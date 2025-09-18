@@ -123,6 +123,113 @@ export function getChildPhotoUrl(photoUrl?: string): string {
   return '/placeholder-child.png'
 }
 
+/**
+ * Upload multiple photos for an update
+ */
+export async function uploadUpdatePhotos(files: File[], updateId: string): Promise<string[]> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const uploadPromises = files.map(async (file, index) => {
+    // Process image with higher quality for updates
+    const processedFile = await processImage(file, { maxWidth: 1920, quality: 0.85 })
+
+    const fileExtension = file.type === 'image/png' ? 'png' : 'jpg'
+    const filePath = `${user.id}/updates/${updateId}/${index + 1}.${fileExtension}`
+
+    const { error } = await supabase.storage
+      .from('media')
+      .upload(filePath, processedFile, {
+        upsert: true,
+        contentType: processedFile.type
+      })
+
+    if (error) throw error
+
+    // Create a signed URL that expires in 30 days
+    const { data, error: signedUrlError } = await supabase.storage
+      .from('media')
+      .createSignedUrl(filePath, 60 * 60 * 24 * 30) // 30 days expiry
+
+    if (signedUrlError) throw signedUrlError
+
+    return data.signedUrl
+  })
+
+  return Promise.all(uploadPromises)
+}
+
+/**
+ * Delete update photos
+ */
+export async function deleteUpdatePhotos(updateId: string, photoUrls: string[]): Promise<void> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const filePaths = photoUrls.map(url => {
+    // Extract file path from URL
+    const urlParts = url.split('/')
+    const fileName = urlParts[urlParts.length - 1].split('?')[0]
+    return `${user.id}/updates/${updateId}/${fileName}`
+  })
+
+  const { error } = await supabase.storage
+    .from('media')
+    .remove(filePaths)
+
+  if (error) throw error
+}
+
+/**
+ * Compress and resize image specifically for updates
+ */
+export async function compressUpdateImage(file: File): Promise<File> {
+  return processImage(file, { maxWidth: 1920, quality: 0.85 })
+}
+
+/**
+ * Validate update media files
+ */
+export function validateUpdateMediaFiles(files: File[]): string | null {
+  if (files.length > 10) {
+    return 'Maximum 10 photos allowed per update'
+  }
+
+  for (const file of files) {
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      return 'Only JPEG, PNG, and WebP images are allowed'
+    }
+
+    // Check file size (10MB limit for updates)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      return 'Each file must be less than 10MB'
+    }
+  }
+
+  return null
+}
+
+/**
+ * Generate preview URLs for files before upload
+ */
+export function generatePreviewUrls(files: File[]): string[] {
+  return files.map(file => URL.createObjectURL(file))
+}
+
+/**
+ * Clean up preview URLs to prevent memory leaks
+ */
+export function cleanupPreviewUrls(urls: string[]): void {
+  urls.forEach(url => URL.revokeObjectURL(url))
+}
+
 // Helper function to get a fresh signed URL for an existing photo
 export async function refreshChildPhotoUrl(childId: string): Promise<string | null> {
   const supabase = createClient()

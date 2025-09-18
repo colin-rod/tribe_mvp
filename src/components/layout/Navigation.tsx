@@ -77,10 +77,10 @@ export default function Navigation() {
                   Groups
                 </Link>
                 <Link
-                  href="/updates"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  href="/dashboard/create-update"
+                  className="bg-primary-600 text-white hover:bg-primary-700 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Updates
+                  Create Update
                 </Link>
               </div>
             )}

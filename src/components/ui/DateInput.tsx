@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, forwardRef } from 'react'
+import { useState, useEffect, useRef, forwardRef } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import { CalendarDaysIcon as CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { cn } from '@/lib/utils'
 
 interface DateInputProps {

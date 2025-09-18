@@ -11,8 +11,21 @@ export async function analyzeUpdate(request: AIAnalysisRequest): Promise<AIAnaly
   const supabase = createClient()
 
   try {
+    // Get the current user to include parent_id
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    // Add parent_id to the request
+    const requestWithParentId = {
+      ...request,
+      parent_id: user.id
+    }
+
     const { data, error } = await supabase.functions.invoke('ai-analyze-update', {
-      body: request
+      body: requestWithParentId
     })
 
     if (error) {

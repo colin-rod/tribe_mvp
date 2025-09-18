@@ -57,3 +57,8 @@ export function getAgeInDays(birthDate: string): number {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
   return diffDays
 }
+
+export function getAgeInMonths(birthDate: string): number {
+  const age = calculateAge(birthDate)
+  return age.totalMonths
+}

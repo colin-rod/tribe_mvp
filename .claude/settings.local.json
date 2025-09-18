@@ -20,7 +20,8 @@
       "Bash(claude --agents react-developer,ui-ux-designer --file claude-tasks/claude-md-cro22.md)",
       "Bash(npm run dev:*)",
       "Bash(claude --agents api-developer,supabase-developer --file claude-tasks/claude-md-cro19.md)",
-      "Bash(supabase:*)"
+      "Bash(supabase:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

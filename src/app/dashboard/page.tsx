@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getChildren } from '@/lib/children'
 import { getRecipientStats } from '@/lib/recipients'
 import { getGroupStats } from '@/lib/recipient-groups'
+import { getUpdates } from '@/lib/updates'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [childrenCount, setChildrenCount] = useState(0)
   const [recipientStats, setRecipientStats] = useState({ total: 0, active: 0, groups: 0 })
+  const [updatesCreated, setUpdatesCreated] = useState(0)
   const [loadingStats, setLoadingStats] = useState(true)
 
   useEffect(() => {
@@ -38,10 +40,11 @@ export default function DashboardPage() {
       setLoadingStats(true)
 
       // Load all stats in parallel
-      const [children, recipientStatsData, groupStatsData] = await Promise.all([
+      const [children, recipientStatsData, groupStatsData, updates] = await Promise.all([
         getChildren(),
         getRecipientStats(),
-        getGroupStats()
+        getGroupStats(),
+        getUpdates()
       ])
 
       setChildrenCount(children.length)
@@ -50,6 +53,10 @@ export default function DashboardPage() {
         active: recipientStatsData.activeRecipients,
         groups: groupStatsData.totalGroups
       })
+
+      // Count all updates (since sending functionality isn't implemented yet)
+      const totalUpdates = updates.length
+      setUpdatesCreated(totalUpdates)
     } catch (error) {
       console.error('Error loading dashboard stats:', error)
     } finally {
@@ -82,9 +89,11 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle={`Welcome back, ${user?.user_metadata?.name || user?.email}!`}
       >
-        <Button>
-          New Update
-        </Button>
+        <Link href="/dashboard/create-update">
+          <Button>
+            New Update
+          </Button>
+        </Link>
       </Header>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -121,8 +130,8 @@ export default function DashboardPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Updates Sent</dt>
-                  <dd className="text-lg font-medium text-gray-900">0</dd>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Updates Created</dt>
+                  <dd className="text-lg font-medium text-gray-900">{updatesCreated}</dd>
                 </dl>
               </div>
             </div>
