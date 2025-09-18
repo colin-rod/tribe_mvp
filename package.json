@@ -1,0 +1,64 @@
+{
+  "name": "tribe-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart baby update distribution platform",
+  "author": "Colin Rodrigues",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:supabase": "node scripts/test-supabase.js",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset",
+    "supabase:generate-types": "supabase gen types typescript --local > lib/types/database.types.ts",
+    "supabase:seed": "supabase db reset && node -e \"console.log('Run: supabase db reset --db-url=your-db-url')\"",
+    "db:seed": "psql $DATABASE_URL -f supabase/seed/test_data.sql"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@linear/sdk": "^59.1.0",
+    "@supabase/ssr": "^0.0.10",
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/react-datepicker": "^6.2.0",
+    "clsx": "^2.1.1",
+    "next": "15.0.0",
+    "react": "19.0.0-rc-65a56d0e-20241020",
+    "react-datepicker": "^8.7.0",
+    "react-dom": "19.0.0-rc-65a56d0e-20241020",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.0.0",
+    "dotenv": "^16.3.1",
+    "eslint": "^8.51.0",
+    "eslint-config-next": "15.0.0",
+    "jest": "^29.7.0",
+    "postcss": "^8.0.0",
+    "prettier": "^3.0.0",
+    "supabase": "^1.110.0",
+    "typescript": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colinrodrigues/tribe-mvp"
+  }
+}

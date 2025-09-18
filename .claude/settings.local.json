@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Read(//Users/colinrodrigues/.claude/**)",
+      "Bash(claude-code config set project.name \"Tribe MVP\")",
+      "Bash(claude-code config set project.description \"Smart baby update distribution platform\")",
+      "Bash(claude-code config set:*)",
+      "Bash(claude-code profile create backend supabase-developer,database-designer,api-developer)",
+      "Bash(gh api graphql:*)",
+      "Bash(curl:*)",
+      "Bash(/dev/null)",
+      "Bash(claude-code profile create frontend nextjs-developer,react-developer,typescript-developer)",
+      "Bash(claude-code profile create fullstack nextjs-developer,react-developer,supabase-developer)",
+      "Bash(claude-code profile create ui ui-ux-designer,react-developer)",
+      "Bash(claude profile create frontend nextjs-developer,react-developer,typescript-developer)",
+      "Bash(claude profile create fullstack nextjs-developer,react-developer,supabase-developer)",
+      "Bash(claude profile create ui ui-ux-designer,react-developer)",
+      "Bash(npm install)",
+      "Bash(claude --agents react-developer,ui-ux-designer --file claude-tasks/claude-md-cro22.md)",
+      "Bash(npm run dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

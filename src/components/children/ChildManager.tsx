@@ -1,0 +1,161 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Child, getChildren, deleteChild } from '@/lib/children'
+import { Button } from '@/components/ui/Button'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import ChildCard from './ChildCard'
+import AddChildForm from './AddChildForm'
+import EditChildModal from './EditChildModal'
+
+export default function ChildManager() {
+  const [children, setChildren] = useState<Child[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingChild, setEditingChild] = useState<Child | null>(null)
+  const [deletingChildId, setDeletingChildId] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadChildren()
+  }, [])
+
+  const loadChildren = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const childrenData = await getChildren()
+      setChildren(childrenData)
+    } catch (error) {
+      console.error('Error loading children:', error)
+      setError('Failed to load children. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChildAdded = (newChild: Child) => {
+    setChildren(prev => [newChild, ...prev])
+    setShowAddForm(false)
+  }
+
+  const handleChildUpdated = (updatedChild: Child) => {
+    setChildren(prev =>
+      prev.map(child => child.id === updatedChild.id ? updatedChild : child)
+    )
+    setEditingChild(null)
+  }
+
+  const handleDeleteChild = async (childId: string) => {
+    if (!window.confirm('Are you sure you want to delete this child? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setDeletingChildId(childId)
+      await deleteChild(childId)
+      setChildren(prev => prev.filter(child => child.id !== childId))
+    } catch (error) {
+      console.error('Error deleting child:', error)
+      alert('Failed to delete child. Please try again.')
+    } finally {
+      setDeletingChildId(null)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" className="mr-3" />
+        <span className="text-lg text-gray-600">Loading children...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-600 mb-4">{error}</div>
+        <Button onClick={loadChildren}>
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Children</h1>
+          <p className="text-gray-600 mt-1">
+            Manage your children&apos;s profiles and information
+          </p>
+        </div>
+        {!showAddForm && (
+          <Button onClick={() => setShowAddForm(true)}>
+            Add Child
+          </Button>
+        )}
+      </div>
+
+      {/* Add Child Form */}
+      {showAddForm && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <AddChildForm
+            onChildAdded={handleChildAdded}
+            onCancel={() => setShowAddForm(false)}
+          />
+        </div>
+      )}
+
+      {/* Children List */}
+      {children.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No children yet</h3>
+          <p className="text-gray-600 mb-6">
+            Get started by adding your first child to begin sharing updates with family and friends.
+          </p>
+          {!showAddForm && (
+            <Button onClick={() => setShowAddForm(true)}>
+              Add Your First Child
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {children.map((child) => (
+            <div key={child.id} className="relative">
+              {deletingChildId === child.id && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
+              <ChildCard
+                child={child}
+                onEdit={setEditingChild}
+                onDelete={handleDeleteChild}
+                showActions={true}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Edit Child Modal */}
+      {editingChild && (
+        <EditChildModal
+          child={editingChild}
+          onChildUpdated={handleChildUpdated}
+          onClose={() => setEditingChild(null)}
+        />
+      )}
+    </div>
+  )
+}

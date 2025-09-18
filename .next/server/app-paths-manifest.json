@@ -1,0 +1,8 @@
+{
+  "/api/preferences/[token]/route": "app/api/preferences/[token]/route.js",
+  "/dashboard/groups/page": "app/dashboard/groups/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/recipients/page": "app/dashboard/recipients/page.js",
+  "/page": "app/page.js",
+  "/preferences/[token]/page": "app/preferences/[token]/page.js"
+}
