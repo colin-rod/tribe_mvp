@@ -8,23 +8,19 @@ max_rows = 1000
 
 [auth]
 enabled = true
-port = 54320
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://www.colinrodrigues.com"]
 jwt_expiry = 3600
 jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 enable_signup = true
-enable_confirmations = false
 enable_manual_linking = false
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
 
 [auth.sms]
 enable_signup = false
-enable_confirmations = false
 
 [auth.external.apple]
 enabled = false
@@ -115,13 +111,10 @@ major_version = 15
 
 [storage]
 enabled = true
-port = 54323
 file_size_limit = "50MiB"
-file_transform_enabled = true
 
 [edge_runtime]
 enabled = true
-port = 54324
 
 [analytics]
 enabled = false
@@ -130,4 +123,3 @@ vector_port = 54328
 backend = "postgres"
 
 [functions]
-verify_jwt = true

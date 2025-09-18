@@ -18,7 +18,9 @@
       "Bash(claude profile create ui ui-ux-designer,react-developer)",
       "Bash(npm install)",
       "Bash(claude --agents react-developer,ui-ux-designer --file claude-tasks/claude-md-cro22.md)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(claude --agents api-developer,supabase-developer --file claude-tasks/claude-md-cro19.md)",
+      "Bash(supabase:*)"
     ],
     "deny": [],
     "ask": []
