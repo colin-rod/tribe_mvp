@@ -315,7 +315,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
               </h3>
               <div className="mt-2 text-sm text-blue-700">
                 <p>
-                  <span className="font-medium">Group "{recipient.group.name}" defaults:</span>
+                  <span className="font-medium">Group &quot;{recipient.group.name}&quot; defaults:</span>
                 </p>
                 <p>
                   • Frequency: {options.frequencies.find(f => f.value === recipient.group!.default_frequency)?.label}

@@ -144,7 +144,7 @@ export default function GroupManager() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No groups found</h3>
           <p className="text-gray-600 mb-6">
-            It looks like your default groups haven't been created yet. This usually happens automatically during signup.
+            It looks like your default groups haven&apos;t been created yet. This usually happens automatically during signup.
           </p>
           <Button onClick={loadGroups}>
             Refresh Groups
