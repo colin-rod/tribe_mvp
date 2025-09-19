@@ -8,6 +8,7 @@ import { getChildren } from '@/lib/children'
 import { getRecipientStats } from '@/lib/recipients'
 import { getGroupStats } from '@/lib/recipient-groups'
 import { getUpdates } from '@/lib/updates'
+import { needsOnboarding } from '@/lib/onboarding'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +28,24 @@ export default function DashboardPage() {
       router.push('/login')
     }
   }, [user, loading, router])
+
+  useEffect(() => {
+    // Check if user needs onboarding
+    if (user && !loading) {
+      checkOnboardingStatus()
+    }
+  }, [user, loading, router])
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const needsOnboard = await needsOnboarding()
+      if (needsOnboard) {
+        router.push('/onboarding')
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+    }
+  }
 
   useEffect(() => {
     // Load stats for dashboard
