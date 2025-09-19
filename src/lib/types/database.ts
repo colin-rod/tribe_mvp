@@ -147,6 +147,117 @@ export interface Database {
           created_at?: string
         }
       }
+      updates: {
+        Row: {
+          id: string
+          parent_id: string
+          child_id: string
+          content: string | null
+          milestone_type: string | null
+          media_urls: string[]
+          is_sent: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          parent_id: string
+          child_id: string
+          content?: string | null
+          milestone_type?: string | null
+          media_urls?: string[]
+          is_sent?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          parent_id?: string
+          child_id?: string
+          content?: string | null
+          milestone_type?: string | null
+          media_urls?: string[]
+          is_sent?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      delivery_jobs: {
+        Row: {
+          id: string
+          update_id: string
+          recipient_id: string
+          channel: string
+          status: 'queued' | 'sent' | 'delivered' | 'failed'
+          external_id: string | null
+          error_message: string | null
+          sent_at: string | null
+          delivered_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          update_id: string
+          recipient_id: string
+          channel: string
+          status?: 'queued' | 'sent' | 'delivered' | 'failed'
+          external_id?: string | null
+          error_message?: string | null
+          sent_at?: string | null
+          delivered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          update_id?: string
+          recipient_id?: string
+          channel?: string
+          status?: 'queued' | 'sent' | 'delivered' | 'failed'
+          external_id?: string | null
+          error_message?: string | null
+          sent_at?: string | null
+          delivered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      responses: {
+        Row: {
+          id: string
+          update_id: string
+          recipient_id: string
+          channel: 'email' | 'whatsapp' | 'sms'
+          external_id: string | null
+          content: string | null
+          media_urls: string[]
+          parent_notified: boolean
+          received_at: string
+        }
+        Insert: {
+          id?: string
+          update_id: string
+          recipient_id: string
+          channel: 'email' | 'whatsapp' | 'sms'
+          external_id?: string | null
+          content?: string | null
+          media_urls?: string[]
+          parent_notified?: boolean
+          received_at?: string
+        }
+        Update: {
+          id?: string
+          update_id?: string
+          recipient_id?: string
+          channel?: 'email' | 'whatsapp' | 'sms'
+          external_id?: string | null
+          content?: string | null
+          media_urls?: string[]
+          parent_notified?: boolean
+          received_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -155,7 +266,8 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      delivery_status: 'queued' | 'sent' | 'delivered' | 'failed'
+      communication_channel: 'email' | 'sms' | 'push'
     }
   }
 }

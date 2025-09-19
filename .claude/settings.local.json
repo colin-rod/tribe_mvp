@@ -22,7 +22,8 @@
       "Bash(claude --agents api-developer,supabase-developer --file claude-tasks/claude-md-cro19.md)",
       "Bash(supabase:*)",
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []
