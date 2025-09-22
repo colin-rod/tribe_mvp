@@ -2,18 +2,27 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 import { UpdateWithDetails, RecipientWithDetails } from './types.ts'
 
 export function createSupabaseClient() {
-  // Use environment variables that don't start with SUPABASE_ (Edge Functions restriction)
-  const supabaseUrl = Deno.env.get('DATABASE_URL') || 'http://kong:8000'
-  const supabaseKey = Deno.env.get('SERVICE_ROLE_KEY')!
-
-  if (!supabaseKey) {
-    throw new Error('SERVICE_ROLE_KEY environment variable is required')
-  }
+  // Use environment variables, with fallbacks for local development
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('DATABASE_URL') || 'http://kong:8000'
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
   console.log('Creating Supabase client with URL:', supabaseUrl)
   console.log('Service role key available:', !!supabaseKey)
+  console.log('Environment variables:', {
+    SUPABASE_URL: !!Deno.env.get('SUPABASE_URL'),
+    DATABASE_URL: !!Deno.env.get('DATABASE_URL'),
+    SUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+    SERVICE_ROLE_KEY: !!Deno.env.get('SERVICE_ROLE_KEY')
+  })
 
-  return createClient(supabaseUrl, supabaseKey)
+  const client = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+
+  return client
 }
 
 export async function fetchUpdateWithDetails(

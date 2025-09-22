@@ -72,15 +72,22 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
     return { success: false, type: 'memory', error: 'Sender authentication failed' }
   }
 
-  // Find parent by email
+  // Find parent by email with detailed logging
+  console.log('Searching for profile with email:', emailData.from)
+
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, name')
+    .select('id, name, email')
     .eq('email', emailData.from)
     .single()
 
+  console.log('Profile query result:', { profile, profileError })
+  console.log('Profile data:', profile)
+  console.log('Profile error:', profileError)
+
   if (profileError || !profile) {
     console.log('Unknown sender for memory email:', emailData.from)
+    console.log('Profile error details:', profileError)
     return { success: false, type: 'memory', error: 'Unknown sender' }
   }
 
@@ -138,15 +145,14 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
       child_id: childId,
       content: finalContent,
       media_urls: mediaUrls,
-      distribution_status: 'draft', // Parent can review and send later
-      created_via: 'email'
+      distribution_status: 'draft' // Parent can review and send later
     })
     .select('id')
     .single()
 
   if (updateError) {
     console.error('Failed to create update from email:', updateError)
-    return { success: false, type: 'memory', error: 'Failed to create update' }
+    return { success: false, type: 'memory', error: 'Failed to create update', details: updateError.message }
   }
 
   console.log('Created update from email:', update.id)
@@ -339,6 +345,39 @@ Deno.serve(async (req) => {
       textLength: emailData.text?.length || 0,
       htmlLength: emailData.html?.length || 0
     })
+
+    // Test database connection first
+    if (emailData.to === 'test@example.com') {
+      try {
+        const supabase = createSupabaseClient()
+        const { data: testProfile, error: testError } = await supabase
+          .from('profiles')
+          .select('id, email, name')
+          .eq('email', 'parent@example.com')
+          .single()
+
+        return new Response(
+          JSON.stringify({
+            test: 'database connection',
+            profile: testProfile,
+            error: testError,
+            success: !!testProfile
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      } catch (err) {
+        return new Response(
+          JSON.stringify({ test: 'database connection', error: err.message }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+    }
 
     // Basic validation
     if (!emailData.to || !emailData.from) {

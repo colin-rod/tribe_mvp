@@ -23,7 +23,8 @@
       "Bash(supabase:*)",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(./test-email-webhook-comprehensive.sh:*)"
     ],
     "deny": [],
     "ask": []
