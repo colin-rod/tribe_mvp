@@ -83,8 +83,7 @@ export default function CreateUpdatePage() {
 
   const handleSendUpdate = async () => {
     try {
-      const updateId = await createUpdateDraft()
-      await finalizeUpdate(updateId)
+      await finalizeUpdate()
 
       // Show success and redirect
       router.push('/dashboard?updated=true')
@@ -96,8 +95,7 @@ export default function CreateUpdatePage() {
   const handleScheduleUpdate = async (scheduledFor: Date) => {
     try {
       setFormData({ scheduledFor })
-      const updateId = await createUpdateDraft()
-      await finalizeUpdate(updateId)
+      await finalizeUpdate()
 
       // Show success and redirect
       router.push('/dashboard?scheduled=true')

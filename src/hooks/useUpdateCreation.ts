@@ -39,7 +39,7 @@ export interface UseUpdateCreationReturn {
   runAIAnalysis: () => Promise<void>
   updateRecipients: (recipients: string[]) => Promise<void>
   createUpdateDraft: () => Promise<string>
-  finalizeUpdate: (updateId: string) => Promise<void>
+  finalizeUpdate: () => Promise<void>
   reset: () => void
   loadChildren: () => Promise<void>
 }
@@ -215,12 +215,15 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
 
     // Return existing update ID if we already created one
     if (currentUpdateId) {
+      console.log('Returning existing update ID:', currentUpdateId)
       return currentUpdateId
     }
 
     try {
       setIsLoading(true)
       setUploadProgress(0)
+
+      console.log('Creating new update...')
 
       // Create the update in database first
       const updateData = {
@@ -232,8 +235,8 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
         suggested_recipients: aiAnalysis?.suggested_recipients || []
       }
 
-
       const update = await createUpdate(updateData)
+      console.log('Created update with ID:', update.id)
       setCurrentUpdateId(update.id)
 
       // Upload media files if any
@@ -261,9 +264,13 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       setIsLoading(false)
       setUploadProgress(0)
     }
-  }, [formData, aiAnalysis])
+  }, [formData, aiAnalysis, currentUpdateId])
 
-  const finalizeUpdate = useCallback(async (updateId: string) => {
+  const finalizeUpdate = useCallback(async () => {
+    if (!currentUpdateId) {
+      throw new Error('No update ID available')
+    }
+
     try {
       setIsLoading(true)
 
@@ -275,7 +282,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [router])
+  }, [currentUpdateId, router])
 
   const reset = useCallback(() => {
     // Clean up preview URLs
