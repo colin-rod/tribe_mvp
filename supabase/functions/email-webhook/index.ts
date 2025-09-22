@@ -171,48 +171,82 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
  * Handles response emails to existing updates
  */
 async function handleUpdateResponse(emailData: InboundEmail, supabase: any): Promise<EmailProcessingResult> {
+  console.log('=== HANDLING UPDATE RESPONSE ===')
+  console.log('Email to address:', emailData.to)
+
   // Extract update ID from email address (update-{uuid}@domain.com)
   const updateMatch = emailData.to.match(/^update-([a-f0-9-]+)@/)
+  console.log('Update ID regex match:', updateMatch)
+
   if (!updateMatch) {
-    console.log('Invalid update email format:', emailData.to)
+    console.log('FAILED: Invalid update email format:', emailData.to)
     return { success: false, type: 'response', error: 'Invalid email format' }
   }
 
   const updateId = updateMatch[1]
+  console.log('Extracted update ID:', updateId)
 
   // Verify update exists
+  console.log('Looking up update in database...')
   const { data: update, error: updateError } = await supabase
     .from('updates')
     .select('id, parent_id')
     .eq('id', updateId)
     .single()
 
+  console.log('Update lookup result:', { update, updateError })
+
   if (updateError || !update) {
-    console.log('Update not found for response:', updateId)
+    console.log('FAILED: Update not found for response:', updateId, 'Error:', updateError)
     return { success: false, type: 'response', error: 'Update not found' }
   }
 
+  console.log('Found update:', update)
+
   // Find recipient by email
+  console.log('Looking up recipient...')
+  console.log('Parent ID:', update.parent_id)
+  console.log('From email:', emailData.from)
+
   const { data: recipient, error: recipientError } = await supabase
     .from('recipients')
-    .select('id, name, relationship')
+    .select('id, name, relationship, email, is_active')
     .eq('parent_id', update.parent_id)
     .eq('email', emailData.from)
     .eq('is_active', true)
     .single()
 
+  console.log('Recipient lookup result:', { recipient, recipientError })
+
   if (recipientError || !recipient) {
-    console.log('Unknown recipient for response:', emailData.from)
+    console.log('FAILED: Unknown recipient for response:', emailData.from)
+    console.log('Recipient error details:', recipientError)
+
+    // Let's also check all recipients for this parent to see what's available
+    const { data: allRecipients } = await supabase
+      .from('recipients')
+      .select('id, name, email, is_active')
+      .eq('parent_id', update.parent_id)
+
+    console.log('All recipients for parent:', allRecipients)
     return { success: false, type: 'response', error: 'Unknown recipient' }
   }
+
+  console.log('Found recipient:', recipient)
 
   // Process attachments
   const mediaUrls = await processEmailAttachments(emailData, update.parent_id, supabase)
 
   // Clean response content
-  const responseContent = cleanEmailContent(emailData.text || emailData.html)
+  const rawContent = emailData.text || emailData.html
+  const responseContent = cleanEmailContent(rawContent)
+
+  console.log('Raw email content:', rawContent)
+  console.log('Cleaned email content:', responseContent)
+  console.log('Content length after cleaning:', responseContent.length)
 
   if (!responseContent.trim() && mediaUrls.length === 0) {
+    console.log('No content found after cleaning - rejecting email')
     return { success: false, type: 'response', error: 'No content found' }
   }
 
@@ -230,6 +264,17 @@ async function handleUpdateResponse(emailData: InboundEmail, supabase: any): Pro
   }
 
   // Create response record
+  console.log('Creating response record...')
+  console.log('Response data:', {
+    update_id: updateId,
+    recipient_id: recipient.id,
+    channel: 'email',
+    content: responseContent,
+    content_length: responseContent.length,
+    media_urls: mediaUrls,
+    external_id: messageId
+  })
+
   const { data: response, error: responseError } = await supabase
     .from('responses')
     .insert({
@@ -244,12 +289,16 @@ async function handleUpdateResponse(emailData: InboundEmail, supabase: any): Pro
     .select('id')
     .single()
 
+  console.log('Response creation result:', { response, responseError })
+
   if (responseError) {
-    console.error('Failed to create response:', responseError)
+    console.error('FAILED: Failed to create response:', responseError)
     return { success: false, type: 'response', error: 'Failed to create response' }
   }
 
-  console.log('Created response from email:', response.id)
+  console.log('SUCCESS: Created response from email:', response.id)
+  console.log('=== EMAIL WEBHOOK DEBUG END ===')
+
 
   // Notify parent of new response (based on their preferences)
   await notifyParentOfResponse(update.parent_id, recipient.name, responseContent, supabase)
@@ -337,13 +386,18 @@ Deno.serve(async (req) => {
     const formData = await req.formData()
     const emailData = parseInboundEmail(formData)
 
+    console.log('=== EMAIL WEBHOOK DEBUG START ===')
     console.log('Received email:', {
       to: emailData.to,
       from: emailData.from,
       subject: emailData.subject,
       attachments: emailData.attachments,
       textLength: emailData.text?.length || 0,
-      htmlLength: emailData.html?.length || 0
+      htmlLength: emailData.html?.length || 0,
+      rawText: emailData.text,
+      rawHtml: emailData.html,
+      spf: emailData.SPF,
+      envelope: emailData.envelope
     })
 
     // Test database connection first
