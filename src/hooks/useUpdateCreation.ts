@@ -3,10 +3,11 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadUpdatePhotos, validateUpdateMediaFiles, generatePreviewUrls, cleanupPreviewUrls } from '@/lib/photo-upload'
-import { createUpdate, updateUpdateAIAnalysis, updateUpdateMediaUrls, updateUpdateRecipients } from '@/lib/updates'
+import { createUpdate, updateUpdateAIAnalysis, updateUpdateMediaUrls, updateUpdateRecipients, markUpdateAsSent } from '@/lib/updates'
 import { analyzeUpdate } from '@/lib/ai-analysis'
 import { getChildren } from '@/lib/children'
 import { getAgeInMonths } from '@/lib/age-utils'
+import { createClient } from '@/lib/supabase/client'
 import type { UpdateFormData } from '@/lib/validation/update'
 import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Child } from '@/lib/children'
@@ -271,18 +272,49 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       throw new Error('No update ID available')
     }
 
+    if (!formData.confirmedRecipients || formData.confirmedRecipients.length === 0) {
+      throw new Error('No recipients selected')
+    }
+
     try {
       setIsLoading(true)
 
-      // Mark as ready to send (implementation depends on your distribution system)
-      // For now, just navigate to the dashboard
+      const supabase = createClient()
+
+      // Trigger email distribution
+      console.log('Triggering email distribution for update:', currentUpdateId)
+      const { data, error: distributionError } = await supabase.functions.invoke('distribute-email', {
+        body: {
+          update_id: currentUpdateId,
+          recipient_ids: formData.confirmedRecipients
+        }
+      })
+
+      if (distributionError) {
+        console.error('Email distribution error:', distributionError)
+        throw new Error(`Failed to send emails: ${distributionError.message}`)
+      }
+
+      if (!data?.success) {
+        console.error('Email distribution failed:', data?.error)
+        throw new Error(`Failed to send emails: ${data?.error || 'Unknown error'}`)
+      }
+
+      console.log('Email distribution successful:', data.delivery_jobs?.length || 0, 'emails queued')
+
+      // Mark update as sent
+      await markUpdateAsSent(currentUpdateId)
+
+      // Navigate to the dashboard
       router.push('/dashboard')
     } catch (err) {
+      console.error('Failed to finalize update:', err)
       setError(err instanceof Error ? err.message : 'Failed to finalize update')
+      throw err
     } finally {
       setIsLoading(false)
     }
-  }, [currentUpdateId, router])
+  }, [currentUpdateId, formData.confirmedRecipients, router])
 
   const reset = useCallback(() => {
     // Clean up preview URLs

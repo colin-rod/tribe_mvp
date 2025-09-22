@@ -2,11 +2,19 @@
 const nextConfig = {
   serverExternalPackages: ['sharp'],
   images: {
-    domains: ['example.com'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'advbcfkisejskhskrmqw.supabase.co',
+        pathname: '/storage/v1/object/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'colinrodrigues.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.colinrodrigues.com',
       },
     ],
   },
