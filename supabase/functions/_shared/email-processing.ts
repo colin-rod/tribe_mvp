@@ -87,6 +87,22 @@ export function extractMessageId(emailData: InboundEmail): string {
 /**
  * Parses SendGrid inbound email form data
  */
+/**
+ * Extracts email address from "Name <email>" format
+ */
+export function extractEmailAddress(emailString: string): string {
+  if (!emailString) return ''
+
+  // Check if it's in "Name <email>" format
+  const match = emailString.match(/<([^>]+)>/)
+  if (match) {
+    return match[1].trim()
+  }
+
+  // Otherwise, assume it's just the email address
+  return emailString.trim()
+}
+
 export function parseInboundEmail(formData: FormData): InboundEmail {
   // Parse attachment info if present
   let attachmentInfo: Record<string, AttachmentInfo> = {}
@@ -99,9 +115,11 @@ export function parseInboundEmail(formData: FormData): InboundEmail {
     }
   }
 
+  const rawFrom = formData.get('from') as string || ''
+
   return {
     to: formData.get('to') as string || '',
-    from: formData.get('from') as string || '',
+    from: extractEmailAddress(rawFrom),
     subject: formData.get('subject') as string || '',
     text: formData.get('text') as string || '',
     html: formData.get('html') as string || '',
