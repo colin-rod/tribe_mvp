@@ -402,3 +402,66 @@ export async function getDraftUpdates(): Promise<Update[]> {
   if (error) throw error
   return data || []
 }
+
+/**
+ * Get recent updates with response counts for dashboard display
+ */
+export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Update[]> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  // Get basic update data with child information
+  const { data: updates, error } = await supabase
+    .from('updates')
+    .select(`
+      *,
+      children:child_id (
+        id,
+        name,
+        birth_date,
+        profile_photo_url
+      )
+    `)
+    .eq('parent_id', user.id)
+    .gte('created_at', thirtyDaysAgo.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+
+  if (!updates || updates.length === 0) {
+    return []
+  }
+
+  // Get response counts for each update
+  const updatesWithStats = await Promise.all(
+    updates.map(async (update) => {
+      const { count } = await supabase
+        .from('responses')
+        .select('*', { count: 'exact', head: true })
+        .eq('update_id', update.id)
+
+      const { data: lastResponse } = await supabase
+        .from('responses')
+        .select('received_at')
+        .eq('update_id', update.id)
+        .order('received_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      return {
+        ...update,
+        response_count: count || 0,
+        last_response_at: lastResponse?.received_at || null,
+        has_unread_responses: false // For now, we'll implement this later
+      }
+    })
+  )
+
+  return updatesWithStats
+}

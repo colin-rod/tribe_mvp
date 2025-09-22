@@ -13,6 +13,7 @@ import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { UpdatesList } from '@/components/updates'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -233,19 +234,18 @@ export default function DashboardPage() {
         <div className="mt-8">
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Recent Activity
-              </h3>
-              <div className="text-center py-8">
-                <div className="text-gray-400 mb-4">
-                  <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-600">
-                  No activity yet. Create your first update to get started!
-                </p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Recent Activity
+                </h3>
+                <Link
+                  href="/dashboard/updates"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  View all
+                </Link>
               </div>
+              <UpdatesList limit={5} showViewAllLink={false} />
             </div>
           </div>
         </div>
