@@ -24,6 +24,9 @@ export interface RecipientWithGroup {
   email?: string | null | undefined
   relationship: string
   group: RecipientGroup | null
+  frequency?: string
+  preferred_channels?: string[]
+  content_types?: string[]
 }
 
 /**
