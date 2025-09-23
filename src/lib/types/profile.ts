@@ -38,6 +38,41 @@ export interface NotificationFormData {
   marketingEmails: boolean
 }
 
+export interface NotificationPreferences {
+  response_notifications: 'immediate' | 'hourly' | 'daily_digest' | 'off'
+  prompt_frequency: 'daily' | 'every_3_days' | 'weekly' | 'off'
+  enabled_prompt_types: string[]
+  quiet_hours: { start: string, end: string }
+  delivery_notifications: boolean
+  system_notifications: boolean
+  weekly_digest: boolean
+  weekly_digest_day: string
+  monthly_summary: boolean
+  browser_notifications: boolean
+  email_notifications: boolean
+  digest_email_time: string
+}
+
+export interface DigestPreferences {
+  enabled: boolean
+  frequency: 'daily' | 'weekly' | 'monthly'
+  delivery_day?: string
+  delivery_time: string
+  content_types: string[]
+  include_metrics: boolean
+  include_responses: boolean
+  include_prompts: boolean
+}
+
+export interface QuietHours {
+  enabled: boolean
+  start: string
+  end: string
+  timezone: string
+  weekdays_only?: boolean
+  holiday_mode?: boolean
+}
+
 export interface PrivacyFormData {
   profileVisibility: 'public' | 'private' | 'friends'
   dataSharing: boolean
