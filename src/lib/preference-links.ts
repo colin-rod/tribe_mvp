@@ -18,7 +18,11 @@ export interface PreferenceUpdate {
  * Interface for enhanced recipient data with group information
  * Used in the preference management interface
  */
-export interface RecipientWithGroup extends Recipient {
+export interface RecipientWithGroup {
+  id: string
+  name: string
+  email?: string | null | undefined
+  relationship: string
   group: RecipientGroup | null
 }
 

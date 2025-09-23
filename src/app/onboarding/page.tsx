@@ -1,8 +1,6 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-
-  const logger = createLogger('Page')
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,6 +14,8 @@ import { RecipientSetupStep } from '@/components/onboarding/RecipientSetupStep'
 import { FirstUpdateStep } from '@/components/onboarding/FirstUpdateStep'
 import { CompletionStep } from '@/components/onboarding/CompletionStep'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
+
+const logger = createLogger('OnboardingPage')
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -65,7 +65,7 @@ export default function OnboardingPage() {
 
   // Handle errors
   const handleError = (error: string) => {
-    logger.errorWithStack('Onboarding error:', error as Error)
+    logger.error('Onboarding error:', { error })
     // You could show a toast or error modal here
   }
 
@@ -304,57 +304,4 @@ export default function OnboardingPage() {
       </footer>
     </div>
   )
-}
-
-// Error Boundary for the onboarding flow
-export function OnboardingErrorBoundary({
-  children,
-  fallback
-}: {
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}) {
-  const [hasError, setHasError] = useState(false)
-
-  useEffect(() => {
-    const handleError = (error: ErrorEvent) => {
-      logger.errorWithStack('Onboarding error:', error as Error)
-      setHasError(true)
-    }
-
-    window.addEventListener('error', handleError)
-    return () => window.removeEventListener('error', handleError)
-  }, [])
-
-  if (hasError) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="text-4xl">😕</div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Something went wrong
-          </h1>
-          <p className="text-gray-600 max-w-md">
-            We&apos;re sorry, but there was an error during setup. Please try refreshing the page or contact support if the problem persists.
-          </p>
-          <div className="space-x-4">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              Refresh Page
-            </button>
-            <button
-              onClick={() => window.location.href = '/dashboard'}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-            >
-              Skip to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return <>{children}</>
 }

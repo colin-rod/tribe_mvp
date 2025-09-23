@@ -19,6 +19,7 @@ interface DateInputProps {
 
 // Custom input component that looks like the standard Input component
 interface CustomInputProps {
+  id?: string
   value: string
   onClick: () => void
   placeholder?: string

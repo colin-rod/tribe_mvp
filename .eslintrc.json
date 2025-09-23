@@ -19,6 +19,13 @@
       "rules": {
         "no-console": "off"
       }
+    },
+    {
+      "files": ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*"],
+      "rules": {
+        "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
     }
   ],
   "env": {

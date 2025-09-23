@@ -10,7 +10,7 @@ interface ResponseCardProps {
     id: string
     update_id: string
     recipient_id: string
-    channel: 'email' | 'whatsapp' | 'sms'
+    channel: string
     content: string | null
     media_urls: string[]
     received_at: string
@@ -49,7 +49,7 @@ export function ResponseCard({ response, showChannel = true, onMediaClick }: Res
 
   const shouldTruncate = response.content && response.content.length > 200
   const displayContent = shouldTruncate && !showFullContent
-    ? response.content.substring(0, 200) + '...'
+    ? response.content?.substring(0, 200) + '...'
     : response.content
 
   return (

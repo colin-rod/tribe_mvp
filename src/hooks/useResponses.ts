@@ -101,7 +101,7 @@ export function useResponses(updateId: string) {
           table: 'responses',
           filter: `update_id=eq.${updateId}`
         },
-        (payload) => {
+        (payload: any) => {
           logger.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
           fetchNewResponse(payload.new.id)

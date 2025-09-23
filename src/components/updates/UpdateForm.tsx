@@ -47,9 +47,9 @@ export default function UpdateForm({
   }
 
   const handleMilestoneChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const milestoneType = e.target.value as MilestoneType
+    const value = e.target.value
     onFormDataChange({
-      milestoneType: milestoneType === 'none' ? undefined : milestoneType
+      milestoneType: value === 'none' ? undefined : (value as MilestoneType)
     })
   }
 

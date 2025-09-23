@@ -33,8 +33,8 @@ export default function UpdatesList({
       setError(null)
 
       const rawUpdates = await getRecentUpdatesWithStats(limit)
-      const transformedUpdates = rawUpdates.map((update: DashboardUpdate) =>
-        transformToCardData(update)
+      const transformedUpdates = rawUpdates.map((update) =>
+        transformToCardData(update as DashboardUpdate)
       )
 
       setUpdates(transformedUpdates)

@@ -92,7 +92,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
           table: 'delivery_jobs',
           filter: `update_id=eq.${updateId}`
         },
-        async (payload) => {
+        async (payload: any) => {
           logger.info('Delivery job update:', { data: payload })
 
           if (payload.eventType === 'INSERT') {

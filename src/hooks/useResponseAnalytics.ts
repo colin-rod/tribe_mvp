@@ -109,7 +109,7 @@ function calculateAnalytics(responses: any[], updates: any[]): ResponseAnalytics
 
   const topResponders = Object.values(responderCounts)
     .sort((a: any, b: any) => b.count - a.count)
-    .slice(0, 5)
+    .slice(0, 5) as { recipient: string; count: number; relationship: string; }[]
 
   // Responses by hour
   const hourCounts = Array(24).fill(0)
@@ -128,7 +128,7 @@ function calculateAnalytics(responses: any[], updates: any[]): ResponseAnalytics
 
   const responsesByChannel = Object.entries(channelCounts).map(([channel, count]) => ({
     channel: channel.charAt(0).toUpperCase() + channel.slice(1),
-    count
+    count: count as number
   }))
 
   // Engagement trend (last 7 days)

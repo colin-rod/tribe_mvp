@@ -274,7 +274,7 @@ export default function SendUpdateModal({
               </div>
 
               <EmailPreview
-                updateContent={updateContent}
+                updateContent={updateContent || null}
                 milestoneType={milestoneType}
                 mediaUrls={mediaUrls}
                 childName={childName}

@@ -30,7 +30,7 @@ export function useResponseNotifications() {
           schema: 'public',
           table: 'responses'
         },
-        async (payload) => {
+        async (payload: any) => {
           try {
             // Get the current user
             const { data: { user } } = await supabase.auth.getUser()
