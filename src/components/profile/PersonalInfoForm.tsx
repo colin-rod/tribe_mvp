@@ -59,7 +59,7 @@ export default function PersonalInfoForm({ onSuccess }: PersonalInfoFormProps) {
 
   // Handle photo preview
   useEffect(() => {
-    if (watchedPhoto && watchedPhoto.length > 0) {
+    if (watchedPhoto && Array.isArray(watchedPhoto) && watchedPhoto.length > 0) {
       const file = watchedPhoto[0]
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -81,7 +81,7 @@ export default function PersonalInfoForm({ onSuccess }: PersonalInfoFormProps) {
       // Convert FileList to File if present
       const formData: PersonalInfoFormData = {
         ...data,
-        profile_photo: data.profile_photo && data.profile_photo.length > 0
+        profile_photo: data.profile_photo && Array.isArray(data.profile_photo) && data.profile_photo.length > 0
           ? data.profile_photo[0]
           : undefined
       }

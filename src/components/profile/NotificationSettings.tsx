@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useProfileManager } from '@/hooks/useProfileManager'
 import { notificationPreferencesSchema, type NotificationPreferencesData } from '@/lib/validation/profile'
+import type { NotificationPreferences } from '@/lib/types/profile'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
@@ -13,7 +14,7 @@ interface NotificationSettingsProps {
 }
 
 export default function NotificationSettings({ onSuccess }: NotificationSettingsProps) {
-  const { profile, updateNotificationPreferences, loading, error, refreshProfile } = useProfileManager()
+  const { profile, updateNotificationPreferences, loading, error, refreshProfile, getNotificationPreferences, convertToFormData } = useProfileManager()
 
   const {
     register,
@@ -40,17 +41,12 @@ export default function NotificationSettings({ onSuccess }: NotificationSettings
 
   // Set form values when profile loads
   useEffect(() => {
-    if (profile && profile.notification_preferences) {
-      const prefs = profile.notification_preferences as NotificationPreferencesData
-      reset({
-        emailNotifications: prefs.emailNotifications ?? true,
-        pushNotifications: prefs.pushNotifications ?? false,
-        responseNotifications: prefs.responseNotifications ?? true,
-        weeklyDigest: prefs.weeklyDigest ?? true,
-        marketingEmails: prefs.marketingEmails ?? false
-      })
+    const preferences = getNotificationPreferences()
+    if (preferences) {
+      const formData = convertToFormData(preferences)
+      reset(formData)
     }
-  }, [profile, reset])
+  }, [profile, reset, getNotificationPreferences, convertToFormData])
 
   const onSubmit = async (data: NotificationPreferencesData) => {
     try {

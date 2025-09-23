@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { useNotificationManager } from '@/hooks/useNotificationManager'
 import QuietHoursConfig from './QuietHoursConfig'
 import DigestSettings from './DigestSettings'
+import NotificationTesting from './NotificationTesting'
 import type { NotificationPreferences, DigestPreferences } from '@/lib/types/profile'
 import {
   BellIcon,
@@ -38,9 +39,26 @@ interface TabInfo {
   icon: React.ComponentType<{ className?: string }>
 }
 
-type NotificationTab = 'general' | 'quiet-hours' | 'digests' | 'advanced'
+type NotificationTab = 'preferences' | 'testing'
 
 const NOTIFICATION_TABS: TabInfo[] = [
+  {
+    id: 'preferences',
+    label: 'Preferences',
+    description: 'Configure notification settings and timing',
+    icon: Cog6ToothIcon
+  },
+  {
+    id: 'testing',
+    label: 'Testing & Preview',
+    description: 'Test notifications and view analytics',
+    icon: PlayIcon
+  }
+]
+
+type PreferenceTab = 'general' | 'quiet-hours' | 'digests' | 'advanced'
+
+const PREFERENCE_TABS: TabInfo[] = [
   {
     id: 'general',
     label: 'General',
@@ -113,7 +131,8 @@ export function NotificationSection({ user }: NotificationSectionProps) {
     getNextNotificationTime
   } = useNotificationManager()
 
-  const [activeTab, setActiveTab] = useState<NotificationTab>('general')
+  const [activeTab, setActiveTab] = useState<NotificationTab>('preferences')
+  const [activePreferenceTab, setActivePreferenceTab] = useState<PreferenceTab>('general')
   const [testNotificationSent, setTestNotificationSent] = useState(false)
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistory[]>([])
   const [browserPermission, setBrowserPermission] = useState<BrowserPermissionStatus>({
@@ -283,7 +302,7 @@ export function NotificationSection({ user }: NotificationSectionProps) {
 
       <div className="space-y-8">
         {/* Tab Content */}
-        {activeTab === 'general' && (
+        {activeTab === 'preferences' && (
           <div className="space-y-6">
             {/* Global Channel Settings */}
             <div className="border border-gray-200 rounded-lg p-6">
@@ -455,13 +474,19 @@ export function NotificationSection({ user }: NotificationSectionProps) {
           </div>
         )}
 
-        {/* Quiet Hours Tab */}
-        {activeTab === 'quiet-hours' && (
-          <QuietHoursConfig onSuccess={() => {}} />
+        {/* Testing Tab */}
+        {activeTab === 'testing' && (
+          <NotificationTesting />
         )}
+      </div>
 
-        {/* Digests Tab */}
-        {activeTab === 'digests' && (
+      {/* Expandable sections for preferences */}
+      {activeTab === 'preferences' && (
+        <div className="space-y-6">
+          {/* Quiet Hours Section */}
+          <QuietHoursConfig onSuccess={() => {}} />
+
+          {/* Digests Section */}
           <DigestSettings
             digestPrefs={{
               enabled: preferences.weekly_digest,
@@ -482,10 +507,8 @@ export function NotificationSection({ user }: NotificationSectionProps) {
             }}
             loading={saving}
           />
-        )}
 
-        {/* Advanced Tab */}
-        {activeTab === 'advanced' && (
+          {/* Advanced Settings */}
           <div className="space-y-6">
             {/* Response Notifications */}
             <div className="border border-gray-200 rounded-lg p-6">
@@ -655,8 +678,13 @@ export function NotificationSection({ user }: NotificationSectionProps) {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Testing Tab */}
+      {activeTab === 'testing' && (
+        <NotificationTesting />
+      )}
 
       {/* Global Messages */}
       {error && (

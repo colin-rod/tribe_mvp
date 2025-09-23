@@ -5,7 +5,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { uploadChildPhoto, deleteChildPhoto } from '@/lib/photo-upload'
 import type { Database } from '@/lib/types/database'
-import type { PersonalInfoFormData, SecurityFormData, NotificationPreferencesData } from '@/lib/validation/profile'
+import type { PersonalInfoFormData, SecurityFormData, NotificationPreferencesData, CompleteNotificationPreferences } from '@/lib/validation/profile'
+import type { NotificationPreferences, NotificationFormData } from '@/lib/types/profile'
+import { convertFormToPreferences, convertPreferencesToForm, safeConvertToFormData } from '@/lib/types/profile'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
@@ -16,7 +18,10 @@ export interface UseProfileManagerReturn {
   error: string | null
   updatePersonalInfo: (data: PersonalInfoFormData) => Promise<void>
   updateSecurity: (data: SecurityFormData) => Promise<void>
-  updateNotificationPreferences: (data: NotificationPreferencesData) => Promise<void>
+  updateNotificationPreferences: (data: NotificationPreferencesData | Partial<NotificationPreferences>) => Promise<void>
+  getNotificationPreferences: () => NotificationPreferences | null
+  convertFormData: (formData: NotificationPreferencesData) => Partial<NotificationPreferences>
+  convertToFormData: (preferences: NotificationPreferences) => NotificationPreferencesData
   exportData: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -162,7 +167,7 @@ export function useProfileManager(): UseProfileManagerReturn {
     }
   }, [user, supabase, refreshSession])
 
-  const updateNotificationPreferences = useCallback(async (data: NotificationPreferencesData) => {
+  const updateNotificationPreferences = useCallback(async (data: NotificationPreferencesData | Partial<NotificationPreferences>) => {
     if (!user || !profile) {
       throw new Error('User or profile not found')
     }
@@ -171,8 +176,20 @@ export function useProfileManager(): UseProfileManagerReturn {
       setLoading(true)
       setError(null)
 
+      // Convert form data to database format if needed
+      let notificationPreferences: Partial<NotificationPreferences>
+
+      if ('emailNotifications' in data) {
+        // Form data - convert to database format
+        const safeFormData = safeConvertToFormData(data as Partial<NotificationFormData>)
+        notificationPreferences = convertFormToPreferences(safeFormData)
+      } else {
+        // Already in database format
+        notificationPreferences = data as Partial<NotificationPreferences>
+      }
+
       const updates: ProfileUpdate = {
-        notification_preferences: data,
+        notification_preferences: notificationPreferences,
         updated_at: new Date().toISOString()
       }
 
@@ -197,6 +214,29 @@ export function useProfileManager(): UseProfileManagerReturn {
       setLoading(false)
     }
   }, [user, profile, supabase])
+
+  const getNotificationPreferences = useCallback((): NotificationPreferences | null => {
+    if (!profile?.notification_preferences) return null
+    // Type assertion is safe here as we know the structure from the database
+    return profile.notification_preferences as unknown as NotificationPreferences
+  }, [profile])
+
+  const convertFormData = useCallback((formData: NotificationPreferencesData): Partial<NotificationPreferences> => {
+    const safeFormData = safeConvertToFormData(formData as Partial<NotificationFormData>)
+    return convertFormToPreferences(safeFormData)
+  }, [])
+
+  const convertToFormData = useCallback((preferences: NotificationPreferences): NotificationPreferencesData => {
+    const fullFormData = convertPreferencesToForm(preferences)
+    // Convert to the simplified NotificationPreferencesData format
+    return {
+      emailNotifications: fullFormData.emailNotifications,
+      pushNotifications: fullFormData.pushNotifications,
+      responseNotifications: fullFormData.responseNotifications,
+      weeklyDigest: fullFormData.weeklyDigest,
+      marketingEmails: fullFormData.marketingEmails
+    }
+  }, [])
 
   const exportData = useCallback(async () => {
     if (!user) {
@@ -227,6 +267,9 @@ export function useProfileManager(): UseProfileManagerReturn {
     updatePersonalInfo,
     updateSecurity,
     updateNotificationPreferences,
+    getNotificationPreferences,
+    convertFormData,
+    convertToFormData,
     exportData,
     refreshProfile
   }

@@ -87,7 +87,7 @@ export function calculatePasswordStrength(password: string): {
   }
 }
 
-// Notification preferences schema
+// Notification preferences schema (for form validation)
 export const notificationPreferencesSchema = z.object({
   emailNotifications: z.boolean(),
   pushNotifications: z.boolean(),
@@ -96,10 +96,30 @@ export const notificationPreferencesSchema = z.object({
   marketingEmails: z.boolean()
 })
 
+// Complete notification preferences schema (for database operations)
+export const completeNotificationPreferencesSchema = z.object({
+  response_notifications: z.enum(['immediate', 'hourly', 'daily_digest', 'off']),
+  prompt_frequency: z.enum(['daily', 'every_3_days', 'weekly', 'off']),
+  enabled_prompt_types: z.array(z.string()),
+  quiet_hours: z.object({
+    start: z.string(),
+    end: z.string()
+  }),
+  delivery_notifications: z.boolean(),
+  system_notifications: z.boolean(),
+  weekly_digest: z.boolean(),
+  weekly_digest_day: z.string(),
+  monthly_summary: z.boolean(),
+  browser_notifications: z.boolean(),
+  email_notifications: z.boolean(),
+  digest_email_time: z.string()
+})
+
 // Export types
 export type PersonalInfoFormData = z.infer<typeof personalInfoSchema>
 export type SecurityFormData = z.infer<typeof securitySchema>
 export type NotificationPreferencesData = z.infer<typeof notificationPreferencesSchema>
+export type CompleteNotificationPreferences = z.infer<typeof completeNotificationPreferencesSchema>
 
 // Validation helpers
 export function validateEmail(email: string): string | null {

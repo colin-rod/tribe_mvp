@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useProfileManager } from '@/hooks/useProfileManager'
+import { useNotificationManager } from '@/hooks/useNotificationManager'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -27,7 +27,7 @@ interface QuietHoursConfigProps {
 }
 
 export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
-  const { profile, updateNotificationPreferences, loading, error, refreshProfile } = useProfileManager()
+  const { preferences, updatePreferences, loading, error } = useNotificationManager()
   const [currentTime, setCurrentTime] = useState<string>('')
   const [detectedTimezone, setDetectedTimezone] = useState<string>('')
 
@@ -73,61 +73,50 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
 
   const watchedValues = watch()
 
-  // Load profile data when component mounts
-  useEffect(() => {
-    if (!profile) {
-      refreshProfile()
-    }
-  }, [profile, refreshProfile])
+  // Component loads preferences automatically via useNotificationManager
 
-  // Set form values when profile loads
+  // Set form values when preferences load
   useEffect(() => {
-    if (profile && profile.notification_preferences) {
-      const prefs = profile.notification_preferences as any
-      const quietHours = prefs.quiet_hours as QuietHours
-
-      if (quietHours) {
-        reset({
-          enabled: quietHours.enabled ?? false,
-          start: quietHours.start ?? '22:00',
-          end: quietHours.end ?? '07:00',
-          timezone: quietHours.timezone ?? detectedTimezone,
-          weekdays_only: quietHours.weekdays_only ?? false,
-          holiday_mode: quietHours.holiday_mode ?? false
-        })
-      } else {
-        reset({
-          enabled: false,
-          start: '22:00',
-          end: '07:00',
-          timezone: detectedTimezone,
-          weekdays_only: false,
-          holiday_mode: false
-        })
-      }
+    if (preferences && preferences.quiet_hours) {
+      const quietHours = preferences.quiet_hours as QuietHours
+      reset({
+        enabled: quietHours.enabled ?? false,
+        start: quietHours.start ?? '22:00',
+        end: quietHours.end ?? '07:00',
+        timezone: quietHours.timezone ?? detectedTimezone,
+        weekdays_only: quietHours.weekdays_only ?? false,
+        holiday_mode: quietHours.holiday_mode ?? false
+      })
+    } else {
+      reset({
+        enabled: false,
+        start: '22:00',
+        end: '07:00',
+        timezone: detectedTimezone,
+        weekdays_only: false,
+        holiday_mode: false
+      })
     }
-  }, [profile, reset, detectedTimezone])
+  }, [preferences, reset, detectedTimezone])
 
   const onSubmit = async (data: QuietHoursFormData) => {
-    if (!profile?.notification_preferences) return
+    if (!preferences) return
 
     try {
-      const currentPrefs = profile.notification_preferences as any
-      const updatedPrefs = {
-        ...currentPrefs,
-        quiet_hours: {
-          enabled: data.enabled,
-          start: data.start,
-          end: data.end,
-          timezone: data.timezone,
-          weekdays_only: data.weekdays_only,
-          holiday_mode: data.holiday_mode
-        }
+      const quietHours = {
+        enabled: data.enabled,
+        start: data.start,
+        end: data.end,
+        timezone: data.timezone,
+        weekdays_only: data.weekdays_only,
+        holiday_mode: data.holiday_mode
       }
 
-      await updateNotificationPreferences(updatedPrefs)
-      onSuccess?.()
-      reset(data)
+      const success = await updatePreferences({ quiet_hours: quietHours })
+      if (success) {
+        onSuccess?.()
+        reset(data)
+      }
     } catch (err) {
       console.error('Failed to update quiet hours:', err)
     }
@@ -205,7 +194,7 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
     }
   }
 
-  if (!profile) {
+  if (loading && !preferences) {
     return (
       <div className="flex items-center justify-center py-8">
         <LoadingSpinner size="lg" />

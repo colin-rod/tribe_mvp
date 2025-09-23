@@ -35,15 +35,13 @@ export function useNotificationManager() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
+      // Use the database function to get preferences with defaults
       const { data, error } = await supabase
-        .from('profiles')
-        .select('notification_preferences')
-        .eq('id', user.id)
-        .single()
+        .rpc('get_notification_preferences', { user_uuid: user.id })
 
       if (error) throw error
 
-      setPreferences(data?.notification_preferences || getDefaultPreferences())
+      setPreferences(data || getDefaultPreferences())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load preferences')
       // Set default preferences even on error so UI can still function
@@ -87,31 +85,25 @@ export function useNotificationManager() {
 
   const sendTestNotification = async (type: 'browser' | 'email' = 'browser') => {
     try {
-      if (type === 'browser' && 'Notification' in window) {
-        // Request permission if not already granted
-        if (Notification.permission === 'default') {
-          const permission = await Notification.requestPermission()
-          if (permission !== 'granted') {
-            throw new Error('Notification permission denied')
-          }
-        }
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-        if (Notification.permission === 'granted') {
-          new Notification('Test Notification', {
-            body: 'This is a test notification from Tribe.',
-            icon: '/favicon.ico',
-            tag: 'tribe-test'
-          })
-          return true
-        }
+      const { notificationService } = await import('@/lib/services/notificationService')
+
+      if (type === 'browser') {
+        await notificationService.sendBrowserNotification(user.id, {
+          title: 'Test Notification',
+          body: 'This is a test notification from Tribe.',
+          tag: 'tribe-test'
+        })
+        return true
       } else if (type === 'email') {
-        // TODO: Implement email test notification via API
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) throw new Error('Not authenticated')
-
-        // This would be implemented with actual email service
-        console.log('Would send test email to:', user.email)
+        await notificationService.sendTestEmailNotification(
+          user.id,
+          user.email || '',
+          'system'
+        )
         return true
       }
     } catch (err) {
