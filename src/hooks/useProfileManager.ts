@@ -1,0 +1,233 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { createClient } from '@/lib/supabase/client'
+import { uploadChildPhoto, deleteChildPhoto } from '@/lib/photo-upload'
+import type { Database } from '@/lib/types/database'
+import type { PersonalInfoFormData, SecurityFormData, NotificationPreferencesData } from '@/lib/validation/profile'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+
+export interface UseProfileManagerReturn {
+  profile: Profile | null
+  loading: boolean
+  error: string | null
+  updatePersonalInfo: (data: PersonalInfoFormData) => Promise<void>
+  updateSecurity: (data: SecurityFormData) => Promise<void>
+  updateNotificationPreferences: (data: NotificationPreferencesData) => Promise<void>
+  exportData: () => Promise<void>
+  refreshProfile: () => Promise<void>
+}
+
+export function useProfileManager(): UseProfileManagerReturn {
+  const { user, refreshSession } = useAuth()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const supabase = createClient()
+
+  const refreshProfile = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        throw new Error(`Failed to fetch profile: ${profileError.message}`)
+      }
+
+      setProfile(data)
+    } catch (err) {
+      console.error('Error fetching profile:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile')
+    } finally {
+      setLoading(false)
+    }
+  }, [user, supabase])
+
+  const updatePersonalInfo = useCallback(async (data: PersonalInfoFormData) => {
+    if (!user || !profile) {
+      throw new Error('User or profile not found')
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const updates: ProfileUpdate = {
+        name: data.name.trim(),
+        email: data.email.trim(),
+        updated_at: new Date().toISOString()
+      }
+
+      // Handle profile photo upload if provided
+      if (data.profile_photo) {
+        try {
+          // Upload to same storage structure as child photos for consistency
+          const photoUrl = await uploadChildPhoto(data.profile_photo, `profile_${user.id}`)
+          // You may want to add a profile_photo_url field to the profiles table
+          console.log('Profile photo uploaded:', photoUrl)
+        } catch (photoError) {
+          console.warn('Failed to upload profile photo:', photoError)
+          // Continue with other updates even if photo upload fails
+        }
+      }
+
+      // Update profile in database
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        throw new Error(`Failed to update profile: ${updateError.message}`)
+      }
+
+      // Update user metadata if email changed
+      if (data.email !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: data.email
+        })
+
+        if (authError) {
+          console.warn('Failed to update auth email:', authError)
+          // Continue anyway since the profile was updated
+        }
+      }
+
+      // Update user metadata if name changed
+      if (data.name !== user.user_metadata?.name) {
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { name: data.name }
+        })
+
+        if (metadataError) {
+          console.warn('Failed to update user metadata:', metadataError)
+        }
+      }
+
+      setProfile(updatedProfile)
+
+      // Refresh the session to get updated metadata
+      await refreshSession()
+    } catch (err) {
+      console.error('Error updating personal info:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update personal information'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [user, profile, supabase, refreshSession])
+
+  const updateSecurity = useCallback(async (data: SecurityFormData) => {
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Update password using Supabase auth
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: data.newPassword
+      })
+
+      if (passwordError) {
+        throw new Error(`Failed to update password: ${passwordError.message}`)
+      }
+
+      // Refresh the session after password change
+      await refreshSession()
+    } catch (err) {
+      console.error('Error updating security:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update security settings'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [user, supabase, refreshSession])
+
+  const updateNotificationPreferences = useCallback(async (data: NotificationPreferencesData) => {
+    if (!user || !profile) {
+      throw new Error('User or profile not found')
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const updates: ProfileUpdate = {
+        notification_preferences: data,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        throw new Error(`Failed to update notification preferences: ${updateError.message}`)
+      }
+
+      setProfile(updatedProfile)
+    } catch (err) {
+      console.error('Error updating notification preferences:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update notification preferences'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [user, profile, supabase])
+
+  const exportData = useCallback(async () => {
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Import the data export functionality
+      const { exportUserData } = await import('@/lib/data-export')
+      await exportUserData(user.id)
+    } catch (err) {
+      console.error('Error exporting data:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to export data'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [user])
+
+  return {
+    profile,
+    loading,
+    error,
+    updatePersonalInfo,
+    updateSecurity,
+    updateNotificationPreferences,
+    exportData,
+    refreshProfile
+  }
+}
