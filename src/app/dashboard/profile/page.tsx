@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Navigation from '@/components/layout/Navigation'
@@ -8,13 +8,13 @@ import Header from '@/components/layout/Header'
 import { ProfileManager } from '@/components/profile'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
+function ProfileContent() {
+  return <ProfileManager />
+}
+
 export default function ProfilePage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
-
-  // Get initial tab from URL search params
-  const tab = searchParams.get('tab') as 'personal' | 'security' | 'notifications' | 'data' | null
 
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
@@ -50,7 +50,9 @@ export default function ProfilePage() {
       />
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <ProfileManager initialTab={tab || 'personal'} />
+        <Suspense fallback={<LoadingSpinner size="lg" />}>
+          <ProfileContent />
+        </Suspense>
       </main>
     </div>
   )
