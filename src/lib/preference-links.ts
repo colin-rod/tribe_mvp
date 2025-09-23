@@ -1,4 +1,5 @@
 // Client-side preference management functions that use API routes
+import { clientEmailService } from './services/clientEmailService'
 import type { Recipient } from './recipients'
 import type { RecipientGroup } from './recipient-groups'
 
@@ -139,8 +140,7 @@ export function getPreferenceLinkUrl(token: string): string {
 }
 
 /**
- * Sends a preference link email to a recipient
- * This is a placeholder implementation - actual email sending will be implemented in CRO-24
+ * Sends a preference link email to a recipient using SendGrid
  *
  * @param email - Recipient's email address
  * @param name - Recipient's name
@@ -156,22 +156,45 @@ export async function sendPreferenceLink(
 ): Promise<void> {
   const preferenceUrl = getPreferenceLinkUrl(token)
 
-  // In a real implementation, this would integrate with an email service like SendGrid
-  const emailContent = generatePreferenceLinkEmail(name, preferenceUrl, senderName)
+  try {
+    // Send the preference invitation email using SendGrid
+    const result = await clientEmailService.sendTemplatedEmail(
+      email,
+      'preference',
+      {
+        recipientName: name,
+        senderName: senderName || 'Someone',
+        preferenceUrl,
+        babyName: '' // Could be enhanced to include baby name if available
+      },
+      {
+        categories: ['tribe-preference-invitation', 'tribe-preference-link'],
+        customArgs: {
+          token,
+          recipientEmail: email,
+          recipientName: name,
+          invitationType: 'preference-link',
+          senderName: senderName || 'unknown'
+        }
+      }
+    )
 
-  console.log(`Sending preference link email to ${email}:`)
-  console.log(`Subject: ${emailContent.subject}`)
-  console.log(`Body: ${emailContent.body}`)
-  console.log(`Link: ${preferenceUrl}`)
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send preference invitation email')
+    }
 
-  // TODO: Integrate with actual email service in CRO-24
-  // Example implementation:
-  // await emailService.send({
-  //   to: email,
-  //   subject: emailContent.subject,
-  //   html: emailContent.html,
-  //   text: emailContent.text
-  // })
+    console.log(`Preference link sent to ${email} (${name}): ${preferenceUrl}`)
+    console.log(`SendGrid Message ID: ${result.messageId}`)
+
+  } catch (error) {
+    console.error(`Failed to send preference link to ${email}:`, error)
+
+    // Log the URL for manual sharing as fallback
+    console.log(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
+
+    // Re-throw error so calling code can handle it
+    throw error
+  }
 }
 
 /**

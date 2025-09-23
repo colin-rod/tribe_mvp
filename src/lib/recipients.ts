@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 import { getDefaultGroup } from './recipient-groups'
 
@@ -566,20 +567,67 @@ export async function regeneratePreferenceToken(recipientId: string): Promise<st
 }
 
 /**
- * Placeholder function for sending preference link emails
- * Will be implemented with actual email service in future phases
+ * Sends a preference setup link to the recipient's email address
+ *
+ * Uses SendGrid to send a properly formatted invitation email
+ * with the preference setup link
  *
  * @param email - Recipient email address
  * @param name - Recipient name
  * @param token - Preference token for magic link
  */
 async function sendPreferenceLink(email: string, name: string, token: string): Promise<void> {
-  // Integration with email service (SendGrid, etc.) will be implemented in CRO-24
   const preferenceUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/preferences/${token}`
 
-  console.log(`Send preference link to ${email} (${name}): ${preferenceUrl}`)
+  try {
+    // Get the parent's information for the email
+    const supabase = createClient()
+    const { data: tokenData } = await supabase
+      .from('preference_tokens')
+      .select(`
+        parent_id,
+        profiles!inner(name)
+      `)
+      .eq('token', token)
+      .single()
 
-  // TODO: Implement actual email sending in CRO-24
-  // For now, we'll just log the link for testing purposes
-  // In production, this would integrate with SendGrid or similar service
+    const senderName = tokenData?.profiles?.name || 'Someone'
+
+    // Send the preference invitation email
+    const result = await clientEmailService.sendTemplatedEmail(
+      email,
+      'preference',
+      {
+        recipientName: name,
+        senderName,
+        preferenceUrl,
+        babyName: '' // Could be enhanced to include baby name if available
+      },
+      {
+        categories: ['tribe-preference-invitation'],
+        customArgs: {
+          token,
+          recipientEmail: email,
+          recipientName: name,
+          invitationType: 'preference-setup'
+        }
+      }
+    )
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send preference invitation email')
+    }
+
+    console.log(`Preference invitation sent to ${email} (${name}): ${preferenceUrl}`)
+    console.log(`SendGrid Message ID: ${result.messageId}`)
+
+  } catch (error) {
+    console.error(`Failed to send preference link to ${email}:`, error)
+
+    // Log the URL for manual sharing as fallback
+    console.log(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
+
+    // Re-throw error so calling code can handle it
+    throw error
+  }
 }

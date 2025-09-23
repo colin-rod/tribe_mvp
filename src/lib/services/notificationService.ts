@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { clientEmailService } from './clientEmailService'
 import type { NotificationPreferences, NotificationDeliveryMethod, NotificationStatus, NotificationDigestType } from '@/lib/types/profile'
 
 export interface NotificationHistoryEntry {
@@ -176,18 +177,19 @@ export class NotificationService {
     }
   }
 
-  // Send test email notification (placeholder for actual email service)
+  // Send test email notification using SendGrid
   async sendTestEmailNotification(
     userId: string,
     userEmail: string,
     notificationType: 'response' | 'prompt' | 'digest' | 'system' = 'system'
   ): Promise<boolean> {
     try {
-      // TODO: Replace with actual email service (Resend, SendGrid, etc.)
-      console.log(`Would send test email to ${userEmail} for notification type: ${notificationType}`)
+      // Use the email service to send actual email
+      const result = await clientEmailService.sendTestEmail(userEmail, notificationType)
 
-      // For now, simulate email sending
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (!result.success) {
+        throw new Error(result.error || 'Email delivery failed')
+      }
 
       // Create history entry for successful email
       await this.createNotificationHistory({
@@ -197,7 +199,9 @@ export class NotificationService {
         content: `This is a test ${notificationType} notification sent to verify your email settings.`,
         metadata: {
           email: userEmail,
-          test_notification: true
+          test_notification: true,
+          sendgrid_message_id: result.messageId,
+          sendgrid_status_code: result.statusCode
         },
         delivery_method: 'email',
         delivery_status: 'sent'
@@ -222,6 +226,146 @@ export class NotificationService {
 
       throw error
     }
+  }
+
+  // Send email notification for updates/responses
+  async sendEmailNotification(
+    userId: string,
+    userEmail: string,
+    type: 'response' | 'prompt' | 'digest' | 'system',
+    templateData: Record<string, any> = {},
+    metadata: Record<string, any> = {}
+  ): Promise<boolean> {
+    try {
+      // Use the email service to send templated email
+      const result = await clientEmailService.sendTemplatedEmail(userEmail, type, templateData)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Email delivery failed')
+      }
+
+      // Create history entry for successful email
+      await this.createNotificationHistory({
+        user_id: userId,
+        type,
+        title: this.getNotificationTitle(type, templateData),
+        content: this.getNotificationContent(type, templateData),
+        metadata: {
+          email: userEmail,
+          sendgrid_message_id: result.messageId,
+          sendgrid_status_code: result.statusCode,
+          template_data: templateData,
+          ...metadata
+        },
+        delivery_method: 'email',
+        delivery_status: 'sent'
+      })
+
+      return true
+    } catch (error) {
+      // Create failed history entry
+      await this.createNotificationHistory({
+        user_id: userId,
+        type,
+        title: this.getNotificationTitle(type, templateData),
+        content: `Failed ${type} notification`,
+        metadata: {
+          email: userEmail,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          template_data: templateData,
+          ...metadata
+        },
+        delivery_method: 'email',
+        delivery_status: 'failed'
+      })
+
+      throw error
+    }
+  }
+
+  // Send bulk email notifications
+  async sendBulkEmailNotifications(
+    recipients: Array<{
+      userId: string
+      userEmail: string
+      type: 'response' | 'prompt' | 'digest' | 'system'
+      templateData?: Record<string, any>
+      metadata?: Record<string, any>
+    }>
+  ): Promise<Array<{ userId: string; success: boolean; error?: string }>> {
+    const results: Array<{ userId: string; success: boolean; error?: string }> = []
+
+    // Process in batches to avoid overwhelming the email service
+    const BATCH_SIZE = 10
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BATCH_SIZE)
+
+      const batchPromises = batch.map(async (recipient) => {
+        try {
+          await this.sendEmailNotification(
+            recipient.userId,
+            recipient.userEmail,
+            recipient.type,
+            recipient.templateData,
+            recipient.metadata
+          )
+          return { userId: recipient.userId, success: true }
+        } catch (error) {
+          return {
+            userId: recipient.userId,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }
+      })
+
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults)
+
+      // Small delay between batches to be nice to the email service
+      if (i + BATCH_SIZE < recipients.length) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+
+    return results
+  }
+
+  // Helper method to generate notification titles
+  private getNotificationTitle(type: string, data: Record<string, any>): string {
+    switch (type) {
+      case 'response':
+        return `${data.senderName || 'Someone'} responded to your update${data.babyName ? ` about ${data.babyName}` : ''}`
+      case 'prompt':
+        return `Update request${data.babyName ? ` about ${data.babyName}` : ''}`
+      case 'digest':
+        return `Your ${data.period || 'daily'} update digest (${data.unreadCount || 0} new updates)`
+      case 'system':
+        return data.title || 'System Notification'
+      default:
+        return 'Notification'
+    }
+  }
+
+  // Helper method to generate notification content
+  private getNotificationContent(type: string, data: Record<string, any>): string {
+    switch (type) {
+      case 'response':
+        return `${data.senderName || 'Someone'} responded: "${data.updateContent || ''}"`
+      case 'prompt':
+        return data.promptText || 'Someone would love to hear an update!'
+      case 'digest':
+        return `You have ${data.unreadCount || 0} new updates from your family and friends.`
+      case 'system':
+        return data.content || 'System notification'
+      default:
+        return 'New notification'
+    }
+  }
+
+  // Check email service status
+  async getEmailServiceStatus(): Promise<{ configured: boolean; apiKey: boolean; fromEmail: boolean }> {
+    return await clientEmailService.getStatus()
   }
 
   // Check if user is in quiet hours
