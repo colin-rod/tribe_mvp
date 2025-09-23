@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createLogger } from '@/lib/logger'
 
 interface ResponseAnalytics {
   totalResponses: number
@@ -25,6 +26,7 @@ interface ResponseAnalytics {
 }
 
 export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
+  const logger = createLogger('UseResponseAnalytics')
   const [analytics, setAnalytics] = useState<ResponseAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -72,7 +74,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
           setAnalytics(analytics)
         }
       } catch (err) {
-        console.error('Error fetching response analytics:', err)
+        logger.error('Error fetching response analytics:', { error: err })
         setError('Failed to load analytics')
       } finally {
         setLoading(false)

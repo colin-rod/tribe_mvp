@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('SecuritySettings')
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -65,7 +68,7 @@ export default function SecuritySettings({ onSuccess }: SecuritySettingsProps) {
       setPasswordStrength({ score: 0, label: 'No password', color: 'bg-gray-300' })
     } catch (err) {
       // Error is already handled in the hook
-      console.error('Failed to update security:', err)
+      logger.error('Failed to update security:', { error: err })
     }
   }
 

@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AddGroupForm')
+
 import { useState } from 'react'
 import { RecipientGroup, createGroup } from '@/lib/recipient-groups'
 import { recipientGroupSchema, RecipientGroupFormData, FREQUENCY_OPTIONS, CHANNEL_OPTIONS } from '@/lib/validation/recipients'
@@ -65,7 +69,7 @@ export default function AddGroupForm({ onGroupAdded, onCancel }: AddGroupFormPro
 
       onGroupAdded(newGroup)
     } catch (error) {
-      console.error('Error creating group:', error)
+      logger.errorWithStack('Error creating group:', error as Error)
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to create group. Please try again.'
       })
@@ -74,7 +78,7 @@ export default function AddGroupForm({ onGroupAdded, onCancel }: AddGroupFormPro
     }
   }
 
-  const handleChannelToggle = (channel: string) => {
+  const handleChannelToggle = (channel: 'email' | 'sms' | 'whatsapp') => {
     setFormData(prev => ({
       ...prev,
       default_channels: prev.default_channels.includes(channel)

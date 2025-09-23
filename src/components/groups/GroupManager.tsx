@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('GroupManager')
+
 import { useState, useEffect } from 'react'
 import { RecipientGroup, getUserGroups, deleteGroup } from '@/lib/recipient-groups'
 import { Button } from '@/components/ui/Button'
@@ -27,7 +31,7 @@ export default function GroupManager() {
       const groupsData = await getUserGroups()
       setGroups(groupsData)
     } catch (error) {
-      console.error('Error loading groups:', error)
+      logger.errorWithStack('Error loading groups:', error as Error)
       setError('Failed to load groups. Please try again.')
     } finally {
       setLoading(false)
@@ -80,7 +84,7 @@ export default function GroupManager() {
       await deleteGroup(groupId)
       setGroups(prev => prev.filter(group => group.id !== groupId))
     } catch (error) {
-      console.error('Error deleting group:', error)
+      logger.errorWithStack('Error deleting group:', error as Error)
       alert(error instanceof Error ? error.message : 'Failed to delete group. Please try again.')
     } finally {
       setDeletingGroupId(null)

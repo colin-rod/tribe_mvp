@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('ProfileSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
@@ -139,7 +142,7 @@ export function ProfileSection({ user }: ProfileSectionProps) {
 
   const handleAvatarUpload = () => {
     // TODO: Implement avatar upload functionality
-    console.log('Avatar upload clicked')
+    logger.info('Avatar upload clicked')
   }
 
   return (

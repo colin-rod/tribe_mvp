@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NotificationBulkEmailAPI')
 
 const bulkEmailSchema = z.object({
   emails: z.array(z.object({
@@ -46,8 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert to email options format
-    const emailOptions = validatedData.emails.map(emailData => {
-      const template = serverEmailService.getEmailTemplate?.(emailData.type, emailData.templateData || {})
+    const _emailOptions = validatedData.emails.map(emailData => {
+      const _template = serverEmailService.getEmailTemplate?.(emailData.type, emailData.templateData || {})
 
       // Since getEmailTemplate is private, we'll use sendTemplatedEmail for each
       return {
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Send bulk emails API error:', error)
+    logger.errorWithStack('Send bulk emails API error', error as Error)
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

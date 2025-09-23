@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('OnboardingHook')
+
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -103,6 +107,7 @@ const SKIPPABLE_STEPS: OnboardingStep[] = [
 ]
 
 export function useOnboarding(): UseOnboardingReturn {
+  const logger = createLogger('UseOnboarding')
   const router = useRouter()
   const { user } = useAuth()
   const supabase = createClient()
@@ -170,7 +175,7 @@ export function useOnboarding(): UseOnboardingReturn {
         }))
       }
     } catch (err) {
-      console.error('Failed to load onboarding progress:', err)
+      logger.error('Failed to load onboarding progress:', { error: err })
       setError('Failed to load progress')
     } finally {
       setIsLoading(false)
@@ -191,7 +196,7 @@ export function useOnboarding(): UseOnboardingReturn {
 
       if (error) throw error
     } catch (err) {
-      console.error('Failed to save progress:', err)
+      logger.error('Failed to save progress:', { error: err })
       // Don't throw here as it's a background operation
     }
   }, [user, supabase, state.currentStepIndex])
@@ -315,7 +320,7 @@ export function useOnboarding(): UseOnboardingReturn {
             // Note: Profile photo upload would be handled separately
           })
         } catch (childError) {
-          console.error('Failed to create child:', childError)
+          logger.errorWithStack('Failed to create child:', childError as Error)
           // Continue with onboarding completion even if child creation fails
         }
       }
@@ -327,7 +332,7 @@ export function useOnboarding(): UseOnboardingReturn {
             await createRecipient(recipient)
           }
         } catch (recipientError) {
-          console.error('Failed to create recipients:', recipientError)
+          logger.errorWithStack('Failed to create recipients:', recipientError as Error)
           // Continue with onboarding completion
         }
       }
@@ -353,7 +358,7 @@ export function useOnboarding(): UseOnboardingReturn {
             })
             .eq('id', user.id)
         } catch (profileError) {
-          console.error('Failed to update profile:', profileError)
+          logger.errorWithStack('Failed to update profile:', profileError as Error)
         }
       } else {
         // Just mark onboarding as completed

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createLogger } from '@/lib/logger'
 
 interface Response {
   id: string
@@ -18,6 +19,7 @@ interface Response {
 }
 
 export function useResponses(updateId: string) {
+  const logger = createLogger('UseResponses')
   const [responses, setResponses] = useState<Response[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function useResponses(updateId: string) {
           .order('received_at', { ascending: true })
 
         if (fetchError) {
-          console.error('Error fetching responses:', fetchError)
+          logger.errorWithStack('Error fetching responses:', fetchError as Error)
           if (mounted) {
             setError('Failed to load responses')
           }
@@ -56,7 +58,7 @@ export function useResponses(updateId: string) {
           setLoading(false)
         }
       } catch (err) {
-        console.error('Unexpected error:', err)
+        logger.error('Unexpected error:', { error: err })
         if (mounted) {
           setError('An unexpected error occurred')
           setLoading(false)
@@ -100,7 +102,7 @@ export function useResponses(updateId: string) {
           filter: `update_id=eq.${updateId}`
         },
         (payload) => {
-          console.log('New response received:', payload)
+          logger.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
           fetchNewResponse(payload.new.id)
           setNewResponseCount(prev => prev + 1)

@@ -1,5 +1,8 @@
 import { createClient } from './supabase/client'
 import type { OnboardingStep } from '@/hooks/useOnboarding'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Onboarding')
 
 export interface OnboardingProgress {
   currentStep: number
@@ -201,7 +204,7 @@ export async function getUserOnboardingProgress(userId: string): Promise<Onboard
       lastUpdated: data.updated_at
     }
   } catch (error) {
-    console.error('Failed to get onboarding progress:', error)
+    logger.errorWithStack('Failed to get onboarding progress:', error as Error)
     return null
   }
 }
@@ -227,13 +230,13 @@ export async function updateUserOnboardingProgress(
       .eq('id', userId)
 
     if (error) {
-      console.error('Failed to update onboarding progress:', error)
+      logger.errorWithStack('Failed to update onboarding progress:', error as Error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Failed to update onboarding progress:', error)
+    logger.errorWithStack('Failed to update onboarding progress:', error as Error)
     return false
   }
 }
@@ -263,13 +266,13 @@ export async function resetUserOnboarding(userId: string): Promise<boolean> {
       .eq('id', userId)
 
     if (error) {
-      console.error('Failed to reset onboarding:', error)
+      logger.errorWithStack('Failed to reset onboarding:', error as Error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Failed to reset onboarding:', error)
+    logger.errorWithStack('Failed to reset onboarding:', error as Error)
     return false
   }
 }
@@ -355,7 +358,7 @@ export async function needsOnboarding(): Promise<boolean> {
 
     return !status.onboarding_completed && !status.onboarding_skipped
   } catch (error) {
-    console.error('Error checking onboarding status:', error)
+    logger.errorWithStack('Error checking onboarding status:', error as Error)
     return true // Default to needing onboarding if error
   }
 }

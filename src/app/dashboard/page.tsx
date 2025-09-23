@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Page')
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -44,7 +47,7 @@ export default function DashboardPage() {
         router.push('/onboarding')
       }
     } catch (error) {
-      console.error('Error checking onboarding status:', error)
+      logger.errorWithStack('Error checking onboarding status:', error as Error)
     }
   }
 
@@ -78,7 +81,7 @@ export default function DashboardPage() {
       const totalUpdates = updates.length
       setUpdatesCreated(totalUpdates)
     } catch (error) {
-      console.error('Error loading dashboard stats:', error)
+      logger.errorWithStack('Error loading dashboard stats:', error as Error)
     } finally {
       setLoadingStats(false)
     }

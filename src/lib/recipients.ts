@@ -2,7 +2,10 @@ import { createClient } from './supabase/client'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 import { getDefaultGroup } from './recipient-groups'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('Recipients')
 /**
  * Interface for recipient with enhanced data
  * Matches database schema with optional group information
@@ -13,11 +16,11 @@ export interface Recipient {
   email?: string | null
   phone?: string | null
   name: string
-  relationship: string
+  relationship: 'grandparent' | 'parent' | 'sibling' | 'friend' | 'family' | 'colleague' | 'other'
   group_id?: string | null
-  frequency: string
-  preferred_channels: string[]
-  content_types: string[]
+  frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
+  preferred_channels: ('email' | 'sms' | 'whatsapp')[]
+  content_types: ('photos' | 'text' | 'milestones')[]
   overrides_group_default: boolean
   preference_token: string
   is_active: boolean
@@ -127,7 +130,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     .single()
 
   if (error) {
-    console.error('Error creating recipient:', error)
+    logger.errorWithStack('Error creating recipient:', error as Error)
     throw new Error('Failed to create recipient')
   }
 
@@ -136,7 +139,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     try {
       await sendPreferenceLink(data.email, data.name, preferenceToken)
     } catch (emailError) {
-      console.warn('Failed to send preference link email:', emailError)
+      logger.warn('Failed to send preference link email:', { data: emailError })
       // Don't throw here as recipient was created successfully
     }
   }
@@ -193,7 +196,7 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
   const { data, error } = await query
 
   if (error) {
-    console.error('Error fetching recipients:', error)
+    logger.errorWithStack('Error fetching recipients:', error as Error)
     throw new Error('Failed to fetch recipients')
   }
 
@@ -227,7 +230,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
 
   if (error) {
     if (error.code === 'PGRST116') return null
-    console.error('Error fetching recipient:', error)
+    logger.errorWithStack('Error fetching recipient:', error as Error)
     throw new Error('Failed to fetch recipient')
   }
 
@@ -277,7 +280,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
     .single()
 
   if (error) {
-    console.error('Error updating recipient:', error)
+    logger.errorWithStack('Error updating recipient:', error as Error)
     throw new Error('Failed to update recipient')
   }
 
@@ -306,7 +309,7 @@ export async function deleteRecipient(recipientId: string): Promise<boolean> {
     .eq('parent_id', user.id)
 
   if (error) {
-    console.error('Error deleting recipient:', error)
+    logger.errorWithStack('Error deleting recipient:', error as Error)
     throw new Error('Failed to delete recipient')
   }
 
@@ -333,7 +336,7 @@ export async function permanentlyDeleteRecipient(recipientId: string): Promise<b
     .eq('parent_id', user.id)
 
   if (error) {
-    console.error('Error permanently deleting recipient:', error)
+    logger.errorWithStack('Error permanently deleting recipient:', error as Error)
     throw new Error('Failed to permanently delete recipient')
   }
 
@@ -364,7 +367,7 @@ export async function reactivateRecipient(recipientId: string): Promise<Recipien
     .single()
 
   if (error) {
-    console.error('Error reactivating recipient:', error)
+    logger.errorWithStack('Error reactivating recipient:', error as Error)
     throw new Error('Failed to reactivate recipient')
   }
 
@@ -425,7 +428,7 @@ export async function bulkUpdateRecipients(
     `)
 
   if (error) {
-    console.error('Error bulk updating recipients:', error)
+    logger.errorWithStack('Error bulk updating recipients:', error as Error)
     throw new Error('Failed to bulk update recipients')
   }
 
@@ -463,7 +466,7 @@ export async function getRecipientStats(): Promise<{
     .eq('parent_id', user.id)
 
   if (error) {
-    console.error('Error fetching recipient stats:', error)
+    logger.errorWithStack('Error fetching recipient stats:', error as Error)
     throw new Error('Failed to fetch recipient statistics')
   }
 
@@ -530,7 +533,7 @@ export async function resendPreferenceLink(recipientId: string): Promise<boolean
     await sendPreferenceLink(recipient.email, recipient.name, recipient.preference_token)
     return true
   } catch (error) {
-    console.error('Error sending preference link:', error)
+    logger.errorWithStack('Error sending preference link:', error as Error)
     throw new Error('Failed to send preference link')
   }
 }
@@ -559,7 +562,7 @@ export async function regeneratePreferenceToken(recipientId: string): Promise<st
     .single()
 
   if (error) {
-    console.error('Error regenerating preference token:', error)
+    logger.errorWithStack('Error regenerating preference token:', error as Error)
     throw new Error('Failed to regenerate preference token')
   }
 
@@ -618,14 +621,14 @@ async function sendPreferenceLink(email: string, name: string, token: string): P
       throw new Error(result.error || 'Failed to send preference invitation email')
     }
 
-    console.log(`Preference invitation sent to ${email} (${name}): ${preferenceUrl}`)
-    console.log(`SendGrid Message ID: ${result.messageId}`)
+    logger.info('Preference invitation sent to ${email} (${name}): ${preferenceUrl}')
+    logger.info('SendGrid Message ID: ${result.messageId}')
 
   } catch (error) {
-    console.error(`Failed to send preference link to ${email}:`, error)
+    logger.errorWithStack('Failed to send preference link to ${email}:', error as Error)
 
     // Log the URL for manual sharing as fallback
-    console.log(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
+    logger.info('Manual preference link for ${name} (${email}): ${preferenceUrl}')
 
     // Re-throw error so calling code can handle it
     throw error

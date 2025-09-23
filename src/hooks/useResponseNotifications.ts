@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { createLogger } from '@/lib/logger'
 
 interface NotificationData {
   childName: string
@@ -10,6 +11,7 @@ interface NotificationData {
 }
 
 export function useResponseNotifications() {
+  const logger = createLogger('UseResponseNotifications')
   useEffect(() => {
     // Request notification permission if not already granted
     if ('Notification' in window && Notification.permission === 'default') {
@@ -68,7 +70,7 @@ export function useResponseNotifications() {
               }
             }
           } catch (error) {
-            console.error('Error processing response notification:', error)
+            logger.errorWithStack('Error processing response notification:', error as Error)
           }
         }
       )

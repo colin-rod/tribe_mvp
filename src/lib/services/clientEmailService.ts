@@ -1,5 +1,7 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
 export interface EmailTemplate {
   subject: string
   html: string
@@ -44,6 +46,8 @@ export interface BulkEmailRequest {
 }
 
 export class ClientEmailService {
+  private logger = createLogger('ClientEmailService')
+
   private async fetchApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const response = await fetch(endpoint, {
       headers: {
@@ -79,7 +83,7 @@ export class ClientEmailService {
         statusCode: data.statusCode
       }
     } catch (error) {
-      console.error('Client email service error:', error)
+      this.logger.errorWithStack('Failed to send email via API', error as Error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -115,7 +119,9 @@ export class ClientEmailService {
 
       return data
     } catch (error) {
-      console.error('Client bulk email service error:', error)
+      this.logger.errorWithStack('Failed to send bulk emails via API', error as Error, {
+        emailCount: requests.length
+      })
 
       // Return a failed result for all emails
       const results = requests.map(req => ({
@@ -184,7 +190,10 @@ export class ClientEmailService {
         statusCode: data.statusCode
       }
     } catch (error) {
-      console.error('Client test email service error:', error)
+      this.logger.errorWithStack('Failed to send test email via API', error as Error, {
+        to: '[REDACTED]',
+        type
+      })
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -204,7 +213,7 @@ export class ClientEmailService {
       const data = await response.json()
       return data.configured || false
     } catch (error) {
-      console.error('Failed to check email service status:', error)
+      this.logger.warn('Failed to check email service status', { error: String(error) })
       return false
     }
   }
@@ -221,7 +230,7 @@ export class ClientEmailService {
       const data = await response.json()
       return data
     } catch (error) {
-      console.error('Failed to get email service status:', error)
+      this.logger.warn('Failed to get email service status', { error: String(error) })
       return { configured: false, apiKey: false, fromEmail: false }
     }
   }

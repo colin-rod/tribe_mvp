@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('DeliveryStatus')
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { DeliveryStatusBadge, type DeliveryStatus } from '@/components/ui/DeliveryStatusBadge'
@@ -63,7 +66,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
         setJobs(data || [])
         onStatusChange?.(data || [])
       } catch (error) {
-        console.error('Error fetching delivery jobs:', error)
+        logger.errorWithStack('Error fetching delivery jobs:', error as Error)
         setError(error instanceof Error ? error.message : 'Failed to load delivery status')
       } finally {
         setLoading(false)
@@ -90,7 +93,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
           filter: `update_id=eq.${updateId}`
         },
         async (payload) => {
-          console.log('Delivery job update:', payload)
+          logger.info('Delivery job update:', { data: payload })
 
           if (payload.eventType === 'INSERT') {
             // Fetch the new job with recipient details

@@ -1,6 +1,9 @@
 import { createClient } from './supabase/client'
 import type { UpdateCreateData, DistributionStatus, MilestoneType } from './validation/update'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('Updates')
 export interface Update {
   id: string
   parent_id: string
@@ -187,10 +190,10 @@ export async function deleteUpdate(updateId: string): Promise<void> {
         .remove(filePaths)
 
       if (storageError) {
-        console.warn('Failed to delete media files from storage:', storageError)
+        logger.warn('Failed to delete media files from storage:', { data: storageError })
       }
     } catch (error) {
-      console.warn('Error deleting media files:', error)
+      logger.warn('Error deleting media files:', { data: error })
     }
   }
 }

@@ -8,6 +8,7 @@ import type { Database } from '@/lib/types/database'
 import type { PersonalInfoFormData, SecurityFormData, NotificationPreferencesData, CompleteNotificationPreferences } from '@/lib/validation/profile'
 import type { NotificationPreferences, NotificationFormData } from '@/lib/types/profile'
 import { convertFormToPreferences, convertPreferencesToForm, safeConvertToFormData } from '@/lib/types/profile'
+import { createLogger } from '@/lib/logger'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
@@ -31,6 +32,7 @@ export function useProfileManager(): UseProfileManagerReturn {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const logger = createLogger('useProfileManager')
 
   const supabase = createClient()
 
@@ -53,7 +55,7 @@ export function useProfileManager(): UseProfileManagerReturn {
 
       setProfile(data)
     } catch (err) {
-      console.error('Error fetching profile:', err)
+      logger.errorWithStack('Failed to fetch profile', err as Error, { userId: user?.id })
       setError(err instanceof Error ? err.message : 'Failed to fetch profile')
     } finally {
       setLoading(false)
@@ -81,9 +83,9 @@ export function useProfileManager(): UseProfileManagerReturn {
           // Upload to same storage structure as child photos for consistency
           const photoUrl = await uploadChildPhoto(data.profile_photo, `profile_${user.id}`)
           // You may want to add a profile_photo_url field to the profiles table
-          console.log('Profile photo uploaded:', photoUrl)
+          logger.info('Profile photo uploaded successfully', { photoUrl, userId: user.id })
         } catch (photoError) {
-          console.warn('Failed to upload profile photo:', photoError)
+          logger.warn('Failed to upload profile photo', { error: String(photoError), userId: user.id })
           // Continue with other updates even if photo upload fails
         }
       }
@@ -107,7 +109,7 @@ export function useProfileManager(): UseProfileManagerReturn {
         })
 
         if (authError) {
-          console.warn('Failed to update auth email:', authError)
+          logger.warn('Failed to update auth email', { error: authError.message, userId: user.id })
           // Continue anyway since the profile was updated
         }
       }
@@ -119,7 +121,7 @@ export function useProfileManager(): UseProfileManagerReturn {
         })
 
         if (metadataError) {
-          console.warn('Failed to update user metadata:', metadataError)
+          logger.warn('Failed to update user metadata', { error: metadataError.message, userId: user.id })
         }
       }
 
@@ -128,7 +130,7 @@ export function useProfileManager(): UseProfileManagerReturn {
       // Refresh the session to get updated metadata
       await refreshSession()
     } catch (err) {
-      console.error('Error updating personal info:', err)
+      logger.errorWithStack('Failed to update personal info', err as Error, { userId: user.id })
       const errorMessage = err instanceof Error ? err.message : 'Failed to update personal information'
       setError(errorMessage)
       throw new Error(errorMessage)
@@ -158,7 +160,7 @@ export function useProfileManager(): UseProfileManagerReturn {
       // Refresh the session after password change
       await refreshSession()
     } catch (err) {
-      console.error('Error updating security:', err)
+      logger.errorWithStack('Failed to update security settings', err as Error, { userId: user.id })
       const errorMessage = err instanceof Error ? err.message : 'Failed to update security settings'
       setError(errorMessage)
       throw new Error(errorMessage)
@@ -206,7 +208,7 @@ export function useProfileManager(): UseProfileManagerReturn {
 
       setProfile(updatedProfile)
     } catch (err) {
-      console.error('Error updating notification preferences:', err)
+      logger.errorWithStack('Failed to update notification preferences', err as Error, { userId: user.id })
       const errorMessage = err instanceof Error ? err.message : 'Failed to update notification preferences'
       setError(errorMessage)
       throw new Error(errorMessage)
@@ -251,7 +253,7 @@ export function useProfileManager(): UseProfileManagerReturn {
       const { exportUserData } = await import('@/lib/data-export')
       await exportUserData(user.id)
     } catch (err) {
-      console.error('Error exporting data:', err)
+      logger.errorWithStack('Failed to export user data', err as Error, { userId: user.id })
       const errorMessage = err instanceof Error ? err.message : 'Failed to export data'
       setError(errorMessage)
       throw new Error(errorMessage)

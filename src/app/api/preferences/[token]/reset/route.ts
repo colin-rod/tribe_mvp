@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('Route')
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -48,13 +51,13 @@ export async function POST(
       .eq('is_active', true)
 
     if (updateError) {
-      console.error('Error resetting to group defaults:', updateError)
+      logger.errorWithStack('Error resetting to group defaults:', updateError as Error)
       return NextResponse.json({ error: 'Failed to reset preferences' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Preference reset error:', error)
+    logger.errorWithStack('Preference reset error:', error as Error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

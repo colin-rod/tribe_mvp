@@ -105,7 +105,7 @@ export function ChildSetupStep({
     }
 
     setErrors(newErrors)
-    setIsValid(Object.keys(newErrors).length === 0 && formData.name && formData.birth_date)
+    setIsValid(Object.keys(newErrors).length === 0 && !!formData.name && !!formData.birth_date)
   }, [formData])
 
   const handleInputChange = (field: keyof ChildSetupData, value: string) => {
@@ -379,7 +379,7 @@ export function ChildSetupStepCompact({
     const birthDateError = validateBirthDate(formData.birth_date)
     if (birthDateError) newErrors.birth_date = birthDateError
     setErrors(newErrors)
-    setIsValid(Object.keys(newErrors).length === 0 && formData.name && formData.birth_date)
+    setIsValid(Object.keys(newErrors).length === 0 && !!formData.name && !!formData.birth_date)
   }, [formData])
 
   const handleInputChange = (field: keyof ChildSetupData, value: string) => {

@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Page')
 import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { PasswordStrengthIndicator, PasswordStrengthCompact } from '@/components/ui/PasswordStrengthIndicator'
@@ -237,7 +240,7 @@ export default function ProfileDemoPage() {
           open={showDialog}
           onClose={() => setShowDialog(false)}
           onConfirm={() => {
-            console.log('Action confirmed')
+            logger.info('Action confirmed')
             setShowDialog(false)
           }}
           title="Confirm Action"

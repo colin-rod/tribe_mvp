@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NotificationService')
+
 import { createClient } from '@/lib/supabase/client'
 import { clientEmailService } from './clientEmailService'
 import type { NotificationPreferences, NotificationDeliveryMethod, NotificationStatus, NotificationDigestType } from '@/lib/types/profile'
@@ -377,7 +381,7 @@ export class NotificationService {
       })
 
     if (error) {
-      console.warn('Failed to check quiet hours:', error.message)
+      logger.warn('Failed to check quiet hours:', { data: error.message })
       return false
     }
 

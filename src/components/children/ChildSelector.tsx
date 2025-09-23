@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ChildSelector')
+
 import { useState, useEffect } from 'react'
 import { Child, getChildren } from '@/lib/children'
 import { calculateAge, formatAgeShort } from '@/lib/age-utils'
@@ -34,7 +38,7 @@ export default function ChildSelector({
       const childrenData = await getChildren()
       setChildren(childrenData)
     } catch (error) {
-      console.error('Error loading children:', error)
+      logger.errorWithStack('Error loading children:', error as Error)
       setError('Failed to load children')
     } finally {
       setLoading(false)

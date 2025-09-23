@@ -1,6 +1,9 @@
+
+const logger = createLogger('AiAnalysis')
 // AI Analysis API helper for frontend integration
 import { createClient } from '@/lib/supabase/client'
 import type { AIAnalysisRequest, AIAnalysisResponse } from '@/lib/types/ai-analysis'
+import { createLogger } from '@/lib/logger'
 
 /**
  * Analyze update content using AI and get recipient suggestions
@@ -34,7 +37,7 @@ export async function analyzeUpdate(request: AIAnalysisRequest): Promise<AIAnaly
 
     return data as AIAnalysisResponse
   } catch (error) {
-    console.error('AI Analysis error:', error)
+    logger.errorWithStack('AI Analysis error:', error as Error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -55,9 +58,9 @@ export async function analyzeUpdate(request: AIAnalysisRequest): Promise<AIAnaly
  * const result = await analyzeUpdate(analysisRequest)
  *
  * if (result.success) {
- *   console.log('Analysis:', result.analysis)
- *   console.log('Suggested recipients:', result.suggested_recipients)
+ *   logger.info('Analysis:', { data: result.analysis })
+ *   logger.info('Suggested recipients:', { data: result.suggested_recipients })
  * } else {
- *   console.error('Error:', result.error)
+ *   logger.errorWithStack('Error:', result.error as Error)
  * }
  */

@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('RecipientEditor')
 import { useState, useEffect } from 'react'
 import { Recipient, updateRecipient } from '@/lib/recipients'
 import { RecipientGroup, getUserGroups } from '@/lib/recipient-groups'
@@ -71,7 +74,7 @@ export default function RecipientEditor({
       const userGroups = await getUserGroups()
       setGroups(userGroups)
     } catch (error) {
-      console.error('Error loading groups:', error)
+      logger.errorWithStack('Error loading groups:', error as Error)
       setErrors({ general: 'Failed to load groups. Please refresh the page.' })
     } finally {
       setLoadingGroups(false)
@@ -162,7 +165,7 @@ export default function RecipientEditor({
       const updatedRecipient = await updateRecipient(recipient.id, updates)
       onRecipientUpdated(updatedRecipient)
     } catch (error: any) {
-      console.error('Error updating recipient:', error)
+      logger.errorWithStack('Error updating recipient:', error as Error)
       if (error.errors) {
         const newErrors: Record<string, string> = {}
         error.errors.forEach((err: any) => {
@@ -181,7 +184,7 @@ export default function RecipientEditor({
     }
   }
 
-  const handleChannelToggle = (channel: string) => {
+  const handleChannelToggle = (channel: 'email' | 'sms' | 'whatsapp') => {
     if (!formData.preferred_channels) return
 
     setFormData(prev => ({
@@ -192,7 +195,7 @@ export default function RecipientEditor({
     }))
   }
 
-  const handleContentTypeToggle = (contentType: string) => {
+  const handleContentTypeToggle = (contentType: 'photos' | 'text' | 'milestones') => {
     if (!formData.content_types) return
 
     setFormData(prev => ({
@@ -429,7 +432,7 @@ export default function RecipientEditor({
                             type="checkbox"
                             value={option.value}
                             checked={formData.preferred_channels?.includes(option.value) || false}
-                            onChange={() => handleChannelToggle(option.value)}
+                            onChange={() => handleChannelToggle(option.value as 'email' | 'sms' | 'whatsapp')}
                             disabled={loading}
                             className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
                           />
@@ -464,7 +467,7 @@ export default function RecipientEditor({
                             type="checkbox"
                             value={option.value}
                             checked={formData.content_types?.includes(option.value) || false}
-                            onChange={() => handleContentTypeToggle(option.value)}
+                            onChange={() => handleContentTypeToggle(option.value as 'photos' | 'text' | 'milestones')}
                             disabled={loading}
                             className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
                           />

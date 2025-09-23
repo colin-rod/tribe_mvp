@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NotificationTestEmailAPI')
 
 const sendTestEmailSchema = z.object({
   to: z.string().email('Invalid email address'),
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Send test email API error:', error)
+    logger.errorWithStack('Send test email API error', error as Error)
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

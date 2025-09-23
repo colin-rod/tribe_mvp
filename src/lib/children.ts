@@ -1,5 +1,8 @@
 import { createClient } from './supabase/client'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('Children')
 export interface Child {
   id: string
   parent_id: string
@@ -94,7 +97,7 @@ export async function deleteChild(childId: string) {
 
     // Don't throw storage errors as they shouldn't prevent child deletion
     if (storageError) {
-      console.warn('Failed to delete child photo from storage:', storageError)
+      logger.warn('Failed to delete child photo from storage:', { data: storageError })
     }
   }
 }

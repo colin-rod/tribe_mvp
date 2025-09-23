@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('GroupEditor')
+
 import { useState } from 'react'
 import { RecipientGroup, updateGroup } from '@/lib/recipient-groups'
 import { recipientGroupSchema, RecipientGroupFormData, FREQUENCY_OPTIONS, CHANNEL_OPTIONS } from '@/lib/validation/recipients'
@@ -80,7 +84,7 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
       const updatedGroup = await updateGroup(group.id, updates)
       onGroupUpdated(updatedGroup)
     } catch (error) {
-      console.error('Error updating group:', error)
+      logger.errorWithStack('Error updating group:', error as Error)
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to update group. Please try again.'
       })
@@ -89,7 +93,7 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
     }
   }
 
-  const handleChannelToggle = (channel: string) => {
+  const handleChannelToggle = (channel: 'email' | 'sms' | 'whatsapp') => {
     setFormData(prev => ({
       ...prev,
       default_channels: prev.default_channels.includes(channel)

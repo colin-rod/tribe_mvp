@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ChildManager')
+
 import { useState, useEffect } from 'react'
 import { Child, getChildren, deleteChild } from '@/lib/children'
 import { Button } from '@/components/ui/Button'
@@ -27,7 +31,7 @@ export default function ChildManager() {
       const childrenData = await getChildren()
       setChildren(childrenData)
     } catch (error) {
-      console.error('Error loading children:', error)
+      logger.errorWithStack('Error loading children:', error as Error)
       setError('Failed to load children. Please try again.')
     } finally {
       setLoading(false)
@@ -56,7 +60,7 @@ export default function ChildManager() {
       await deleteChild(childId)
       setChildren(prev => prev.filter(child => child.id !== childId))
     } catch (error) {
-      console.error('Error deleting child:', error)
+      logger.errorWithStack('Error deleting child:', error as Error)
       alert('Failed to delete child. Please try again.')
     } finally {
       setDeletingChildId(null)

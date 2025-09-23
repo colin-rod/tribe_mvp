@@ -3,7 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { updatePreferencesSchema } from '@/lib/validation/recipients'
 import { z } from 'zod'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('Route')
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -31,7 +34,7 @@ export async function GET(
       if (error.code === 'PGRST116') {
         return NextResponse.json({ error: 'Invalid or expired token' }, { status: 404 })
       }
-      console.error('Error fetching recipient by token:', error)
+      logger.errorWithStack('Error fetching recipient by token:', error as Error)
       return NextResponse.json({ error: 'Failed to fetch recipient' }, { status: 500 })
     }
 
@@ -42,7 +45,7 @@ export async function GET(
 
     return NextResponse.json({ recipient })
   } catch (error) {
-    console.error('Preference API error:', error)
+    logger.errorWithStack('Preference API error:', error as Error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -99,7 +102,7 @@ export async function PUT(
       .eq('is_active', true)
 
     if (updateError) {
-      console.error('Error updating recipient preferences:', updateError)
+      logger.errorWithStack('Error updating recipient preferences:', updateError as Error)
       return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 })
     }
 
@@ -108,7 +111,7 @@ export async function PUT(
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid preference data', details: error.errors }, { status: 400 })
     }
-    console.error('Preference update error:', error)
+    logger.errorWithStack('Preference update error:', error as Error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

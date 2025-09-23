@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('QuietHoursConfig')
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -118,7 +121,7 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
         reset(data)
       }
     } catch (err) {
-      console.error('Failed to update quiet hours:', err)
+      logger.error('Failed to update quiet hours:', { error: err })
     }
   }
 

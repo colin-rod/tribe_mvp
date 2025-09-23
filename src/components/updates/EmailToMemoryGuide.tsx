@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('EmailToMemoryGuide')
 import { Copy, Mail, Camera, Smartphone, Check } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +21,7 @@ export function EmailToMemoryGuide({ domain = 'colinrodrigues.com' }: EmailToMem
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.error('Failed to copy email:', error)
+      logger.errorWithStack('Failed to copy email:', error as Error)
     }
   }
 

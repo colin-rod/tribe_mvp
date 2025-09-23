@@ -99,7 +99,7 @@ export function FirstUpdateStep({
     })
 
     setErrors(newErrors)
-    setIsValid(Object.keys(newErrors).length === 0 && (formData.content.trim() || canSkip))
+    setIsValid(Object.keys(newErrors).length === 0 && (!!formData.content.trim() || canSkip))
   }, [formData, canSkip])
 
   const handleContentChange = (content: string) => {
@@ -146,7 +146,7 @@ export function FirstUpdateStep({
     }))
   }
 
-  const usePrompt = (prompt: string) => {
+  const handlePromptClick = (prompt: string) => {
     handleContentChange(prompt)
   }
 
@@ -225,7 +225,7 @@ export function FirstUpdateStep({
                 <button
                   key={index}
                   type="button"
-                  onClick={() => usePrompt(prompt)}
+                  onClick={() => handlePromptClick(prompt)}
                   className="text-left p-2 bg-white border border-gray-200 rounded hover:bg-primary-50 hover:border-primary-300 transition-colors text-sm"
                 >
                   {prompt}

@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { cookies } from 'next/headers'
+import { createLogger } from '@/lib/logger'
 
-export async function GET(request: NextRequest) {
+const logger = createLogger('NotificationStatusAPI')
+
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const cookieStore = await cookies()
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Email service status API error:', error)
+    logger.errorWithStack('Email service status API error', error as Error)
 
     return NextResponse.json(
       { error: 'Internal server error' },

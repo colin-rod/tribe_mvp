@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('NotificationSettings')
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -55,7 +58,7 @@ export default function NotificationSettings({ onSuccess }: NotificationSettings
       reset(data)
     } catch (err) {
       // Error is already handled in the hook
-      console.error('Failed to update notification preferences:', err)
+      logger.error('Failed to update notification preferences:', { error: err })
     }
   }
 

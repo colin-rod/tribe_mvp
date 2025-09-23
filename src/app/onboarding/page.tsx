@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('Page')
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -62,7 +65,7 @@ export default function OnboardingPage() {
 
   // Handle errors
   const handleError = (error: string) => {
-    console.error('Onboarding error:', error)
+    logger.errorWithStack('Onboarding error:', error as Error)
     // You could show a toast or error modal here
   }
 
@@ -315,7 +318,7 @@ export function OnboardingErrorBoundary({
 
   useEffect(() => {
     const handleError = (error: ErrorEvent) => {
-      console.error('Onboarding error:', error)
+      logger.errorWithStack('Onboarding error:', error as Error)
       setHasError(true)
     }
 

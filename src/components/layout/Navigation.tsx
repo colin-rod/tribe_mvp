@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Navigation')
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -54,7 +57,7 @@ export default function Navigation() {
       router.push('/')
       router.refresh()
     } catch (error) {
-      console.error('Error signing out:', error)
+      logger.errorWithStack('Error signing out:', error as Error)
     }
   }
 

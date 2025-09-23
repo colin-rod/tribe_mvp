@@ -2,6 +2,7 @@
 import { clientEmailService } from './services/clientEmailService'
 import type { Recipient } from './recipients'
 import type { RecipientGroup } from './recipient-groups'
+import { createLogger } from '@/lib/logger'
 
 /**
  * Interface for recipient preference updates via magic link
@@ -43,7 +44,7 @@ export async function getRecipientByToken(token: string): Promise<RecipientWithG
     const { recipient } = await response.json()
     return recipient
   } catch (error) {
-    console.error('Error fetching recipient by token:', error)
+    logger.errorWithStack('Error fetching recipient by token:', error as Error)
     return null
   }
 }
@@ -80,7 +81,7 @@ export async function updateRecipientPreferences(
 
     return true
   } catch (error) {
-    console.error('Error updating recipient preferences:', error)
+    logger.errorWithStack('Error updating recipient preferences:', error as Error)
     throw error
   }
 }
@@ -108,7 +109,7 @@ export async function resetToGroupDefaults(token: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.error('Error resetting to group defaults:', error)
+    logger.errorWithStack('Error resetting to group defaults:', error as Error)
     throw error
   }
 }
@@ -135,6 +136,7 @@ export async function validatePreferenceToken(token: string): Promise<boolean> {
  * @returns Complete preference link URL
  */
 export function getPreferenceLinkUrl(token: string): string {
+  const logger = createLogger('PreferenceLinks')
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   return `${baseUrl}/preferences/${token}`
 }
@@ -183,14 +185,14 @@ export async function sendPreferenceLink(
       throw new Error(result.error || 'Failed to send preference invitation email')
     }
 
-    console.log(`Preference link sent to ${email} (${name}): ${preferenceUrl}`)
-    console.log(`SendGrid Message ID: ${result.messageId}`)
+    logger.info('Preference link sent to ${email} (${name}): ${preferenceUrl}')
+    logger.info('SendGrid Message ID: ${result.messageId}')
 
   } catch (error) {
-    console.error(`Failed to send preference link to ${email}:`, error)
+    logger.errorWithStack('Failed to send preference link to ${email}:', error as Error)
 
     // Log the URL for manual sharing as fallback
-    console.log(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
+    logger.info('Manual preference link for ${name} (${email}): ${preferenceUrl}')
 
     // Re-throw error so calling code can handle it
     throw error
@@ -399,7 +401,7 @@ export async function logPreferenceAccess(
   action: 'view' | 'update' | 'reset'
 ): Promise<void> {
   // In production, this could log to analytics service
-  console.log(`Preference access logged: ${action} for token ${token.slice(0, 8)}...`)
+  logger.info('Preference access logged: ${action} for token ${token.slice(0, 8)}...')
 
   // TODO: Implement actual analytics logging if needed
   // This could track:

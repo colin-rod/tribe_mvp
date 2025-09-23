@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('RecipientManager')
 import { useState, useEffect } from 'react'
 import {
   Recipient,
@@ -63,7 +66,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
       setRecipients(recipientsData)
       setGroups(groupsData)
     } catch (err) {
-      console.error('Error loading data:', err)
+      logger.error('Error loading data:', { error: err })
       setError('Failed to load recipients. Please try again.')
     } finally {
       setLoading(false)
@@ -96,7 +99,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
         return updated
       })
     } catch (error) {
-      console.error('Error deleting recipient:', error)
+      logger.errorWithStack('Error deleting recipient:', error as Error)
       alert('Failed to delete recipient. Please try again.')
     }
   }
@@ -106,7 +109,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
       await resendPreferenceLink(recipientId)
       alert('Preference link sent successfully!')
     } catch (error) {
-      console.error('Error sending preference link:', error)
+      logger.errorWithStack('Error sending preference link:', error as Error)
       alert('Failed to send preference link. Please try again.')
     }
   }
@@ -173,7 +176,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
       setSelectedRecipients(new Set())
       setBulkOperation('')
     } catch (error) {
-      console.error('Error performing bulk operation:', error)
+      logger.errorWithStack('Error performing bulk operation:', error as Error)
       alert('Failed to perform bulk operation. Please try again.')
     } finally {
       setBulkLoading(false)

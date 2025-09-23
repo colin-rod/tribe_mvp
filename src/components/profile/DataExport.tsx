@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('DataExport')
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileManager } from '@/hooks/useProfileManager'
@@ -42,7 +45,7 @@ export default function DataExport({ onSuccess }: DataExportProps) {
       const exportStats = await getExportStats(user.id)
       setStats(exportStats)
     } catch (err) {
-      console.error('Failed to load export stats:', err)
+      logger.error('Failed to load export stats:', { error: err })
     }
   }
 
@@ -62,7 +65,7 @@ export default function DataExport({ onSuccess }: DataExportProps) {
 
       onSuccess?.()
     } catch (err) {
-      console.error(`Failed to export ${type}:`, err)
+      logger.error('Failed to export ${type}:', { error: err })
       setError(err instanceof Error ? err.message : 'Export failed. Please try again.')
     } finally {
       setLoading(false)

@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AddChildForm')
 import { useState } from 'react'
 import { Child, createChild, updateChild } from '@/lib/children'
 import { uploadChildPhoto, validateImageFile } from '@/lib/photo-upload'
@@ -98,7 +101,7 @@ export default function AddChildForm({ onChildAdded, onCancel }: AddChildFormPro
 
       onChildAdded(newChild)
     } catch (error) {
-      console.error('Error adding child:', error)
+      logger.errorWithStack('Error adding child:', error as Error)
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to add child. Please try again.'
       })

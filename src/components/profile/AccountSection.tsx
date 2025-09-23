@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('AccountSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
@@ -122,7 +125,7 @@ export function AccountSection({ user }: AccountSectionProps) {
       await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
 
       // This would typically redirect to a goodbye page or sign out
-      console.log('Account deletion would be processed here')
+      logger.info('Account deletion would be processed here')
     } catch (error) {
       setFormState({
         loading: false,

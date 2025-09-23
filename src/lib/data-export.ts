@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/types/database'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('DataExport')
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Child = Database['public']['Tables']['children']['Row']
 type Recipient = Database['public']['Tables']['recipients']['Row']
@@ -82,22 +85,22 @@ export async function exportUserData(userId: string): Promise<void> {
 
     // Check for errors
     if (profileResult.error) {
-      console.warn('Failed to fetch profile:', profileResult.error)
+      logger.warn('Failed to fetch profile:', { data: profileResult.error })
     }
     if (childrenResult.error) {
-      console.warn('Failed to fetch children:', childrenResult.error)
+      logger.warn('Failed to fetch children:', { data: childrenResult.error })
     }
     if (recipientsResult.error) {
-      console.warn('Failed to fetch recipients:', recipientsResult.error)
+      logger.warn('Failed to fetch recipients:', { data: recipientsResult.error })
     }
     if (groupsResult.error) {
-      console.warn('Failed to fetch groups:', groupsResult.error)
+      logger.warn('Failed to fetch groups:', { data: groupsResult.error })
     }
     if (updatesResult.error) {
-      console.warn('Failed to fetch updates:', updatesResult.error)
+      logger.warn('Failed to fetch updates:', { data: updatesResult.error })
     }
     if (responsesResult.error) {
-      console.warn('Failed to fetch responses:', responsesResult.error)
+      logger.warn('Failed to fetch responses:', { data: responsesResult.error })
     }
 
     // Prepare export data
@@ -115,7 +118,7 @@ export async function exportUserData(userId: string): Promise<void> {
     await downloadJSON(exportData, `tribe-data-export-${formatDate(new Date())}.json`)
 
   } catch (error) {
-    console.error('Error exporting user data:', error)
+    logger.errorWithStack('Error exporting user data:', error as Error)
     throw new Error('Failed to export data. Please try again.')
   }
 }
@@ -188,7 +191,7 @@ export async function exportCSV(
     await downloadCSV(csv, filename)
 
   } catch (error) {
-    console.error(`Error exporting ${dataType}:`, error)
+    logger.errorWithStack('Error exporting ${dataType}:', error as Error)
     throw new Error(`Failed to export ${dataType}. Please try again.`)
   }
 }
@@ -338,7 +341,7 @@ export async function getExportStats(userId: string): Promise<{
       breakdown
     }
   } catch (error) {
-    console.error('Error getting export stats:', error)
+    logger.errorWithStack('Error getting export stats:', error as Error)
     throw new Error('Failed to get export statistics')
   }
 }

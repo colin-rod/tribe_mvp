@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('SendUpdateModal')
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -62,7 +65,7 @@ export default function SendUpdateModal({
         const allRecipientIds = new Set(emailRecipients.map(r => r.id))
         setSelectedRecipients(allRecipientIds)
       } catch (error) {
-        console.error('Error loading recipients:', error)
+        logger.errorWithStack('Error loading recipients:', error as Error)
         setRecipientsError(error instanceof Error ? error.message : 'Failed to load recipients')
       } finally {
         setLoadingRecipients(false)
@@ -112,7 +115,7 @@ export default function SendUpdateModal({
         onSent?.()
       }
     } catch (error) {
-      console.error('Error sending update:', error)
+      logger.errorWithStack('Error sending update:', error as Error)
       // Error is handled by the hook
     }
   }

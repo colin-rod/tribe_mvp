@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('UpdatesList')
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -36,7 +39,7 @@ export default function UpdatesList({
 
       setUpdates(transformedUpdates)
     } catch (err) {
-      console.error('Error loading updates:', err)
+      logger.error('Error loading updates:', { error: err })
       setError('Failed to load recent updates')
     } finally {
       setLoading(false)

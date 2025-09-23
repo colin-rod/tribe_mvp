@@ -45,7 +45,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
     setErrors(prev => ({ ...prev, frequency: undefined }))
   }
 
-  const handleChannelChange = (channel: string, checked: boolean) => {
+  const handleChannelChange = (channel: 'email' | 'sms' | 'whatsapp', checked: boolean) => {
     setPreferences(prev => {
       const newChannels = checked
         ? [...prev.preferred_channels, channel]
@@ -167,7 +167,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
                       name="frequency"
                       type="radio"
                       checked={preferences.frequency === option.value}
-                      onChange={() => handleFrequencyChange(option.value)}
+                      onChange={() => handleFrequencyChange(option.value as PreferenceUpdate['frequency'])}
                       className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
                     />
                   </div>
@@ -213,7 +213,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           <legend className="sr-only">Communication channels</legend>
           <div className="space-y-3">
             {options.channels.map((option) => {
-              const isGroupDefault = recipient.group && recipient.group.default_channels.includes(option.value)
+              const isGroupDefault = recipient.group && recipient.group.default_channels.includes(option.value as 'email' | 'sms' | 'whatsapp')
               return (
                 <div key={option.value} className={`flex items-start ${isGroupDefault ? 'bg-blue-50 border border-blue-200 rounded-md p-3' : 'p-1'}`}>
                   <div className="flex items-center h-5">
@@ -222,7 +222,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
                       name="channels"
                       type="checkbox"
                       checked={preferences.preferred_channels.includes(option.value as 'email' | 'sms' | 'whatsapp')}
-                      onChange={(e) => handleChannelChange(option.value, e.target.checked)}
+                      onChange={(e) => handleChannelChange(option.value as 'email' | 'sms' | 'whatsapp', e.target.checked)}
                       className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
                     />
                   </div>

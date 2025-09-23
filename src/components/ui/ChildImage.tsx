@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ChildImage')
 import { useState, useEffect } from 'react'
 import { getChildPhotoUrl, refreshChildPhotoUrl, isSignedUrlExpired } from '@/lib/photo-upload'
 
@@ -42,7 +45,7 @@ export default function ChildImage({ childId, photoUrl, alt, className = '', onE
         onError?.()
       }
     } catch (error) {
-      console.warn('Failed to refresh photo URL:', error)
+      logger.warn('Failed to refresh photo URL:', { data: error })
       setImageError(true)
       onError?.()
     } finally {

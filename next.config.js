@@ -19,14 +19,14 @@ const nextConfig = {
     ],
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    // ESLint errors will now prevent production builds
+    dirs: ['src'],
+    // Allow warnings during build but still fail on errors
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has TypeScript errors.
-    ignoreBuildErrors: true,
+    // TypeScript errors will now prevent production builds
+    // Enables strict type checking during build
   },
 }
 

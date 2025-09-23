@@ -94,7 +94,7 @@ export function ConversationView({
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 mr-4">
                       <ChildImage
                         childId={update.children.id}
-                        photoUrl={update.children.profile_photo_url}
+                        photoUrl={update.children.profile_photo_url || undefined}
                         alt={`${update.children.name}'s profile`}
                         className="w-full h-full object-cover"
                       />

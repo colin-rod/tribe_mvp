@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('NotificationSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
@@ -175,7 +178,7 @@ export function NotificationSection({ user }: NotificationSectionProps) {
         await handlePreferenceUpdate({ browser_notifications: true })
       }
     } catch (err) {
-      console.error('Failed to request notification permission:', err)
+      logger.error('Failed to request notification permission:', { error: err })
     }
   }
 

@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AddRecipientForm')
 import { useState, useEffect } from 'react'
 import { Recipient, createRecipient } from '@/lib/recipients'
 import { RecipientGroup, getUserGroups } from '@/lib/recipient-groups'
@@ -67,7 +70,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
         }))
       }
     } catch (error) {
-      console.error('Error loading groups:', error)
+      logger.errorWithStack('Error loading groups:', error as Error)
       setErrors({ general: 'Failed to load groups. Please refresh the page.' })
     } finally {
       setLoadingGroups(false)
@@ -155,7 +158,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
 
       onRecipientAdded(newRecipient)
     } catch (error: any) {
-      console.error('Error creating recipient:', error)
+      logger.errorWithStack('Error creating recipient:', error as Error)
       if (error.errors) {
         const newErrors: Record<string, string> = {}
         error.errors.forEach((err: any) => {
@@ -174,7 +177,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
     }
   }
 
-  const handleChannelToggle = (channel: string) => {
+  const handleChannelToggle = (channel: 'email' | 'sms' | 'whatsapp') => {
     setFormData(prev => ({
       ...prev,
       preferred_channels: prev.preferred_channels.includes(channel)
@@ -183,7 +186,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
     }))
   }
 
-  const handleContentTypeToggle = (contentType: string) => {
+  const handleContentTypeToggle = (contentType: 'photos' | 'text' | 'milestones') => {
     setFormData(prev => ({
       ...prev,
       content_types: prev.content_types.includes(contentType)
@@ -423,7 +426,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
                     type="checkbox"
                     value={option.value}
                     checked={formData.preferred_channels.includes(option.value)}
-                    onChange={() => handleChannelToggle(option.value)}
+                    onChange={() => handleChannelToggle(option.value as 'email' | 'sms' | 'whatsapp')}
                     className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
                   />
                   <div className="flex-1">
@@ -457,7 +460,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
                     type="checkbox"
                     value={option.value}
                     checked={formData.content_types.includes(option.value)}
-                    onChange={() => handleContentTypeToggle(option.value)}
+                    onChange={() => handleContentTypeToggle(option.value as 'photos' | 'text' | 'milestones')}
                     className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
                   />
                   <div className="flex-1">

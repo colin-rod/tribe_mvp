@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Page')
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -49,14 +52,14 @@ export default function UpdatePage() {
           .single()
 
         if (fetchError) {
-          console.error('Error fetching update:', fetchError)
+          logger.errorWithStack('Error fetching update:', fetchError as Error)
           setError('Failed to load update')
           return
         }
 
         setUpdate(data)
       } catch (err) {
-        console.error('Unexpected error:', err)
+        logger.error('Unexpected error:', { error: err })
         setError('An unexpected error occurred')
       } finally {
         setLoading(false)

@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+  const logger = createLogger('UseAuth')
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
@@ -41,11 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Handle specific auth events
         if (event === 'SIGNED_IN') {
-          console.log('User signed in:', session?.user?.email)
+          logger.info('User signed in:', { data: session?.user?.email })
         } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out')
+          logger.info('User signed out')
         } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed')
+          logger.info('Token refreshed')
         }
       }
     )
@@ -58,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
-      console.error('Error signing out:', error)
+      logger.errorWithStack('Error signing out:', error as Error)
       throw error
     }
   }
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshSession = async () => {
     const { data, error } = await supabase.auth.refreshSession()
     if (error) {
-      console.error('Error refreshing session:', error)
+      logger.errorWithStack('Error refreshing session:', error as Error)
       throw error
     }
     setSession(data.session)

@@ -236,7 +236,7 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
                           : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
                       )}
                     >
-                      {digestPrefs.frequency === 'weekly' ? day.slice(0, 3) : day}
+                      {digestPrefs.frequency === 'weekly' ? String(day).slice(0, 3) : day}
                     </button>
                   )
                 })}

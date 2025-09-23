@@ -2,6 +2,9 @@ import { createClient } from './supabase/server'
 import { cookies } from 'next/headers'
 import type { Recipient } from './recipients'
 import type { RecipientGroup } from './recipient-groups'
+import { createLogger } from './logger'
+
+const logger = createLogger('PreferenceServer')
 
 /**
  * Interface for enhanced recipient data with group information
@@ -41,7 +44,9 @@ export async function getRecipientByTokenServer(token: string): Promise<Recipien
       // No matching token found
       return null
     }
-    console.error('Error fetching recipient by token:', error)
+    logger.errorWithStack('Failed to fetch recipient by token', error as Error, {
+      token: '[REDACTED]'
+    })
     return null
   }
 

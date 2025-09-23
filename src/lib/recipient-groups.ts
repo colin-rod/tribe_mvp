@@ -1,6 +1,9 @@
 import { createClient } from './supabase/client'
 import type { Database } from './types/database'
+import { createLogger } from '@/lib/logger'
 
+
+const logger = createLogger('RecipientGroups')
 /**
  * Interface for recipient group with enhanced data
  * Matches the database schema with additional computed fields
@@ -9,8 +12,8 @@ export interface RecipientGroup {
   id: string
   parent_id: string
   name: string
-  default_frequency: string
-  default_channels: string[]
+  default_frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
+  default_channels: ('email' | 'sms' | 'whatsapp')[]
   is_default_group: boolean
   created_at: string
   recipient_count?: number
@@ -75,7 +78,7 @@ export async function createDefaultGroups(userId: string): Promise<RecipientGrou
     .select()
 
   if (error) {
-    console.error('Error creating default groups:', error)
+    logger.errorWithStack('Error creating default groups:', error as Error)
     throw new Error('Failed to create default recipient groups')
   }
 
@@ -106,7 +109,7 @@ export async function getUserGroups(): Promise<(RecipientGroup & { recipient_cou
     .order('name')
 
   if (error) {
-    console.error('Error fetching user groups:', error)
+    logger.errorWithStack('Error fetching user groups:', error as Error)
     throw new Error('Failed to fetch recipient groups')
   }
 
@@ -155,7 +158,7 @@ export async function createGroup(groupData: CreateGroupData): Promise<Recipient
     .single()
 
   if (error) {
-    console.error('Error creating group:', error)
+    logger.errorWithStack('Error creating group:', error as Error)
     throw new Error('Failed to create recipient group')
   }
 
@@ -215,7 +218,7 @@ export async function updateGroup(groupId: string, updates: UpdateGroupData): Pr
     .single()
 
   if (error) {
-    console.error('Error updating group:', error)
+    logger.errorWithStack('Error updating group:', error as Error)
     throw new Error('Failed to update recipient group')
   }
 
@@ -273,7 +276,7 @@ export async function deleteGroup(groupId: string): Promise<boolean> {
     .eq('parent_id', user.id)
 
   if (updateError) {
-    console.error('Error reassigning recipients:', updateError)
+    logger.errorWithStack('Error reassigning recipients:', updateError as Error)
     throw new Error('Failed to reassign recipients before group deletion')
   }
 
@@ -285,7 +288,7 @@ export async function deleteGroup(groupId: string): Promise<boolean> {
     .eq('parent_id', user.id)
 
   if (error) {
-    console.error('Error deleting group:', error)
+    logger.errorWithStack('Error deleting group:', error as Error)
     throw new Error('Failed to delete recipient group')
   }
 
@@ -313,7 +316,7 @@ export async function getGroupById(groupId: string): Promise<RecipientGroup | nu
 
   if (error) {
     if (error.code === 'PGRST116') return null
-    console.error('Error fetching group:', error)
+    logger.errorWithStack('Error fetching group:', error as Error)
     throw new Error('Failed to fetch recipient group')
   }
 
@@ -342,7 +345,7 @@ export async function getDefaultGroup(groupName: 'Close Family' | 'Extended Fami
 
   if (error) {
     if (error.code === 'PGRST116') return null
-    console.error('Error fetching default group:', error)
+    logger.errorWithStack('Error fetching default group:', error as Error)
     throw new Error('Failed to fetch default group')
   }
 
@@ -373,7 +376,7 @@ export async function hasDefaultGroups(userId?: string): Promise<boolean> {
     .eq('is_default_group', true)
 
   if (error) {
-    console.error('Error checking default groups:', error)
+    logger.errorWithStack('Error checking default groups:', error as Error)
     return false
   }
 

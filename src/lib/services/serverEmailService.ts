@@ -1,4 +1,5 @@
 import * as sgMail from '@sendgrid/mail'
+import { createLogger } from '@/lib/logger'
 
 export interface EmailTemplate {
   subject: string
@@ -28,6 +29,7 @@ export interface EmailDeliveryResult {
 
 export class ServerEmailService {
   private initialized = false
+  private logger = createLogger('ServerEmailService')
 
   constructor() {
     this.initialize()
@@ -43,7 +45,7 @@ export class ServerEmailService {
       sgMail.setApiKey(apiKey)
       this.initialized = true
     } catch (error) {
-      console.error('Failed to initialize ServerEmailService:', error)
+      this.logger.errorWithStack('Failed to initialize ServerEmailService', error as Error)
       this.initialized = false
     }
   }
@@ -99,7 +101,10 @@ export class ServerEmailService {
         statusCode: response.statusCode
       }
     } catch (error: any) {
-      console.error('SendGrid email error:', error)
+      this.logger.errorWithStack('SendGrid email error', error as Error, {
+        to: options.to,
+        subject: options.subject
+      })
 
       let errorMessage = 'Unknown email delivery error'
       let statusCode: number | undefined

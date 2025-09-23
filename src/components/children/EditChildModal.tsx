@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('EditChildModal')
 import { useState, useEffect } from 'react'
 import { Child, updateChild } from '@/lib/children'
 import { uploadChildPhoto, validateImageFile, getChildPhotoUrl, deleteChildPhoto } from '@/lib/photo-upload'
@@ -111,15 +114,15 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
         try {
           await deleteChildPhoto(child.id)
         } catch (deleteError) {
-          console.warn('Failed to delete photo from storage:', deleteError)
+          logger.warn('Failed to delete photo from storage:', { data: deleteError })
         }
-        updates.profile_photo_url = null
+        updates.profile_photo_url = undefined
       }
 
       const updatedChild = await updateChild(child.id, updates)
       onChildUpdated(updatedChild)
     } catch (error) {
-      console.error('Error updating child:', error)
+      logger.errorWithStack('Error updating child:', error as Error)
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to update child. Please try again.'
       })

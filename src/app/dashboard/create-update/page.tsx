@@ -1,5 +1,8 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Page')
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,10 +14,11 @@ import AIReview from '@/components/updates/AIReview'
 import UpdatePreview from '@/components/updates/UpdatePreview'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { Recipient } from '@/lib/recipients'
+import type { Child } from '@/lib/children'
 
 export default function CreateUpdatePage() {
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const {
     currentStep,
     steps,
@@ -37,7 +41,7 @@ export default function CreateUpdatePage() {
   } = useUpdateCreation()
 
   const [recipients, setRecipients] = useState<Recipient[]>([])
-  const [selectedChild, setSelectedChild] = useState(null)
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null)
 
   // Authentication check
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function CreateUpdatePage() {
       const recipientData = await getRecipients()
       setRecipients(recipientData)
     } catch (err) {
-      console.error('Failed to load recipients:', err)
+      logger.error('Failed to load recipients:', { error: err })
     }
   }
 
@@ -77,7 +81,7 @@ export default function CreateUpdatePage() {
       await createUpdateDraft()
       setCurrentStep('preview')
     } catch (err) {
-      console.error('Failed to create update draft:', err)
+      logger.error('Failed to create update draft:', { error: err })
     }
   }
 
@@ -88,7 +92,7 @@ export default function CreateUpdatePage() {
       // Show success and redirect
       router.push('/dashboard?updated=true')
     } catch (err) {
-      console.error('Failed to send update:', err)
+      logger.error('Failed to send update:', { error: err })
     }
   }
 
@@ -100,7 +104,7 @@ export default function CreateUpdatePage() {
       // Show success and redirect
       router.push('/dashboard?scheduled=true')
     } catch (err) {
-      console.error('Failed to schedule update:', err)
+      logger.error('Failed to schedule update:', { error: err })
     }
   }
 

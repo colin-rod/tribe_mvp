@@ -1,5 +1,9 @@
 'use client'
 
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('UseUpdateCreation')
+
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadUpdatePhotos, validateUpdateMediaFiles, generatePreviewUrls, cleanupPreviewUrls } from '@/lib/photo-upload'
@@ -204,7 +208,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
           recipients
         )
       } catch (err) {
-        console.warn('Failed to update recipients in database:', err)
+        logger.warn('Failed to update recipients in database:', { data: err })
       }
     }
   }, [currentUpdateId, aiAnalysis, setFormData])
@@ -216,7 +220,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
 
     // Return existing update ID if we already created one
     if (currentUpdateId) {
-      console.log('Returning existing update ID:', currentUpdateId)
+      logger.info('Returning existing update ID:', { data: currentUpdateId })
       return currentUpdateId
     }
 
@@ -224,20 +228,20 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       setIsLoading(true)
       setUploadProgress(0)
 
-      console.log('Creating new update...')
+      logger.info('Creating new update...')
 
       // Create the update in database first
       const updateData = {
         child_id: formData.childId!,
         content: formData.content!,
-        milestone_type: formData.milestoneType || null,
+        milestone_type: formData.milestoneType || undefined,
         confirmed_recipients: formData.confirmedRecipients || [],
         ai_analysis: aiAnalysis?.analysis || {},
         suggested_recipients: aiAnalysis?.suggested_recipients || []
       }
 
       const update = await createUpdate(updateData)
-      console.log('Created update with ID:', update.id)
+      logger.info('Created update with ID:', { data: update.id })
       setCurrentUpdateId(update.id)
 
       // Upload media files if any
@@ -252,7 +256,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
           // Update the update with media URLs
           await updateUpdateMediaUrls(update.id, mediaUrls)
         } catch (uploadError) {
-          console.warn('Failed to upload media files:', uploadError)
+          logger.warn('Failed to upload media files:', { data: uploadError })
           // Continue without media files rather than failing entirely
         }
       }
@@ -282,7 +286,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       const supabase = createClient()
 
       // Trigger email distribution
-      console.log('Triggering email distribution for update:', currentUpdateId)
+      logger.info('Triggering email distribution for update:', { data: currentUpdateId })
       const { data, error: distributionError } = await supabase.functions.invoke('distribute-email', {
         body: {
           update_id: currentUpdateId,
@@ -291,16 +295,16 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       })
 
       if (distributionError) {
-        console.error('Email distribution error:', distributionError)
+        logger.errorWithStack('Email distribution error:', distributionError as Error)
         throw new Error(`Failed to send emails: ${distributionError.message}`)
       }
 
       if (!data?.success) {
-        console.error('Email distribution failed:', data?.error)
+        logger.errorWithStack('Email distribution failed:', data?.error as Error)
         throw new Error(`Failed to send emails: ${data?.error || 'Unknown error'}`)
       }
 
-      console.log('Email distribution successful:', data.delivery_jobs?.length || 0, 'emails queued')
+      logger.info('Email distribution successful:', { emailsQueued: data.delivery_jobs?.length || 0 })
 
       // Mark update as sent
       await markUpdateAsSent(currentUpdateId)
@@ -308,7 +312,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       // Navigate to the dashboard
       router.push('/dashboard')
     } catch (err) {
-      console.error('Failed to finalize update:', err)
+      logger.error('Failed to finalize update:', { error: err })
       setError(err instanceof Error ? err.message : 'Failed to finalize update')
       throw err
     } finally {
