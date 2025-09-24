@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/hooks/useAuth'
+import { DevelopmentBanner, DevelopmentIndicator } from '@/components/ui/DevelopmentBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,11 +20,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">
           <AuthProvider>
             {children}
           </AuthProvider>
         </div>
+        <DevelopmentIndicator />
       </body>
     </html>
   )
