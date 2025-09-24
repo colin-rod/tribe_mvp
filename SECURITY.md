@@ -249,6 +249,91 @@ For security vulnerabilities or questions:
 - Follow responsible disclosure practices
 - Provide clear reproduction steps
 
+## JWT Secret Management
+
+### Overview
+The JWT secret is used by Supabase for signing and verifying JSON Web Tokens. This secret must be kept secure and rotated regularly.
+
+### Current Configuration
+- **Location**: Environment variable `JWT_SECRET`
+- **Usage**: Referenced in `supabase/config.toml` as `${JWT_SECRET}`
+- **Environment Files**:
+  - Development: `supabase/.env`
+  - Production: Set in deployment platform environment variables
+
+### Secret Rotation Process
+
+#### When to Rotate
+- **Immediately**: If there's suspected compromise
+- **Regularly**: Every 90 days as a security best practice
+- **Before production deployment**: Always generate new secrets for production
+
+#### Step-by-Step Rotation Process
+
+1. **Generate New Secret**
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+   ```
+
+2. **Update Environment Variables**
+   - Development: Update `supabase/.env`
+   - Production: Update deployment platform environment variables
+   - Template files: Update `.env.example` and `.env.production.example`
+
+3. **Deploy Changes**
+   - For Vercel: Update environment variables in Vercel dashboard or via CLI
+   - For other platforms: Follow platform-specific environment variable update process
+
+4. **Verify Deployment**
+   - Test authentication functionality
+   - Verify JWT token validation is working
+   - Check application logs for any authentication errors
+
+5. **Secure Old Secret**
+   - Remove old secret from all systems
+   - Clear from deployment logs if visible
+   - Update any documentation that may contain the old secret
+
+#### Environment Variable Setup
+
+**Development (.env files):**
+```bash
+JWT_SECRET=your-cryptographically-secure-jwt-secret-here
+```
+
+**Production (Vercel):**
+```bash
+# Via Vercel CLI
+vercel env add JWT_SECRET
+
+# Or via Vercel Dashboard
+# Project Settings > Environment Variables > Add
+```
+
+#### Security Requirements
+- **Minimum length**: 32 characters
+- **Cryptographically secure**: Use `crypto.randomBytes()` or equivalent
+- **Base64 encoded**: For safe storage in environment variables
+- **Never commit**: Ensure secrets are never committed to version control
+
+#### Verification Checklist
+- [x] New secret generated using cryptographically secure method
+- [x] Old hardcoded secret removed from all configuration files
+- [x] Environment variables updated in all environments
+- [x] Template files updated with placeholder values
+- [x] No secrets committed to version control
+- [ ] Application tested with new secret
+- [ ] Production deployment successful
+- [ ] Authentication functionality verified
+
+### Emergency Response
+If JWT secret is compromised:
+1. **Immediately** rotate the secret following the process above
+2. Invalidate all existing user sessions
+3. Force users to re-authenticate
+4. Review access logs for suspicious activity
+5. Update incident response documentation
+
 ## Compliance Notes
 
 This authorization system helps meet compliance requirements for:
