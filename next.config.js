@@ -19,16 +19,20 @@ const nextConfig = {
     ],
   },
   eslint: {
-    // ESLint errors will now prevent production builds
     dirs: ['src'],
-    // Allow warnings during build but still fail on errors
     ignoreDuringBuilds: false,
   },
   typescript: {
     // TypeScript errors will now prevent production builds
-    // Enables strict type checking during build
   },
-  // Explicitly expose environment variables to the client bundle
+  // Use publicRuntimeConfig instead of env
+  publicRuntimeConfig: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  },
+  // Also keep the env config as fallback
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
