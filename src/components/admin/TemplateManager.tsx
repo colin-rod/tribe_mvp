@@ -115,9 +115,9 @@ export function TemplateManager() {
 
       // Apply search filter
       if (searchTerm) {
-        filteredData = filteredData.filter(template =>
+        filteredData = filteredData.filter((template: any) =>
           template.template_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+          template.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
         )
       }
 
@@ -127,7 +127,7 @@ export function TemplateManager() {
       await fetchStats()
 
     } catch (error) {
-      console.error('Error fetching templates:', error)
+      // console.error('Error fetching templates:', error)
       setError(error instanceof Error ? error.message : 'Failed to fetch templates')
     } finally {
       setLoading(false)
@@ -147,15 +147,15 @@ export function TemplateManager() {
       if (data) {
         const stats: TemplateStats = {
           total_templates: data.length,
-          community_templates: data.filter(t => t.is_community_contributed).length,
+          community_templates: data.filter((t: any) => t.is_community_contributed).length,
           most_effective_type: getMostEffectiveType(data),
-          average_effectiveness: data.reduce((acc, t) => acc + (t.effectiveness_score || 0), 0) / data.length,
-          total_usage: data.reduce((acc, t) => acc + (t.usage_count || 0), 0)
+          average_effectiveness: data.reduce((acc: number, t: any) => acc + (t.effectiveness_score || 0), 0) / data.length,
+          total_usage: data.reduce((acc: number, t: any) => acc + (t.usage_count || 0), 0)
         }
         setStats(stats)
       }
     } catch (error) {
-      console.error('Error fetching template stats:', error)
+      // console.error('Error fetching template stats:', error)
     }
   }
 
@@ -185,7 +185,7 @@ export function TemplateManager() {
       setShowForm(false)
       await fetchTemplates()
     } catch (error) {
-      console.error('Error creating template:', error)
+      // console.error('Error creating template:', error)
       setError(error instanceof Error ? error.message : 'Failed to create template')
     } finally {
       setSaving(false)
@@ -216,7 +216,7 @@ export function TemplateManager() {
       setShowForm(false)
       await fetchTemplates()
     } catch (error) {
-      console.error('Error updating template:', error)
+      // console.error('Error updating template:', error)
       setError(error instanceof Error ? error.message : 'Failed to update template')
     } finally {
       setSaving(false)
@@ -241,7 +241,7 @@ export function TemplateManager() {
 
       await fetchTemplates()
     } catch (error) {
-      console.error('Error deleting template:', error)
+      // console.error('Error deleting template:', error)
       setError(error instanceof Error ? error.message : 'Failed to delete template')
     } finally {
       setSaving(false)
@@ -259,7 +259,7 @@ export function TemplateManager() {
 
       await fetchTemplates()
     } catch (error) {
-      console.error('Error recalculating effectiveness:', error)
+      // console.error('Error recalculating effectiveness:', error)
       setError(error instanceof Error ? error.message : 'Failed to recalculate effectiveness')
     } finally {
       setSaving(false)

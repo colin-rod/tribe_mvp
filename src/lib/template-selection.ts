@@ -3,7 +3,7 @@
  * Selects the best template based on age, context, preferences, and variety enforcement
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/supabase-js'
 import { PromptVariables, Child, User } from './prompt-context'
 
 // =============================================================================
@@ -61,11 +61,11 @@ export async function selectTemplate(
   child: Child,
   user: User,
   context: PromptVariables,
-  preferences: NotificationPreferences,
+  _preferences: NotificationPreferences,
   supabase: SupabaseClient
 ): Promise<PromptTemplate | null> {
   try {
-    const enabledTypes = preferences.enabled_prompt_types || ['milestone', 'activity', 'fun']
+    const enabledTypes = _preferences.enabled_prompt_types || ['milestone', 'activity', 'fun']
 
     // Get recent template IDs to avoid repetition
     const recentTemplateIds = await getRecentTemplateIds(child.id, supabase, 7)
@@ -79,30 +79,25 @@ export async function selectTemplate(
     })
 
     if (!candidates || candidates.length === 0) {
-      console.log('No candidate templates found for child', child.id)
+      // console.log('No candidate templates found for child', child.id)
       return null
     }
 
     // Score templates based on context
     const scoredTemplates = candidates.map(template => ({
       template,
-      score: calculateTemplateScore(template, context, preferences),
-      scoreBreakdown: calculateDetailedTemplateScore(template, context, preferences)
+      score: calculateTemplateScore(template, context, _preferences),
+      scoreBreakdown: calculateDetailedTemplateScore(template, context, _preferences)
     }))
 
     // Sort by score (highest first)
     scoredTemplates.sort((a, b) => b.score - a.score)
 
-    console.log(`Template selection for ${child.name}:`, {
-      candidatesFound: candidates.length,
-      topScore: scoredTemplates[0]?.score,
-      selectedTemplate: scoredTemplates[0]?.template.id,
-      scoreBreakdown: scoredTemplates[0]?.scoreBreakdown
-    })
+    // Template selection completed
 
     return scoredTemplates[0]?.template || null
   } catch (error) {
-    console.error('Error in template selection:', error)
+    // console.error('Error in template selection:', error)
     return null
   }
 }
@@ -321,13 +316,13 @@ export async function getTemplatesByFilters(
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching templates:', error)
+      // console.error('Error fetching templates:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('Error in getTemplatesByFilters:', error)
+    // console.error('Error in getTemplatesByFilters:', error)
     return []
   }
 }
@@ -346,13 +341,13 @@ export async function getRecentTemplateIds(
       .gte('created_at', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString())
 
     if (error) {
-      console.error('Error fetching recent template IDs:', error)
+      // console.error('Error fetching recent template IDs:', error)
       return []
     }
 
     return data?.map(item => item.template_id).filter(Boolean) || []
   } catch (error) {
-    console.error('Error in getRecentTemplateIds:', error)
+    // console.error('Error in getRecentTemplateIds:', error)
     return []
   }
 }
@@ -458,7 +453,7 @@ export async function logTemplateSelection(
       created_at: new Date().toISOString()
     })
   } catch (error) {
-    console.error('Error logging template selection:', error)
+    // console.error('Error logging template selection:', error)
   }
 }
 

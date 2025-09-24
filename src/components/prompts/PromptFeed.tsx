@@ -14,7 +14,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { cn } from '@/lib/utils'
 import {
-  LightbulbIcon,
+  SparklesIcon,
   ArrowPathIcon,
   FunnelIcon,
   InformationCircleIcon,
@@ -470,7 +470,7 @@ export function PromptFeed({
             disabled={refreshing}
             className="flex items-center gap-2"
           >
-            <LightbulbIcon className="h-4 w-4" />
+            <SparklesIcon className="h-4 w-4" />
             Generate More
           </Button>
         )}

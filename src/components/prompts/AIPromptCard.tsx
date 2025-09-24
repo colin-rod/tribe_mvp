@@ -9,7 +9,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import {
-  LightbulbIcon,
   XMarkIcon,
   CameraIcon,
   ClockIcon,
@@ -396,7 +395,7 @@ export function AIPromptList({
   if (!prompts || prompts.length === 0) {
     return (
       <div className="text-center py-8">
-        <LightbulbIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <SparklesIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
         <h3 className="text-sm font-medium text-gray-900 mb-2">No prompts available</h3>
         <p className="text-sm text-gray-500 max-w-sm mx-auto">
           {emptyStateMessage}

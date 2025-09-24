@@ -54,8 +54,8 @@ export default function AdminPage() {
           topTemplateType: systemAnalytics.type_performance[0]?.prompt_type || 'N/A'
         })
       }
-    } catch (error) {
-      console.error('Error loading admin stats:', error)
+    } catch (_error) {
+      // Error loading admin stats
     } finally {
       setLoading(false)
     }
@@ -73,8 +73,8 @@ export default function AdminPage() {
 
       alert('Prompts generated successfully!')
       loadAdminStats() // Reload stats
-    } catch (error) {
-      console.error('Error generating prompts:', error)
+    } catch (_error) {
+      // Error generating prompts
       alert('Failed to generate prompts. Please try again.')
     }
   }

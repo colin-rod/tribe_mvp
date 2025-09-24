@@ -3,7 +3,7 @@
  * Comprehensive analytics and performance monitoring for AI prompt templates
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -116,10 +116,10 @@ export class TemplateAnalyticsTracker {
         })
 
       if (error) {
-        console.error('Error tracking template selection:', error)
+        // console.error('Error tracking template selection:', error)
       }
     } catch (error) {
-      console.error('Failed to track template selection:', error)
+      // console.error('Failed to track template selection:', error)
     }
   }
 
@@ -158,7 +158,7 @@ export class TemplateAnalyticsTracker {
           .eq('id', existing.id)
 
         if (error) {
-          console.error('Error updating template analytics:', error)
+          // console.error('Error updating template analytics:', error)
         }
       } else {
         // Create new record
@@ -175,7 +175,7 @@ export class TemplateAnalyticsTracker {
           })
 
         if (error) {
-          console.error('Error creating template analytics:', error)
+          // console.error('Error creating template analytics:', error)
         }
       }
 
@@ -183,7 +183,7 @@ export class TemplateAnalyticsTracker {
       await this.updateTemplateEffectiveness(templateId)
 
     } catch (error) {
-      console.error('Failed to track prompt action:', error)
+      // console.error('Failed to track prompt action:', error)
     }
   }
 
@@ -199,7 +199,7 @@ export class TemplateAnalyticsTracker {
         .eq('template_id', templateId)
 
       if (error || !analytics) {
-        console.error('Error fetching template analytics:', error)
+        // console.error('Error fetching template analytics:', error)
         return null
       }
 
@@ -277,7 +277,7 @@ export class TemplateAnalyticsTracker {
       }
 
     } catch (error) {
-      console.error('Error getting template performance:', error)
+      // console.error('Error getting template performance:', error)
       return null
     }
   }
@@ -299,7 +299,7 @@ export class TemplateAnalyticsTracker {
         `)
 
       if (analyticsError) {
-        console.error('Error fetching system analytics:', analyticsError)
+        // console.error('Error fetching system analytics:', analyticsError)
         return null
       }
 
@@ -309,7 +309,7 @@ export class TemplateAnalyticsTracker {
         .select('*', { count: 'exact', head: true })
 
       if (countError) {
-        console.error('Error fetching template count:', countError)
+        // console.error('Error fetching template count:', countError)
       }
 
       const totalUsage = allAnalytics?.length || 0
@@ -382,7 +382,7 @@ export class TemplateAnalyticsTracker {
       }
 
     } catch (error) {
-      console.error('Error getting system analytics:', error)
+      // console.error('Error getting system analytics:', error)
       return null
     }
   }
@@ -447,11 +447,11 @@ export class TemplateAnalyticsTracker {
         .eq('id', templateId)
 
       if (updateError) {
-        console.error('Error updating template effectiveness:', updateError)
+        // console.error('Error updating template effectiveness:', updateError)
       }
 
     } catch (error) {
-      console.error('Failed to update template effectiveness:', error)
+      // console.error('Failed to update template effectiveness:', error)
     }
   }
 
@@ -583,7 +583,7 @@ export async function generateAnalyticsReport(
     }
 
   } catch (error) {
-    console.error('Error generating analytics report:', error)
+    // console.error('Error generating analytics report:', error)
     throw error
   }
 }
