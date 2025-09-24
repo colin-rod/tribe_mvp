@@ -132,6 +132,67 @@ export function getEnv(): Env {
 }
 
 /**
+ * Client-side environment validation (only NEXT_PUBLIC_* variables)
+ * Used by client components that don't need server-side variables
+ */
+export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY' | 'NEXT_PUBLIC_APP_URL' | 'NODE_ENV'> {
+  // For client-side, only validate public environment variables
+  const clientSchema = z.object({
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url({
+      message: 'NEXT_PUBLIC_SUPABASE_URL must be a valid URL'
+    }),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
+      message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'
+    }),
+    NEXT_PUBLIC_APP_URL: z.string().url({
+      message: 'NEXT_PUBLIC_APP_URL must be a valid URL'
+    }).optional().default('http://localhost:3000'),
+  })
+
+  try {
+    const result = clientSchema.safeParse(process.env)
+
+    if (!result.success) {
+      const errors = result.error.errors.map(err => ({
+        path: err.path.join('.'),
+        message: err.message,
+        received: err.code === 'invalid_type' ? typeof (process.env as Record<string, unknown>)[err.path[0]] : 'invalid'
+      }))
+
+      logger.error('Client environment validation failed', {
+        errors,
+        nodeEnv: process.env.NODE_ENV
+      })
+
+      const errorMessage = [
+        '🚨 Client Environment Configuration Error 🚨',
+        '',
+        'The following client environment variables are missing or invalid:',
+        '',
+        ...errors.map(err => `  • ${err.path}: ${err.message} (received: ${err.received})`),
+        '',
+        'Required client variables:',
+        '  • NEXT_PUBLIC_SUPABASE_URL',
+        '  • NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        '',
+      ].join('\n')
+
+      throw new Error(errorMessage)
+    }
+
+    return result.data
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Client Environment Configuration Error')) {
+      throw error
+    }
+
+    logger.errorWithStack('Unexpected error during client environment validation', error as Error)
+    throw new Error('Failed to validate client environment variables: ' + (error as Error).message)
+  }
+}
+
+/**
  * Check if environment is properly configured without throwing
  * Useful for conditional features and graceful degradation
  */

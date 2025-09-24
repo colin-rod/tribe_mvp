@@ -2,17 +2,17 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '../types/database'
-import { getEnv, getFeatureFlags } from '../env'
+import { getClientEnv } from '../env'
 import { createLogger } from '../logger'
 
 const logger = createLogger('supabase-client')
 
 export function createClient() {
   try {
-    const env = getEnv()
-    const features = getFeatureFlags()
+    const env = getClientEnv()
 
-    if (!features.supabaseEnabled) {
+    // Check if we have the required Supabase variables
+    if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       // During build time or when missing config, return a mock client
       if (typeof window === 'undefined') {
         logger.info('Using mock Supabase client during build')
