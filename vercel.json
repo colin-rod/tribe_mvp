@@ -48,8 +48,7 @@
     {
       "source": "/admin",
       "destination": "/admin",
-      "permanent": false,
-      "statusCode": 302
+      "permanent": false
     }
   ],
   "rewrites": [
