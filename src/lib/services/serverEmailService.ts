@@ -1,5 +1,6 @@
 import * as sgMail from '@sendgrid/mail'
 import { createLogger } from '@/lib/logger'
+import { getEnv, getFeatureFlags } from '@/lib/env'
 
 export interface EmailTemplate {
   subject: string
@@ -37,13 +38,26 @@ export class ServerEmailService {
 
   private initialize() {
     try {
-      const apiKey = process.env.SENDGRID_API_KEY
-      if (!apiKey) {
-        throw new Error('SENDGRID_API_KEY environment variable is required')
+      const env = getEnv()
+      const features = getFeatureFlags()
+
+      if (!features.emailEnabled) {
+        throw new Error('Email service not properly configured - SENDGRID_API_KEY is required')
       }
 
-      sgMail.setApiKey(apiKey)
+      this.logger.debug('Initializing SendGrid with API key', {
+        hasApiKey: !!env.SENDGRID_API_KEY,
+        fromEmail: env.SENDGRID_FROM_EMAIL,
+        fromName: env.SENDGRID_FROM_NAME
+      })
+
+      sgMail.setApiKey(env.SENDGRID_API_KEY)
       this.initialized = true
+
+      this.logger.info('ServerEmailService initialized successfully', {
+        fromEmail: env.SENDGRID_FROM_EMAIL,
+        fromName: env.SENDGRID_FROM_NAME
+      })
     } catch (error) {
       this.logger.errorWithStack('Failed to initialize ServerEmailService', error as Error)
       this.initialized = false
@@ -51,9 +65,19 @@ export class ServerEmailService {
   }
 
   private getDefaultFrom(): { email: string; name?: string } {
-    const email = process.env.SENDGRID_FROM_EMAIL || 'updates@colinrodrigues.com'
-    const name = process.env.SENDGRID_FROM_NAME || 'Tribe'
-    return { email, name }
+    try {
+      const env = getEnv()
+      return {
+        email: env.SENDGRID_FROM_EMAIL,
+        name: env.SENDGRID_FROM_NAME
+      }
+    } catch (error) {
+      this.logger.warn('Failed to get validated environment, using fallbacks', { error: (error as Error).message })
+      return {
+        email: 'updates@colinrodrigues.com',
+        name: 'Tribe'
+      }
+    }
   }
 
   private generateMessageId(): string {
@@ -533,11 +557,25 @@ export class ServerEmailService {
   }
 
   // Get configuration status
-  getStatus(): { configured: boolean; apiKey: boolean; fromEmail: boolean } {
-    return {
-      configured: this.initialized,
-      apiKey: !!process.env.SENDGRID_API_KEY,
-      fromEmail: !!process.env.SENDGRID_FROM_EMAIL
+  getStatus(): { configured: boolean; apiKey: boolean; fromEmail: boolean; environmentValid: boolean } {
+    try {
+      const env = getEnv()
+      const features = getFeatureFlags()
+
+      return {
+        configured: this.initialized,
+        apiKey: !!env.SENDGRID_API_KEY,
+        fromEmail: !!env.SENDGRID_FROM_EMAIL,
+        environmentValid: features.emailEnabled
+      }
+    } catch (error) {
+      this.logger.warn('Failed to get environment status', { error: (error as Error).message })
+      return {
+        configured: false,
+        apiKey: false,
+        fromEmail: false,
+        environmentValid: false
+      }
     }
   }
 }
