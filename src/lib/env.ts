@@ -148,8 +148,7 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     // Strategy 2: Next.js publicRuntimeConfig (production fallback)
     if (typeof window !== 'undefined') {
       try {
-        // @ts-expect-error - Next.js runtime config
-        const publicRuntimeConfig = window.__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+        const publicRuntimeConfig = (window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
         if (publicRuntimeConfig && publicRuntimeConfig[key]) {
           return publicRuntimeConfig[key]
         }
@@ -161,7 +160,6 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     // Strategy 3: Check if variables are embedded in window object (Vercel deployment)
     if (typeof window !== 'undefined') {
       try {
-        // @ts-expect-error - Check for Vercel-style environment embedding
         const env = (window as any).__ENV__
         if (env && env[key]) {
           return env[key]
