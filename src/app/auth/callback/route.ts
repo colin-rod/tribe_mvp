@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createLogger } from '@/lib/logger'
-import { getEnv } from '@/lib/env'
 
 const logger = createLogger('auth-callback')
 
