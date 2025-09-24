@@ -10,7 +10,7 @@ const logger = createLogger('PreferenceServer')
  * Interface for enhanced recipient data with group information
  * Used in the preference management interface
  */
-export interface RecipientWithGroup extends Recipient {
+export interface RecipientWithGroup extends Omit<Recipient, 'group'> {
   group: RecipientGroup | null
 }
 

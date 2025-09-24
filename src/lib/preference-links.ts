@@ -1,8 +1,10 @@
 // Client-side preference management functions that use API routes
 import { clientEmailService } from './services/clientEmailService'
-import type { Recipient } from './recipients'
 import type { RecipientGroup } from './recipient-groups'
-import { createLogger } from '@/lib/logger'
+import { createLogger } from './logger'
+
+// Create logger instance for this module
+const logger = createLogger('PreferenceLinks')
 
 /**
  * Interface for recipient preference updates via magic link
@@ -27,6 +29,7 @@ export interface RecipientWithGroup {
   frequency?: string
   preferred_channels?: string[]
   content_types?: string[]
+  overrides_group_default?: boolean
 }
 
 /**
@@ -143,7 +146,6 @@ export async function validatePreferenceToken(token: string): Promise<boolean> {
  * @returns Complete preference link URL
  */
 export function getPreferenceLinkUrl(token: string): string {
-  const logger = createLogger('PreferenceLinks')
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   return `${baseUrl}/preferences/${token}`
 }
@@ -192,14 +194,14 @@ export async function sendPreferenceLink(
       throw new Error(result.error || 'Failed to send preference invitation email')
     }
 
-    logger.info('Preference link sent to ${email} (${name}): ${preferenceUrl}')
-    logger.info('SendGrid Message ID: ${result.messageId}')
+    logger.info(`Preference link sent to ${email} (${name}): ${preferenceUrl}`)
+    logger.info(`SendGrid Message ID: ${result.messageId}`)
 
   } catch (error) {
-    logger.errorWithStack('Failed to send preference link to ${email}:', error as Error)
+    logger.errorWithStack(`Failed to send preference link to ${email}:`, error as Error)
 
     // Log the URL for manual sharing as fallback
-    logger.info('Manual preference link for ${name} (${email}): ${preferenceUrl}')
+    logger.info(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
 
     // Re-throw error so calling code can handle it
     throw error
@@ -319,15 +321,15 @@ export async function getPreferenceSummary(token: string): Promise<{
   return {
     recipient,
     preferences: {
-      frequency: recipient.frequency,
-      channels: recipient.preferred_channels,
-      contentTypes: recipient.content_types
+      frequency: recipient.frequency || 'every_update',
+      channels: recipient.preferred_channels || [],
+      contentTypes: recipient.content_types || []
     },
     groupDefaults: recipient.group ? {
       frequency: recipient.group.default_frequency,
       channels: recipient.group.default_channels
     } : undefined,
-    isOverriding: recipient.overrides_group_default
+    isOverriding: recipient.overrides_group_default || false
   }
 }
 
@@ -408,7 +410,7 @@ export async function logPreferenceAccess(
   action: 'view' | 'update' | 'reset'
 ): Promise<void> {
   // In production, this could log to analytics service
-  logger.info('Preference access logged: ${action} for token ${token.slice(0, 8)}...')
+  logger.info(`Preference access logged: ${action} for token ${token.slice(0, 8)}...`)
 
   // TODO: Implement actual analytics logging if needed
   // This could track:

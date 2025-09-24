@@ -451,7 +451,7 @@ export class NotificationService {
 
     if (data) {
       // Count by type, method, and status
-      data.forEach(notification => {
+      data.forEach((notification: any) => {
         analytics.by_type[notification.type] = (analytics.by_type[notification.type] || 0) + 1
         analytics.by_method[notification.delivery_method] = (analytics.by_method[notification.delivery_method] || 0) + 1
         analytics.by_status[notification.delivery_status] = (analytics.by_status[notification.delivery_status] || 0) + 1
@@ -462,7 +462,7 @@ export class NotificationService {
       analytics.delivery_rate = analytics.total > 0 ? (successful / analytics.total) * 100 : 0
 
       // Group by date for recent activity
-      const activityByDate = data.reduce((acc, notification) => {
+      const activityByDate = data.reduce((acc: Record<string, number>, notification: any) => {
         const date = notification.sent_at.split('T')[0]
         acc[date] = (acc[date] || 0) + 1
         return acc

@@ -200,7 +200,7 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     throw new Error('Failed to fetch recipients')
   }
 
-  return data?.map(recipient => ({
+  return data?.map((recipient: any) => ({
     ...recipient,
     group: Array.isArray(recipient.recipient_groups) ? recipient.recipient_groups[0] : recipient.recipient_groups
   })) || []
@@ -432,7 +432,7 @@ export async function bulkUpdateRecipients(
     throw new Error('Failed to bulk update recipients')
   }
 
-  return data?.map(recipient => ({
+  return data?.map((recipient: any) => ({
     ...recipient,
     group: Array.isArray(recipient.recipient_groups) ? recipient.recipient_groups[0] : recipient.recipient_groups
   })) || []
@@ -477,7 +477,7 @@ export async function getRecipientStats(): Promise<{
   let activeCount = 0
   let inactiveCount = 0
 
-  recipients.forEach(recipient => {
+  recipients.forEach((recipient: any) => {
     // Count by active status
     if (recipient.is_active) {
       activeCount++

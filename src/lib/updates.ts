@@ -178,7 +178,7 @@ export async function deleteUpdate(updateId: string): Promise<void> {
   // Delete associated media files from storage
   if (update.media_urls && update.media_urls.length > 0) {
     try {
-      const filePaths = update.media_urls.map(url => {
+      const filePaths = update.media_urls.map((url: string) => {
         // Extract file path from URL
         const urlParts = url.split('/')
         const fileName = urlParts[urlParts.length - 1].split('?')[0]
@@ -443,7 +443,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
 
   // Get response counts for each update
   const updatesWithStats = await Promise.all(
-    updates.map(async (update) => {
+    updates.map(async (update: any) => {
       const { count } = await supabase
         .from('responses')
         .select('*', { count: 'exact', head: true })

@@ -114,7 +114,7 @@ export async function getUserGroups(): Promise<(RecipientGroup & { recipient_cou
   }
 
   // Transform the data to include recipient counts
-  return data?.map(group => ({
+  return data?.map((group: any) => ({
     ...group,
     recipient_count: Array.isArray(group.recipients) && group.recipients.length > 0
       ? group.recipients[0].count || 0
@@ -418,7 +418,7 @@ export async function getGroupStats(): Promise<{
   return {
     totalGroups: groups.length,
     totalRecipients: recipients.length,
-    defaultGroups: groups.filter(g => g.is_default_group).length,
-    customGroups: groups.filter(g => !g.is_default_group).length
+    defaultGroups: groups.filter((g: any) => g.is_default_group).length,
+    customGroups: groups.filter((g: any) => !g.is_default_group).length
   }
 }
