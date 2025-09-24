@@ -28,6 +28,13 @@ const nextConfig = {
     // TypeScript errors will now prevent production builds
     // Enables strict type checking during build
   },
+  // Explicitly expose environment variables to the client bundle
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  },
 }
 
 module.exports = nextConfig
