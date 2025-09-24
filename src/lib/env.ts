@@ -153,7 +153,7 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
           return publicRuntimeConfig[key]
         }
       } catch (error) {
-        logger.debug(`Unable to access runtime config for ${key}`, error)
+        logger.debug(`Unable to access runtime config for ${key}`, { error: String(error) })
       }
     }
 
@@ -165,7 +165,7 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
           return env[key]
         }
       } catch (error) {
-        logger.debug(`Unable to access window.__ENV__ for ${key}`, error)
+        logger.debug(`Unable to access window.__ENV__ for ${key}`, { error: String(error) })
       }
     }
 
