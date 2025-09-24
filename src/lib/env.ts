@@ -180,6 +180,20 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     NEXT_PUBLIC_APP_URL: getEnvVar('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
   }
 
+  // In development, if variables are missing but we're in SSR context, use safe defaults
+  const isDevelopment = clientEnv.NODE_ENV === 'development'
+  const isSSR = typeof window === 'undefined'
+
+  if (isDevelopment && isSSR && !clientEnv.NEXT_PUBLIC_SUPABASE_URL) {
+    logger.debug('Using development fallback values during SSR')
+    return {
+      NODE_ENV: 'development' as const,
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'development-fallback-key',
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+    }
+  }
+
   // Validate the client environment
   const clientSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -229,6 +243,26 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
 
         logger.warn('Returning partial environment configuration for production resilience', partialEnv)
         return partialEnv
+      }
+
+      // In development client-side, also try graceful degradation
+      if (typeof window !== 'undefined' && isDevelopment) {
+        logger.warn('Environment validation failed in development, using fallback configuration')
+
+        // Return development fallback configuration
+        const fallbackEnv = {
+          NODE_ENV: 'development' as const,
+          NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321',
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'development-fallback-key',
+          NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        }
+
+        logger.info('Using development fallback configuration', {
+          hasSupabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+          hasSupabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          fallbackUrl: fallbackEnv.NEXT_PUBLIC_SUPABASE_URL
+        })
+        return fallbackEnv
       }
 
       const errorMessage = [

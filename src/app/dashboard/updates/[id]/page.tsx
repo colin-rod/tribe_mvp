@@ -28,7 +28,7 @@ interface Update {
 
 export default function UpdatePage() {
   const params = useParams()
-  const updateId = params.id as string
+  const updateId = params?.id as string
   const [update, setUpdate] = useState<Update | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
