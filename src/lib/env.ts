@@ -4,6 +4,27 @@ import { createLogger } from './logger'
 const logger = createLogger('env-validation')
 
 /**
+ * Helper function to get expected Zod field type for detailed error logging
+ */
+function getZodFieldType(fieldName: string): string {
+  const typeMap: Record<string, string> = {
+    NODE_ENV: 'enum["development", "production", "test"]',
+    PORT: 'number (1-65535)',
+    LOG_LEVEL: 'enum["debug", "info", "warn", "error"] (optional)',
+    NEXT_PUBLIC_SUPABASE_URL: 'url (required)',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'string (required, min length: 1)',
+    SENDGRID_API_KEY: 'string (required, min length: 1)',
+    SENDGRID_FROM_EMAIL: 'email (optional, default: updates@colinrodrigues.com)',
+    SENDGRID_FROM_NAME: 'string (optional, default: Tribe)',
+    LINEAR_API_KEY: 'string (optional)',
+    LINEAR_PROJECT_ID: 'uuid (optional)',
+    DATABASE_URL: 'url (optional)',
+    NEXT_PUBLIC_APP_URL: 'url (optional, default: http://localhost:3000)'
+  }
+  return typeMap[fieldName] || 'unknown'
+}
+
+/**
  * Environment validation schema with zod
  * Separates required vs optional variables with proper error handling
  */
@@ -60,18 +81,74 @@ let validatedEnv: Env | null = null
  */
 function validateEnvironment(): Env {
   try {
+    // Log the validation attempt with available environment variables (sanitized)
+    const availableEnvVars = Object.keys(process.env).filter(key =>
+      key.startsWith('NEXT_PUBLIC_') ||
+      ['NODE_ENV', 'PORT', 'LOG_LEVEL'].includes(key)
+    )
+
+    logger.debug('Starting environment validation', {
+      nodeEnv: process.env.NODE_ENV,
+      availablePublicVars: availableEnvVars,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasSendgridKey: !!process.env.SENDGRID_API_KEY,
+      hasLinearKey: !!process.env.LINEAR_API_KEY,
+      supabaseUrlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+      supabaseKeyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      supabaseUrlPreview: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...' || 'undefined'
+    })
+
     const result = envSchema.safeParse(process.env)
 
     if (!result.success) {
-      const errors = result.error.errors.map(err => ({
-        path: err.path.join('.'),
-        message: err.message,
-        received: err.code === 'invalid_type' ? typeof (process.env as Record<string, unknown>)[err.path[0]] : 'invalid'
-      }))
+      // Enhanced error logging with detailed context
+      const errors = result.error.errors.map(err => {
+        const fieldName = err.path[0] as string
+        const fieldValue = (process.env as Record<string, unknown>)[fieldName]
 
-      logger.error('Environment validation failed', {
+        return {
+          path: err.path.join('.'),
+          message: err.message,
+          code: err.code,
+          received: err.code === 'invalid_type' ? typeof fieldValue : fieldValue,
+          expectedType: getZodFieldType(err.path[0] as string),
+          isPresent: fieldValue !== undefined,
+          isEmpty: fieldValue === '' || fieldValue === null,
+          length: typeof fieldValue === 'string' ? fieldValue.length : 0
+        }
+      })
+
+      // Log detailed validation failure information
+      logger.error('Environment validation failed - detailed breakdown', {
+        totalErrors: errors.length,
         errors,
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        processEnvKeys: Object.keys(process.env).length,
+        relevantEnvVars: {
+          NEXT_PUBLIC_SUPABASE_URL: {
+            present: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+            length: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+            startsWithHttp: process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http') || false,
+            preview: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 50) + '...' || 'undefined'
+          },
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: {
+            present: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            length: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+            startsWithEyJ: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.startsWith('eyJ') || false,
+            preview: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + '...' || 'undefined'
+          },
+          SENDGRID_API_KEY: {
+            present: !!process.env.SENDGRID_API_KEY,
+            length: process.env.SENDGRID_API_KEY?.length || 0,
+            startsWithSG: process.env.SENDGRID_API_KEY?.startsWith('SG.') || false
+          },
+          LINEAR_API_KEY: {
+            present: !!process.env.LINEAR_API_KEY,
+            length: process.env.LINEAR_API_KEY?.length || 0,
+            startsWithLin: process.env.LINEAR_API_KEY?.startsWith('lin_') || false
+          }
+        }
       })
 
       // Create detailed error message
@@ -100,12 +177,42 @@ function validateEnvironment(): Env {
       throw new Error(errorMessage)
     }
 
-    logger.info('Environment validation successful', {
+    // Enhanced success logging
+    logger.info('Environment validation successful - all variables validated', {
       nodeEnv: result.data.NODE_ENV,
-      hasSupabaseUrl: !!result.data.NEXT_PUBLIC_SUPABASE_URL,
-      hasSendGridKey: !!result.data.SENDGRID_API_KEY,
-      hasLinearKey: !!result.data.LINEAR_API_KEY,
-      appUrl: result.data.NEXT_PUBLIC_APP_URL
+      port: result.data.PORT,
+      appUrl: result.data.NEXT_PUBLIC_APP_URL,
+      validatedFields: {
+        supabaseUrl: {
+          present: !!result.data.NEXT_PUBLIC_SUPABASE_URL,
+          isLocalhost: result.data.NEXT_PUBLIC_SUPABASE_URL.includes('localhost'),
+          domain: new URL(result.data.NEXT_PUBLIC_SUPABASE_URL).hostname
+        },
+        supabaseKey: {
+          present: !!result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          length: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.length,
+          isJWT: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ')
+        },
+        sendgridKey: {
+          present: !!result.data.SENDGRID_API_KEY,
+          length: result.data.SENDGRID_API_KEY.length,
+          isValid: result.data.SENDGRID_API_KEY.startsWith('SG.')
+        },
+        sendgridFrom: {
+          email: result.data.SENDGRID_FROM_EMAIL,
+          name: result.data.SENDGRID_FROM_NAME
+        },
+        linearIntegration: {
+          hasApiKey: !!result.data.LINEAR_API_KEY,
+          hasProjectId: !!result.data.LINEAR_PROJECT_ID,
+          enabled: !!(result.data.LINEAR_API_KEY && result.data.LINEAR_PROJECT_ID)
+        },
+        database: {
+          hasDirectUrl: !!result.data.DATABASE_URL,
+          isPostgresql: result.data.DATABASE_URL?.startsWith('postgresql://') || false
+        }
+      },
+      totalValidatedFields: Object.keys(result.data).length
     })
 
     return result.data
@@ -140,37 +247,160 @@ export function getEnv(): Env {
 export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY' | 'NEXT_PUBLIC_APP_URL' | 'NODE_ENV'> {
   // Get environment variables with multiple fallback strategies for production reliability
   function getEnvVar(key: string, defaultValue?: string): string | undefined {
+    const strategies = []
+    let finalValue: string | undefined
+
     // Strategy 1: Direct process.env access (works in dev and during build)
-    if (process.env[key]) {
-      return process.env[key]
-    }
+    const processEnvValue = process.env[key]
+    strategies.push({
+      strategy: 1,
+      name: 'process.env',
+      attempted: true,
+      success: !!processEnvValue,
+      value: processEnvValue ? `${processEnvValue.substring(0, 20)}...` : undefined,
+      length: processEnvValue?.length || 0
+    })
 
-    // Strategy 2: Next.js publicRuntimeConfig (production fallback)
-    if (typeof window !== 'undefined') {
-      try {
-        const publicRuntimeConfig = (window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
-        if (publicRuntimeConfig && publicRuntimeConfig[key]) {
-          return publicRuntimeConfig[key]
+    if (processEnvValue) {
+      finalValue = processEnvValue
+      logger.debug(`Environment variable '${key}' found via process.env`, {
+        strategy: 'process.env',
+        hasValue: true,
+        length: processEnvValue.length,
+        preview: processEnvValue.substring(0, 30) + '...'
+      })
+    } else {
+      // Strategy 2: Next.js publicRuntimeConfig (production fallback)
+      let runtimeConfigValue: string | undefined
+      if (typeof window !== 'undefined') {
+        try {
+          const publicRuntimeConfig = (window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+          runtimeConfigValue = publicRuntimeConfig?.[key]
+          strategies.push({
+            strategy: 2,
+            name: 'publicRuntimeConfig',
+            attempted: true,
+            success: !!runtimeConfigValue,
+            value: runtimeConfigValue ? `${runtimeConfigValue.substring(0, 20)}...` : undefined,
+            configAvailable: !!publicRuntimeConfig
+          })
+
+          if (runtimeConfigValue) {
+            finalValue = runtimeConfigValue
+            logger.debug(`Environment variable '${key}' found via publicRuntimeConfig`, {
+              strategy: 'publicRuntimeConfig',
+              hasValue: true,
+              length: runtimeConfigValue.length
+            })
+          }
+        } catch (error) {
+          strategies.push({
+            strategy: 2,
+            name: 'publicRuntimeConfig',
+            attempted: true,
+            success: false,
+            error: String(error)
+          })
+          logger.debug(`Unable to access runtime config for ${key}`, { error: String(error) })
         }
-      } catch (error) {
-        logger.debug(`Unable to access runtime config for ${key}`, { error: String(error) })
+      } else {
+        strategies.push({
+          strategy: 2,
+          name: 'publicRuntimeConfig',
+          attempted: false,
+          reason: 'window not available (SSR/build context)'
+        })
+      }
+
+      // Strategy 3: Check if variables are embedded in window object (Vercel deployment)
+      if (!finalValue && typeof window !== 'undefined') {
+        try {
+          const env = (window as any).__ENV__
+          const windowEnvValue = env?.[key]
+          strategies.push({
+            strategy: 3,
+            name: 'window.__ENV__',
+            attempted: true,
+            success: !!windowEnvValue,
+            value: windowEnvValue ? `${windowEnvValue.substring(0, 20)}...` : undefined,
+            envObjectAvailable: !!env
+          })
+
+          if (windowEnvValue) {
+            finalValue = windowEnvValue
+            logger.debug(`Environment variable '${key}' found via window.__ENV__`, {
+              strategy: 'window.__ENV__',
+              hasValue: true,
+              length: windowEnvValue.length
+            })
+          }
+        } catch (error) {
+          strategies.push({
+            strategy: 3,
+            name: 'window.__ENV__',
+            attempted: true,
+            success: false,
+            error: String(error)
+          })
+          logger.debug(`Unable to access window.__ENV__ for ${key}`, { error: String(error) })
+        }
+      } else if (!finalValue) {
+        strategies.push({
+          strategy: 3,
+          name: 'window.__ENV__',
+          attempted: false,
+          reason: typeof window === 'undefined' ? 'window not available (SSR/build context)' : 'already found value'
+        })
+      }
+
+      // Use default value if no strategy worked
+      if (!finalValue && defaultValue) {
+        finalValue = defaultValue
+        logger.debug(`Environment variable '${key}' using default value`, {
+          strategy: 'default',
+          defaultValue: defaultValue.substring(0, 30) + '...',
+          allStrategiesFailed: true
+        })
       }
     }
 
-    // Strategy 3: Check if variables are embedded in window object (Vercel deployment)
-    if (typeof window !== 'undefined') {
-      try {
-        const env = (window as any).__ENV__
-        if (env && env[key]) {
-          return env[key]
+    // Log comprehensive strategy results for debugging
+    if (!finalValue || key.includes('SUPABASE')) {
+      logger.debug(`Environment variable retrieval summary for '${key}'`, {
+        key,
+        finalValue: finalValue ? `${finalValue.substring(0, 20)}...` : undefined,
+        hasValue: !!finalValue,
+        length: finalValue?.length || 0,
+        usedDefault: finalValue === defaultValue,
+        strategiesAttempted: strategies.length,
+        strategies,
+        context: {
+          isClient: typeof window !== 'undefined',
+          isSSR: typeof window === 'undefined',
+          nodeEnv: process.env.NODE_ENV
         }
-      } catch (error) {
-        logger.debug(`Unable to access window.__ENV__ for ${key}`, { error: String(error) })
-      }
+      })
     }
 
-    return defaultValue
+    return finalValue
   }
+
+  // Enhanced logging for client environment variable retrieval
+  logger.debug('Client environment validation starting', {
+    isClient: typeof window !== 'undefined',
+    isSSR: typeof window === 'undefined',
+    nodeEnv: process.env.NODE_ENV,
+    hasPublicVars: {
+      supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      appUrl: !!process.env.NEXT_PUBLIC_APP_URL
+    },
+    publicVarLengths: {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL?.length || 0
+    }
+  })
 
   // For client-side, access environment variables using fallback strategies
   const clientEnv = {
@@ -180,12 +410,43 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     NEXT_PUBLIC_APP_URL: getEnvVar('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
   }
 
+  // Log the retrieved values (sanitized)
+  logger.debug('Client environment variables retrieved', {
+    retrieved: {
+      nodeEnv: clientEnv.NODE_ENV,
+      hasSupabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasAppUrl: !!clientEnv.NEXT_PUBLIC_APP_URL,
+      supabaseUrlPreview: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...' || 'undefined',
+      supabaseKeyPreview: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + '...' || 'undefined',
+      appUrl: clientEnv.NEXT_PUBLIC_APP_URL
+    },
+    lengths: {
+      supabaseUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+      supabaseKey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      appUrl: clientEnv.NEXT_PUBLIC_APP_URL?.length || 0
+    }
+  })
+
   // In development, if variables are missing but we're in SSR context, use safe defaults
   const isDevelopment = clientEnv.NODE_ENV === 'development'
   const isSSR = typeof window === 'undefined'
 
   if (isDevelopment && isSSR && !clientEnv.NEXT_PUBLIC_SUPABASE_URL) {
-    logger.debug('Using development fallback values during SSR')
+    logger.info('Using development fallback values during SSR', {
+      reason: 'Missing NEXT_PUBLIC_SUPABASE_URL in development SSR context',
+      context: {
+        isDevelopment,
+        isSSR,
+        hasSupabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      },
+      fallbackValues: {
+        supabaseUrl: 'http://localhost:54321',
+        supabaseKey: 'development-fallback-key',
+        appUrl: 'http://localhost:3000'
+      }
+    })
     return {
       NODE_ENV: 'development' as const,
       NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
@@ -218,20 +479,60 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
         received: err.code === 'invalid_type' ? typeof clientEnv[err.path[0] as keyof typeof clientEnv] : clientEnv[err.path[0] as keyof typeof clientEnv] || 'undefined'
       }))
 
-      logger.error('Client environment validation failed', {
-        errors,
-        nodeEnv: clientEnv.NODE_ENV,
-        availableVars: Object.keys(clientEnv).reduce((acc, key) => ({
-          ...acc,
-          [key]: !!clientEnv[key as keyof typeof clientEnv]
-        }), {}),
-        isClient: typeof window !== 'undefined',
-        isDevelopment: clientEnv.NODE_ENV === 'development'
+      // Enhanced client-side validation failure logging
+      logger.error('Client environment validation failed - detailed analysis', {
+        validationStage: 'client-side-zod-validation',
+        totalErrors: errors.length,
+        errors: errors.map(err => ({
+          ...err,
+          fieldType: getZodFieldType(err.path),
+          criticalField: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'].includes(err.path)
+        })),
+        context: {
+          nodeEnv: clientEnv.NODE_ENV,
+          isClient: typeof window !== 'undefined',
+          isSSR: typeof window === 'undefined',
+          isDevelopment: clientEnv.NODE_ENV === 'development',
+          timestamp: new Date().toISOString()
+        },
+        environmentAnalysis: {
+          processEnvKeys: typeof process !== 'undefined' ? Object.keys(process.env).length : 0,
+          nextPublicVarsInProcess: typeof process !== 'undefined' ? Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')).length : 0,
+          windowEnvAvailable: typeof window !== 'undefined' && !!(window as any).__ENV__,
+          runtimeConfigAvailable: typeof window !== 'undefined' && !!(window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+        },
+        retrievedValues: {
+          supabaseUrl: {
+            present: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+            value: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...' || 'undefined',
+            length: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+            isUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.startsWith('http') || false
+          },
+          supabaseKey: {
+            present: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            value: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 20) + '...' || 'undefined',
+            length: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+            isJWT: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.startsWith('eyJ') || false
+          },
+          appUrl: {
+            present: !!clientEnv.NEXT_PUBLIC_APP_URL,
+            value: clientEnv.NEXT_PUBLIC_APP_URL || 'undefined',
+            isUrl: clientEnv.NEXT_PUBLIC_APP_URL?.startsWith('http') || false
+          }
+        }
       })
 
       // In production client-side, try to continue with partial configuration
       if (typeof window !== 'undefined' && clientEnv.NODE_ENV === 'production') {
-        logger.warn('Environment validation failed in production, attempting graceful degradation')
+        logger.warn('Environment validation failed in production, attempting graceful degradation', {
+          strategy: 'production-partial-config',
+          availableVars: {
+            supabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+            supabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            appUrl: !!clientEnv.NEXT_PUBLIC_APP_URL
+          },
+          partialConfigAttempt: true
+        })
 
         // Return partial configuration for production resilience
         const partialEnv = {
@@ -247,7 +548,19 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
 
       // In development client-side, also try graceful degradation
       if (typeof window !== 'undefined' && isDevelopment) {
-        logger.warn('Environment validation failed in development, using fallback configuration')
+        logger.warn('Environment validation failed in development, using fallback configuration', {
+          strategy: 'development-fallback-config',
+          originalValues: {
+            supabaseUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL || 'undefined',
+            supabaseKey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'undefined',
+            appUrl: clientEnv.NEXT_PUBLIC_APP_URL || 'undefined'
+          },
+          fallbackValues: {
+            supabaseUrl: 'http://localhost:54321',
+            supabaseKey: 'development-fallback-key',
+            appUrl: 'http://localhost:3000'
+          }
+        })
 
         // Return development fallback configuration
         const fallbackEnv = {
@@ -285,11 +598,38 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
       throw new Error(errorMessage)
     }
 
-    logger.debug('Client environment validation successful', {
+    logger.info('Client environment validation successful - all client variables validated', {
+      validationStage: 'client-side-zod-success',
       nodeEnv: result.data.NODE_ENV,
-      hasSupabaseUrl: !!result.data.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseKey: !!result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      appUrl: result.data.NEXT_PUBLIC_APP_URL
+      timestamp: new Date().toISOString(),
+      context: {
+        isClient: typeof window !== 'undefined',
+        isSSR: typeof window === 'undefined'
+      },
+      validatedFields: {
+        supabaseUrl: {
+          present: !!result.data.NEXT_PUBLIC_SUPABASE_URL,
+          domain: new URL(result.data.NEXT_PUBLIC_SUPABASE_URL).hostname,
+          isLocalhost: result.data.NEXT_PUBLIC_SUPABASE_URL.includes('localhost'),
+          length: result.data.NEXT_PUBLIC_SUPABASE_URL.length
+        },
+        supabaseKey: {
+          present: !!result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          isJWT: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ'),
+          length: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.length,
+          preview: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20) + '...'
+        },
+        appUrl: {
+          present: !!result.data.NEXT_PUBLIC_APP_URL,
+          value: result.data.NEXT_PUBLIC_APP_URL,
+          isLocalhost: result.data.NEXT_PUBLIC_APP_URL.includes('localhost')
+        }
+      },
+      integrationReadiness: {
+        supabaseReady: !!(result.data.NEXT_PUBLIC_SUPABASE_URL && result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        localDevelopment: result.data.NEXT_PUBLIC_SUPABASE_URL.includes('localhost'),
+        productionReady: !result.data.NEXT_PUBLIC_SUPABASE_URL.includes('localhost') && result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY.startsWith('eyJ')
+      }
     })
 
     return result.data
@@ -463,6 +803,142 @@ export function getEnvironmentStatus(): {
       health: checkEnvironmentHealth(),
       features: getFeatureFlags()
     }
+  }
+}
+
+/**
+ * Comprehensive environment debugging function
+ * Logs detailed information about environment variable state across all validation layers
+ */
+export function debugEnvironmentState(): void {
+  const timestamp = new Date().toISOString()
+
+  logger.info('=== COMPREHENSIVE ENVIRONMENT DEBUG REPORT ===', { timestamp })
+
+  // 1. Raw Environment Inspection
+  const rawEnvInfo = {
+    totalProcessEnvKeys: typeof process !== 'undefined' ? Object.keys(process.env).length : 0,
+    nodeEnv: process.env.NODE_ENV,
+    nextPublicVars: typeof process !== 'undefined' ?
+      Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')) : [],
+    criticalVarsPresent: {
+      NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      SENDGRID_API_KEY: !!process.env.SENDGRID_API_KEY,
+      LINEAR_API_KEY: !!process.env.LINEAR_API_KEY
+    },
+    criticalVarsLengths: {
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      SENDGRID_API_KEY: process.env.SENDGRID_API_KEY?.length || 0,
+      LINEAR_API_KEY: process.env.LINEAR_API_KEY?.length || 0
+    }
+  }
+
+  logger.info('1. Raw Environment Variables', rawEnvInfo)
+
+  // 2. Server-side Validation Results
+  try {
+    const serverEnv = getEnv()
+    logger.info('2. Server-side Validation: SUCCESS', {
+      validatedFields: Object.keys(serverEnv).length,
+      supabaseConfig: {
+        url: serverEnv.NEXT_PUBLIC_SUPABASE_URL.substring(0, 50) + '...',
+        keyLength: serverEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY.length,
+        isProduction: !serverEnv.NEXT_PUBLIC_SUPABASE_URL.includes('localhost')
+      },
+      features: {
+        sendgrid: !!serverEnv.SENDGRID_API_KEY,
+        linear: !!(serverEnv.LINEAR_API_KEY && serverEnv.LINEAR_PROJECT_ID),
+        database: !!serverEnv.DATABASE_URL
+      }
+    })
+  } catch (error) {
+    logger.error('2. Server-side Validation: FAILED', {
+      error: (error as Error).message.substring(0, 200),
+      validationLayer: 'server-side'
+    })
+  }
+
+  // 3. Client-side Validation Results
+  try {
+    const clientEnv = getClientEnv()
+    logger.info('3. Client-side Validation: SUCCESS', {
+      context: {
+        isClient: typeof window !== 'undefined',
+        isSSR: typeof window === 'undefined'
+      },
+      clientFields: {
+        nodeEnv: clientEnv.NODE_ENV,
+        supabaseUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 50) + '...',
+        supabaseKeyLength: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+        appUrl: clientEnv.NEXT_PUBLIC_APP_URL
+      },
+      integrationReadiness: {
+        supabaseReady: !!(clientEnv.NEXT_PUBLIC_SUPABASE_URL && clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        isProduction: !clientEnv.NEXT_PUBLIC_SUPABASE_URL?.includes('localhost')
+      }
+    })
+  } catch (error) {
+    logger.error('3. Client-side Validation: FAILED', {
+      error: (error as Error).message.substring(0, 200),
+      validationLayer: 'client-side'
+    })
+  }
+
+  // 4. Health Check Results
+  const health = checkEnvironmentHealth()
+  logger.info('4. Environment Health Check', {
+    isValid: health.isValid,
+    missingRequired: health.missingRequired,
+    missingOptional: health.missingOptional,
+    totalErrors: health.errors.length,
+    errors: health.errors.slice(0, 5) // Show first 5 errors
+  })
+
+  // 5. Feature Flags Status
+  const features = getFeatureFlags()
+  logger.info('5. Feature Flags', features)
+
+  // 6. Runtime Context Information
+  const runtimeInfo = {
+    timestamp,
+    nodeVersion: typeof process !== 'undefined' ? process.version : 'unknown',
+    platform: typeof process !== 'undefined' ? process.platform : 'unknown',
+    isNextjs: typeof window !== 'undefined' ? !!(window as any).__NEXT_DATA__ : 'unknown',
+    hasWindowEnv: typeof window !== 'undefined' ? !!(window as any).__ENV__ : 'N/A',
+    hasRuntimeConfig: typeof window !== 'undefined' ?
+      !!(window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig : 'N/A'
+  }
+
+  logger.info('6. Runtime Context', runtimeInfo)
+
+  logger.info('=== END ENVIRONMENT DEBUG REPORT ===', { timestamp })
+}
+
+/**
+ * Quick environment validation check with minimal logging
+ * Returns boolean result without throwing errors
+ */
+export function isEnvironmentValid(): boolean {
+  try {
+    getEnv()
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Quick client environment validation check
+ * Returns boolean result without throwing errors
+ */
+export function isClientEnvironmentValid(): boolean {
+  try {
+    getClientEnv()
+    return true
+  } catch {
+    return false
   }
 }
 
