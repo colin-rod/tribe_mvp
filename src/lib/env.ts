@@ -66,7 +66,7 @@ function validateEnvironment(): Env {
       const errors = result.error.errors.map(err => ({
         path: err.path.join('.'),
         message: err.message,
-        received: err.code === 'invalid_type' ? typeof (process.env as any)[err.path[0]] : 'invalid'
+        received: err.code === 'invalid_type' ? typeof (process.env as Record<string, unknown>)[err.path[0]] : 'invalid'
       }))
 
       logger.error('Environment validation failed', {
@@ -226,9 +226,11 @@ export function initializeEnvironment(): void {
   } catch (error) {
     logger.errorWithStack('Failed to initialize environment', error as Error)
 
-    // In production, exit the process for critical errors
-    if (process.env.NODE_ENV === 'production') {
+    // In production, exit the process for critical errors (Node.js only)
+    if (process.env.NODE_ENV === 'production' && typeof process !== 'undefined' && process.exit) {
+      // eslint-disable-next-line no-console
       console.error('\n💥 Application failed to start due to environment configuration errors\n')
+      // eslint-disable-next-line no-restricted-syntax
       process.exit(1)
     }
 
@@ -292,13 +294,5 @@ export function getEnvironmentStatus(): {
   }
 }
 
-// Auto-initialize environment validation (with error handling for edge cases)
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
-  // Only auto-initialize on server side and outside of tests
-  try {
-    initializeEnvironment()
-  } catch (error) {
-    // Log but don't throw during module load to prevent import failures
-    console.error('Environment validation failed during module initialization:', (error as Error).message)
-  }
-}
+// Note: Auto-initialization removed to avoid Edge Runtime compatibility issues
+// Environment validation will be performed on first call to getEnv()

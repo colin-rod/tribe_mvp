@@ -39,9 +39,11 @@ export function initializeApp(): void {
   } catch (error) {
     logger.errorWithStack('Application initialization failed', error as Error)
 
-    // In production, exit on critical startup failures
-    if (process.env.NODE_ENV === 'production') {
+    // In production, exit on critical startup failures (Node.js only)
+    if (process.env.NODE_ENV === 'production' && typeof process !== 'undefined' && process.exit) {
+      // eslint-disable-next-line no-console
       console.error('\n💥 Critical startup failure - application cannot continue\n')
+      // eslint-disable-next-line no-restricted-syntax
       process.exit(1)
     }
 
@@ -76,7 +78,5 @@ export function getAppHealth(): {
   }
 }
 
-// Auto-initialize if not in test environment
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
-  initializeApp()
-}
+// Note: Auto-initialization removed to avoid Edge Runtime compatibility issues
+// Initialization will happen when services are first used
