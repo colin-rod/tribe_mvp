@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
+import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
 
 const logger = createLogger('NotificationSendEmailAPI')
 
@@ -27,14 +26,31 @@ export async function POST(request: NextRequest) {
     const validatedData = sendEmailSchema.parse(body)
 
     // Check authentication
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+    const { user } = authResult
 
-    if (authError || !user) {
+    // Check rate limiting
+    if (!checkRateLimit(user.id, 50, 10)) { // 50 emails per 10 minutes
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    // Verify user can send email to this recipient
+    const { allowed, ownedEmails } = await verifyNotificationPermissions(user.id, [validatedData.to])
+    if (!allowed) {
+      logger.warn('Unauthorized email send attempt', {
+        userId: user.id,
+        requestedEmail: validatedData.to,
+        ownedEmails
+      })
+      return NextResponse.json(
+        { error: 'You are not authorized to send emails to this recipient' },
+        { status: 403 }
       )
     }
 

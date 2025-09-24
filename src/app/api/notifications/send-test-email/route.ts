@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
+import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
 
 const logger = createLogger('NotificationTestEmailAPI')
 
@@ -19,14 +18,35 @@ export async function POST(request: NextRequest) {
     const validatedData = sendTestEmailSchema.parse(body)
 
     // Check authentication
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+    const { user } = authResult
 
-    if (authError || !user) {
+    // Check rate limiting for test emails
+    if (!checkRateLimit(user.id, 20, 5)) { // 20 test emails per 5 minutes
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    // For test emails, allow sending to user's own email or owned recipients
+    const allowedEmails = [user.email]
+    const { ownedEmails } = await verifyNotificationPermissions(user.id, [validatedData.to])
+    allowedEmails.push(...ownedEmails)
+
+    if (!allowedEmails.includes(validatedData.to.toLowerCase()) && user.email?.toLowerCase() !== validatedData.to.toLowerCase()) {
+      logger.warn('Unauthorized test email attempt', {
+        userId: user.id,
+        requestedEmail: validatedData.to,
+        userEmail: user.email,
+        ownedEmails
+      })
+      return NextResponse.json(
+        { error: 'You can only send test emails to your own email address or recipients you manage' },
+        { status: 403 }
       )
     }
 

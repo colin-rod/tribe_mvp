@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
+import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
 
 const logger = createLogger('NotificationBulkEmailAPI')
 
@@ -29,14 +28,43 @@ export async function POST(request: NextRequest) {
     const validatedData = bulkEmailSchema.parse(body)
 
     // Check authentication
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+    const { user } = authResult
 
-    if (authError || !user) {
+    // Check rate limiting - stricter for bulk emails
+    if (!checkRateLimit(user.id, 100, 60)) { // 100 emails per hour
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
+    // Extract all recipient emails
+    const recipientEmails = validatedData.emails.map(email => email.to)
+
+    // Verify user can send emails to all recipients
+    const { allowed, ownedEmails } = await verifyNotificationPermissions(user.id, recipientEmails)
+    if (!allowed) {
+      const unauthorizedEmails = recipientEmails.filter(email => !ownedEmails.includes(email.toLowerCase()))
+      logger.warn('Unauthorized bulk email send attempt', {
+        userId: user.id,
+        totalRequested: recipientEmails.length,
+        authorized: ownedEmails.length,
+        unauthorizedEmails
+      })
+      return NextResponse.json(
+        {
+          error: 'You are not authorized to send emails to some recipients',
+          details: {
+            totalRequested: recipientEmails.length,
+            authorized: ownedEmails.length,
+            unauthorized: unauthorizedEmails.length
+          }
+        },
+        { status: 403 }
       )
     }
 
@@ -48,28 +76,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert to email options format
-    const _emailOptions = validatedData.emails.map(emailData => {
-      const _template = serverEmailService.getEmailTemplate?.(emailData.type, emailData.templateData || {})
-
-      // Since getEmailTemplate is private, we'll use sendTemplatedEmail for each
-      return {
-        to: emailData.to,
-        subject: '', // Will be set by template
-        html: '', // Will be set by template
-        text: '', // Will be set by template
-        categories: emailData.options?.categories || [`tribe-${emailData.type}`, 'tribe-notification'],
-        customArgs: {
-          templateType: emailData.type,
-          ...emailData.options?.customArgs
-        },
-        ...emailData.options
-      }
-    })
+    // Email options will be handled by sendTemplatedEmail
 
     // Send emails in batches using the individual email method
+    // Only send to authorized emails
+    const authorizedEmails = validatedData.emails.filter(email =>
+      ownedEmails.includes(email.to.toLowerCase())
+    )
+
     const results = []
-    for (const emailData of validatedData.emails) {
+    for (const emailData of authorizedEmails) {
       try {
         const result = await serverEmailService.sendTemplatedEmail(
           emailData.to,
@@ -91,6 +107,14 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+
+    // Log security event for audit trail
+    logger.info('Bulk email send completed', {
+      userId: user.id,
+      totalRequested: validatedData.emails.length,
+      totalSent: authorizedEmails.length,
+      successfulSends: results.filter(r => r.success).length
+    })
 
     const successCount = results.filter(r => r.success).length
     const failureCount = results.length - successCount
