@@ -1,6 +1,7 @@
 /**
  * Development Environment Banner
  * Shows when app is running in development/staging environment
+ * Updated: Added Supabase environment variables to preview
  */
 
 'use client'
