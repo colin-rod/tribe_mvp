@@ -56,5 +56,14 @@ function createMockClient() {
   } as any
 }
 
-// Export a singleton instance for use in client components
-export const supabase = createClient()
+// Export a lazy-loaded singleton instance for use in client components
+let _supabase: ReturnType<typeof createClient> | null = null
+
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(target, prop) {
+    if (!_supabase) {
+      _supabase = createClient()
+    }
+    return (_supabase as any)[prop]
+  }
+})
