@@ -2,21 +2,22 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '../types/database'
-import { getClientEnv } from '../env'
 import { createLogger } from '../logger'
 
 const logger = createLogger('supabase-client')
 
 export function createClient() {
   try {
-    // Get environment variables - this will validate and throw if missing
-    const env = getClientEnv()
+    // Use direct process.env access for NEXT_PUBLIC_ variables
+    // These get replaced at build time by Next.js
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
     // Check if we're in a valid state to create a real client
-    const hasValidConfig = env.NEXT_PUBLIC_SUPABASE_URL &&
-                          env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-                          env.NEXT_PUBLIC_SUPABASE_URL !== 'development-fallback-key' &&
-                          env.NEXT_PUBLIC_SUPABASE_URL !== ''
+    const hasValidConfig = supabaseUrl &&
+                          supabaseAnonKey &&
+                          supabaseUrl !== 'development-fallback-key' &&
+                          supabaseUrl !== ''
 
     if (!hasValidConfig) {
       // During build time or SSR, always use mock client
@@ -27,22 +28,22 @@ export function createClient() {
 
       // Client-side: use mock client but log the reason
       logger.warn('Using mock Supabase client due to missing environment variables', {
-        hasUrl: !!env.NEXT_PUBLIC_SUPABASE_URL,
-        hasKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        urlValue: env.NEXT_PUBLIC_SUPABASE_URL,
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey,
+        urlValue: supabaseUrl,
         isClient: typeof window !== 'undefined'
       })
       return createMockClient()
     }
 
     logger.debug('Creating Supabase browser client', {
-      hasUrl: !!env.NEXT_PUBLIC_SUPABASE_URL,
-      hasKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      nodeEnv: env.NODE_ENV,
-      url: env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20) + '...'
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      nodeEnv: process.env.NODE_ENV,
+      url: supabaseUrl.substring(0, 20) + '...'
     })
 
-    return createBrowserClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
   } catch (error) {
     logger.errorWithStack('Failed to create Supabase client', error as Error)
 
@@ -74,7 +75,7 @@ function createMockClient() {
 let _supabase: ReturnType<typeof createClient> | null = null
 
 export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
-  get(target, prop) {
+  get(_, prop) {
     if (!_supabase) {
       _supabase = createClient()
     }
