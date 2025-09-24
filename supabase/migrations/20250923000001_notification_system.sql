@@ -3,6 +3,13 @@
 -- Description: Complete notification system with history tracking and digest queue
 
 -- =============================================================================
+-- ENABLE REQUIRED EXTENSIONS
+-- =============================================================================
+
+-- Enable UUID generation extension
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- =============================================================================
 -- UPDATE PROFILES TABLE - Enhanced notification preferences
 -- =============================================================================
 
@@ -27,7 +34,7 @@ ALTER TABLE profiles ALTER COLUMN notification_preferences SET DEFAULT '{
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS notification_history (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   type VARCHAR(50) NOT NULL CHECK (type IN ('response', 'prompt', 'delivery', 'system', 'digest')),
   title VARCHAR(255) NOT NULL,
@@ -69,7 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_history_metadata ON notification_his
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS digest_queue (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   digest_type VARCHAR(20) NOT NULL CHECK (digest_type IN ('daily', 'weekly', 'monthly')),
   content JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -146,7 +153,7 @@ DECLARE
     prefs JSONB;
     quiet_start TIME;
     quiet_end TIME;
-    current_time TIME;
+    check_time_only TIME;
 BEGIN
     -- Get user preferences
     prefs := get_notification_preferences(user_uuid);
@@ -154,14 +161,14 @@ BEGIN
     -- Extract quiet hours
     quiet_start := (prefs->'quiet_hours'->>'start')::TIME;
     quiet_end := (prefs->'quiet_hours'->>'end')::TIME;
-    current_time := check_time::TIME;
+    check_time_only := check_time::TIME;
 
     -- Handle overnight quiet hours (e.g., 22:00 to 07:00)
     IF quiet_start > quiet_end THEN
-        RETURN current_time >= quiet_start OR current_time <= quiet_end;
+        RETURN check_time_only >= quiet_start OR check_time_only <= quiet_end;
     ELSE
         -- Handle same-day quiet hours (e.g., 12:00 to 14:00)
-        RETURN current_time >= quiet_start AND current_time <= quiet_end;
+        RETURN check_time_only >= quiet_start AND check_time_only <= quiet_end;
     END IF;
 END;
 $$;

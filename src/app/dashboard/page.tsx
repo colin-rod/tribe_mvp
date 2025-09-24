@@ -17,6 +17,7 @@ import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { UpdatesList } from '@/components/updates'
+import { PromptFeed } from '@/components/prompts/PromptFeed'
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -231,6 +232,19 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AI Prompt Suggestions */}
+        <div className="mt-8">
+          <PromptFeed
+            userId={user?.id}
+            limit={5}
+            showStats={true}
+            showFilters={false}
+            compact={true}
+            autoRefresh={true}
+            refreshInterval={300000} // 5 minutes
+          />
         </div>
 
         {/* Recent Activity */}
