@@ -134,9 +134,55 @@ export function getEnv(): Env {
 /**
  * Client-side environment validation (only NEXT_PUBLIC_* variables)
  * Used by client components that don't need server-side variables
+ *
+ * Note: In Next.js 15, NEXT_PUBLIC_* variables are embedded in the client bundle at build time
  */
 export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUBLIC_SUPABASE_ANON_KEY' | 'NEXT_PUBLIC_APP_URL' | 'NODE_ENV'> {
-  // For client-side, only validate public environment variables
+  // Get environment variables with multiple fallback strategies for production reliability
+  function getEnvVar(key: string, defaultValue?: string): string | undefined {
+    // Strategy 1: Direct process.env access (works in dev and during build)
+    if (process.env[key]) {
+      return process.env[key]
+    }
+
+    // Strategy 2: Next.js publicRuntimeConfig (production fallback)
+    if (typeof window !== 'undefined') {
+      try {
+        // @ts-ignore - Next.js runtime config
+        const publicRuntimeConfig = window.__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+        if (publicRuntimeConfig && publicRuntimeConfig[key]) {
+          return publicRuntimeConfig[key]
+        }
+      } catch (error) {
+        logger.debug(`Unable to access runtime config for ${key}`, error)
+      }
+    }
+
+    // Strategy 3: Check if variables are embedded in window object (Vercel deployment)
+    if (typeof window !== 'undefined') {
+      try {
+        // @ts-ignore - Check for Vercel-style environment embedding
+        const env = (window as any).__ENV__
+        if (env && env[key]) {
+          return env[key]
+        }
+      } catch (error) {
+        logger.debug(`Unable to access window.__ENV__ for ${key}`, error)
+      }
+    }
+
+    return defaultValue
+  }
+
+  // For client-side, access environment variables using fallback strategies
+  const clientEnv = {
+    NODE_ENV: getEnvVar('NODE_ENV', 'development'),
+    NEXT_PUBLIC_SUPABASE_URL: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    NEXT_PUBLIC_APP_URL: getEnvVar('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
+  }
+
+  // Validate the client environment
   const clientSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url({
@@ -151,19 +197,41 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
   })
 
   try {
-    const result = clientSchema.safeParse(process.env)
+    const result = clientSchema.safeParse(clientEnv)
 
     if (!result.success) {
       const errors = result.error.errors.map(err => ({
         path: err.path.join('.'),
         message: err.message,
-        received: err.code === 'invalid_type' ? typeof (process.env as Record<string, unknown>)[err.path[0]] : 'invalid'
+        received: err.code === 'invalid_type' ? typeof clientEnv[err.path[0] as keyof typeof clientEnv] : clientEnv[err.path[0] as keyof typeof clientEnv] || 'undefined'
       }))
 
       logger.error('Client environment validation failed', {
         errors,
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: clientEnv.NODE_ENV,
+        availableVars: Object.keys(clientEnv).reduce((acc, key) => ({
+          ...acc,
+          [key]: !!clientEnv[key as keyof typeof clientEnv]
+        }), {}),
+        isClient: typeof window !== 'undefined',
+        isDevelopment: clientEnv.NODE_ENV === 'development'
       })
+
+      // In production client-side, try to continue with partial configuration
+      if (typeof window !== 'undefined' && clientEnv.NODE_ENV === 'production') {
+        logger.warn('Environment validation failed in production, attempting graceful degradation')
+
+        // Return partial configuration for production resilience
+        const partialEnv = {
+          NODE_ENV: clientEnv.NODE_ENV as 'production',
+          NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL || '',
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        }
+
+        logger.warn('Returning partial environment configuration for production resilience', partialEnv)
+        return partialEnv
+      }
 
       const errorMessage = [
         '🚨 Client Environment Configuration Error 🚨',
@@ -176,10 +244,21 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
         '  • NEXT_PUBLIC_SUPABASE_URL',
         '  • NEXT_PUBLIC_SUPABASE_ANON_KEY',
         '',
+        'Debug Information:',
+        `  • NODE_ENV: ${clientEnv.NODE_ENV}`,
+        `  • Build-time embedding: ${typeof window === 'undefined' ? 'build' : 'runtime'}`,
+        '',
       ].join('\n')
 
       throw new Error(errorMessage)
     }
+
+    logger.debug('Client environment validation successful', {
+      nodeEnv: result.data.NODE_ENV,
+      hasSupabaseUrl: !!result.data.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      appUrl: result.data.NEXT_PUBLIC_APP_URL
+    })
 
     return result.data
   } catch (error) {
