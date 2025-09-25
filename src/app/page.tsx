@@ -169,10 +169,6 @@ function Home() {
         >
         <Container>
           <div className="text-center">
-            <Badge variant="outline" className="mb-8 inline-flex items-center">
-              <ShieldCheckIcon className="w-4 h-4 mr-2" />
-              SOC 2 Certified • Trusted by 50,000+ families
-            </Badge>
 
             <h1
               id="hero-heading"
@@ -209,20 +205,6 @@ function Home() {
               </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
-              <div className="flex items-center">
-                <StarIcon className="w-4 h-4 text-yellow-400 mr-1" />
-                <span className="font-semibold">4.9/5</span> rating
-              </div>
-              <div className="flex items-center">
-                <ShieldCheckIcon className="w-4 h-4 text-green-500 mr-1" />
-                Bank-level security
-              </div>
-              <div className="flex items-center">
-                <UsersIcon className="w-4 h-4 text-blue-500 mr-1" />
-                50,000+ families
-              </div>
-            </div>
           </div>
         </Container>
       </section>
@@ -250,17 +232,6 @@ function Home() {
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
             onMouseEnter={trackFeaturesExplored}
           >
-            <Card className="text-center p-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <LockClosedIcon className="w-8 h-8 text-green-600" />
-              </div>
-              <CardHeader>
-                <CardTitle>Bank-Level Security</CardTitle>
-                <CardDescription>
-                  SOC 2 certified platform with end-to-end encryption. Your family photos are protected by the same security banks use.
-                </CardDescription>
-              </CardHeader>
-            </Card>
 
             <Card className="text-center p-8">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -471,24 +442,6 @@ function Home() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-70">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">4.9/5</div>
-              <div className="text-sm text-gray-600">App Store Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">50K+</div>
-              <div className="text-sm text-gray-600">Happy Families</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">99.9%</div>
-              <div className="text-sm text-gray-600">Uptime</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900">SOC 2</div>
-              <div className="text-sm text-gray-600">Certified</div>
-            </div>
-          </div>
         </Container>
       </section>
 
