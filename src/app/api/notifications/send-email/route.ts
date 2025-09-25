@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
-import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
+import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
+import { checkRateLimit, RateLimitConfigs } from '@/lib/middleware/rateLimiting'
+import { emailSchema } from '@/lib/validation/security'
 
 const logger = createLogger('NotificationSendEmailAPI')
 
 const sendEmailSchema = z.object({
-  to: z.string().email('Invalid email address'),
+  to: emailSchema,
   type: z.enum(['response', 'prompt', 'digest', 'system', 'preference']),
   templateData: z.record(z.any()).optional(),
   options: z.object({
-    from: z.string().email().optional(),
-    fromName: z.string().optional(),
-    replyTo: z.string().email().optional(),
-    categories: z.array(z.string()).optional(),
-    customArgs: z.record(z.string()).optional()
+    from: emailSchema.optional(),
+    fromName: z.string().max(100).optional(),
+    replyTo: emailSchema.optional(),
+    categories: z.array(z.string().max(50)).max(10).optional(),
+    customArgs: z.record(z.string().max(255)).optional()
   }).optional()
 })
 
@@ -32,11 +34,28 @@ export async function POST(request: NextRequest) {
     }
     const { user } = authResult
 
-    // Check rate limiting
-    if (!checkRateLimit(user.id, 50, 10)) { // 50 emails per 10 minutes
+    // Check rate limiting with enhanced system
+    const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { status: 429 }
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          details: {
+            limit: rateLimitResult.info.total,
+            remaining: rateLimitResult.info.remaining,
+            resetTime: new Date(rateLimitResult.info.resetTime).toISOString(),
+            retryAfter: Math.ceil((rateLimitResult.info.resetTime - Date.now()) / 1000)
+          }
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.info.total.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.info.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(rateLimitResult.info.resetTime / 1000).toString(),
+            'Retry-After': Math.ceil((rateLimitResult.info.resetTime - Date.now()) / 1000).toString()
+          }
+        }
       )
     }
 

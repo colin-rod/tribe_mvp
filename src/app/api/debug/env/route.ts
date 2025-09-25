@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { withSecurity, SecurityConfigs } from '@/lib/middleware/security'
 
 /**
  * Debug endpoint to verify environment variables in production
  * Only shows presence/absence, not actual values for security
  */
-export async function GET() {
+export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequest) => {
   // Only enable in development or when explicitly enabled
   const isDebugEnabled = process.env.NODE_ENV === 'development' || process.env.ENABLE_DEBUG === 'true'
 
@@ -55,4 +56,4 @@ export async function GET() {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
     }
   })
-}
+})

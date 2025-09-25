@@ -1,6 +1,7 @@
 import * as sgMail from '@sendgrid/mail'
 import { createLogger } from '@/lib/logger'
 import { getEnv, getFeatureFlags } from '@/lib/env'
+import { sanitizeHtml, sanitizeText, emailSchema } from '@/lib/validation/security'
 
 export interface EmailTemplate {
   subject: string
@@ -84,6 +85,56 @@ export class ServerEmailService {
     return `tribe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
 
+  /**
+   * Sanitize template data to prevent XSS and other security issues
+   */
+  private sanitizeTemplateData(data: Record<string, any>): Record<string, any> {
+    const sanitized: Record<string, any> = {}
+
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string') {
+        // Sanitize string values based on their context
+        if (key.toLowerCase().includes('html') || key.toLowerCase().includes('content')) {
+          // Allow some HTML in content fields, but sanitize it
+          sanitized[key] = sanitizeHtml(value)
+        } else {
+          // Plain text sanitization for other fields
+          sanitized[key] = sanitizeText(value)
+        }
+      } else if (Array.isArray(value)) {
+        // Recursively sanitize array elements
+        sanitized[key] = value.map(item =>
+          typeof item === 'object' && item !== null
+            ? this.sanitizeTemplateData(item)
+            : typeof item === 'string'
+              ? sanitizeText(item)
+              : item
+        )
+      } else if (value && typeof value === 'object') {
+        // Recursively sanitize nested objects
+        sanitized[key] = this.sanitizeTemplateData(value)
+      } else {
+        // Keep other types as-is (numbers, booleans, null)
+        sanitized[key] = value
+      }
+    }
+
+    return sanitized
+  }
+
+  /**
+   * Validate email address with enhanced security checks
+   */
+  private validateEmailAddress(email: string): boolean {
+    try {
+      emailSchema.parse(email)
+      return true
+    } catch (error) {
+      this.logger.warn('Email validation failed', { email, error: (error as Error).message })
+      return false
+    }
+  }
+
   async sendEmail(options: EmailOptions): Promise<EmailDeliveryResult> {
     if (!this.initialized) {
       return {
@@ -92,20 +143,52 @@ export class ServerEmailService {
       }
     }
 
+    // Validate recipient email address
+    if (!this.validateEmailAddress(options.to)) {
+      return {
+        success: false,
+        error: 'Invalid recipient email address'
+      }
+    }
+
+    // Validate sender email if provided
+    if (options.from && !this.validateEmailAddress(options.from)) {
+      return {
+        success: false,
+        error: 'Invalid sender email address'
+      }
+    }
+
+    // Validate reply-to email if provided
+    if (options.replyTo && !this.validateEmailAddress(options.replyTo)) {
+      return {
+        success: false,
+        error: 'Invalid reply-to email address'
+      }
+    }
+
     try {
       const defaultFrom = this.getDefaultFrom()
       const messageId = this.generateMessageId()
 
+      // Sanitize email content
+      const sanitizedOptions = {
+        ...options,
+        subject: sanitizeText(options.subject),
+        html: sanitizeHtml(options.html),
+        text: sanitizeText(options.text)
+      }
+
       const msg = {
-        to: options.to,
+        to: sanitizedOptions.to,
         from: {
-          email: options.from || defaultFrom.email,
-          name: options.fromName || defaultFrom.name
+          email: sanitizedOptions.from || defaultFrom.email,
+          name: sanitizeText(sanitizedOptions.fromName || defaultFrom.name || '')
         },
-        replyTo: options.replyTo,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
+        replyTo: sanitizedOptions.replyTo,
+        subject: sanitizedOptions.subject,
+        html: sanitizedOptions.html,
+        text: sanitizedOptions.text,
         categories: options.categories || ['tribe-notification'],
         customArgs: {
           ...options.customArgs,
@@ -178,7 +261,9 @@ export class ServerEmailService {
     templateData: Record<string, any> = {},
     options: Partial<EmailOptions> = {}
   ): Promise<EmailDeliveryResult> {
-    const template = this.getEmailTemplate(templateType, templateData)
+    // Sanitize template data before processing
+    const sanitizedData = this.sanitizeTemplateData(templateData)
+    const template = this.getEmailTemplate(templateType, sanitizedData)
 
     return this.sendEmail({
       to,

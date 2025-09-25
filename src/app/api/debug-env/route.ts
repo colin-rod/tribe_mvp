@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getEnv, getClientEnv, checkEnvironmentHealth, getFeatureFlags } from '@/lib/env'
+import { withSecurity, SecurityConfigs } from '@/lib/middleware/security'
 
 /**
  * Debug endpoint for comprehensive environment validation information
@@ -7,7 +8,7 @@ import { getEnv, getClientEnv, checkEnvironmentHealth, getFeatureFlags } from '@
  *
  * GET /api/debug-env - Returns comprehensive environment debug information
  */
-export async function GET() {
+export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequest) => {
   try {
     const timestamp = new Date().toISOString()
     const debugReport: any = {
@@ -144,4 +145,4 @@ export async function GET() {
       timestamp: new Date().toISOString()
     }, { status: 500 })
   }
-}
+})
