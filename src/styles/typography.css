@@ -1,7 +1,6 @@
 /* Typography System for Tribe MVP */
 
-@layer base {
-  /* Base Typography */
+/* Base Typography */
   html {
     font-feature-settings: "cv03", "cv04", "cv11";
   }
@@ -139,9 +138,8 @@
   pre code {
     @apply bg-transparent text-inherit p-0;
   }
-}
 
-@layer components {
+/* Typography Components */
   /* Responsive Typography Utilities */
   .text-responsive-xl {
     @apply text-lg md:text-xl lg:text-2xl;
@@ -213,4 +211,3 @@
   .tracking-widest {
     letter-spacing: 0.1em;
   }
-}

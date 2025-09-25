@@ -1,9 +1,7 @@
 @tailwind base;
+@import '../styles/typography.css';
 @tailwind components;
 @tailwind utilities;
-
-/* Import Typography System */
-@import '../styles/typography.css';
 
 @layer base {
   * {
