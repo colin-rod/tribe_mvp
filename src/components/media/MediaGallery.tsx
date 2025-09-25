@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { XMarkIcon, ArrowDownTrayIcon, ArrowTopRightOnSquareIcon, ChevronLeftIcon, ChevronRightIcon, PlayIcon } from '@heroicons/react/24/outline'
 
 interface MediaGalleryProps {
@@ -75,10 +76,14 @@ export function MediaGallery({
                 </div>
               </div>
             ) : (
-              <img
+              <Image
                 src={url}
                 alt={`Media ${index + 1}`}
+                width={400}
+                height={80}
                 className="w-full h-20 object-cover transition-transform group-hover:scale-105"
+                quality={75}
+                sizes="(max-width: 768px) 100vw, 400px"
               />
             )}
 
@@ -145,10 +150,15 @@ export function MediaGallery({
                   autoPlay
                 />
               ) : (
-                <img
+                <Image
                   src={mediaUrls[currentIndex]}
                   alt={`Media ${currentIndex + 1}`}
+                  width={1200}
+                  height={800}
                   className="max-w-full max-h-full rounded-lg"
+                  quality={90}
+                  priority={true}
+                  sizes="100vw"
                 />
               )}
             </div>

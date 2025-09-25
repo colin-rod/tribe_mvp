@@ -3,7 +3,7 @@
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Page')
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -17,9 +17,9 @@ import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { UpdatesList } from '@/components/updates'
-import { PromptFeed } from '@/components/prompts/PromptFeed'
+import { PromptFeed } from '@/components/lazy'
 
-export default function DashboardPage() {
+const DashboardPage = memo(function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [childrenCount, setChildrenCount] = useState(0)
@@ -41,7 +41,7 @@ export default function DashboardPage() {
     }
   }, [user, loading, router])
 
-  const checkOnboardingStatus = async () => {
+  const checkOnboardingStatus = useCallback(async () => {
     try {
       const needsOnboard = await needsOnboarding()
       if (needsOnboard) {
@@ -50,7 +50,7 @@ export default function DashboardPage() {
     } catch (error) {
       logger.errorWithStack('Error checking onboarding status:', error as Error)
     }
-  }
+  }, [router])
 
   useEffect(() => {
     // Load stats for dashboard
@@ -59,7 +59,7 @@ export default function DashboardPage() {
     }
   }, [user])
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
     try {
       setLoadingStats(true)
 
@@ -86,7 +86,14 @@ export default function DashboardPage() {
     } finally {
       setLoadingStats(false)
     }
-  }
+  }, [])
+
+  const memoizedStats = useMemo(() => ({
+    children: childrenCount,
+    recipients: recipientStats,
+    updates: updatesCreated,
+    hasData: childrenCount > 0 || recipientStats.total > 0 || updatesCreated > 0
+  }), [childrenCount, recipientStats, updatesCreated])
 
   if (loading) {
     return (
@@ -269,4 +276,8 @@ export default function DashboardPage() {
       </main>
     </div>
   )
-}
+})
+
+DashboardPage.displayName = 'DashboardPage'
+
+export default DashboardPage

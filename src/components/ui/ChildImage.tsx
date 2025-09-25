@@ -1,10 +1,11 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { getChildPhotoUrl, refreshChildPhotoUrl, isSignedUrlExpired } from '@/lib/photo-upload'
 
 const logger = createLogger('ChildImage')
-import { useState, useEffect } from 'react'
-import { getChildPhotoUrl, refreshChildPhotoUrl, isSignedUrlExpired } from '@/lib/photo-upload'
 
 interface ChildImageProps {
   childId: string
@@ -12,9 +13,21 @@ interface ChildImageProps {
   alt: string
   className?: string
   onError?: () => void
+  width?: number
+  height?: number
+  priority?: boolean
 }
 
-export default function ChildImage({ childId, photoUrl, alt, className = '', onError }: ChildImageProps) {
+export default function ChildImage({
+  childId,
+  photoUrl,
+  alt,
+  className = '',
+  onError,
+  width = 400,
+  height = 400,
+  priority = false
+}: ChildImageProps) {
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState(photoUrl)
   const [imageError, setImageError] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -64,11 +77,16 @@ export default function ChildImage({ childId, photoUrl, alt, className = '', onE
   }
 
   return (
-    <img
+    <Image
       src={getChildPhotoUrl(currentPhotoUrl)}
       alt={alt}
+      width={width}
+      height={height}
       className={className}
       onError={handleImageError}
+      priority={priority}
+      quality={85}
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
     />
   )
 }

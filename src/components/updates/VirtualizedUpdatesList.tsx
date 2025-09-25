@@ -1,10 +1,9 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('UpdatesList')
 import { useState, useEffect, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
+import { FixedSizeList as List } from 'react-window'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/types/dashboard'
@@ -14,13 +13,60 @@ import UpdateCard from './UpdateCard'
 import UpdateCardSkeleton from './UpdateCardSkeleton'
 import { Button } from '@/components/ui/Button'
 
+const logger = createLogger('VirtualizedUpdatesList')
+
+interface VirtualizedUpdatesListProps extends Omit<UpdatesListProps, 'limit'> {
+  height?: number
+  itemHeight?: number
+  overscanCount?: number
+  maxItems?: number
+}
+
+interface ListItemProps {
+  index: number
+  style: React.CSSProperties
+  data: {
+    updates: UpdateCardData[]
+    onUpdateClick: (updateId: string) => void
+  }
+}
+
+const ListItem = memo<ListItemProps>(({ index, style, data }) => {
+  const { updates, onUpdateClick } = data
+  const update = updates[index]
+
+  if (!update) {
+    return (
+      <div style={style}>
+        <UpdateCardSkeleton />
+      </div>
+    )
+  }
+
+  return (
+    <div style={style} className="px-1">
+      <UpdateCard
+        update={update}
+        onClick={onUpdateClick}
+        className="mb-4"
+      />
+    </div>
+  )
+})
+
+ListItem.displayName = 'ListItem'
+
 /**
- * UpdatesList component for displaying recent updates on the dashboard
+ * VirtualizedUpdatesList component for efficiently displaying large lists of updates
+ * Uses react-window for performance optimization when dealing with many updates
  */
-const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
-  limit = 5,
+const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function VirtualizedUpdatesList({
   showViewAllLink = true,
-  className
+  className,
+  height = 600,
+  itemHeight = 200,
+  overscanCount = 5,
+  maxItems = 1000
 }) {
   const router = useRouter()
   const [updates, setUpdates] = useState<UpdateCardData[]>([])
@@ -32,7 +78,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       setLoading(true)
       setError(null)
 
-      const rawUpdates = await getRecentUpdatesWithStats(limit)
+      const rawUpdates = await getRecentUpdatesWithStats(maxItems)
       const transformedUpdates = rawUpdates.map((update) =>
         transformToCardData(update as DashboardUpdate)
       )
@@ -44,7 +90,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [maxItems])
 
   useEffect(() => {
     loadUpdates()
@@ -58,11 +104,16 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     loadUpdates()
   }, [loadUpdates])
 
+  const itemData = useCallback(() => ({
+    updates,
+    onUpdateClick: handleUpdateClick
+  }), [updates, handleUpdateClick])
+
   // Loading state
   if (loading) {
     return (
       <div className={cn('space-y-4', className)}>
-        {Array.from({ length: limit }, (_, index) => (
+        {Array.from({ length: 5 }, (_, index) => (
           <UpdateCardSkeleton key={index} />
         ))}
       </div>
@@ -145,19 +196,22 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     )
   }
 
-  // Success state with updates
+  // Success state with virtualized updates list
   return (
     <div className={cn('space-y-4', className)}>
-      {updates.map((update) => (
-        <UpdateCard
-          key={update.id}
-          update={update}
-          onClick={handleUpdateClick}
-        />
-      ))}
+      <List
+        height={height}
+        itemCount={updates.length}
+        itemSize={itemHeight}
+        itemData={itemData()}
+        overscanCount={overscanCount}
+        className="virtualized-updates-list"
+      >
+        {ListItem}
+      </List>
 
       {/* View all link */}
-      {showViewAllLink && updates.length >= limit && (
+      {showViewAllLink && (
         <div className="pt-4 border-t border-gray-200">
           <Link
             href="/dashboard/updates"
@@ -185,6 +239,6 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   )
 })
 
-UpdatesList.displayName = 'UpdatesList'
+VirtualizedUpdatesList.displayName = 'VirtualizedUpdatesList'
 
-export default UpdatesList
+export default VirtualizedUpdatesList

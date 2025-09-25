@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { calculateAge, formatAgeShort } from '@/lib/age-utils'
 import { getMilestoneLabel, getEmotionalToneLabel } from '@/lib/validation/update'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -136,10 +137,14 @@ export default function UpdatePreview({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {previewUrls.map((url, index) => (
                   <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                    <img
+                    <Image
                       src={url}
                       alt={`Update photo ${index + 1}`}
+                      width={300}
+                      height={300}
                       className="w-full h-full object-cover"
+                      quality={80}
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
                     />
                   </div>
                 ))}
