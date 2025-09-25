@@ -1,0 +1,216 @@
+/* Typography System for Tribe MVP */
+
+@layer base {
+  /* Base Typography */
+  html {
+    font-feature-settings: "cv03", "cv04", "cv11";
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: theme('colors.neutral.800');
+    background-color: theme('colors.neutral.50');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings */
+  h1, .h1 {
+    @apply text-4xl md:text-5xl font-bold tracking-tight text-neutral-900;
+    line-height: 1.1;
+  }
+
+  h2, .h2 {
+    @apply text-3xl md:text-4xl font-bold tracking-tight text-neutral-900;
+    line-height: 1.2;
+  }
+
+  h3, .h3 {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight text-neutral-900;
+    line-height: 1.25;
+  }
+
+  h4, .h4 {
+    @apply text-xl md:text-2xl font-semibold tracking-tight text-neutral-900;
+    line-height: 1.3;
+  }
+
+  h5, .h5 {
+    @apply text-lg md:text-xl font-semibold text-neutral-900;
+    line-height: 1.4;
+  }
+
+  h6, .h6 {
+    @apply text-base md:text-lg font-semibold text-neutral-900;
+    line-height: 1.4;
+  }
+
+  /* Body Text */
+  p, .body {
+    @apply text-base text-neutral-700 leading-relaxed;
+  }
+
+  .body-lg {
+    @apply text-lg text-neutral-700 leading-relaxed;
+  }
+
+  .body-sm {
+    @apply text-sm text-neutral-700 leading-relaxed;
+  }
+
+  /* Display Text for Hero Sections */
+  .display-xl {
+    @apply text-6xl md:text-7xl font-bold tracking-tight text-neutral-900;
+    line-height: 1;
+  }
+
+  .display-lg {
+    @apply text-5xl md:text-6xl font-bold tracking-tight text-neutral-900;
+    line-height: 1.1;
+  }
+
+  .display-md {
+    @apply text-4xl md:text-5xl font-bold tracking-tight text-neutral-900;
+    line-height: 1.1;
+  }
+
+  /* Text Colors */
+  .text-muted {
+    @apply text-neutral-500;
+  }
+
+  .text-subtle {
+    @apply text-neutral-600;
+  }
+
+  .text-emphasis {
+    @apply text-neutral-900 font-medium;
+  }
+
+  .text-brand {
+    @apply text-primary-600;
+  }
+
+  .text-success {
+    @apply text-success-600;
+  }
+
+  .text-warning {
+    @apply text-warning-600;
+  }
+
+  .text-error {
+    @apply text-error-600;
+  }
+
+  .text-info {
+    @apply text-info-600;
+  }
+
+  /* Links */
+  a, .link {
+    @apply text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200;
+  }
+
+  .link-subtle {
+    @apply text-neutral-600 hover:text-neutral-900 transition-colors duration-200;
+  }
+
+  /* Caption and Small Text */
+  .caption {
+    @apply text-sm text-neutral-500 font-medium;
+  }
+
+  .overline {
+    @apply text-xs text-neutral-500 font-semibold uppercase tracking-wide;
+  }
+
+  /* Code */
+  code {
+    @apply text-sm bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded font-mono;
+  }
+
+  pre {
+    @apply bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent text-inherit p-0;
+  }
+}
+
+@layer components {
+  /* Responsive Typography Utilities */
+  .text-responsive-xl {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+
+  .text-responsive-lg {
+    @apply text-base md:text-lg lg:text-xl;
+  }
+
+  .text-responsive-base {
+    @apply text-sm md:text-base lg:text-lg;
+  }
+
+  .text-responsive-sm {
+    @apply text-xs md:text-sm lg:text-base;
+  }
+
+  /* Text Balance for Headlines */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Font Weight Utilities */
+  .font-light {
+    font-weight: 300;
+  }
+
+  .font-regular {
+    font-weight: 400;
+  }
+
+  .font-medium {
+    font-weight: 500;
+  }
+
+  .font-semibold {
+    font-weight: 600;
+  }
+
+  .font-bold {
+    font-weight: 700;
+  }
+
+  .font-extrabold {
+    font-weight: 800;
+  }
+
+  /* Letter Spacing */
+  .tracking-tighter {
+    letter-spacing: -0.05em;
+  }
+
+  .tracking-tight {
+    letter-spacing: -0.025em;
+  }
+
+  .tracking-normal {
+    letter-spacing: 0em;
+  }
+
+  .tracking-wide {
+    letter-spacing: 0.025em;
+  }
+
+  .tracking-wider {
+    letter-spacing: 0.05em;
+  }
+
+  .tracking-widest {
+    letter-spacing: 0.1em;
+  }
+}
