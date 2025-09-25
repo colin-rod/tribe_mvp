@@ -172,7 +172,7 @@
   }
 
   .textarea {
-    @apply input min-h-[80px] resize-vertical;
+    @apply input min-h-[80px] resize-y;
   }
 
   .select {
