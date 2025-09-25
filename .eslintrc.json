@@ -1,27 +1,46 @@
 {
   "extends": [
     "next/core-web-vitals",
-    "next/typescript"
+    "next/typescript",
+    "plugin:storybook/recommended"
   ],
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_"
+      }
+    ],
     "@typescript-eslint/no-explicit-any": "warn",
     "prefer-const": "error",
     "react-hooks/exhaustive-deps": "warn",
     "react/no-unescaped-entities": "warn",
     "react-hooks/rules-of-hooks": "error",
     "@next/next/no-img-element": "warn",
-    "no-console": ["error", { "allow": ["debug"] }]
+    "no-console": [
+      "error",
+      {
+        "allow": [
+          "debug"
+        ]
+      }
+    ]
   },
   "overrides": [
     {
-      "files": ["src/lib/logger.ts"],
+      "files": [
+        "src/lib/logger.ts"
+      ],
       "rules": {
         "no-console": "off"
       }
     },
     {
-      "files": ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*"],
+      "files": [
+        "**/__tests__/**/*",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
       "rules": {
         "@typescript-eslint/no-require-imports": "off",
         "@typescript-eslint/no-unused-vars": "off"

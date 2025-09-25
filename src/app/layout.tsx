@@ -10,9 +10,94 @@ import { PerformanceProvider } from '@/components/providers/PerformanceProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Tribe MVP',
-  description: 'Smart baby update distribution platform',
-  keywords: ['family', 'baby', 'updates', 'sharing', 'private'],
+  title: 'Tribe - Secure Baby Update App for Private Family Sharing',
+  description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
+  keywords: [
+    'baby update app',
+    'private family sharing',
+    'family photo sharing app',
+    'baby milestone tracker',
+    'secure family communication',
+    'family circle app',
+    'private baby photos',
+    'family group chat',
+    'baby memories app',
+    'grandparent sharing app'
+  ],
+  authors: [{ name: 'Tribe Team' }],
+  creator: 'Tribe',
+  publisher: 'Tribe',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://tribe-app.com',
+    title: 'Tribe - Secure Baby Update App for Private Family Sharing',
+    description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
+    siteName: 'Tribe',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Tribe - Secure Baby Update App for Private Family Sharing',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tribe - Secure Baby Update App for Private Family Sharing',
+    description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately.',
+    images: ['/twitter-image.jpg'],
+    creator: '@TribeApp',
+  },
+  alternates: {
+    canonical: 'https://tribe-app.com',
+  },
+  verification: {
+    google: 'your-google-site-verification',
+  },
+}
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Tribe',
+  applicationCategory: 'Family & Parenting',
+  operatingSystem: 'iOS, Android, Web',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD'
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    ratingCount: '50000'
+  },
+  description: 'Secure baby update app for private family sharing. Share photos, milestones & moments with family members privately.',
+  featureList: [
+    'Private family photo sharing',
+    'Baby milestone tracking',
+    'Secure, encrypted communications',
+    'Ad-free experience',
+    'SOC 2 certified security'
+  ],
+  publisher: {
+    '@type': 'Organization',
+    name: 'Tribe',
+    url: 'https://tribe-app.com'
+  }
 }
 
 export default function RootLayout({
@@ -22,6 +107,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">

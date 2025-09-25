@@ -111,3 +111,6 @@ supabase/.temp
 *.backup
 *.bak
 .vercel
+
+*storybook.log
+storybook-static
