@@ -3,7 +3,7 @@
 import { createLogger } from '@/lib/logger'
 import { useState, useEffect, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
-import { FixedSizeList as List } from 'react-window'
+import { List } from 'react-window'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/types/dashboard'

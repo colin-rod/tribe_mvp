@@ -3,7 +3,7 @@
  * Integrated with Vercel Analytics for comprehensive performance insights
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals'
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals'
 
 // Performance thresholds (in milliseconds)
 export const PERFORMANCE_THRESHOLDS = {
@@ -12,10 +12,10 @@ export const PERFORMANCE_THRESHOLDS = {
     good: 2500,
     needsImprovement: 4000
   },
-  // First Input Delay
-  FID: {
-    good: 100,
-    needsImprovement: 300
+  // Interaction to Next Paint (replaces FID)
+  INP: {
+    good: 200,
+    needsImprovement: 500
   },
   // Cumulative Layout Shift (score)
   CLS: {
@@ -118,11 +118,11 @@ export function initPerformanceMonitoring() {
   }
 
   // Monitor all Core Web Vitals
-  getCLS(handleMetric)
-  getFID(handleMetric)
-  getFCP(handleMetric)
-  getLCP(handleMetric)
-  getTTFB(handleMetric)
+  onCLS(handleMetric)
+  onINP(handleMetric)
+  onFCP(handleMetric)
+  onLCP(handleMetric)
+  onTTFB(handleMetric)
 }
 
 /**

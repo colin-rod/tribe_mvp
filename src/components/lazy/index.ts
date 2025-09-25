@@ -33,8 +33,8 @@ export const ConversationView = dynamic(() => import('@/components/responses/Con
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
-// Onboarding components - multi-step forms
-export const OnboardingWizard = dynamic(() => import('@/components/onboarding/OnboardingWizard'), {
+// Onboarding components - multi-step forms (use the main onboarding page component)
+export const OnboardingWizard = dynamic(() => import('@/app/onboarding/page').then(mod => ({ default: mod.default })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'lg' })
 })
 
