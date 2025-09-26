@@ -5,7 +5,7 @@ import { FixedSizeList as List } from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek, startOfWeek } from 'date-fns'
 import MobileUpdateCard from './MobileUpdateCard'
-import { UpdateCardSkeleton } from '@/components/updates/UpdateCardSkeleton'
+import UpdateCardSkeleton from '@/components/updates/UpdateCardSkeleton'
 import EmptyTimelineState, { NoSearchResultsState } from './EmptyTimelineState'
 
 interface Update {

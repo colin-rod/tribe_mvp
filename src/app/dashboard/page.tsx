@@ -1,11 +1,9 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('Page')
 import { useEffect, useState, memo, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { getChildren } from '@/lib/children'
 import { getRecipientStats } from '@/lib/recipients'
@@ -24,6 +22,8 @@ import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardin
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
 import type { UpdateType } from '@/components/updates/CreateUpdateModal'
+
+const logger = createLogger('DashboardPage')
 
 const DashboardPage = memo(function DashboardPage() {
   const { user, loading } = useAuth()
@@ -84,12 +84,6 @@ const DashboardPage = memo(function DashboardPage() {
     }
   }, [user, loading, router])
 
-  useEffect(() => {
-    if (user && !loading) {
-      checkOnboardingStatus()
-    }
-  }, [user, loading, checkOnboardingStatus])
-
   const checkOnboardingStatus = useCallback(async () => {
     try {
       const needsOnboard = await needsOnboarding()
@@ -100,12 +94,6 @@ const DashboardPage = memo(function DashboardPage() {
       logger.errorWithStack('Error checking onboarding status:', error as Error)
     }
   }, [router])
-
-  useEffect(() => {
-    if (user) {
-      loadDashboardStats()
-    }
-  }, [user, loadDashboardStats])
 
   const loadDashboardStats = useCallback(async () => {
     try {
@@ -157,7 +145,19 @@ const DashboardPage = memo(function DashboardPage() {
     } finally {
       setLoadingStats(false)
     }
-  }, [onboardingSteps])
+  }, [onboardingSteps, user])
+
+  useEffect(() => {
+    if (user && !loading) {
+      checkOnboardingStatus()
+    }
+  }, [user, loading, checkOnboardingStatus])
+
+  useEffect(() => {
+    if (user) {
+      loadDashboardStats()
+    }
+  }, [user, loadDashboardStats])
 
   const {
     openCreateUpdateModal,

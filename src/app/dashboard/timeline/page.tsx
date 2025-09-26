@@ -76,75 +76,6 @@ const TimelinePage = () => {
     }
   })
 
-  const {
-    openCreateUpdateModal,
-    createUpdateModal
-  } = useCreateUpdateModal({
-    onUpdateSent: loadDashboardStats,
-    onUpdateScheduled: loadDashboardStats
-  })
-
-  // Enhanced split button options
-  const splitButtonOptions: SplitButtonOption[] = useMemo(() => [
-    {
-      id: 'photo',
-      label: 'Photo Update',
-      description: 'Share a photo with family and friends',
-      shortcut: 'P',
-      isPrimary: true,
-      category: 'media',
-      action: () => {
-        trackDashboardInteraction({
-          type: 'create_update',
-          element: 'split-button-photo'
-        })
-        openCreateUpdateModal('photo')
-      }
-    },
-    {
-      id: 'milestone',
-      label: 'Milestone',
-      description: 'Record a special achievement or moment',
-      shortcut: 'M',
-      category: 'special',
-      action: () => {
-        trackDashboardInteraction({
-          type: 'create_update',
-          element: 'split-button-milestone'
-        })
-        openCreateUpdateModal('milestone')
-      }
-    },
-    {
-      id: 'video',
-      label: 'Video Update',
-      description: 'Share a video moment',
-      shortcut: 'V',
-      category: 'media',
-      action: () => {
-        trackDashboardInteraction({
-          type: 'create_update',
-          element: 'split-button-video'
-        })
-        openCreateUpdateModal('video')
-      }
-    },
-    {
-      id: 'text',
-      label: 'Text Update',
-      description: 'Share a quick text update',
-      shortcut: 'T',
-      category: 'basic',
-      action: () => {
-        trackDashboardInteraction({
-          type: 'create_update',
-          element: 'split-button-text'
-        })
-        openCreateUpdateModal('text')
-      }
-    }
-  ], [openCreateUpdateModal])
-
   // Load dashboard stats with performance monitoring
   const loadDashboardStats = useCallback(async () => {
     if (!user) return
@@ -215,6 +146,75 @@ const TimelinePage = () => {
       endMeasure()
     }
   }, [user, cache, measureTimelineRender, updateCacheStats])
+
+  const {
+    openCreateUpdateModal,
+    createUpdateModal
+  } = useCreateUpdateModal({
+    onUpdateSent: loadDashboardStats,
+    onUpdateScheduled: loadDashboardStats
+  })
+
+  // Enhanced split button options
+  const splitButtonOptions: SplitButtonOption[] = useMemo(() => [
+    {
+      id: 'photo',
+      label: 'Photo Update',
+      description: 'Share a photo with family and friends',
+      shortcut: 'P',
+      isPrimary: true,
+      category: 'media',
+      action: () => {
+        trackDashboardInteraction({
+          type: 'create_update',
+          element: 'split-button-photo'
+        })
+        openCreateUpdateModal('photo')
+      }
+    },
+    {
+      id: 'milestone',
+      label: 'Milestone',
+      description: 'Record a special achievement or moment',
+      shortcut: 'M',
+      category: 'special',
+      action: () => {
+        trackDashboardInteraction({
+          type: 'create_update',
+          element: 'split-button-milestone'
+        })
+        openCreateUpdateModal('milestone')
+      }
+    },
+    {
+      id: 'video',
+      label: 'Video Update',
+      description: 'Share a video moment',
+      shortcut: 'V',
+      category: 'media',
+      action: () => {
+        trackDashboardInteraction({
+          type: 'create_update',
+          element: 'split-button-video'
+        })
+        openCreateUpdateModal('video')
+      }
+    },
+    {
+      id: 'text',
+      label: 'Text Update',
+      description: 'Share a quick text update',
+      shortcut: 'T',
+      category: 'basic',
+      action: () => {
+        trackDashboardInteraction({
+          type: 'create_update',
+          element: 'split-button-text'
+        })
+        openCreateUpdateModal('text')
+      }
+    }
+  ], [openCreateUpdateModal])
 
   useEffect(() => {
     if (!loading && !user) {

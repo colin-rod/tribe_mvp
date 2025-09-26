@@ -5,10 +5,10 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import {
+  ArrowTrendingUpIcon,
   BellIcon,
   ClockIcon,
   HeartIcon,
-  TrendingUpIcon,
   SparklesIcon,
   XMarkIcon,
   ChartBarIcon,
@@ -237,7 +237,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
   // Rotate insights every 5 seconds
   const rotatingInsights = [
     {
-      icon: TrendingUpIcon,
+      icon: ArrowTrendingUpIcon,
       label: 'Updates per week',
       value: insights.averageUpdatesPerWeek.toFixed(1),
       color: 'text-green-600'
