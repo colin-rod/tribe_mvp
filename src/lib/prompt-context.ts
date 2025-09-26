@@ -67,7 +67,6 @@ export interface LastUpdate {
 // =============================================================================
 
 export function calculatePromptContext(child: Child, user: User, lastUpdate?: LastUpdate): PromptVariables {
-  const now = new Date()
   const birthDate = new Date(child.birth_date)
   const ageMonths = calculateAgeInMonths(birthDate)
   const ageWeeks = calculateAgeInWeeks(birthDate)

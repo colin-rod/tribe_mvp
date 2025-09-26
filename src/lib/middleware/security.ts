@@ -251,7 +251,7 @@ export function validateRequestBody(body: unknown): { valid: boolean; errors: st
       }
     }
 
-  } catch (error) {
+  } catch {
     errors.push('Failed to validate request body')
   }
 

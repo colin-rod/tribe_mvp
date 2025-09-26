@@ -181,17 +181,14 @@ export function checkRateLimit(
  * Simple rate limit check (backwards compatible)
  */
 export function simpleRateLimit(userId: string, maxRequests: number = 10, windowMinutes: number = 1): boolean {
-  const mockRequest = {
-    nextUrl: { pathname: '/api/legacy' },
-    headers: new Map()
-  } as any as NextRequest
+  const key = `user:${userId || 'anonymous'}`
 
-  const result = checkRateLimit(mockRequest, {
+  const { allowed } = rateLimiter.checkLimit(key, {
     maxRequests,
     windowMinutes
-  }, userId)
+  })
 
-  return result.allowed
+  return allowed
 }
 
 /**
@@ -213,7 +210,7 @@ export function withRateLimit(config: RateLimitConfig) {
           // Extract user ID from token if possible
           // This is implementation-specific
         }
-      } catch (error) {
+      } catch {
         // Ignore auth extraction errors for rate limiting
       }
 

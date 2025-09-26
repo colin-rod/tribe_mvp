@@ -5,6 +5,17 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('GroupSecurity')
 
+type RecipientGroupMembershipRow = {
+  group_id: string
+  is_active: boolean
+}
+
+type GroupSecurityHandlerContext = {
+  params: Promise<{ groupId?: string; token?: string }>
+}
+
+type GroupAuditDetails = Record<string, unknown>
+
 /**
  * Security context for group operations
  */
@@ -104,9 +115,9 @@ export async function validateRecipientTokenAccess(
 
   // Get active group memberships
   const activeGroups = Array.isArray(recipient.group_memberships)
-    ? recipient.group_memberships
-        .filter((m: any) => m.is_active)
-        .map((m: any) => m.group_id)
+    ? (recipient.group_memberships as RecipientGroupMembershipRow[])
+        .filter(membership => membership.is_active)
+        .map(membership => membership.group_id)
     : []
 
   return {
@@ -124,8 +135,12 @@ export async function validateRecipientTokenAccess(
 export function withGroupSecurity() {
   return async (
     request: NextRequest,
-    context: { params: Promise<{ groupId?: string; token?: string }> },
-    handler: (req: NextRequest, ctx: any, security: GroupSecurityContext | RecipientSecurityContext) => Promise<NextResponse>
+    context: GroupSecurityHandlerContext,
+    handler: (
+      req: NextRequest,
+      ctx: GroupSecurityHandlerContext,
+      security: GroupSecurityContext | RecipientSecurityContext
+    ) => Promise<NextResponse>
   ) => {
     try {
       const params = await context.params
@@ -222,7 +237,7 @@ export interface GroupAuditLog {
   operation: string
   group_id?: string
   recipient_id?: string
-  details: any
+  details: GroupAuditDetails
   timestamp: string
   ip_address?: string
   user_agent?: string
@@ -232,7 +247,7 @@ export async function logGroupOperation(
   request: NextRequest,
   operation: string,
   userId: string,
-  details: any
+  details: GroupAuditDetails
 ): Promise<void> {
   try {
     const auditLog: GroupAuditLog = {

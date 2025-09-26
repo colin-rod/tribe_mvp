@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ZodError } from 'zod'
 import { createLogger } from '@/lib/logger'
 import { Recipient, updateRecipient } from '@/lib/recipients'
@@ -47,12 +47,25 @@ export default function RecipientEditor({
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const loadGroups = useCallback(async () => {
+    try {
+      setLoadingGroups(true)
+      const userGroups = await getUserGroups()
+      setGroups(userGroups)
+    } catch (error) {
+      logger.errorWithStack('Error loading groups:', error as Error)
+      setErrors({ general: 'Failed to load groups. Please refresh the page.' })
+    } finally {
+      setLoadingGroups(false)
+    }
+  }, [])
+
   // Load user groups on component mount
   useEffect(() => {
     if (isOpen) {
-      loadGroups()
+      void loadGroups()
     }
-  }, [isOpen])
+  }, [isOpen, loadGroups])
 
   // Reset form when recipient changes
   useEffect(() => {
@@ -69,18 +82,8 @@ export default function RecipientEditor({
     setErrors({})
   }, [recipient])
 
-  const loadGroups = async () => {
-    try {
-      setLoadingGroups(true)
-      const userGroups = await getUserGroups()
-      setGroups(userGroups)
-    } catch (error) {
-      logger.errorWithStack('Error loading groups:', error as Error)
-      setErrors({ general: 'Failed to load groups. Please refresh the page.' })
-    } finally {
-      setLoadingGroups(false)
-    }
-  }
+  type RelationshipOptionValue = typeof RELATIONSHIP_OPTIONS[number]['value']
+  type FrequencyOptionValue = typeof FREQUENCY_OPTIONS[number]['value']
 
   const validateForm = (): boolean => {
     const formErrors: Record<string, string> = {}
@@ -339,7 +342,7 @@ export default function RecipientEditor({
                             name="relationship"
                             value={option.value}
                             checked={formData.relationship === option.value}
-                            onChange={(e) => setFormData(prev => ({ ...prev, relationship: e.target.value as any }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, relationship: e.target.value as RelationshipOptionValue }))}
                             disabled={loading}
                             className="text-primary-600 focus:ring-primary-600 border-gray-300"
                           />
@@ -401,7 +404,7 @@ export default function RecipientEditor({
                             name="frequency"
                             value={option.value}
                             checked={formData.frequency === option.value}
-                            onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as any }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as FrequencyOptionValue }))}
                             disabled={loading}
                             className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300"
                           />
@@ -415,7 +418,7 @@ export default function RecipientEditor({
                     {selectedGroup && selectedGroup.default_frequency !== formData.frequency && (
                       <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                         <p className="text-xs text-blue-700">
-                          <span className="font-medium">Override:</span> Group default is "{FREQUENCY_OPTIONS.find(o => o.value === selectedGroup.default_frequency)?.label}"
+                          <span className="font-medium">Override:</span> Group default is {FREQUENCY_OPTIONS.find(o => o.value === selectedGroup.default_frequency)?.label}
                         </p>
                       </div>
                     )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ZodError } from 'zod'
 import { createLogger } from '@/lib/logger'
 import { Recipient, createRecipient } from '@/lib/recipients'
@@ -45,31 +45,29 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Load user groups on component mount
-  useEffect(() => {
-    loadGroups()
-  }, [])
-
-  // Set default group if provided
-  useEffect(() => {
-    if (selectedGroupId && formData.group_id !== selectedGroupId) {
-      setFormData(prev => ({ ...prev, group_id: selectedGroupId }))
-    }
-  }, [selectedGroupId])
-
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
     try {
       setLoadingGroups(true)
       const userGroups = await getUserGroups()
       setGroups(userGroups)
 
       // Set default group if none selected
-      if (!formData.group_id && userGroups.length > 0) {
-        const friendsGroup = userGroups.find(g => g.name === 'Friends')
-        setFormData(prev => ({
-          ...prev,
-          group_id: friendsGroup?.id || userGroups[0].id
-        }))
+      if (userGroups.length > 0) {
+        setFormData(prev => {
+          if (prev.group_id) return prev
+
+          const friendsGroup = userGroups.find(g => g.name === 'Friends')
+          const defaultGroupId = friendsGroup?.id ?? userGroups[0].id
+
+          if (defaultGroupId === prev.group_id) {
+            return prev
+          }
+
+          return {
+            ...prev,
+            group_id: defaultGroupId
+          }
+        })
       }
     } catch (error) {
       logger.errorWithStack('Error loading groups:', error as Error)
@@ -77,7 +75,19 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
     } finally {
       setLoadingGroups(false)
     }
-  }
+  }, [])
+
+  // Load user groups on component mount
+  useEffect(() => {
+    void loadGroups()
+  }, [loadGroups])
+
+  // Set default group if provided
+  useEffect(() => {
+    if (selectedGroupId && formData.group_id !== selectedGroupId) {
+      setFormData(prev => ({ ...prev, group_id: selectedGroupId }))
+    }
+  }, [selectedGroupId, formData.group_id])
 
   const validateCurrentStep = (): boolean => {
     const stepErrors: Record<string, string> = {}
@@ -347,7 +357,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
                     name="relationship"
                     value={option.value}
                     checked={formData.relationship === option.value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, relationship: e.target.value as any }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, relationship: e.target.value as AddRecipientFormData['relationship'] }))}
                     className="text-primary-600 focus:ring-primary-600 border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-900">{option.label}</span>
@@ -397,7 +407,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
                     name="frequency"
                     value={option.value}
                     checked={formData.frequency === option.value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as any }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as AddRecipientFormData['frequency'] }))}
                     className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300"
                   />
                   <div className="flex-1">
@@ -410,7 +420,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
             {selectedGroup && selectedGroup.default_frequency !== formData.frequency && (
               <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-xs text-blue-700">
-                  <span className="font-medium">Override:</span> Group default is "{FREQUENCY_OPTIONS.find(o => o.value === selectedGroup.default_frequency)?.label}"
+                  <span className="font-medium">Override:</span> Group default is {FREQUENCY_OPTIONS.find(o => o.value === selectedGroup.default_frequency)?.label}
                 </p>
               </div>
             )}

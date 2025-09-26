@@ -3,6 +3,38 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('GroupSecurityValidator')
 
+interface QuietHoursSettings {
+  start?: string
+  end?: string
+}
+
+interface NotificationSettings {
+  quiet_hours?: QuietHoursSettings
+  digest_day?: string
+  preferred_channels?: string[]
+  [key: string]: unknown
+}
+
+interface SanitizableGroupInput {
+  name?: string
+  default_channels?: string[]
+  content_types?: string[]
+  [key: string]: unknown
+}
+
+interface GroupOperation {
+  type: string
+  recipient_id?: string
+  group_id?: string
+  settings?: {
+    preferred_channels?: string[]
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+type GroupSecurityEventDetails = Record<string, unknown>
+
 /**
  * Input validation schemas for group management
  */
@@ -82,7 +114,7 @@ export class GroupSecurityValidator {
   /**
    * Validate notification settings for security and consistency
    */
-  static validateNotificationSettings(settings: any): string[] {
+  static validateNotificationSettings(settings: NotificationSettings): string[] {
     const issues: string[] = []
 
     if (settings.quiet_hours) {
@@ -165,8 +197,8 @@ export class GroupSecurityValidator {
   /**
    * Sanitize user input for group operations
    */
-  static sanitizeGroupInput(input: any): any {
-    const sanitized = { ...input }
+  static sanitizeGroupInput<T extends SanitizableGroupInput>(input: T): T {
+    const sanitized: T & SanitizableGroupInput = { ...input }
 
     // Sanitize group name
     if (sanitized.name) {
@@ -175,11 +207,19 @@ export class GroupSecurityValidator {
 
     // Ensure arrays are properly formatted
     if (sanitized.default_channels && Array.isArray(sanitized.default_channels)) {
-      sanitized.default_channels = [...new Set(sanitized.default_channels)] // Remove duplicates
+      sanitized.default_channels = Array.from(
+        new Set(
+          sanitized.default_channels.filter((channel): channel is string => typeof channel === 'string')
+        )
+      )
     }
 
     if (sanitized.content_types && Array.isArray(sanitized.content_types)) {
-      sanitized.content_types = [...new Set(sanitized.content_types)]
+      sanitized.content_types = Array.from(
+        new Set(
+          sanitized.content_types.filter((type): type is string => typeof type === 'string')
+        )
+      )
     }
 
     return sanitized
@@ -216,7 +256,7 @@ export class GroupSecurityValidator {
   /**
    * Validate that group operations maintain data consistency
    */
-  static validateDataConsistency(operation: any): string[] {
+  static validateDataConsistency(operation: GroupOperation): string[] {
     const issues: string[] = []
 
     // Check for circular references or invalid relationships
@@ -255,7 +295,7 @@ export class GroupSecurityValidator {
     return hours * 60 + minutes
   }
 
-  private static allowSelfRemoval(groupId: string): boolean {
+  private static allowSelfRemoval(_groupId: string): boolean {
     // In a real implementation, this would check the group's access settings
     // For now, assume self-removal is allowed for non-default groups
     return true
@@ -270,7 +310,7 @@ export interface GroupSecurityEvent {
   user_id?: string
   recipient_id?: string
   group_id?: string
-  details: any
+  details: GroupSecurityEventDetails
   timestamp: string
   ip_address?: string
   user_agent?: string
@@ -329,7 +369,7 @@ export class GroupDataLossPreventor {
   /**
    * Check if group deletion would cause data loss
    */
-  static async validateGroupDeletion(groupId: string): Promise<{
+  static async validateGroupDeletion(_groupId: string): Promise<{
     canDelete: boolean
     warnings: string[]
     blockers: string[]
@@ -364,7 +404,7 @@ export class GroupDataLossPreventor {
   /**
    * Create backup before destructive operations
    */
-  static async createGroupBackup(groupId: string): Promise<{ backupId: string; data: any }> {
+  static async createGroupBackup(groupId: string): Promise<{ backupId: string; data: GroupSecurityEventDetails }> {
     // In a real implementation, this would create a backup of group data
     const backupId = `backup_${groupId}_${Date.now()}`
 

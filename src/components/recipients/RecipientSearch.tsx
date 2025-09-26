@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { RecipientGroup } from '@/lib/recipient-groups'
 import { RecipientFilters } from '@/lib/recipients'
 import { RELATIONSHIP_OPTIONS } from '@/lib/validation/recipients'
@@ -25,26 +25,39 @@ export default function RecipientSearch({
   loading = false
 }: RecipientSearchProps) {
   const [localSearch, setLocalSearch] = useState(filters.search || '')
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const filtersRef = useRef(filters)
+
+  useEffect(() => {
+    filtersRef.current = filters
+  }, [filters])
 
   // Debounced search
   useEffect(() => {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
     }
 
-    const timeout = setTimeout(() => {
-      onFiltersChange({ ...filters, search: localSearch.trim() || undefined })
+    searchTimeoutRef.current = setTimeout(() => {
+      const trimmedSearch = localSearch.trim() || undefined
+
+      if (trimmedSearch === filtersRef.current.search) {
+        return
+      }
+
+      onFiltersChange({
+        ...filtersRef.current,
+        search: trimmedSearch
+      })
     }, 300)
 
-    setSearchTimeout(timeout)
-
     return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout)
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+        searchTimeoutRef.current = null
       }
     }
-  }, [localSearch])
+  }, [localSearch, onFiltersChange])
 
   // Update local search when filters change externally
   useEffect(() => {
@@ -235,7 +248,7 @@ export default function RecipientSearch({
 
             {filters.search && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-                Search: "{filters.search}"
+                Search: {filters.search}
                 <button
                   type="button"
                   onClick={() => onFiltersChange({ ...filters, search: undefined })}

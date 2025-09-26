@@ -87,7 +87,7 @@ export function sendPerformanceMetric(metric: PerformanceMetric) {
   // Custom analytics logic could go here
   if (typeof window !== 'undefined' && 'gtag' in window) {
     // Example: Send to Google Analytics 4
-    // @ts-ignore
+    // @ts-expect-error gtag is injected globally via the analytics script
     window.gtag('event', metric.name, {
       value: Math.round(metric.value),
       metric_id: metric.id,
@@ -198,7 +198,7 @@ export function measurePerformance(name: string, startMark: string, endMark: str
   return null
 }
 
-export default {
+const performanceUtils = {
   initPerformanceMonitoring,
   usePerformanceMonitoring,
   markPerformance,
@@ -208,3 +208,5 @@ export default {
   sendPerformanceMetric,
   PERFORMANCE_THRESHOLDS
 }
+
+export default performanceUtils

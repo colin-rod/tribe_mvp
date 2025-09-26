@@ -13,7 +13,7 @@ export interface AuthenticatedUser {
 /**
  * Middleware to ensure the user is authenticated and extract user information
  */
-export async function requireAuth(request: NextRequest): Promise<{ user: AuthenticatedUser } | NextResponse> {
+export async function requireAuth(_request: NextRequest): Promise<{ user: AuthenticatedUser } | NextResponse> {
   try {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
@@ -179,7 +179,7 @@ export async function verifyNotificationPermissions(
 /**
  * Higher-order function to wrap API routes with authentication and authorization
  */
-export function withAuth<T extends any[]>(
+export function withAuth<T extends unknown[]>(
   handler: (request: NextRequest, user: AuthenticatedUser, ...args: T) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {

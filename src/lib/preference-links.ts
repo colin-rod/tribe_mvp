@@ -202,6 +202,8 @@ export async function sendPreferenceLink(
 
     // Log the URL for manual sharing as fallback
     logger.info(`Manual preference link for ${name} (${email}): ${preferenceUrl}`)
+    const fallbackEmail = generatePreferenceLinkEmail(name, preferenceUrl, senderName)
+    logger.debug('Fallback preference email content', fallbackEmail)
 
     // Re-throw error so calling code can handle it
     throw error

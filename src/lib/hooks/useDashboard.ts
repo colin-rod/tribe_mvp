@@ -81,12 +81,14 @@ export function useDashboardUpdates(
     fetchUpdates()
   }, [fetchUpdates])
 
+  const shouldFetchOnEffect = refetchOnMount || data.length === 0
+
   // Initial fetch
   useEffect(() => {
-    if (enabled && (refetchOnMount || data.length === 0)) {
+    if (enabled && shouldFetchOnEffect) {
       fetchUpdates()
     }
-  }, [parentId, JSON.stringify(filters), enabled, refetchOnMount])
+  }, [enabled, fetchUpdates, shouldFetchOnEffect])
 
   // Refetch interval
   useEffect(() => {

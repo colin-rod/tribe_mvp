@@ -3,7 +3,7 @@
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('RecipientManager')
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Recipient,
   getRecipients,
@@ -38,22 +38,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     group_id: selectedGroupId,
     is_active: true // Default to showing only active recipients
   })
-  const [bulkOperation, setBulkOperation] = useState<string>('')
-  const [bulkLoading, setBulkLoading] = useState(false)
-
-  // Load data on component mount and when filters change
-  useEffect(() => {
-    loadData()
-  }, [filters])
-
-  // Update filters when selectedGroupId changes
-  useEffect(() => {
-    if (selectedGroupId && selectedGroupId !== filters.group_id) {
-      setFilters(prev => ({ ...prev, group_id: selectedGroupId }))
-    }
-  }, [selectedGroupId])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -71,7 +56,22 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
+
+  const [bulkOperation, setBulkOperation] = useState<string>('')
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  // Load data on component mount and when filters change
+  useEffect(() => {
+    void loadData()
+  }, [loadData])
+
+  // Update filters when selectedGroupId changes
+  useEffect(() => {
+    if (selectedGroupId && selectedGroupId !== filters.group_id) {
+      setFilters(prev => ({ ...prev, group_id: selectedGroupId }))
+    }
+  }, [selectedGroupId, filters.group_id])
 
   const handleRecipientAdded = (newRecipient: Recipient) => {
     setRecipients(prev => [newRecipient, ...prev])
@@ -153,12 +153,12 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
 
         case 'deactivate':
           await bulkUpdateRecipients(recipientIds, { is_active: false })
-          loadData() // Reload to reflect changes
+          void loadData() // Reload to reflect changes
           break
 
         case 'reactivate':
           await bulkUpdateRecipients(recipientIds, { is_active: true })
-          loadData() // Reload to reflect changes
+          void loadData() // Reload to reflect changes
           break
 
         case 'send_links':

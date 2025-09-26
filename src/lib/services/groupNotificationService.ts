@@ -1,8 +1,21 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
-import type { Database } from '@/lib/types/database'
-
 const logger = createLogger('GroupNotificationService')
+
+export interface NotificationPreferences {
+  frequency?: string
+  channels?: string[]
+  content_types?: string[]
+  [key: string]: unknown
+}
+
+export interface MuteSettings {
+  preserve_urgent?: boolean
+  mute_until?: string
+  [key: string]: unknown
+}
+
+export type NotificationContent = Record<string, unknown>
 
 export interface NotificationRecipient {
   id: string
@@ -12,7 +25,7 @@ export interface NotificationRecipient {
   preference_token: string
   relationship: string
   group_memberships: GroupMembership[]
-  notification_preferences?: any
+  notification_preferences?: NotificationPreferences
 }
 
 export interface GroupMembership {
@@ -22,7 +35,7 @@ export interface GroupMembership {
   preferred_channels?: string[]
   content_types?: string[]
   mute_until?: string
-  mute_settings?: any
+  mute_settings?: MuteSettings
   is_active: boolean
 }
 
@@ -34,7 +47,7 @@ export interface NotificationJob {
   scheduled_for: string
   notification_type: 'immediate' | 'digest' | 'milestone'
   urgency_level: 'normal' | 'urgent' | 'low'
-  content: any
+  content: NotificationContent
   delivery_method: 'email' | 'sms' | 'whatsapp'
   status: 'pending' | 'sent' | 'failed' | 'skipped'
 }
@@ -279,7 +292,7 @@ export class GroupNotificationService {
     updateId: string,
     groupId: string,
     parentId: string,
-    content: any,
+    content: NotificationContent,
     options: {
       notificationType?: 'immediate' | 'digest' | 'milestone'
       urgencyLevel?: 'normal' | 'urgent' | 'low'
@@ -506,13 +519,22 @@ export class GroupNotificationService {
     reason?: string,
     messageId?: string
   ): Promise<void> {
-    const updateData: any = {
+    const updateData: {
+      status: 'sent' | 'failed' | 'skipped'
+      processed_at: string
+      failure_reason?: string
+      message_id?: string
+    } = {
       status,
       processed_at: new Date().toISOString()
     }
 
-    if (reason) updateData.failure_reason = reason
-    if (messageId) updateData.message_id = messageId
+    if (reason) {
+      updateData.failure_reason = reason
+    }
+    if (messageId) {
+      updateData.message_id = messageId
+    }
 
     const { error } = await this.supabase
       .from('notification_jobs')
