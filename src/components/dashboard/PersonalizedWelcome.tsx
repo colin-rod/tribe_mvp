@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/Badge'
 import { createLogger } from '@/lib/logger'
 import {
   ArrowTrendingUpIcon,
-  BellIcon,
   ClockIcon,
   HeartIcon,
   SparklesIcon,
@@ -333,7 +332,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
         <div className="mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 animate-slide-up">
           <h3 className="text-sm font-semibold text-neutral-800 mb-3">Your Journey</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {rotatingInsights.map((insight, index) => (
+            {rotatingInsights.map((insight) => (
               <div key={insight.label} className="text-center">
                 <div className={cn("inline-flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 mb-2", insight.color)}>
                   {React.createElement(insight.icon, { className: "w-4 h-4" })}

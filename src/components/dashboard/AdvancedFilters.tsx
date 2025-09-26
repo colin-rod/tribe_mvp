@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -54,12 +54,6 @@ interface AdvancedFiltersProps {
 const CalendarIcon: React.FC<{ className?: string }> = ({ className = "" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-)
-
-const TagIcon: React.FC<{ className?: string }> = ({ className = "" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
   </svg>
 )
 
@@ -120,10 +114,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   const {
     filterPresets,
     recentFilters,
-    suggestedFilters,
     saveFilterPreset,
     deleteFilterPreset,
-    getFilterHistory,
     clearFilterHistory,
     isLoading: filtersLoading
   } = useAdvancedFiltering()
@@ -250,6 +242,11 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     onPresetLoad(preset)
     onFiltersChange(preset.filters)
   }, [onPresetLoad, onFiltersChange])
+
+  const handleDeletePreset = useCallback((presetId: string) => {
+    deleteFilterPreset(presetId)
+    onPresetDelete(presetId)
+  }, [deleteFilterPreset, onPresetDelete])
 
   // Handle bulk action execution
   const handleBulkAction = useCallback(async (action: BulkAction) => {
@@ -423,6 +420,27 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                       {preset.usageCount}
                     </Badge>
                   )}
+                  {!preset.isSystem && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleDeletePreset(preset.id)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          handleDeletePreset(preset.id)
+                        }
+                      }}
+                      aria-label={`Delete preset ${preset.name}`}
+                      className="ml-2 text-xs text-neutral-500 hover:text-neutral-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-400 rounded"
+                    >
+                      ×
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -476,7 +494,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   key={type.value}
                   onClick={() => onFiltersChange({
                     ...filters,
-                    contentType: type.value === 'all' ? undefined : type.value as any
+                    contentType: type.value === 'all' ? undefined : type.value
                   })}
                   className={cn(
                     'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',

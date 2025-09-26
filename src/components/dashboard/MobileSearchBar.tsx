@@ -323,7 +323,7 @@ export const MobileSearchBar: React.FC<MobileSearchBarProps> = ({
       {searchQuery && (
         <div className="px-4 py-2 bg-neutral-50 border-t border-neutral-100">
           <p className="text-xs text-neutral-600">
-            Searching for <span className="font-medium">"{searchQuery}"</span>
+            Searching for <span className="font-medium">&quot;{searchQuery}&quot;</span>
           </p>
         </div>
       )}

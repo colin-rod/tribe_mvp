@@ -1,11 +1,9 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import {
   ChevronDownIcon,
-  PlusIcon,
   CameraIcon,
   VideoIcon,
   PencilIcon,
@@ -146,7 +144,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
           <HandRaisedIcon className="ml-2 h-6 w-6 text-primary-600" aria-hidden="true" />
         </h1>
         <p className="text-sm text-neutral-600 leading-relaxed">
-          Ready to share what's happening with your little one?
+          Ready to share what&apos;s happening with your little one?
         </p>
         {hasUnreadNotifications && (
           <div className="mt-2 flex items-center">

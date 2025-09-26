@@ -37,7 +37,7 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
     if (child.profile_photo_url) {
       setPhotoPreview(getChildPhotoUrl(child.profile_photo_url, child.name))
     }
-  }, [child.profile_photo_url])
+  }, [child.profile_photo_url, child.name])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

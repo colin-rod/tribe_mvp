@@ -1,1 +1,125 @@
-/**\n * Style Guide Component\n * \n * A comprehensive showcase of the Tribe MVP design system.\n * This component can be used for development, testing, and documentation.\n */\n\nimport React from 'react'\nimport { Container } from '@/components/ui/Container'\nimport {\n  BabyUpdateCard,\n  CreateUpdateForm,\n  FamilyDashboard,\n  ButtonShowcase,\n  TypographyShowcase,\n} from '@/design-system/examples'\n\ninterface StyleGuideProps {\n  section?: 'all' | 'typography' | 'colors' | 'components' | 'examples'\n}\n\nexport const StyleGuide: React.FC<StyleGuideProps> = ({ section = 'all' }) => {\n  const sections = {\n    typography: {\n      title: 'Typography',\n      component: <TypographyShowcase />\n    },\n    components: {\n      title: 'Components',\n      component: <ButtonShowcase />\n    },\n    examples: {\n      title: 'Example Implementations',\n      component: (\n        <div className=\"space-y-16\">\n          <div>\n            <h2 className=\"h2 mb-6\">Baby Update Card</h2>\n            <div className=\"flex justify-center\">\n              <BabyUpdateCard />\n            </div>\n          </div>\n          \n          <div>\n            <h2 className=\"h2 mb-6\">Create Update Form</h2>\n            <CreateUpdateForm />\n          </div>\n          \n          <div>\n            <h2 className=\"h2 mb-6\">Family Dashboard</h2>\n            <FamilyDashboard />\n          </div>\n        </div>\n      )\n    }\n  }\n\n  const renderSection = (key: string) => {\n    const sectionData = sections[key as keyof typeof sections]\n    if (!sectionData) return null\n\n    return (\n      <section key={key} className=\"mb-16\">\n        <Container>\n          <h1 className=\"h1 mb-8 text-center\">{sectionData.title}</h1>\n          {sectionData.component}\n        </Container>\n      </section>\n    )\n  }\n\n  const renderAll = () => {\n    return Object.keys(sections).map(renderSection)\n  }\n\n  return (\n    <div className=\"min-h-screen bg-neutral-50 py-16\">\n      {/* Header */}\n      <Container className=\"mb-16\">\n        <div className=\"text-center\">\n          <h1 className=\"display-lg mb-4 gradient-primary bg-clip-text text-transparent\">\n            Tribe Design System\n          </h1>\n          <p className=\"body-lg text-neutral-600 max-w-2xl mx-auto\">\n            A comprehensive, family-friendly design system built for the Tribe MVP platform.\n            Featuring warm colors, accessibility-first components, and consistent design patterns.\n          </p>\n        </div>\n      </Container>\n\n      {/* Navigation */}\n      <Container className=\"mb-12\">\n        <div className=\"flex justify-center\">\n          <nav className=\"flex gap-4 p-2 bg-white rounded-lg shadow-sm border border-neutral-200\">\n            {['all', 'typography', 'components', 'examples'].map((tab) => (\n              <button\n                key={tab}\n                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${\n                  section === tab\n                    ? 'bg-primary-500 text-white'\n                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'\n                }`}\n              >\n                {tab}\n              </button>\n            ))}\n          </nav>\n        </div>\n      </Container>\n\n      {/* Content */}\n      {section === 'all' ? renderAll() : renderSection(section)}\n\n      {/* Footer */}\n      <Container>\n        <div className=\"text-center py-12 border-t border-neutral-200\">\n          <p className=\"text-sm text-neutral-500\">\n            Built with Next.js, TypeScript, Tailwind CSS, and lots of care\n          </p>\n        </div>\n      </Container>\n    </div>\n  )\n}\n\nexport default StyleGuide
+/**
+ * Style Guide Component
+ *
+ * A comprehensive showcase of the Tribe MVP design system.
+ * This component can be used for development, testing, and documentation.
+ */
+
+import React from 'react'
+import { Container } from '@/components/ui/Container'
+import {
+  BabyUpdateCard,
+  CreateUpdateForm,
+  FamilyDashboard,
+  ButtonShowcase,
+  TypographyShowcase
+} from '@/design-system/examples'
+
+interface StyleGuideProps {
+  section?: 'all' | 'typography' | 'components' | 'examples'
+}
+
+const SECTIONS = {
+  typography: {
+    title: 'Typography',
+    component: <TypographyShowcase />
+  },
+  components: {
+    title: 'Components',
+    component: <ButtonShowcase />
+  },
+  examples: {
+    title: 'Example Implementations',
+    component: (
+      <div className="space-y-16">
+        <div>
+          <h2 className="h2 mb-6">Baby Update Card</h2>
+          <div className="flex justify-center">
+            <BabyUpdateCard />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="h2 mb-6">Create Update Form</h2>
+          <CreateUpdateForm />
+        </div>
+
+        <div>
+          <h2 className="h2 mb-6">Family Dashboard</h2>
+          <FamilyDashboard />
+        </div>
+      </div>
+    )
+  }
+} satisfies Record<string, { title: string; component: React.ReactNode }>
+
+export const StyleGuide: React.FC<StyleGuideProps> = ({ section = 'all' }) => {
+  const renderSection = (key: keyof typeof SECTIONS) => {
+    const sectionData = SECTIONS[key]
+    if (!sectionData) return null
+
+    return (
+      <section key={key} className="mb-16">
+        <Container>
+          <h1 className="h1 mb-8 text-center">{sectionData.title}</h1>
+          {sectionData.component}
+        </Container>
+      </section>
+    )
+  }
+
+  const renderAll = () => {
+    return (Object.keys(SECTIONS) as Array<keyof typeof SECTIONS>).map(renderSection)
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-50 py-16">
+      {/* Header */}
+      <Container className="mb-16">
+        <div className="text-center">
+          <h1 className="display-lg mb-4 gradient-primary bg-clip-text text-transparent">
+            Tribe Design System
+          </h1>
+          <p className="body-lg text-neutral-600 max-w-2xl mx-auto">
+            A comprehensive, family-friendly design system built for the Tribe MVP platform.
+            Featuring warm colors, accessibility-first components, and consistent design patterns.
+          </p>
+        </div>
+      </Container>
+
+      {/* Navigation */}
+      <Container className="mb-12">
+        <div className="flex justify-center">
+          <nav className="flex gap-4 p-2 bg-white rounded-lg shadow-sm border border-neutral-200">
+            {['all', 'typography', 'components', 'examples'].map((tab) => (
+              <span
+                key={tab}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+                  section === tab
+                    ? 'bg-primary-500 text-white'
+                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                }`}
+              >
+                {tab}
+              </span>
+            ))}
+          </nav>
+        </div>
+      </Container>
+
+      {/* Content */}
+      {section === 'all' ? renderAll() : renderSection(section as keyof typeof SECTIONS)}
+
+      {/* Footer */}
+      <Container>
+        <div className="text-center py-12 border-t border-neutral-200">
+          <p className="text-sm text-neutral-500">
+            Built with Next.js, TypeScript, Tailwind CSS, and lots of care
+          </p>
+        </div>
+      </Container>
+    </div>
+  )
+}
+
+export default StyleGuide

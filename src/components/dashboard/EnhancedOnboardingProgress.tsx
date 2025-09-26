@@ -38,7 +38,7 @@ interface EnhancedOnboardingProgressProps {
 
 export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProps> = ({
   steps,
-  currentStepIndex,
+  currentStepIndex: _currentStepIndex,
   totalSteps,
   onStepClick,
   onCollapse,
@@ -227,7 +227,7 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
 
       {/* Steps List */}
       <div className="px-4 pb-4 space-y-3">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const StepIcon = step.icon
 
           return (
@@ -349,7 +349,7 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
               Setup Complete!
             </h4>
             <p className="text-sm text-success-700 mb-3">
-              You're all ready to start sharing precious moments with your family.
+              You&apos;re all ready to start sharing precious moments with your family.
             </p>
             <Button
               variant="success"

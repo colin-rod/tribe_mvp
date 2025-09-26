@@ -279,7 +279,7 @@ export const NoSearchResultsState: React.FC<NoSearchResultsProps> = ({
       </h3>
 
       <p className="text-sm text-neutral-600 text-center mb-6 max-w-xs">
-        We couldn't find any updates matching <span className="font-medium">"{searchQuery}"</span>
+        We couldn&apos;t find any updates matching <span className="font-medium">&quot;{searchQuery}&quot;</span>
       </p>
 
       <Button variant="outline" onClick={onClearSearch}>
