@@ -57,6 +57,12 @@ export function WelcomeStep({ onNext, className }: WelcomeStepProps) {
         <p className="text-sm text-gray-600">
           Free • {Math.ceil(totalTime)} minutes
         </p>
+        {privacyMessage && (
+          <div className="mt-2 flex items-center justify-center space-x-2 text-xs text-gray-500">
+            <ShieldCheckIcon className="w-4 h-4" />
+            <span>{privacyMessage}</span>
+          </div>
+        )}
       </div>
 
       {/* CTA section */}

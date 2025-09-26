@@ -17,10 +17,7 @@ import {
   PlayIcon,
   EyeIcon,
   BugAntIcon,
-  CogIcon,
   InformationCircleIcon,
-  SpeakerWaveIcon,
-  DevicePhoneMobileIcon,
   ComputerDesktopIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
@@ -34,11 +31,21 @@ interface NotificationTestResult {
   error?: string
 }
 
+type NotificationTemplateMetadata = Record<string, string | number | boolean>
+
 interface NotificationTemplate {
   type: 'response' | 'prompt' | 'digest' | 'system'
   title: string
   content: string
-  metadata?: Record<string, any>
+  metadata?: NotificationTemplateMetadata
+}
+
+type NotificationTabId = 'testing' | 'preview' | 'analytics' | 'debug'
+
+interface NotificationTabDefinition {
+  id: NotificationTabId
+  label: string
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
 }
 
 const notificationTemplates: NotificationTemplate[] = [
@@ -94,11 +101,12 @@ export default function NotificationTesting() {
 
   const { profile } = useProfileManager()
 
-  const [activeTab, setActiveTab] = useState<'testing' | 'preview' | 'analytics' | 'debug'>('testing')
+  const [activeTab, setActiveTab] = useState<NotificationTabId>('testing')
   const [testResults, setTestResults] = useState<NotificationTestResult[]>([])
   const [debugLogs, setDebugLogs] = useState<string[]>([])
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default')
   const [isTesting, setIsTesting] = useState(false)
+  const nextNotificationTime = getNextNotificationTime()
 
   useEffect(() => {
     // Check browser notification permission status
@@ -167,6 +175,11 @@ export default function NotificationTesting() {
         }
       }
 
+      const serviceTriggered = await sendTestNotification(method)
+      if (!serviceTriggered) {
+        addDebugLog(`WARNING: Failed to trigger ${method} notification via notification service`)
+      }
+
       // Update test result to success
       setTestResults(prev => prev.map(result =>
         result.id === testId
@@ -211,7 +224,7 @@ export default function NotificationTesting() {
     }
   }
 
-  const tabs = [
+  const tabs: NotificationTabDefinition[] = [
     { id: 'testing', label: 'Test Panel', icon: PlayIcon },
     { id: 'preview', label: 'Templates', icon: EyeIcon },
     { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
@@ -304,6 +317,11 @@ export default function NotificationTesting() {
               )}>
                 {isInQuietHours() ? 'Active' : 'Inactive'}
               </p>
+              {nextNotificationTime && (
+                <p className="text-xs text-gray-500">
+                  Next notification {nextNotificationTime.toLocaleTimeString()}
+                </p>
+              )}
             </div>
           </div>
           {preferences?.quiet_hours && (
@@ -353,7 +371,7 @@ export default function NotificationTesting() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   'flex items-center py-4 px-1 border-b-2 font-medium text-sm',
                   isActive
@@ -595,7 +613,7 @@ export default function NotificationTesting() {
               <h5 className="text-base font-medium text-gray-900 mb-4">Recent Activity</h5>
 
               <div className="space-y-3">
-                {mockAnalytics.recentActivity.map((day, index) => (
+                {mockAnalytics.recentActivity.map((day) => (
                   <div key={day.date} className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
                       {new Date(day.date).toLocaleDateString()}
@@ -699,7 +717,7 @@ export default function NotificationTesting() {
             <div className="mt-1 text-sm text-blue-700">
               <p>
                 This testing interface helps you verify your notification settings work correctly.
-                Test notifications are safe and won't be sent to your recipients. Use this tool to:
+                Test notifications are safe and won&apos;t be sent to your recipients. Use this tool to:
               </p>
               <ul className="mt-2 list-disc list-inside space-y-1">
                 <li>Verify browser notification permissions are working</li>

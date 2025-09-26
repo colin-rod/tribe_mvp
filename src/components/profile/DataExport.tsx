@@ -3,7 +3,7 @@
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('DataExport')
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileManager } from '@/hooks/useProfileManager'
 import { exportUserData, exportCSV, getExportStats } from '@/lib/data-export'
@@ -32,13 +32,7 @@ export default function DataExport({ onSuccess }: DataExportProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Load export statistics
-  useEffect(() => {
-    if (user) {
-      loadStats()
-    }
-  }, [user])
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     if (!user) return
 
     try {
@@ -47,7 +41,13 @@ export default function DataExport({ onSuccess }: DataExportProps) {
     } catch (err) {
       logger.error('Failed to load export stats:', { error: err })
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user) {
+      loadStats()
+    }
+  }, [user, loadStats])
 
   const handleExport = async (type: 'json' | 'recipients' | 'children' | 'updates') => {
     if (!user) return
@@ -65,7 +65,7 @@ export default function DataExport({ onSuccess }: DataExportProps) {
 
       onSuccess?.()
     } catch (err) {
-      logger.error('Failed to export ${type}:', { error: err })
+      logger.error(`Failed to export ${type}:`, { error: err })
       setError(err instanceof Error ? err.message : 'Export failed. Please try again.')
     } finally {
       setLoading(false)
@@ -217,7 +217,7 @@ export default function DataExport({ onSuccess }: DataExportProps) {
               <div className="flex-1">
                 <h5 className="text-sm font-medium text-gray-900">Children Information</h5>
                 <p className="text-sm text-gray-600 mt-1">
-                  Export your children's information as a CSV file.
+                  Export your children&apos;s information as a CSV file.
                 </p>
               </div>
               <Button

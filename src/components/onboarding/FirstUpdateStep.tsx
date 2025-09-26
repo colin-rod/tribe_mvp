@@ -69,14 +69,9 @@ export function FirstUpdateStep({
 
   // Generate preview URLs for uploaded images
   useEffect(() => {
-    // Clean up existing preview URLs
-    previewUrls.forEach(url => URL.revokeObjectURL(url))
-
-    // Generate new preview URLs
     const newUrls = formData.mediaFiles.map(file => URL.createObjectURL(file))
     setPreviewUrls(newUrls)
 
-    // Cleanup function
     return () => {
       newUrls.forEach(url => URL.revokeObjectURL(url))
     }
@@ -196,7 +191,7 @@ export function FirstUpdateStep({
         {/* Content Input */}
         <div className="space-y-3">
           <label htmlFor="content" className="block text-sm font-medium text-gray-900">
-            What's happening with {childName}?
+            What&apos;s happening with {childName}?
             {!canSkip && <span className="text-red-500 ml-1">*</span>}
           </label>
 
@@ -349,7 +344,7 @@ export function FirstUpdateStep({
               </label>
             </div>
             <p className="text-xs text-primary-700 mt-2">
-              Don't worry - this is just for testing. The update won&apos;t actually be sent during onboarding.
+              Don&apos;t worry - this is just for testing. The update won&apos;t actually be sent during onboarding.
             </p>
           </div>
         )}
@@ -387,7 +382,7 @@ export function FirstUpdateStep({
               <h4 className="font-medium text-gray-900 mb-1">Practice Mode</h4>
               <p className="text-sm text-gray-700">{privacyMessage}</p>
               <p className="text-xs text-gray-600 mt-1">
-                This practice update won&apos;t be sent to anyone. It's just to show you how the process works.
+                This practice update won&apos;t be sent to anyone. It&apos;s just to show you how the process works.
               </p>
             </div>
           </div>
@@ -430,7 +425,7 @@ export function FirstUpdateStep({
           Remember: This is just practice! No updates will be sent during setup.
         </p>
         <div className="text-xs text-gray-400">
-          You'll create and send real updates from your dashboard after completing onboarding
+          You&apos;ll create and send real updates from your dashboard after completing onboarding
         </div>
       </div>
     </div>

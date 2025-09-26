@@ -1,10 +1,8 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-  const logger = createLogger('NotificationSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
+import { createLogger } from '@/lib/logger'
 import { Button } from '@/components/ui/Button'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -17,11 +15,7 @@ import type { NotificationPreferences, DigestPreferences } from '@/lib/types/pro
 import {
   BellIcon,
   EnvelopeIcon,
-  DevicePhoneMobileIcon,
-  ChatBubbleLeftRightIcon,
   ClockIcon,
-  NewspaperIcon,
-  MegaphoneIcon,
   Cog6ToothIcon,
   ShieldCheckIcon,
   CalendarIcon,
@@ -30,6 +24,8 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
+
+const logger = createLogger('NotificationSection')
 
 interface NotificationSectionProps {
   user: User
@@ -56,35 +52,6 @@ const NOTIFICATION_TABS: TabInfo[] = [
     label: 'Testing & Preview',
     description: 'Test notifications and view analytics',
     icon: PlayIcon
-  }
-]
-
-type PreferenceTab = 'general' | 'quiet-hours' | 'digests' | 'advanced'
-
-const PREFERENCE_TABS: TabInfo[] = [
-  {
-    id: 'general',
-    label: 'General',
-    description: 'Basic notification settings and channels',
-    icon: BellIcon
-  },
-  {
-    id: 'quiet-hours',
-    label: 'Quiet Hours',
-    description: 'Set times when you don\'t want notifications',
-    icon: ClockIcon
-  },
-  {
-    id: 'digests',
-    label: 'Digests',
-    description: 'Configure email digest preferences',
-    icon: NewspaperIcon
-  },
-  {
-    id: 'advanced',
-    label: 'Advanced',
-    description: 'Fine-tune notification timing and behavior',
-    icon: Cog6ToothIcon
   }
 ]
 
@@ -122,7 +89,7 @@ const PROMPT_TYPES = [
   { id: 'photos', label: 'Photo Ideas', description: 'Creative photo suggestions' }
 ]
 
-export function NotificationSection({ user }: NotificationSectionProps) {
+export function NotificationSection({ user: _user }: NotificationSectionProps) {
   const {
     preferences,
     loading,
@@ -135,7 +102,6 @@ export function NotificationSection({ user }: NotificationSectionProps) {
   } = useNotificationManager()
 
   const [activeTab, setActiveTab] = useState<NotificationTab>('preferences')
-  const [activePreferenceTab, setActivePreferenceTab] = useState<PreferenceTab>('general')
   const [testNotificationSent, setTestNotificationSent] = useState(false)
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistory[]>([])
   const [browserPermission, setBrowserPermission] = useState<BrowserPermissionStatus>({
@@ -558,7 +524,7 @@ export function NotificationSection({ user }: NotificationSectionProps) {
             <div className="border border-gray-200 rounded-lg p-6">
               <div className="mb-6">
                 <h3 className="text-base font-medium text-gray-900">AI Prompt Frequency</h3>
-                <p className="text-sm text-gray-600">How often you'd like to receive AI-generated prompts and suggestions</p>
+                <p className="text-sm text-gray-600">How often you&apos;d like to receive AI-generated prompts and suggestions</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -600,7 +566,7 @@ export function NotificationSection({ user }: NotificationSectionProps) {
               <div className="border border-gray-200 rounded-lg p-6">
                 <div className="mb-6">
                   <h3 className="text-base font-medium text-gray-900">Prompt Types</h3>
-                  <p className="text-sm text-gray-600">Choose what types of AI prompts you'd like to receive</p>
+                  <p className="text-sm text-gray-600">Choose what types of AI prompts you&apos;d like to receive</p>
                 </div>
 
                 <div className="space-y-4">

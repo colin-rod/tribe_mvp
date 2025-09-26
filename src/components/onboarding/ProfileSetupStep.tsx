@@ -101,6 +101,11 @@ export function ProfileSetupStep({
         <p className="text-lg text-gray-600">
           Name and timezone
         </p>
+        {privacyMessage && (
+          <p className="text-xs text-gray-500">
+            {privacyMessage}
+          </p>
+        )}
       </div>
 
       {/* Form */}

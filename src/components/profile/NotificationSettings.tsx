@@ -1,16 +1,15 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('NotificationSettings')
-import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { createLogger } from '@/lib/logger'
 import { useProfileManager } from '@/hooks/useProfileManager'
 import { notificationPreferencesSchema, type NotificationPreferencesData } from '@/lib/validation/profile'
-import type { NotificationPreferences } from '@/lib/types/profile'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+
+const logger = createLogger('NotificationSettings')
 
 interface NotificationSettingsProps {
   onSuccess?: () => void
@@ -214,7 +213,7 @@ export default function NotificationSettings({ onSuccess }: NotificationSettings
               <h4 className="text-sm font-medium text-gray-900">About Notifications</h4>
               <div className="mt-1 text-sm text-gray-600">
                 <p>
-                  We'll only send you notifications that are relevant to your account activity.
+                  We&apos;ll only send you notifications that are relevant to your account activity.
                   You can change these preferences at any time. Some security notifications
                   cannot be disabled.
                 </p>

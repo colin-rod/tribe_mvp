@@ -134,7 +134,12 @@ export default function AddGroupForm({ onGroupAdded, onCancel }: AddGroupFormPro
                 name="frequency"
                 value={option.value}
                 checked={formData.default_frequency === option.value}
-                onChange={(e) => setFormData(prev => ({ ...prev, default_frequency: e.target.value as any }))}
+                onChange={(e) =>
+                  setFormData(prev => ({
+                    ...prev,
+                    default_frequency: e.target.value as RecipientGroupFormData['default_frequency']
+                  }))
+                }
                 disabled={loading}
                 className="mt-1 text-primary-600 focus:ring-primary-600 border-gray-300"
               />

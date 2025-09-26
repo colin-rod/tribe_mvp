@@ -36,6 +36,7 @@ export function CompletionStep({
   if (data.profile?.name) accomplishments.push('profile')
   if (data.child?.name) accomplishments.push(`${data.child.name}`)
   if (data.recipients?.recipients?.length) accomplishments.push(`${data.recipients.recipients.length} recipient${data.recipients.recipients.length !== 1 ? 's' : ''}`)
+  const childDisplayName = data.child?.name ?? 'your child'
 
   return (
     <div className={cn('max-w-lg mx-auto text-center space-y-8', className)}>
@@ -66,7 +67,7 @@ export function CompletionStep({
           <CheckCircleIcon className="w-8 h-8 text-green-600" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900">
-          You're All Set!
+          You&apos;re All Set!
         </h1>
         <p className="text-lg text-gray-600">
           Welcome to Tribe. Your family sharing platform is ready.
@@ -103,7 +104,7 @@ export function CompletionStep({
         </Button>
 
         <p className="text-sm text-gray-500">
-          Start sharing {data.child?.name ? `${data.child.name}'s` : 'your child\'s'} moments with your family
+          Start sharing {childDisplayName}&rsquo;s moments with your family
         </p>
       </div>
 
@@ -135,6 +136,8 @@ export function CompletionStepCompact({
   isLoading = false,
   className
 }: CompletionStepCompactProps) {
+  const childDisplayName = data.child?.name ?? 'your child'
+
   return (
     <div className={cn('max-w-sm mx-auto text-center space-y-6', className)}>
       {/* Hero Section */}
@@ -143,10 +146,10 @@ export function CompletionStepCompact({
           <CheckCircleIcon className="w-6 h-6 text-green-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          You're All Set!
+          You&apos;re All Set!
         </h1>
         <p className="text-gray-600">
-          Welcome to Tribe. Start sharing {data.child?.name ? `${data.child.name}'s` : 'your child\'s'} moments.
+          Welcome to Tribe. Start sharing {childDisplayName}&rsquo;s moments.
         </p>
       </div>
 

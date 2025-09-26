@@ -198,6 +198,12 @@ export function ChildSetupStep({
         <p className="text-gray-600">
           Name and birth date
         </p>
+        {privacyMessage && (
+          <p className="text-xs text-gray-500 flex items-center justify-center space-x-2">
+            <LockClosedIcon className="w-4 h-4" />
+            <span>{privacyMessage}</span>
+          </p>
+        )}
       </div>
 
       {/* Form */}
@@ -205,14 +211,14 @@ export function ChildSetupStep({
         {/* Name */}
         <div className="space-y-2">
           <label htmlFor="name" className="block text-sm font-medium text-gray-900">
-            Child's Name <span className="text-red-500">*</span>
+            Child&apos;s Name <span className="text-red-500">*</span>
           </label>
           <Input
             id="name"
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="Enter your child's name"
+            placeholder="Enter your child&apos;s name"
             className={cn(
               'text-base',
               errors.name && 'border-red-500 focus-visible:ring-red-500'

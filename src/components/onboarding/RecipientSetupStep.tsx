@@ -37,7 +37,6 @@ export function RecipientSetupStep({
     data.recipients?.map((r, index) => ({ ...r, id: `temp-${index}` })) || []
   )
   const [quickAddEnabled, setQuickAddEnabled] = useState(data.quickAddEnabled ?? true)
-  const [isAddingRecipient, setIsAddingRecipient] = useState(false)
   const [errors, setErrors] = useState<Record<string, Record<string, string>>>({})
 
   const privacyMessage = getPrivacyMessageForStep('recipient-setup')
@@ -57,7 +56,7 @@ export function RecipientSetupStep({
 
   // Update parent state when recipients change
   useEffect(() => {
-    const recipientData = recipients.map(({ id, ...recipient }) => recipient)
+    const recipientData = recipients.map(({ id: _id, ...recipient }) => recipient)
     onUpdate({ recipients: recipientData, quickAddEnabled })
   }, [recipients, quickAddEnabled, onUpdate])
 
@@ -73,7 +72,6 @@ export function RecipientSetupStep({
       preferred_channels: ['email'],
       content_types: ['photos', 'text']
     }])
-    setIsAddingRecipient(true)
   }
 
   const addQuickRecipient = (suggestion: { name: string; relationship: string }) => {
@@ -207,7 +205,7 @@ export function RecipientSetupStep({
               onClick={() => setQuickAddEnabled(false)}
               size="sm"
             >
-              I'll add them manually
+              I&apos;ll add them manually
             </Button>
           </div>
         </div>
@@ -274,7 +272,7 @@ export function RecipientSetupStep({
       {/* Benefits */}
       {recipients.length > 0 && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h4 className="font-medium text-green-900 mb-2">Great! Here's what happens next:</h4>
+          <h4 className="font-medium text-green-900 mb-2">Great! Here&apos;s what happens next:</h4>
           <div className="text-sm text-green-800 space-y-1">
             <div>• Recipients will get a welcome email with their preference link</div>
             <div>• They can customize what updates they want to receive</div>

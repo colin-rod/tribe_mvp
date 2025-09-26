@@ -1,10 +1,8 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-  const logger = createLogger('AccountSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
+import { EnvelopeIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
@@ -12,8 +10,10 @@ import { FormMessage } from '@/components/ui/FormMessage'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
 import type { AccountFormData, FormState, FormValidationResult } from '@/lib/types/profile'
-import { EnvelopeIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
+
+const logger = createLogger('AccountSection')
 
 interface AccountSectionProps {
   user: User
@@ -127,6 +127,7 @@ export function AccountSection({ user }: AccountSectionProps) {
       // This would typically redirect to a goodbye page or sign out
       logger.info('Account deletion would be processed here')
     } catch (error) {
+      logger.error('Account deletion failed', { error })
       setFormState({
         loading: false,
         success: false,

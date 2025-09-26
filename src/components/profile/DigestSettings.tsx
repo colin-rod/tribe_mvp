@@ -333,7 +333,7 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
                   {generatePreviewContent().length > 0 && (
                     <div className="mt-4 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-500">
-                        This is a preview of your digest content. Actual content will vary based on your family's activity.
+                        This is a preview of your digest content. Actual content will vary based on your family&apos;s activity.
                       </p>
                     </div>
                   )}

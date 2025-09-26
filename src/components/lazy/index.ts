@@ -44,7 +44,7 @@ export const ResponseAnalytics = dynamic(() => import('@/components/responses/Re
   ssr: false // Analytics typically don't need SSR
 })
 
-export default {
+const lazyComponents = {
   AdminPanel,
   ProfileSettings,
   MediaGallery,
@@ -54,3 +54,5 @@ export default {
   OnboardingWizard,
   ResponseAnalytics
 }
+
+export default lazyComponents
