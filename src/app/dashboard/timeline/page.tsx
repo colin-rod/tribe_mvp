@@ -15,8 +15,6 @@ import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring'
 import AdvancedFilters from '@/components/dashboard/AdvancedFilters'
 import EnhancedSplitButton from '@/components/dashboard/EnhancedSplitButton'
-import { getChildren } from '@/lib/children'
-import { getRecipientStats } from '@/lib/recipients'
 import { getUpdates } from '@/lib/updates'
 import { initializeDashboardAnalytics, trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
 import { initializeDashboardFeatureFlags, useFeatureFlag, isFeatureEnabled } from '@/lib/feature-flags/dashboard-flags'
@@ -97,11 +95,7 @@ const TimelinePage = () => {
         return
       }
 
-      const [children, recipientStats, updates] = await Promise.all([
-        getChildren(),
-        getRecipientStats(),
-        getUpdates()
-      ])
+      const updates = await getUpdates()
 
       // Calculate user stats
       const totalUpdates = updates.length

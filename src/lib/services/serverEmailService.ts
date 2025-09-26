@@ -17,7 +17,7 @@ export interface EmailOptions {
   subject: string
   html: string
   text: string
-  templateData?: Record<string, any>
+  templateData?: Record<string, unknown>
   categories?: string[]
   customArgs?: Record<string, string>
 }
@@ -27,6 +27,42 @@ export interface EmailDeliveryResult {
   messageId?: string
   error?: string
   statusCode?: number
+}
+
+interface DigestUpdate {
+  senderName?: string
+  content?: string
+  timestamp?: string
+}
+
+type TemplateData = Record<string, unknown> & {
+  senderName?: string
+  updateContent?: string
+  babyName?: string
+  replyUrl?: string
+  promptText?: string
+  responseUrl?: string
+  period?: string
+  unreadCount?: number
+  digestUrl?: string
+  updates?: DigestUpdate[]
+  title?: string
+  content?: string
+  actionUrl?: string
+  actionText?: string
+  recipientName?: string
+  preferenceUrl?: string
+}
+
+type TemplateRecord = Record<string, unknown>
+
+interface SendGridError extends Error {
+  response?: {
+    status: number
+    body?: {
+      errors?: Array<{ message?: string }>
+    }
+  }
 }
 
 export class ServerEmailService {
@@ -88,8 +124,8 @@ export class ServerEmailService {
   /**
    * Sanitize template data to prevent XSS and other security issues
    */
-  private sanitizeTemplateData(data: Record<string, any>): Record<string, any> {
-    const sanitized: Record<string, any> = {}
+  private sanitizeTemplateData<T extends TemplateRecord>(data: T): T {
+    const sanitized: TemplateRecord = {}
 
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
@@ -103,23 +139,22 @@ export class ServerEmailService {
         }
       } else if (Array.isArray(value)) {
         // Recursively sanitize array elements
-        sanitized[key] = value.map(item =>
-          typeof item === 'object' && item !== null
-            ? this.sanitizeTemplateData(item)
-            : typeof item === 'string'
-              ? sanitizeText(item)
-              : item
-        )
+        sanitized[key] = value.map(item => {
+          if (typeof item === 'object' && item !== null) {
+            return this.sanitizeTemplateData(item as TemplateRecord)
+          }
+          return typeof item === 'string' ? sanitizeText(item) : item
+        })
       } else if (value && typeof value === 'object') {
         // Recursively sanitize nested objects
-        sanitized[key] = this.sanitizeTemplateData(value)
+        sanitized[key] = this.sanitizeTemplateData(value as TemplateRecord)
       } else {
         // Keep other types as-is (numbers, booleans, null)
         sanitized[key] = value
       }
     }
 
-    return sanitized
+    return sanitized as T
   }
 
   /**
@@ -207,7 +242,7 @@ export class ServerEmailService {
         messageId,
         statusCode: response.statusCode
       }
-    } catch (error: any) {
+    } catch (error) {
       this.logger.errorWithStack('SendGrid email error', error as Error, {
         to: options.to,
         subject: options.subject
@@ -216,11 +251,13 @@ export class ServerEmailService {
       let errorMessage = 'Unknown email delivery error'
       let statusCode: number | undefined
 
-      if (error.response) {
-        statusCode = error.response.status
-        errorMessage = error.response.body?.errors?.[0]?.message || error.message
-      } else if (error.message) {
-        errorMessage = error.message
+      const sendgridError = error as SendGridError
+
+      if (sendgridError.response) {
+        statusCode = sendgridError.response.status
+        errorMessage = sendgridError.response.body?.errors?.[0]?.message || sendgridError.message
+      } else if (sendgridError instanceof Error) {
+        errorMessage = sendgridError.message
       }
 
       return {
@@ -258,7 +295,7 @@ export class ServerEmailService {
   async sendTemplatedEmail(
     to: string,
     templateType: 'response' | 'prompt' | 'digest' | 'system' | 'preference',
-    templateData: Record<string, any> = {},
+    templateData: TemplateData = {},
     options: Partial<EmailOptions> = {}
   ): Promise<EmailDeliveryResult> {
     // Sanitize template data before processing
@@ -281,7 +318,7 @@ export class ServerEmailService {
 
   getEmailTemplate(
     type: 'response' | 'prompt' | 'digest' | 'system' | 'preference',
-    data: Record<string, any>
+    data: TemplateData
   ): EmailTemplate {
     switch (type) {
       case 'response':
@@ -299,7 +336,7 @@ export class ServerEmailService {
     }
   }
 
-  private getResponseTemplate(data: Record<string, any>): EmailTemplate {
+  private getResponseTemplate(data: TemplateData): EmailTemplate {
     const { senderName = 'Someone', updateContent = '', babyName = '', replyUrl = '#' } = data
 
     return {
@@ -353,7 +390,7 @@ export class ServerEmailService {
     }
   }
 
-  private getPromptTemplate(data: Record<string, any>): EmailTemplate {
+  private getPromptTemplate(data: TemplateData): EmailTemplate {
     const { promptText = '', babyName = '', responseUrl = '#' } = data
 
     return {
@@ -407,8 +444,15 @@ export class ServerEmailService {
     }
   }
 
-  private getDigestTemplate(data: Record<string, any>): EmailTemplate {
-    const { updates = [], period = 'daily', unreadCount = 0, digestUrl = '#' } = data
+  private getDigestTemplate(data: TemplateData): EmailTemplate {
+    const {
+      updates = [],
+      period = 'daily',
+      unreadCount = 0,
+      digestUrl = '#'
+    } = data
+
+    const digestUpdates = Array.isArray(updates) ? updates as DigestUpdate[] : []
 
     return {
       subject: `Your ${period} update digest (${unreadCount} new updates)`,
@@ -430,9 +474,9 @@ export class ServerEmailService {
             <h2 style="margin: 0 0 15px 0; color: #1f2937;">${period.charAt(0).toUpperCase() + period.slice(1)} Digest</h2>
             <p style="margin: 0 0 15px 0;">You have ${unreadCount} new updates from your family and friends.</p>
 
-            ${updates.length > 0 ? `
+            ${digestUpdates.length > 0 ? `
               <div style="margin: 20px 0;">
-                ${updates.map((update: any) => `
+                ${digestUpdates.map((update) => `
                   <div style="background: white; border-radius: 6px; padding: 15px; margin: 10px 0; border-left: 4px solid #6366f1;">
                     <div style="font-weight: 500; color: #1f2937; margin-bottom: 5px;">${update.senderName || 'Someone'}</div>
                     <div style="color: #666; font-size: 14px; margin-bottom: 8px;">${update.timestamp || ''}</div>
@@ -459,7 +503,7 @@ export class ServerEmailService {
 
         You have ${unreadCount} new updates from your family and friends.
 
-        ${updates.map((update: any) => `
+        ${digestUpdates.map((update) => `
         ${update.senderName || 'Someone'} - ${update.timestamp || ''}
         ${update.content || ''}
         `).join('\n')}
@@ -473,7 +517,7 @@ export class ServerEmailService {
     }
   }
 
-  private getSystemTemplate(data: Record<string, any>): EmailTemplate {
+  private getSystemTemplate(data: TemplateData): EmailTemplate {
     const { title = 'System Notification', content = '', actionUrl = '', actionText = 'View Details' } = data
 
     return {
@@ -524,7 +568,7 @@ export class ServerEmailService {
     }
   }
 
-  private getPreferenceTemplate(data: Record<string, any>): EmailTemplate {
+  private getPreferenceTemplate(data: TemplateData): EmailTemplate {
     const { recipientName = '', senderName = '', preferenceUrl = '#', babyName = '' } = data
 
     return {

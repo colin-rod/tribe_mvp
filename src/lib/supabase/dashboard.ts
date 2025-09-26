@@ -4,6 +4,7 @@
  */
 
 import { createClient } from './client'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import type {
   Database,
   UpdateWithChild,
@@ -11,12 +12,14 @@ import type {
   TimelineUpdate,
   DashboardFilters,
   PaginationParams,
-  EnhancedUpdate,
   EngagementUpdatePayload
 } from '../types/database'
 import { createLogger } from '../logger'
 
 const logger = createLogger('dashboard-client')
+
+type UpdateRow = Database['public']['Tables']['updates']['Row']
+type CommentRow = Database['public']['Tables']['comments']['Row']
 
 export class DashboardClient {
   private supabase = createClient()
@@ -409,7 +412,7 @@ export class DashboardClient {
           table: 'updates',
           filter: `parent_id=eq.${parentId}`
         },
-        (payload: any) => {
+        (payload: RealtimePostgresChangesPayload<UpdateRow>) => {
           logger.debug('Received engagement update', payload)
 
           const update = payload.new
@@ -438,7 +441,7 @@ export class DashboardClient {
    */
   subscribeToUpdateComments(
     parentId: string,
-    callback: (payload: { updateId: string; comment: any }) => void
+    callback: (payload: { updateId: string; comment: CommentRow }) => void
   ): () => void {
     logger.debug('Setting up comments subscription', { parentId })
 
@@ -450,7 +453,7 @@ export class DashboardClient {
           schema: 'public',
           table: 'comments'
         },
-        async (payload: any) => {
+        async (payload: RealtimePostgresChangesPayload<CommentRow>) => {
           logger.debug('Received new comment', payload)
 
           const comment = payload.new

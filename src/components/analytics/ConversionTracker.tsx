@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { createLogger } from '@/lib/logger'
 
 interface ConversionEvent {
   action: string
@@ -14,10 +15,12 @@ declare global {
     gtag?: (
       command: 'config' | 'event',
       targetId: string,
-      config?: any
+      config?: Record<string, unknown>
     ) => void
   }
 }
+
+const logger = createLogger('ConversionTracker')
 
 export function trackConversion(event: ConversionEvent) {
   // Google Analytics 4 tracking
@@ -30,7 +33,7 @@ export function trackConversion(event: ConversionEvent) {
   }
 
   // Custom analytics tracking can be added here
-  console.log('Conversion tracked:', event)
+  logger.debug('Conversion tracked', { event })
 }
 
 // Pre-defined conversion events for common actions
@@ -63,7 +66,7 @@ export const ConversionEvents = {
 } as const
 
 interface ConversionTrackerProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function ConversionTracker({ children }: ConversionTrackerProps) {

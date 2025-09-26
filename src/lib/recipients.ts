@@ -2,6 +2,7 @@ import { createClient } from './supabase/client'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 import { getDefaultGroup } from './recipient-groups'
+import type { Database } from './types/database'
 import { createLogger } from '@/lib/logger'
 
 
@@ -27,6 +28,8 @@ export interface Recipient {
   created_at: string
   group?: RecipientGroup
 }
+
+type RecipientRow = Database['public']['Tables']['recipients']['Row']
 
 /**
  * Interface for creating new recipients
@@ -75,6 +78,19 @@ export interface RecipientFilters {
  */
 function generatePreferenceToken(): string {
   return crypto.randomUUID() + '-' + Date.now().toString(36)
+}
+
+function isRecipientGroupValue(value: unknown): value is RecipientGroup {
+  return typeof value === 'object' && value !== null && 'id' in value && 'name' in value
+}
+
+function extractGroupFromRelation(relation: unknown): RecipientGroup | undefined {
+  if (Array.isArray(relation)) {
+    const [first] = relation
+    return isRecipientGroupValue(first) ? first : undefined
+  }
+
+  return isRecipientGroupValue(relation) ? relation : undefined
 }
 
 /**
@@ -200,10 +216,12 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     throw new Error('Failed to fetch recipients')
   }
 
-  return data?.map((recipient: any) => ({
+  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+
+  return recipientsWithGroups.map((recipient) => ({
     ...recipient,
-    group: Array.isArray(recipient.recipient_groups) ? recipient.recipient_groups[0] : recipient.recipient_groups
-  })) || []
+    group: extractGroupFromRelation(recipient.recipient_groups)
+  }))
 }
 
 /**
@@ -236,7 +254,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
 
   return {
     ...data,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
+    group: extractGroupFromRelation(data.recipient_groups)
   }
 }
 
@@ -432,10 +450,12 @@ export async function bulkUpdateRecipients(
     throw new Error('Failed to bulk update recipients')
   }
 
-  return data?.map((recipient: any) => ({
+  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+
+  return recipientsWithGroups.map((recipient) => ({
     ...recipient,
-    group: Array.isArray(recipient.recipient_groups) ? recipient.recipient_groups[0] : recipient.recipient_groups
-  })) || []
+    group: extractGroupFromRelation(recipient.recipient_groups)
+  }))
 }
 
 /**
@@ -470,14 +490,14 @@ export async function getRecipientStats(): Promise<{
     throw new Error('Failed to fetch recipient statistics')
   }
 
-  const recipients = data || []
+  const recipients = (data ?? []) as Array<Pick<RecipientRow, 'is_active' | 'relationship'> & { recipient_groups: unknown }>
   const byRelationship: Record<string, number> = {}
   const byGroup: Record<string, number> = {}
 
   let activeCount = 0
   let inactiveCount = 0
 
-  recipients.forEach((recipient: any) => {
+  recipients.forEach((recipient) => {
     // Count by active status
     if (recipient.is_active) {
       activeCount++
@@ -487,14 +507,13 @@ export async function getRecipientStats(): Promise<{
 
     // Count by relationship (only active)
     if (recipient.is_active) {
-      byRelationship[recipient.relationship] = (byRelationship[recipient.relationship] || 0) + 1
+      const relationshipKey = recipient.relationship || 'unknown'
+      byRelationship[relationshipKey] = (byRelationship[relationshipKey] || 0) + 1
     }
 
     // Count by group (only active)
     if (recipient.is_active) {
-      const groupName = Array.isArray(recipient.recipient_groups)
-        ? recipient.recipient_groups[0]?.name || 'Unassigned'
-        : recipient.recipient_groups?.name || 'Unassigned'
+      const groupName = extractGroupFromRelation(recipient.recipient_groups)?.name || 'Unassigned'
       byGroup[groupName] = (byGroup[groupName] || 0) + 1
     }
   })

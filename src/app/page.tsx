@@ -2,14 +2,12 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import {
-  ShieldCheckIcon,
   HeartIcon,
   UsersIcon,
   ChartBarIcon,
-  LockClosedIcon,
   CheckIcon,
   ChevronDownIcon,
   XMarkIcon
@@ -18,7 +16,7 @@ import { useState } from 'react'
 import { ConversionTracker, useConversionTracking } from '@/components/analytics/ConversionTracker'
 import { SmoothScroll } from '@/components/ui/SmoothScroll'
 import { LandingNavigation } from '@/components/navigation/LandingNavigation'
-import { FadeUpSection, SlideLeftSection, SlideRightSection } from '@/components/ui/AnimatedSection'
+import { SlideLeftSection, SlideRightSection } from '@/components/ui/AnimatedSection'
 
 interface FAQItem {
   id: string
@@ -98,7 +96,7 @@ function FAQSection() {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Everything you need to know about sharing your baby's precious moments securely
+            Everything you need to know about sharing your baby&apos;s precious moments securely
           </p>
         </div>
 

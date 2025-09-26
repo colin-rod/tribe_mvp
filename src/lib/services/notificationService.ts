@@ -6,7 +6,7 @@ const logger = createLogger('NotificationService')
 
 import { createClient } from '@/lib/supabase/client'
 import { clientEmailService } from './clientEmailService'
-import type { NotificationPreferences, NotificationDeliveryMethod, NotificationStatus, NotificationDigestType } from '@/lib/types/profile'
+import type { NotificationDeliveryMethod, NotificationStatus, NotificationDigestType } from '@/lib/types/profile'
 
 export interface NotificationHistoryEntry {
   id: string
@@ -14,7 +14,7 @@ export interface NotificationHistoryEntry {
   type: 'response' | 'prompt' | 'delivery' | 'system' | 'digest'
   title: string
   content?: string
-  metadata: Record<string, any>
+  metadata: NotificationMetadata
   read_at?: string
   sent_at: string
   delivery_method: NotificationDeliveryMethod
@@ -26,7 +26,7 @@ export interface DigestQueueEntry {
   id: string
   user_id: string
   digest_type: NotificationDigestType
-  content: Record<string, any>
+  content: NotificationData
   scheduled_for: string
   sent_at?: string
   delivery_status: NotificationStatus | 'processing'
@@ -34,6 +34,33 @@ export interface DigestQueueEntry {
   error_message?: string
   created_at: string
 }
+
+type NotificationMetadata = Record<string, unknown>
+
+interface NotificationData extends NotificationMetadata {
+  senderName?: string
+  babyName?: string
+  period?: string
+  unreadCount?: number
+  title?: string
+  updateContent?: string
+  promptText?: string
+  content?: string
+  replyUrl?: string
+  responseUrl?: string
+  digestUrl?: string
+  actionUrl?: string
+  actionText?: string
+  recipientName?: string
+  preferenceUrl?: string
+  updates?: Array<{
+    senderName?: string
+    content?: string
+    timestamp?: string
+  }>
+}
+
+type NotificationHistorySummary = Pick<NotificationHistoryEntry, 'type' | 'delivery_method' | 'delivery_status' | 'sent_at'>
 
 export class NotificationService {
   private supabase = createClient()
@@ -112,7 +139,7 @@ export class NotificationService {
       body: string
       icon?: string
       tag?: string
-      data?: any
+      data?: NotificationMetadata
     }
   ): Promise<boolean> {
     try {
@@ -237,8 +264,8 @@ export class NotificationService {
     userId: string,
     userEmail: string,
     type: 'response' | 'prompt' | 'digest' | 'system',
-    templateData: Record<string, any> = {},
-    metadata: Record<string, any> = {}
+    templateData: NotificationData = {},
+    metadata: NotificationMetadata = {}
   ): Promise<boolean> {
     try {
       // Use the email service to send templated email
@@ -293,8 +320,8 @@ export class NotificationService {
       userId: string
       userEmail: string
       type: 'response' | 'prompt' | 'digest' | 'system'
-      templateData?: Record<string, any>
-      metadata?: Record<string, any>
+      templateData?: NotificationData
+      metadata?: NotificationMetadata
     }>
   ): Promise<Array<{ userId: string; success: boolean; error?: string }>> {
     const results: Array<{ userId: string; success: boolean; error?: string }> = []
@@ -336,7 +363,7 @@ export class NotificationService {
   }
 
   // Helper method to generate notification titles
-  private getNotificationTitle(type: string, data: Record<string, any>): string {
+  private getNotificationTitle(type: string, data: NotificationData): string {
     switch (type) {
       case 'response':
         return `${data.senderName || 'Someone'} responded to your update${data.babyName ? ` about ${data.babyName}` : ''}`
@@ -352,7 +379,7 @@ export class NotificationService {
   }
 
   // Helper method to generate notification content
-  private getNotificationContent(type: string, data: Record<string, any>): string {
+  private getNotificationContent(type: string, data: NotificationData): string {
     switch (type) {
       case 'response':
         return `${data.senderName || 'Someone'} responded: "${data.updateContent || ''}"`
@@ -393,7 +420,7 @@ export class NotificationService {
     userId: string,
     digestType: NotificationDigestType,
     scheduledFor: Date,
-    content: Record<string, any> = {}
+    _content: NotificationData = {}
   ): Promise<string> {
     const { data, error } = await this.supabase
       .rpc('schedule_digest_for_user', {
@@ -439,9 +466,11 @@ export class NotificationService {
       throw new Error(`Failed to fetch notification analytics: ${error.message}`)
     }
 
+    const notifications = (data ?? []) as NotificationHistorySummary[]
+
     // Process analytics data
     const analytics = {
-      total: data?.length || 0,
+      total: notifications.length,
       by_type: {} as Record<string, number>,
       by_method: {} as Record<string, number>,
       by_status: {} as Record<string, number>,
@@ -449,9 +478,9 @@ export class NotificationService {
       recent_activity: [] as Array<{ date: string; count: number }>
     }
 
-    if (data) {
+    if (notifications.length > 0) {
       // Count by type, method, and status
-      data.forEach((notification: any) => {
+      notifications.forEach((notification) => {
         analytics.by_type[notification.type] = (analytics.by_type[notification.type] || 0) + 1
         analytics.by_method[notification.delivery_method] = (analytics.by_method[notification.delivery_method] || 0) + 1
         analytics.by_status[notification.delivery_status] = (analytics.by_status[notification.delivery_status] || 0) + 1
@@ -462,14 +491,14 @@ export class NotificationService {
       analytics.delivery_rate = analytics.total > 0 ? (successful / analytics.total) * 100 : 0
 
       // Group by date for recent activity
-      const activityByDate = data.reduce((acc: Record<string, number>, notification: any) => {
+      const activityByDate = notifications.reduce((acc: Record<string, number>, notification) => {
         const date = notification.sent_at.split('T')[0]
         acc[date] = (acc[date] || 0) + 1
         return acc
       }, {} as Record<string, number>)
 
       analytics.recent_activity = Object.entries(activityByDate)
-        .map(([date, count]) => ({ date, count: count as number }))
+        .map(([date, count]) => ({ date, count }))
         .sort((a, b) => a.date.localeCompare(b.date))
     }
 

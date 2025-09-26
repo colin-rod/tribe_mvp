@@ -17,7 +17,7 @@ interface Update {
   child_id: string
   parent_id: string
   media_urls: string[]
-  confirmed_recipients?: any[]
+  confirmed_recipients?: string[]
   children: {
     id: string
     name: string

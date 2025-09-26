@@ -1,10 +1,13 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database'
 import { createLogger } from '../logger'
 
 const logger = createLogger('supabase-client')
+
+type SupabaseClientType = SupabaseClient<Database>
 
 export function createClient() {
   try {
@@ -53,7 +56,7 @@ export function createClient() {
   }
 }
 
-function createMockClient() {
+function createMockClient(): SupabaseClientType {
   return {
     from: () => ({
       select: () => ({ data: [], error: null }),
@@ -68,7 +71,7 @@ function createMockClient() {
       on: () => ({ subscribe: () => {} }),
     }),
     removeChannel: () => {},
-  } as any
+  } as unknown as SupabaseClientType
 }
 
 // Export a lazy-loaded singleton instance for use in client components
@@ -79,6 +82,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
     if (!_supabase) {
       _supabase = createClient()
     }
-    return (_supabase as any)[prop]
+    return (_supabase as SupabaseClientType)[prop]
   }
 })

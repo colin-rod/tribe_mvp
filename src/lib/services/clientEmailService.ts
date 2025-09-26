@@ -16,7 +16,7 @@ export interface EmailOptions {
   subject: string
   html: string
   text: string
-  templateData?: Record<string, any>
+  templateData?: Record<string, unknown>
   categories?: string[]
   customArgs?: Record<string, string>
 }
@@ -31,7 +31,7 @@ export interface EmailDeliveryResult {
 export interface EmailApiRequest {
   to: string
   type: 'response' | 'prompt' | 'digest' | 'system' | 'preference'
-  templateData?: Record<string, any>
+  templateData?: Record<string, unknown>
   options?: {
     from?: string
     fromName?: string
@@ -145,7 +145,7 @@ export class ClientEmailService {
   async sendTemplatedEmail(
     to: string,
     templateType: 'response' | 'prompt' | 'digest' | 'system' | 'preference',
-    templateData: Record<string, any> = {},
+    templateData: Record<string, unknown> = {},
     options: Partial<EmailApiRequest['options']> = {}
   ): Promise<EmailDeliveryResult> {
     return this.sendEmail({

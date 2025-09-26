@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -65,6 +65,10 @@ interface TemplateStats {
   total_usage: number
 }
 
+type FilterType = TemplateFormData['prompt_type'] | 'all' | 'community'
+type SortOption = 'created_at' | 'effectiveness_score' | 'usage_count'
+type TemplateSummaryRow = Pick<PromptTemplate, 'prompt_type' | 'effectiveness_score' | 'usage_count' | 'is_community_contributed'>
+
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
@@ -78,16 +82,56 @@ export function TemplateManager() {
   const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterType, setFilterType] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<'created_at' | 'effectiveness_score' | 'usage_count'>('effectiveness_score')
+  const [filterType, setFilterType] = useState<FilterType>('all')
+  const [sortBy, setSortBy] = useState<SortOption>('effectiveness_score')
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // =============================================================================
   // DATA FETCHING
   // =============================================================================
 
-  const fetchTemplates = async () => {
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .select('prompt_type, effectiveness_score, usage_count, is_community_contributed')
+
+      if (error) {
+        throw error
+      }
+
+      const summary = (data ?? []) as TemplateSummaryRow[]
+
+      if (summary.length === 0) {
+        setStats({
+          total_templates: 0,
+          community_templates: 0,
+          most_effective_type: '',
+          average_effectiveness: 0,
+          total_usage: 0
+        })
+        return
+      }
+
+      const totalEffectiveness = summary.reduce((acc, template) => acc + (template.effectiveness_score || 0), 0)
+      const totalUsage = summary.reduce((acc, template) => acc + (template.usage_count || 0), 0)
+
+      setStats({
+        total_templates: summary.length,
+        community_templates: summary.filter(template => template.is_community_contributed).length,
+        most_effective_type: getMostEffectiveType(summary),
+        average_effectiveness: totalEffectiveness / summary.length,
+        total_usage: totalUsage
+      })
+    } catch {
+      // Stats are optional; ignore errors so user can still manage templates
+    }
+  }, [supabase])
+
+  const fetchTemplates = useCallback(async (searchValue: string) => {
     setLoading(true)
     setError(null)
 
@@ -111,53 +155,28 @@ export function TemplateManager() {
         throw error
       }
 
-      let filteredData = data || []
+      const fetchedTemplates = (data ?? []) as PromptTemplate[]
+      const normalizedSearch = searchValue.trim().toLowerCase()
 
-      // Apply search filter
-      if (searchTerm) {
-        filteredData = filteredData.filter((template: any) =>
-          template.template_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          template.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      }
+      const filteredData = normalizedSearch
+        ? fetchedTemplates.filter((template) =>
+            template.template_text.toLowerCase().includes(normalizedSearch) ||
+            template.tags.some((tag) => tag.toLowerCase().includes(normalizedSearch))
+          )
+        : fetchedTemplates
 
       setTemplates(filteredData)
 
       // Fetch stats
       await fetchStats()
 
-    } catch (error) {
+    } catch (fetchError) {
       // console.error('Error fetching templates:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch templates')
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch templates')
     } finally {
       setLoading(false)
     }
-  }
-
-  const fetchStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('prompt_templates')
-        .select('prompt_type, effectiveness_score, usage_count, is_community_contributed')
-
-      if (error) {
-        throw error
-      }
-
-      if (data) {
-        const stats: TemplateStats = {
-          total_templates: data.length,
-          community_templates: data.filter((t: any) => t.is_community_contributed).length,
-          most_effective_type: getMostEffectiveType(data),
-          average_effectiveness: data.reduce((acc: number, t: any) => acc + (t.effectiveness_score || 0), 0) / data.length,
-          total_usage: data.reduce((acc: number, t: any) => acc + (t.usage_count || 0), 0)
-        }
-        setStats(stats)
-      }
-    } catch (error) {
-      // console.error('Error fetching template stats:', error)
-    }
-  }
+  }, [filterType, fetchStats, sortBy, supabase])
 
   // =============================================================================
   // TEMPLATE OPERATIONS
@@ -183,7 +202,7 @@ export function TemplateManager() {
       }
 
       setShowForm(false)
-      await fetchTemplates()
+      await fetchTemplates(debouncedSearchTerm)
     } catch (error) {
       // console.error('Error creating template:', error)
       setError(error instanceof Error ? error.message : 'Failed to create template')
@@ -214,7 +233,7 @@ export function TemplateManager() {
 
       setSelectedTemplate(null)
       setShowForm(false)
-      await fetchTemplates()
+      await fetchTemplates(debouncedSearchTerm)
     } catch (error) {
       // console.error('Error updating template:', error)
       setError(error instanceof Error ? error.message : 'Failed to update template')
@@ -239,7 +258,7 @@ export function TemplateManager() {
         throw error
       }
 
-      await fetchTemplates()
+      await fetchTemplates(debouncedSearchTerm)
     } catch (error) {
       // console.error('Error deleting template:', error)
       setError(error instanceof Error ? error.message : 'Failed to delete template')
@@ -257,7 +276,7 @@ export function TemplateManager() {
         throw error
       }
 
-      await fetchTemplates()
+      await fetchTemplates(debouncedSearchTerm)
     } catch (error) {
       // console.error('Error recalculating effectiveness:', error)
       setError(error instanceof Error ? error.message : 'Failed to recalculate effectiveness')
@@ -275,7 +294,7 @@ export function TemplateManager() {
     return matches ? matches.map(match => match.slice(1, -1)) : []
   }
 
-  const getMostEffectiveType = (templates: any[]): string => {
+  function getMostEffectiveType(templates: TemplateSummaryRow[]): string {
     const typeScores = templates.reduce((acc, template) => {
       const type = template.prompt_type
       if (!acc[type]) {
@@ -305,18 +324,16 @@ export function TemplateManager() {
   // =============================================================================
 
   useEffect(() => {
-    fetchTemplates()
-  }, [sortBy, filterType])
-
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm !== '') {
-        fetchTemplates()
-      }
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
     }, 300)
 
-    return () => clearTimeout(delayedSearch)
+    return () => clearTimeout(timer)
   }, [searchTerm])
+
+  useEffect(() => {
+    fetchTemplates(debouncedSearchTerm)
+  }, [debouncedSearchTerm, fetchTemplates])
 
   // =============================================================================
   // RENDER HELPERS
@@ -368,7 +385,7 @@ export function TemplateManager() {
 
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
+          onChange={(e) => setFilterType(e.target.value as FilterType)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">All Types</option>
@@ -381,7 +398,7 @@ export function TemplateManager() {
 
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
+          onChange={(e) => setSortBy(e.target.value as SortOption)}
           className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="effectiveness_score">By Effectiveness</option>
@@ -724,7 +741,7 @@ function TemplateForm({ template, onSave, onCancel, saving }: TemplateFormProps)
               </label>
               <select
                 value={formData.prompt_type}
-                onChange={(e) => setFormData(prev => ({ ...prev, prompt_type: e.target.value as any }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, prompt_type: e.target.value as TemplateFormData['prompt_type'] }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >

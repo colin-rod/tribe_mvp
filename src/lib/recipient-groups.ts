@@ -113,13 +113,18 @@ export async function getUserGroups(): Promise<(RecipientGroup & { recipient_cou
     throw new Error('Failed to fetch recipient groups')
   }
 
+  type RecipientGroupRow = Database['public']['Tables']['recipient_groups']['Row']
+  type RecipientCountRow = { count: number }
+
+  const groupsWithCounts = (data ?? []) as Array<RecipientGroupRow & { recipients: RecipientCountRow[] | null }>
+
   // Transform the data to include recipient counts
-  return data?.map((group: any) => ({
+  return groupsWithCounts.map((group) => ({
     ...group,
     recipient_count: Array.isArray(group.recipients) && group.recipients.length > 0
-      ? group.recipients[0].count || 0
+      ? group.recipients[0]?.count ?? 0
       : 0
-  })) || []
+  }))
 }
 
 /**
@@ -412,13 +417,15 @@ export async function getGroupStats(): Promise<{
       .eq('is_active', true)
   ])
 
-  const groups = groupsResult.data || []
+  type RecipientGroupSummary = Pick<Database['public']['Tables']['recipient_groups']['Row'], 'id' | 'is_default_group'>
+
+  const groups = (groupsResult.data ?? []) as RecipientGroupSummary[]
   const recipients = recipientsResult.data || []
 
   return {
     totalGroups: groups.length,
     totalRecipients: recipients.length,
-    defaultGroups: groups.filter((g: any) => g.is_default_group).length,
-    customGroups: groups.filter((g: any) => !g.is_default_group).length
+    defaultGroups: groups.filter((group) => group.is_default_group).length,
+    customGroups: groups.filter((group) => !group.is_default_group).length
   }
 }

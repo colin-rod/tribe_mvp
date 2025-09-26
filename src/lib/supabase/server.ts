@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database'
 import { getEnv, getFeatureFlags } from '../env'
 import { createLogger } from '../logger'
@@ -7,7 +8,7 @@ const logger = createLogger('supabase-server')
 
 export function createClient(cookieStore: {
   get: (name: string) => { value: string } | undefined
-  set: (name: string, value: string, options?: any) => void
+  set: (name: string, value: string, options?: CookieOptions) => void
 }) {
   try {
     const env = getEnv()
@@ -54,7 +55,7 @@ export function createClient(cookieStore: {
   }
 }
 
-function createMockClient() {
+function createMockClient(): SupabaseClient<Database> {
   logger.info('Using mock Supabase client')
   return {
     from: () => ({
@@ -66,5 +67,5 @@ function createMockClient() {
     auth: {
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
     },
-  } as any
+  } as unknown as SupabaseClient<Database>
 }

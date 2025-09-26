@@ -121,7 +121,7 @@ export default function ProfileDemoPage() {
                       size="sm"
                       onClick={() => setPassword(testPassword)}
                     >
-                      "{testPassword}"
+                      &quot;{testPassword}&quot;
                     </Button>
                   ))}
                 </div>
