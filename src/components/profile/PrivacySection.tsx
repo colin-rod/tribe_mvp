@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
-import { FormField } from '@/components/ui/FormField'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -12,7 +11,6 @@ import type { PrivacyFormData, FormState } from '@/lib/types/profile'
 import {
   LockClosedIcon,
   EyeIcon,
-  EyeSlashIcon,
   ShareIcon,
   ChartBarIcon,
   ClockIcon,
@@ -118,7 +116,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch (error) {
+    } catch {
       setFormState({
         loading: false,
         success: false,
@@ -146,7 +144,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch (error) {
+    } catch {
       setFormState({
         loading: false,
         success: false,
@@ -420,7 +418,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         onClose={() => setShowDataExportDialog(false)}
         onConfirm={handleDataExport}
         title="Export Your Data"
-        description="We'll create a downloadable file containing all your personal data, including profiles, updates, photos, and settings. This may take a few minutes."
+        description="We&apos;ll create a downloadable file containing all your personal data, including profiles, updates, photos, and settings. This may take a few minutes."
         confirmText="Export Data"
         cancelText="Cancel"
         variant="info"
@@ -438,7 +436,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
             <li>All sent updates and responses</li>
           </ul>
           <p className="mt-2 text-sm text-blue-700">
-            You'll receive an email with a download link when your export is ready.
+            You&apos;ll receive an email with a download link when your export is ready.
           </p>
         </div>
       </ConfirmationDialog>

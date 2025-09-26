@@ -157,8 +157,8 @@ export function TemporaryMuteModal({
             {/* Description */}
             <div>
               <p className="text-sm text-gray-600">
-                Temporarily pause notifications from <strong className="text-gray-900">"{groupName}"</strong>.
-                You'll remain in the group and can unmute anytime.
+                Temporarily pause notifications from <strong className="text-gray-900">&quot;{groupName}&quot;</strong>.
+                You&apos;ll remain in the group and can unmute anytime.
               </p>
             </div>
 
@@ -235,7 +235,7 @@ export function TemporaryMuteModal({
                   </label>
                   <p className="text-sm text-blue-700 mt-1">
                     Allow important notifications (like emergencies) to come through even while muted.
-                    This ensures you don't miss critical updates.
+                    This ensures you don&apos;t miss critical updates.
                   </p>
                 </div>
               </div>
@@ -247,10 +247,10 @@ export function TemporaryMuteModal({
                 <ExclamationTriangleIcon className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-orange-900">
-                    You'll miss regular updates
+                    You&apos;ll miss regular updates
                   </p>
                   <p className="text-sm text-orange-700 mt-1">
-                    While muted, you won't receive any regular notifications from this group.
+                    While muted, you won&apos;t receive any regular notifications from this group.
                     You can check for updates manually or unmute at any time.
                   </p>
                 </div>

@@ -79,6 +79,7 @@ export function GroupMembershipCard({
 
   const options = getPreferenceOptions()
   const isMuted = !!membership.mute_until && new Date(membership.mute_until) > new Date()
+  const resolvedIsInactive = isInactive || !membership.is_active
 
   const getFrequencyLabel = (freq: string) => {
     return options.frequencies.find(f => f.value === freq)?.label || freq
@@ -155,7 +156,7 @@ export function GroupMembershipCard({
     if (isMuted) {
       return <BellSlashIcon className="h-5 w-5 text-orange-500" />
     }
-    if (!membership.is_active) {
+    if (resolvedIsInactive) {
       return <BellSlashIcon className="h-5 w-5 text-gray-400" />
     }
     return <BellIcon className="h-5 w-5 text-green-500" />
@@ -165,24 +166,18 @@ export function GroupMembershipCard({
     if (isMuted) {
       return `Muted ${formatMuteUntil(membership.mute_until!)}`
     }
-    if (!membership.is_active) {
+    if (resolvedIsInactive) {
       return 'Inactive'
     }
     return 'Active'
   }
 
-  const getStatusBadgeColor = () => {
-    if (isMuted) return 'bg-orange-100 text-orange-800 border-orange-200'
-    if (!membership.is_active) return 'bg-gray-100 text-gray-800 border-gray-200'
-    return 'bg-green-100 text-green-800 border-green-200'
-  }
-
   return (
     <div className={cn(
       "bg-white border rounded-lg transition-all duration-200",
-      membership.is_active && !isMuted ? "border-green-200 hover:border-green-300 hover:shadow-md" : "border-gray-200",
+      !resolvedIsInactive && !isMuted ? "border-green-200 hover:border-green-300 hover:shadow-md" : "border-gray-200",
       isMuted && "bg-orange-50 border-orange-200",
-      !membership.is_active && "bg-gray-50 border-gray-200"
+      resolvedIsInactive && "bg-gray-50 border-gray-200"
     )}>
       {/* Header */}
       <div className="p-4 sm:p-6">
@@ -223,7 +218,7 @@ export function GroupMembershipCard({
                   <span className={cn(
                     "font-medium",
                     isMuted ? "text-orange-700" :
-                    !membership.is_active ? "text-gray-500" : "text-green-700"
+                    resolvedIsInactive ? "text-gray-500" : "text-green-700"
                   )}>
                     {getStatusText()}
                   </span>
@@ -442,11 +437,11 @@ export function GroupMembershipCard({
                     <ExclamationTriangleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <h5 className="text-sm font-medium text-blue-900 mb-1">
-                        You're using custom settings for this group
+                        You&apos;re using custom settings for this group
                       </h5>
                       <div className="text-sm text-blue-800">
                         <p className="mb-1">
-                          <strong>Group "{membership.group.name}" defaults:</strong>
+                          <strong>Group &quot;{membership.group.name}&quot; defaults:</strong>
                         </p>
                         <p>• Frequency: {getFrequencyLabel(membership.group.default_frequency)}</p>
                         <p>• Channels: {getChannelLabels(membership.group.default_channels).join(', ')}</p>

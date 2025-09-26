@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import PreferenceLayout from '@/components/preferences/PreferenceLayout'
 import PreferenceForm from '@/components/preferences/PreferenceForm'
 import { GroupOverviewDashboard } from './GroupOverviewDashboard'
@@ -28,12 +28,7 @@ export default function EnhancedPreferencesPageClient({
   const [error, setError] = useState<string | null>(null)
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
 
-  // Check if user has multiple groups to determine UI mode
-  useEffect(() => {
-    checkGroupMembership()
-  }, [token])
-
-  const checkGroupMembership = async () => {
+  const checkGroupMembership = useCallback(async () => {
     try {
       setError(null)
 
@@ -57,7 +52,12 @@ export default function EnhancedPreferencesPageClient({
       // Fallback to legacy mode on error
       setViewMode('legacy')
     }
-  }
+  }, [token])
+
+  // Check if user has multiple groups to determine UI mode
+  useEffect(() => {
+    void checkGroupMembership()
+  }, [checkGroupMembership])
 
   const handleSuccess = () => {
     setShowSuccess(true)
@@ -83,7 +83,7 @@ export default function EnhancedPreferencesPageClient({
     if (hasMultipleGroups) {
       return "Your notification settings for all groups have been saved and will take effect immediately."
     }
-    return "You'll now receive baby updates according to your preferences."
+    return "You&apos;ll now receive baby updates according to your preferences."
   }
 
   // Success state
@@ -254,9 +254,9 @@ export default function EnhancedPreferencesPageClient({
               </h3>
               <div className="mt-2 text-sm text-blue-700">
                 <p>
-                  You've been added to receive baby updates. Use this page to customize
+                  You&apos;ve been added to receive baby updates. Use this page to customize
                   how often you want to receive notifications and what types of content
-                  you'd like to see.
+                  you&apos;d like to see.
                 </p>
                 <p className="mt-2">
                   No account needed - your preferences are securely linked to this personalized link.
@@ -321,12 +321,12 @@ export default function EnhancedPreferencesPageClient({
         {/* Security note */}
         <div className="text-xs text-gray-500 text-center space-y-1">
           <p>
-            This is a secure, personalized link. Don't share it with others as
+            This is a secure, personalized link. Don&apos;t share it with others as
             it allows access to modify your preferences.
           </p>
           <p>
             Your privacy is important to us. We only use your information to send
-            the updates you've requested.
+            the updates you&apos;ve requested.
           </p>
         </div>
       </div>

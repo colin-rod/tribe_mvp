@@ -5,12 +5,11 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AIPromptList, type AIPrompt } from './AIPromptCard'
 import { Button } from '@/components/ui/Button'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
@@ -89,7 +88,7 @@ export function PromptFeed({
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<PromptFilters>(DEFAULT_FILTERS)
+  const [filters] = useState<PromptFilters>(DEFAULT_FILTERS)
   const [showFiltersPanel, setShowFiltersPanel] = useState(false)
 
   const router = useRouter()
@@ -99,7 +98,25 @@ export function PromptFeed({
   // DATA FETCHING
   // =============================================================================
 
-  const fetchPrompts = async (isRefresh = false) => {
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_prompt_stats', {
+        user_uuid: userId,
+        child_uuid: childId
+      })
+
+      if (error) {
+        logger.error('Error fetching stats', { error })
+        return
+      }
+
+      setStats(data)
+    } catch (error) {
+      logger.error('Error fetching prompt stats', { error })
+    }
+  }, [supabase, userId, childId])
+
+  const fetchPrompts = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true)
     } else {
@@ -126,7 +143,6 @@ export function PromptFeed({
         .order('created_at', { ascending: false })
         .limit(limit)
 
-      // Apply filters
       if (userId) {
         query = query.eq('parent_id', userId)
       }
@@ -151,7 +167,6 @@ export function PromptFeed({
         query = query.not('prompt_templates.is_community_contributed', 'is', false)
       }
 
-      // Date range filter
       if (filters.date_range !== 'all') {
         const now = new Date()
         let startDate: Date
@@ -166,6 +181,8 @@ export function PromptFeed({
           case 'month':
             startDate = new Date(now.getFullYear(), now.getMonth(), 1)
             break
+          default:
+            startDate = now
         }
 
         query = query.gte('created_at', startDate.toISOString())
@@ -177,7 +194,6 @@ export function PromptFeed({
         throw error
       }
 
-      // Transform data to match expected format
       const transformedPrompts: AIPrompt[] = (data || []).map(prompt => ({
         ...prompt,
         child_name: prompt.children?.name,
@@ -192,7 +208,6 @@ export function PromptFeed({
 
       setPrompts(transformedPrompts)
 
-      // Fetch stats if requested
       if (showStats) {
         await fetchStats()
       }
@@ -204,25 +219,7 @@ export function PromptFeed({
       setLoading(false)
       setRefreshing(false)
     }
-  }
-
-  const fetchStats = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_prompt_stats', {
-        user_uuid: userId,
-        child_uuid: childId
-      })
-
-      if (error) {
-        logger.error('Error fetching stats', { error })
-        return
-      }
-
-      setStats(data)
-    } catch (error) {
-      logger.error('Error fetching prompt stats', { error })
-    }
-  }
+  }, [childId, fetchStats, filters, limit, showStats, supabase, userId])
 
   // =============================================================================
   // PROMPT ACTIONS
@@ -263,7 +260,7 @@ export function PromptFeed({
 
       // Refresh stats
       if (showStats) {
-        fetchStats()
+        await fetchStats()
       }
 
     } catch (error) {
@@ -306,7 +303,7 @@ export function PromptFeed({
 
       // Refresh stats
       if (showStats) {
-        fetchStats()
+        await fetchStats()
       }
 
     } catch (error) {
@@ -348,18 +345,18 @@ export function PromptFeed({
   // =============================================================================
 
   useEffect(() => {
-    fetchPrompts()
-  }, [filters, userId, childId])
+    void fetchPrompts()
+  }, [fetchPrompts])
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return
 
     const interval = setInterval(() => {
-      fetchPrompts(true)
+      void fetchPrompts(true)
     }, refreshInterval)
 
     return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval])
+  }, [autoRefresh, refreshInterval, fetchPrompts])
 
   // =============================================================================
   // HELPER FUNCTIONS
@@ -454,7 +451,9 @@ export function PromptFeed({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => fetchPrompts(true)}
+          onClick={() => {
+            void fetchPrompts(true)
+          }}
           disabled={refreshing}
           className="flex items-center gap-2"
         >

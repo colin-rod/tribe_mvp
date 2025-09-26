@@ -22,6 +22,17 @@ const groupPreferencesSchema = z.object({
   content_types: z.array(z.enum(['photos', 'text', 'milestones'])).min(1, 'At least one content type is required').optional()
 })
 
+type GroupPreferencePayload = z.infer<typeof groupPreferencesSchema>
+type FrequencyValue = 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
+type ChannelValue = 'email' | 'sms' | 'whatsapp'
+type ContentTypeValue = 'photos' | 'text' | 'milestones'
+
+interface PreferenceFormState {
+  notification_frequency: FrequencyValue | ''
+  preferred_channels: ChannelValue[]
+  content_types: ContentTypeValue[]
+}
+
 export interface GroupMembership {
   id: string
   group_id: string
@@ -59,10 +70,10 @@ export function GroupPreferenceSettings({
   onUpdate,
   onCancel
 }: GroupPreferenceSettingsProps) {
-  const [preferences, setPreferences] = useState({
-    notification_frequency: membership.notification_frequency || '',
-    preferred_channels: membership.preferred_channels || [],
-    content_types: membership.content_types || ['photos', 'text', 'milestones']
+  const [preferences, setPreferences] = useState<PreferenceFormState>({
+    notification_frequency: (membership.notification_frequency as FrequencyValue | undefined) || '',
+    preferred_channels: (membership.preferred_channels as ChannelValue[] | undefined) || [],
+    content_types: (membership.content_types as ContentTypeValue[] | undefined) || ['photos', 'text', 'milestones']
   })
   const [useGroupDefaults, setUseGroupDefaults] = useState(!membership.has_custom_settings)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -70,13 +81,13 @@ export function GroupPreferenceSettings({
 
   const options = getPreferenceOptions()
 
-  const handleFrequencyChange = (frequency: string) => {
+  const handleFrequencyChange = (frequency: FrequencyValue) => {
     setPreferences(prev => ({ ...prev, notification_frequency: frequency }))
     setUseGroupDefaults(false)
     setErrors(prev => ({ ...prev, notification_frequency: '' }))
   }
 
-  const handleChannelChange = (channel: string, checked: boolean) => {
+  const handleChannelChange = (channel: ChannelValue, checked: boolean) => {
     setPreferences(prev => {
       const newChannels = checked
         ? [...prev.preferred_channels, channel]
@@ -88,7 +99,7 @@ export function GroupPreferenceSettings({
     setErrors(prev => ({ ...prev, preferred_channels: '' }))
   }
 
-  const handleContentTypeChange = (contentType: string, checked: boolean) => {
+  const handleContentTypeChange = (contentType: ContentTypeValue, checked: boolean) => {
     setPreferences(prev => {
       const newContentTypes = checked
         ? [...prev.content_types, contentType]
@@ -117,7 +128,7 @@ export function GroupPreferenceSettings({
     }
 
     try {
-      const validationData: any = {}
+      const validationData: GroupPreferencePayload = {}
 
       if (preferences.notification_frequency) {
         validationData.notification_frequency = preferences.notification_frequency
@@ -176,7 +187,7 @@ export function GroupPreferenceSettings({
         }
       } else {
         // Update custom preferences
-        const updateData: any = {}
+        const updateData: GroupPreferencePayload = {}
 
         if (preferences.notification_frequency) {
           updateData.notification_frequency = preferences.notification_frequency
@@ -218,16 +229,16 @@ export function GroupPreferenceSettings({
     }
   }
 
-  const getEffectiveFrequency = () => {
+  const getEffectiveFrequency = (): FrequencyValue => {
     if (useGroupDefaults || !preferences.notification_frequency) {
-      return membership.group.default_frequency
+      return membership.group.default_frequency as FrequencyValue
     }
     return preferences.notification_frequency
   }
 
-  const getEffectiveChannels = () => {
+  const getEffectiveChannels = (): ChannelValue[] => {
     if (useGroupDefaults || preferences.preferred_channels.length === 0) {
-      return membership.group.default_channels
+      return membership.group.default_channels as ChannelValue[]
     }
     return preferences.preferred_channels
   }
@@ -247,9 +258,9 @@ export function GroupPreferenceSettings({
               } else {
                 setUseGroupDefaults(false)
                 setPreferences({
-                  notification_frequency: membership.effective_settings.frequency,
-                  preferred_channels: [...membership.effective_settings.channels],
-                  content_types: [...membership.effective_settings.content_types]
+                  notification_frequency: membership.effective_settings.frequency as FrequencyValue,
+                  preferred_channels: [...membership.effective_settings.channels] as ChannelValue[],
+                  content_types: [...membership.effective_settings.content_types] as ContentTypeValue[]
                 })
               }
             }}
@@ -260,7 +271,7 @@ export function GroupPreferenceSettings({
               Use group default settings
             </label>
             <p className="text-sm text-blue-700 mt-1">
-              Automatically inherit settings from the "{membership.group.name}" group.
+              Automatically inherit settings from the &quot;{membership.group.name}&quot; group.
               When group defaults change, your settings will update automatically.
             </p>
           </div>
@@ -346,15 +357,16 @@ export function GroupPreferenceSettings({
           Communication Channels
         </label>
         <p className="text-sm text-gray-500 mt-1 mb-3">
-          Select how you'd like to receive notifications from this group
+          Select how you&apos;d like to receive notifications from this group
         </p>
 
         <fieldset className="space-y-3">
           <legend className="sr-only">Communication channels</legend>
           {options.channels.map((option) => {
-            const isGroupDefault = membership.group.default_channels.includes(option.value as any)
-            const isSelected = getEffectiveChannels().includes(option.value as any)
-            const isCustomSelected = !useGroupDefaults && preferences.preferred_channels.includes(option.value)
+            const channelValue = option.value as ChannelValue
+            const isGroupDefault = membership.group.default_channels.includes(channelValue)
+            const isSelected = getEffectiveChannels().includes(channelValue)
+            const isCustomSelected = !useGroupDefaults && preferences.preferred_channels.includes(channelValue)
 
             return (
               <div key={option.value} className={cn(
@@ -369,7 +381,7 @@ export function GroupPreferenceSettings({
                     name="channels"
                     type="checkbox"
                     checked={isSelected}
-                    onChange={(e) => handleChannelChange(option.value, e.target.checked)}
+                    onChange={(e) => handleChannelChange(channelValue, e.target.checked)}
                     disabled={useGroupDefaults}
                     className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded disabled:opacity-50"
                   />
@@ -425,7 +437,8 @@ export function GroupPreferenceSettings({
         <fieldset className="space-y-3">
           <legend className="sr-only">Content types</legend>
           {options.contentTypes.map((option) => {
-            const isSelected = preferences.content_types.includes(option.value as any)
+            const contentValue = option.value as ContentTypeValue
+            const isSelected = preferences.content_types.includes(contentValue)
 
             return (
               <div key={option.value} className={cn(
@@ -440,7 +453,7 @@ export function GroupPreferenceSettings({
                     name="content_types"
                     type="checkbox"
                     checked={useGroupDefaults ? true : isSelected}
-                    onChange={(e) => handleContentTypeChange(option.value, e.target.checked)}
+                    onChange={(e) => handleContentTypeChange(contentValue, e.target.checked)}
                     disabled={useGroupDefaults}
                     className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded disabled:opacity-50"
                   />

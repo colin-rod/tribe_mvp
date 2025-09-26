@@ -210,7 +210,7 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
       <div>
         <h3 className="text-lg font-medium text-gray-900">Quiet Hours</h3>
         <p className="mt-1 text-sm text-gray-600">
-          Set times when you don't want to receive notifications. Perfect for sleep, family time, or focus periods.
+          Set times when you don&apos;t want to receive notifications. Perfect for sleep, family time, or focus periods.
         </p>
       </div>
 
@@ -431,7 +431,7 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
               <h4 className="text-sm font-medium text-gray-900">About Quiet Hours</h4>
               <div className="mt-1 text-sm text-gray-600">
                 <p>
-                  During quiet hours, you won't receive notifications via email or push notifications.
+                  During quiet hours, you won&apos;t receive notifications via email or push notifications.
                   Urgent notifications and security alerts will still be delivered.
                   Notifications will be queued and delivered when quiet hours end.
                 </p>
@@ -453,7 +453,7 @@ export default function QuietHoursConfig({ onSuccess }: QuietHoursConfigProps) {
                 Saving...
               </>
             ) : (
-              'Save Settings'
+              "Save Settings"
             )}
           </Button>
         </div>

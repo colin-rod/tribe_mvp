@@ -208,7 +208,7 @@ export function SecuritySection({ user }: SecuritySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch (error) {
+    } catch {
       setFormState({
         loading: false,
         success: false,
@@ -234,7 +234,7 @@ export function SecuritySection({ user }: SecuritySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch (error) {
+    } catch {
       setFormState({
         loading: false,
         success: false,

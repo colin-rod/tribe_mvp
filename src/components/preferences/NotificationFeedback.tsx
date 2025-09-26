@@ -6,8 +6,7 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   InformationCircleIcon,
-  XMarkIcon,
-  ArrowPathIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning'

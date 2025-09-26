@@ -280,9 +280,9 @@ export default function SecuritySettings({ onSuccess }: SecuritySettingsProps) {
               <h4 className="text-sm font-medium text-blue-800">Security Tips</h4>
               <div className="mt-1 text-sm text-blue-700">
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Use a unique password that you don't use elsewhere</li>
+                  <li>Use a unique password that you don&apos;t use elsewhere</li>
                   <li>Consider using a password manager</li>
-                  <li>You'll be logged out of all devices after changing your password</li>
+                  <li>You&apos;ll be logged out of all devices after changing your password</li>
                 </ul>
               </div>
             </div>
@@ -302,7 +302,7 @@ export default function SecuritySettings({ onSuccess }: SecuritySettingsProps) {
                 Updating...
               </>
             ) : (
-              'Change Password'
+              "Change Password"
             )}
           </Button>
         </div>

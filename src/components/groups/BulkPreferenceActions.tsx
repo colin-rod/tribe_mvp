@@ -116,7 +116,7 @@ export default function BulkPreferenceActions({
     try {
       await onBulkAction(action.type)
       onClearSelection()
-    } catch (_error) {
+    } catch {
       setErrorMessage('Could not complete that action. Please try again.')
     } finally {
       setIsProcessing(false)
@@ -142,7 +142,7 @@ export default function BulkPreferenceActions({
       await onBulkAction(activeAction.type, preferences)
       setActiveAction(null)
       onClearSelection()
-    } catch (_error) {
+    } catch {
       setErrorMessage('Could not update preferences for the selected groups.')
     } finally {
       setIsProcessing(false)

@@ -42,6 +42,7 @@ export default function GroupPreferenceManager({
   ))
 
   const [isProcessing, setIsProcessing] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const hasChanges = useCallback(() => {
@@ -66,6 +67,7 @@ export default function GroupPreferenceManager({
 
   const handleSave = async () => {
     setIsProcessing(true)
+    setSaveError(null)
     try {
       if (useGroupDefaults) {
         await onResetToDefaults(membership.id)
@@ -78,7 +80,8 @@ export default function GroupPreferenceManager({
       }
       onClose()
     } catch (error) {
-      console.error('Failed to update preferences:', error)
+      const message = error instanceof Error ? error.message : 'Failed to update preferences'
+      setSaveError(message)
     } finally {
       setIsProcessing(false)
     }
@@ -169,6 +172,12 @@ export default function GroupPreferenceManager({
       </div>
 
       <div className="p-6 space-y-6">
+        {saveError && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive">{saveError}</p>
+          </div>
+        )}
+
         {/* Use Group Defaults Toggle */}
         <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center h-5">
@@ -186,7 +195,7 @@ export default function GroupPreferenceManager({
               Use group default settings
             </label>
             <p className="text-xs text-gray-600 mt-1">
-              When enabled, you'll automatically receive updates according to the group's default preferences.
+              When enabled, you&apos;ll automatically receive updates according to the group&apos;s default preferences.
               Disable to customize your personal preferences for this group.
             </p>
           </div>

@@ -11,7 +11,6 @@ import { formatDistanceToNow } from 'date-fns'
 import {
   XMarkIcon,
   CameraIcon,
-  ClockIcon,
   DocumentTextIcon,
   SparklesIcon,
   UserGroupIcon,

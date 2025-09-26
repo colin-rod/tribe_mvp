@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { GroupMembershipCard } from './GroupMembershipCard'
 import { TemporaryMuteModal } from './TemporaryMuteModal'
-import { getPreferenceOptions } from '@/lib/preference-links'
 import { createLogger } from '@/lib/logger'
 import {
   ChevronDownIcon,
@@ -55,7 +53,7 @@ export interface RecipientData {
   relationship: string
   member_since: string
   last_seen?: string
-  preferences: any
+  preferences: Record<string, unknown>
 }
 
 export interface GroupOverviewData {
@@ -75,7 +73,7 @@ export interface GroupOverviewData {
     custom_groups: number
     groups_with_custom_settings: number
     admin_roles: number
-    preferences: any
+    preferences: Record<string, unknown>
   }
 }
 
@@ -97,14 +95,8 @@ export function GroupOverviewDashboard({ token, onSuccess }: GroupOverviewDashbo
   const [selectedMembership, setSelectedMembership] = useState<GroupMembership | null>(null)
   const [processingAction, setProcessingAction] = useState<string | null>(null)
 
-  const options = getPreferenceOptions()
-
   // Fetch membership data
-  useEffect(() => {
-    fetchMembershipData()
-  }, [token])
-
-  const fetchMembershipData = async () => {
+  const fetchMembershipData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -124,7 +116,11 @@ export function GroupOverviewDashboard({ token, onSuccess }: GroupOverviewDashbo
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
+
+  useEffect(() => {
+    void fetchMembershipData()
+  }, [fetchMembershipData])
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -389,7 +385,7 @@ export function GroupOverviewDashboard({ token, onSuccess }: GroupOverviewDashbo
           {expandedSections.inactiveGroups && (
             <div className="px-6 pb-6">
               <p className="text-sm text-gray-600 mb-4">
-                These groups are inactive. You won't receive notifications but can rejoin anytime.
+                These groups are inactive. You won&apos;t receive notifications but can rejoin anytime.
               </p>
 
               <div className="space-y-4">
@@ -464,7 +460,7 @@ export function GroupOverviewDashboard({ token, onSuccess }: GroupOverviewDashbo
                 <li><strong>Group Defaults:</strong> Settings automatically applied to new groups you join</li>
                 <li><strong>Custom Settings:</strong> Your personal overrides for specific groups</li>
                 <li><strong>Mute Options:</strong> Temporarily pause notifications while staying in the group</li>
-                <li><strong>Override Indicators:</strong> Blue badges show when you're using custom settings</li>
+                <li><strong>Override Indicators:</strong> Blue badges show when you&apos;re using custom settings</li>
               </ul>
             </div>
           </div>

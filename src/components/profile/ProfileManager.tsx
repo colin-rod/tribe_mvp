@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { ProfileTabNavigation } from './ProfileTabNavigation'
 import { ProfileSection } from './ProfileSection'
@@ -48,7 +47,6 @@ const PROFILE_TABS: ProfileTab[] = [
 export function ProfileManager() {
   const { user, loading } = useAuth()
   const [activeTab, setActiveTab] = useState<string>('profile')
-  const [isMobile, setIsMobile] = useState(false)
 
   // Handle URL tab parameter
   useEffect(() => {
@@ -59,17 +57,6 @@ export function ProfileManager() {
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam)
     }
-  }, [])
-
-  // Detect mobile screen size
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   // Update URL when tab changes

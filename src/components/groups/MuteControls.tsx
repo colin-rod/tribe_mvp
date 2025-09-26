@@ -68,16 +68,19 @@ export default function MuteControls({
 }: MuteControlsProps) {
   const [selectedOption, setSelectedOption] = useState<MuteOption | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleMute = async (option: MuteOption) => {
     if (isProcessing) return
 
     setIsProcessing(true)
+    setErrorMessage(null)
     try {
       await onMute(groupId, option.duration)
       onClose()
     } catch (error) {
-      console.error('Failed to mute group:', error)
+      const message = error instanceof Error ? error.message : 'Failed to mute group'
+      setErrorMessage(message)
     } finally {
       setIsProcessing(false)
     }
@@ -87,11 +90,13 @@ export default function MuteControls({
     if (isProcessing) return
 
     setIsProcessing(true)
+    setErrorMessage(null)
     try {
       await onUnmute(groupId)
       onClose()
     } catch (error) {
-      console.error('Failed to unmute group:', error)
+      const message = error instanceof Error ? error.message : 'Failed to unmute group'
+      setErrorMessage(message)
     } finally {
       setIsProcessing(false)
     }
@@ -165,7 +170,13 @@ export default function MuteControls({
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 space-y-4">
+        {errorMessage && (
+          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive">{errorMessage}</p>
+          </div>
+        )}
+
         {isMuted ? (
           // Unmute interface
           <div className="space-y-4">
@@ -190,7 +201,7 @@ export default function MuteControls({
             <div className="flex items-center justify-between pt-2">
               <div>
                 <p className="text-sm text-gray-600">
-                  You won't receive any notifications from this group while it's muted.
+                  You won&apos;t receive any notifications from this group while it&apos;s muted.
                 </p>
               </div>
               <Button
@@ -207,7 +218,7 @@ export default function MuteControls({
           <div className="space-y-4">
             <div className="mb-4">
               <p className="text-sm text-gray-600">
-                Choose how long you'd like to mute notifications from this group:
+                Choose how long you&apos;d like to mute notifications from this group:
               </p>
             </div>
 
