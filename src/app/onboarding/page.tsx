@@ -14,6 +14,7 @@ import { RecipientSetupStep } from '@/components/onboarding/RecipientSetupStep'
 import { FirstUpdateStep } from '@/components/onboarding/FirstUpdateStep'
 import { CompletionStep } from '@/components/onboarding/CompletionStep'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
+import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 const logger = createLogger('OnboardingPage')
 
@@ -250,7 +251,9 @@ export default function OnboardingPage() {
             <div className="fixed bottom-4 right-4 max-w-md">
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
-                  <div className="text-red-600 text-lg">⚠️</div>
+                  <div className="text-red-600">
+                    <ExclamationTriangleIcon className="h-6 w-6" aria-hidden="true" />
+                  </div>
                   <div>
                     <h4 className="font-medium text-red-900 mb-1">
                       Something went wrong
@@ -289,8 +292,9 @@ export default function OnboardingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
             {/* Privacy Message */}
-            <div className="text-xs text-gray-500 max-w-md">
-              🔒 {privacyMessage}
+            <div className="flex items-center text-xs text-gray-500 max-w-md space-x-2">
+              <LockClosedIcon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+              <span>{privacyMessage}</span>
             </div>
 
             {/* Links */}

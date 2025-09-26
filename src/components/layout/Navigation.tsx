@@ -10,14 +10,29 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { getInitials } from '@/lib/utils'
+import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
-export default function Navigation() {
+interface NavigationProps {
+  onCreateUpdate?: (type?: UpdateType) => void
+}
+
+export default function Navigation({ onCreateUpdate }: NavigationProps = {}) {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
+
+  const triggerCreateUpdate = (type: UpdateType = 'photo') => {
+    if (onCreateUpdate) {
+      onCreateUpdate(type)
+      setIsMobileMenuOpen(false)
+      setIsUserMenuOpen(false)
+    } else {
+      router.push('/dashboard/create-update')
+    }
+  }
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -116,12 +131,13 @@ export default function Navigation() {
                 >
                   Groups
                 </Link>
-                <Link
-                  href="/dashboard/create-update"
+                <button
+                  type="button"
+                  onClick={() => triggerCreateUpdate('photo')}
                   className="bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   Create Update
-                </Link>
+                </button>
               </div>
             )}
           </div>
@@ -300,16 +316,16 @@ export default function Navigation() {
               Groups
             </Link>
             <div className="pt-2 border-t border-neutral-200">
-              <Link
-                href="/dashboard/create-update"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block min-h-[44px] px-3 py-3 rounded-md text-base font-medium bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              <button
+                type="button"
+                onClick={() => triggerCreateUpdate('photo')}
+                className="block w-full min-h-[44px] px-3 py-3 rounded-md text-base font-medium bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center justify-center hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 <svg className="mr-3 h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Create Update
-              </Link>
+              </button>
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileManager } from '@/hooks/useProfileManager'
 import { personalInfoSchema, type PersonalInfoFormData } from '@/lib/validation/profile'
-import { validateImageFile, getChildPhotoUrl } from '@/lib/photo-upload'
+import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -155,11 +155,13 @@ export default function PersonalInfoForm({ onSuccess }: PersonalInfoFormProps) {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-primary-100 flex items-center justify-center">
-                    <span className="text-primary-800 text-lg font-semibold">
-                      {profile.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
-                    </span>
-                  </div>
+                  <img
+                    src={getDefaultAvatarUrl({
+                      name: profile.name || user.user_metadata?.name || user.email
+                    })}
+                    alt="Default profile avatar"
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </div>
             </div>

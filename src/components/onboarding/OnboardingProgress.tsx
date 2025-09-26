@@ -4,6 +4,7 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { getAllSteps, getStepInfo, getRemainingEstimatedTime } from '@/lib/onboarding'
 import type { OnboardingStep } from '@/hooks/useOnboarding'
+import { CheckIcon, ArrowUturnUpIcon } from '@heroicons/react/24/outline'
 
 interface OnboardingProgressProps {
   currentStep: OnboardingStep
@@ -102,7 +103,13 @@ export function OnboardingProgress({
                     }
                   )}
                 >
-                  {isCompleted ? '✓' : isSkipped ? '⤴' : index + 1}
+                  {isCompleted ? (
+                    <CheckIcon className="w-4 h-4" aria-hidden="true" />
+                  ) : isSkipped ? (
+                    <ArrowUturnUpIcon className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    index + 1
+                  )}
                 </div>
                 {showStepNames && (
                   <span className={cn(
@@ -177,7 +184,13 @@ export function OnboardingProgress({
                   }
                 )}
               >
-                {isCompleted ? '✓' : isSkipped ? '⤴' : step.icon}
+                {isCompleted ? (
+                  <CheckIcon className="w-4 h-4" aria-hidden="true" />
+                ) : isSkipped ? (
+                  <ArrowUturnUpIcon className="w-4 h-4" aria-hidden="true" />
+                ) : (
+                  step.icon
+                )}
               </div>
               {showStepNames && (
                 <span className={cn(

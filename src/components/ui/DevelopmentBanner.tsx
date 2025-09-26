@@ -7,7 +7,7 @@
 'use client'
 
 import { useState } from 'react'
-import { XMarkIcon, CodeBracketIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 export function DevelopmentBanner() {
   const [dismissed, setDismissed] = useState(false)
@@ -36,7 +36,10 @@ export function DevelopmentBanner() {
           <div className="flex items-center gap-x-2">
             <CodeBracketIcon className="h-4 w-4 flex-shrink-0" />
             <p className="flex-1">
-              <strong className="font-semibold">🚧 DEVELOPMENT VERSION 🚧</strong>
+              <strong className="font-semibold inline-flex items-center gap-1">
+                <ExclamationTriangleIcon className="h-4 w-4" aria-hidden="true" />
+                Development Version
+              </strong>
               <span className="ml-2 hidden sm:inline">
                 You are viewing the development version of Tribe MVP.
                 Changes here may not reflect the production environment.

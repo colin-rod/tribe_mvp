@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { calculateAge } from '@/lib/utils'
+import { SparklesIcon, HeartIcon } from '@heroicons/react/24/outline'
 
 interface EmailPreviewProps {
   updateContent: string | null
@@ -50,7 +51,7 @@ export default function EmailPreview({
 
   const getSubject = () => {
     if (milestoneName) {
-      return `🎉 ${childName}'s ${milestoneName}!`
+      return `${childName}'s ${milestoneName}!`
     }
     return `Update about ${childName}`
   }
@@ -139,8 +140,9 @@ export default function EmailPreview({
                 <h2 className="text-lg font-medium text-gray-900">{childName}</h2>
                 <p className="text-sm text-gray-600">{childAge}</p>
                 {milestoneName && (
-                  <p className="text-sm font-medium text-primary-600 mt-1">
-                    🎉 {milestoneName}
+                  <p className="text-sm font-medium text-primary-600 mt-1 flex items-center gap-1">
+                    <SparklesIcon className="h-4 w-4" aria-hidden="true" />
+                    {milestoneName}
                   </p>
                 )}
               </div>
@@ -191,7 +193,10 @@ export default function EmailPreview({
               </p>
 
               <div className="text-xs text-gray-500 space-y-1">
-                <p>Sent with ❤️ via Tribe</p>
+                <p className="flex items-center gap-1">
+                  <HeartIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  Sent with care via Tribe
+                </p>
                 <p>
                   You&apos;re receiving this because you&apos;re part of {childName}&apos;s family updates.
                   <a href="#" className="text-primary-600 hover:text-primary-700 underline ml-1">

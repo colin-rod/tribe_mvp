@@ -1,0 +1,365 @@
+Dashboard Improvements — Task File
+
+Context: Improve Dashboard UX for Tribe. Reorder layout, change activity feed to timeline with card-based view, add search/filter, progressive onboarding, personalization, empty states, and quick actions split button.
+
+Summary
+
+Deliver a set of front-end (React/Next) and necessary backend tasks to implement the requested UX changes. Each high-level feature is broken into discrete tasks with acceptance criteria, implementation notes, and QA checks.
+
+Tasks
+
+1) Reorder dashboard
+
+Goal: Make primary CTA prominent and move activity feed higher.
+
+Subtasks:
+
+Create new top-of-page hero area with large centered Create Update CTA (primary, large).
+
+Move Recent Activity Feed directly below hero area (above the fold on desktop where possible).
+
+Make onboarding tasks a collapsible section that only expands if any tasks incomplete.
+
+Acceptance criteria:
+
+Primary CTA is visible without scrolling on desktop (>= 1024w) and appears first in DOM after the nav.
+
+Activity feed is the first content section under the hero on load.
+
+Stats are grouped under "Stats" section in Profile and not displayed above the activity feed.
+
+Implementation notes:
+
+Use semantic HTML (header > main > section) so screen readers still understand order.
+
+Add a feature-flag toggle to revert layout if needed.
+
+2) Progressive "Getting Started"
+
+Goal: Replace static 3-step boxes with a single progressive checklist/progress bar.
+
+Subtasks:
+
+Build OnboardingProgress component that accepts booleans: hasChild, hasRecipient, hasPostedFirstUpdate.
+
+Render a checklist with completed state (check icon) and the next actionable step highlighted.
+
+If all steps complete, show a collapsed/hidden state with a single CTA: "Create an Update".
+
+Acceptance criteria:
+
+Users see ✓ for completed items and ➜ for the next suggested action.
+
+Clicking an action step routes to the correct page/modal.
+
+3) Change Activity Feed to Timeline View
+
+Goal: Replace list with a vertical timeline (left: date, right: activity card).
+
+Subtasks:
+
+Implement Timeline component that groups updates by date (day granularity).
+
+Left rail shows date/month. Right side renders ActivityCard per update.
+
+Add infinite scroll / "Load more" to paginate older updates.
+
+Acceptance criteria:
+
+Timeline renders grouped date headers with connector line.
+
+Scrolling older content loads more updates.
+
+Implementation notes:
+
+Keep mobile responsive: on narrow screens, date can collapse above each card to save horizontal space.
+
+4) Feed Filter & Search
+
+Goal: Allow users to search and filter activity feed.
+
+Subtasks:
+
+Add search input (global to feed) with debounced queries.
+
+Add filter chips/dropdown: All, By Child, Media (photos), Milestones, Drafts, Responses.
+
+Support combined search + filter state; reflect in URL query params for share/bookmark.
+
+Acceptance criteria:
+
+Search returns updates matching text in body, child.name, or tags.
+
+Filters update feed without full page reload.
+
+Backend notes:
+
+If server-side search used, add a q param to the updates list endpoint supporting limit/offset and filters.
+
+5) Card-Based Feed (ActivityCard)
+
+Goal: Give each update visual weight with avatar, text, timestamp, engagement.
+
+Subtasks:
+
+Build ActivityCard component with the following slots:
+
+Avatar (child image or default)
+
+Header (child name, age, relation)
+
+Body (update text, media preview)
+
+Footer (timestamp, engagement buttons: responses count, like, comment)
+
+Use accessible buttons for engagement and show hover states.
+
+Acceptance criteria:
+
+Cards show avatar, text, timestamp, and engagement metrics.
+
+Clicking the card opens the full update modal or navigates to update detail.
+
+6) Improved Empty States
+
+Goal: Provide helpful suggestions when sections are empty.
+
+Subtasks:
+
+Replace "No prompts available" with a card that shows 3 suggested prompts (clickable) to start an update.
+
+Add an empty timeline state with CTA: "Create your first memory" and link to example posts.
+
+Acceptance criteria:
+
+Empty states provide actionable CTAs and sample content that pre-fills the create-update modal when clicked.
+
+7) Personalization
+
+Goal: Surface a friendly welcome message and smart reminders.
+
+Subtasks:
+
+Add WelcomeBanner component: "Welcome back, {firstName} 👋".
+
+Query last update timestamp and display contextual reminder: e.g. "It's been 5 days since your last update. Want to share a new one?"
+
+Acceptance criteria:
+
+Personalized message shows the user first name pulled from profile.
+
+If last update > X days (configurable, default 7), display the reminder.
+
+8) Quick Actions Bar (Split Button)
+
+Goal: Expand New Update CTA into a split control for common update types.
+
+Subtasks:
+
+Implement a split button: primary portion opens the generic Create Update modal; dropdown portion presents options: Text, Photo, Milestone, Prompt Response.
+
+Map each option to the Create Update modal with pre-filled state (e.g., Photo mode opens file picker, Milestone opens milestone form tab).
+
+Acceptance criteria:
+
+Users can click the primary area to open default create modal or choose a specific type from the dropdown.
+
+Analytics event fired for each action type.
+
+Cross-cutting concerns
+
+Accessibility: keyboard navigation for timeline, split button, and filters. Ensure aria-* attributes and focus states.
+
+Performance: lazy-load images, virtualization for long feeds, or pagination/infinite scroll.
+
+Analytics: instrument events for CTA clicks, filter usage, search queries.
+
+Feature flags: wrap major layout changes behind a flag for gradual rollout.
+
+API / Data Model Notes
+
+Endpoint GET /updates should support params: limit, offset/cursor, q (search), filter (enum), group_by_date=true.
+
+Add engagement fields in updates response (responseCount, likeCount, commentCount, lastResponseAt).
+
+Add child.avatar_url to the updates response to avoid extra calls.
+
+QA Checklist
+
+Layout renders correctly at 320/768/1024/1440 widths.
+
+Keyboard nav and screenreader announcements for timeline group headers.
+
+Search + filters combine correctly and preserve state in URL.
+
+Empty states show suggested prompts and prefill create modal when clicked.
+
+Split button behavior works and analytics fire.
+
+Stats section hides/collapses when user has no stats (e.g., brand new account).
+
+Example routes & components (suggested)
+
+components/hero/CreateUpdateSplitButton.tsx
+
+components/timeline/Timeline.tsx
+
+components/timeline/ActivityCard.tsx
+
+components/onboarding/OnboardingProgress.tsx
+
+pages/dashboard.tsx (reflowed to hero -> timeline -> profile+stats)
+
+## Technical Architecture & Component Structure
+
+**State Management (Required Dependencies):**
+```json
+{
+  "zustand": "^4.4.0",
+  "use-debounce": "^9.0.4",
+  "react-intersection-observer": "^9.5.0",
+  "@tanstack/react-query": "^4.29.0",
+  "react-window": "^1.8.8"
+}
+```
+
+**Component Architecture:**
+
+**Core Components:**
+- `components/dashboard/DashboardHero.tsx` - Hero section with split CTA
+- `components/dashboard/DashboardStats.tsx` - Collapsible stats section
+- `components/onboarding/OnboardingProgress.tsx` - Progressive checklist
+- `components/timeline/Timeline.tsx` - Virtual scrolling timeline
+- `components/timeline/ActivityCard.tsx` - Enhanced update cards
+- `components/timeline/TimelineSearch.tsx` - Search and filter controls
+- `components/ui/SplitButton.tsx` - Reusable split button component
+- `components/dashboard/EmptyStates.tsx` - Various empty state components
+
+**State Management:**
+- `stores/dashboardStore.ts` - Dashboard state (Zustand)
+- `stores/timelineStore.ts` - Timeline data and filters (Zustand)
+- `hooks/useTimelineData.ts` - Server state management (React Query)
+- `hooks/useSearchDebounced.ts` - Debounced search implementation
+
+**Updated Page Structure:**
+- `pages/dashboard.tsx` - Refactored: hero → timeline → stats → onboarding
+
+**Utility Functions:**
+- `utils/timelineHelpers.ts` - Date grouping and formatting
+- `utils/searchHelpers.ts` - Search query processing
+- `utils/analyticsHelpers.ts` - Event tracking utilities
+
+## User Stories & Acceptance Criteria
+
+**Critical Missing User Stories Added:**
+
+**US1: New Parent Onboarding**
+```
+As a new parent with limited tech experience,
+I want guided tutorials with real examples,
+So I can confidently create my first update without anxiety.
+
+Acceptance Criteria:
+- Onboarding includes example updates with child photos (stock/demo)
+- Tutorial tooltips explain each field and its purpose
+- Progress is saved if user navigates away
+- Skip option available but tracks completion rates
+```
+
+**US2: Extended Family Engagement**
+```
+As a grandparent viewing updates,
+I want clear visual cues about response expectations,
+So I know how to engage meaningfully without feeling overwhelmed.
+
+Acceptance Criteria:
+- Activity cards show "response encouraged" vs "just sharing" indicators
+- Response suggestions provided based on update type
+- Family role affects suggested response types
+```
+
+**US3: Content Migration**
+```
+As an existing user,
+I want my current activity history preserved in the new timeline,
+So I don't lose my family's digital memories.
+
+Acceptance Criteria:
+- All existing updates appear in new timeline format
+- Existing URLs/bookmarks still work (redirects)
+- Migration happens seamlessly without user action
+- Backup/export available if user wants old format
+```
+
+## Clarifying Questions & Decisions Needed
+
+**Strategic Decisions Required:**
+1. **What is the target improvement in new user activation rate?**
+2. **How will success be measured: DAU, update frequency, or response engagement?**
+3. **What's the acceptable timeline for ROI from this UX investment?**
+
+**User Experience Clarifications:**
+1. **Timeline Grouping:** How are updates grouped when multiple children have updates on the same day?
+2. **Search Scope:** Should search include recipient responses or only parent-created content?
+3. **Mobile Performance:** What's the acceptable loading time on 3G connections?
+4. **Filter Persistence:** Should filter preferences persist across sessions?
+
+**Technical Architecture Decisions:**
+1. **Database Performance:** When do we switch from client-side to server-side filtering?
+2. **Virtual Scrolling:** Which library and what's the performance target?
+3. **Offline Support:** Should timeline be available offline?
+4. **API Rate Limiting:** What are the limits for search endpoints?
+
+**Business Impact Questions:**
+1. **Mobile Priority:** Should mobile experience be developed first?
+2. **Feature Flag Strategy:** What's the rollout percentage plan?
+3. **User Training:** Do we need help documentation or video tutorials?
+4. **Success Metrics:** What constitutes success vs. failure for rollback?
+
+## Delivery Strategy & Resource Requirements
+
+**Team Allocation:**
+- **Frontend Developer:** 1.5 FTE for 12 weeks
+- **Backend Developer:** 0.5 FTE for API enhancements and database changes
+- **UX Designer:** 0.25 FTE for mobile optimization and user testing
+- **QA Engineer:** 0.5 FTE for comprehensive testing across phases
+
+**Phased PR Delivery:**
+
+**Phase 1 PRs (Week 1-4):**
+1. **Database schema updates and API enhancements**
+2. **Hero CTA repositioning and mobile-first responsive design**
+3. **Progressive onboarding component with analytics**
+4. **Basic card-based activity feed with loading states**
+
+**Phase 2 PRs (Week 5-10):**
+5. **Timeline view with virtual scrolling implementation**
+6. **Enhanced empty states and personalization features**
+7. **Basic search functionality with debouncing**
+
+**Phase 3 PRs (Week 11-12):**
+8. **Advanced filtering with URL state management**
+9. **Split button enhancements and analytics integration**
+10. **Performance optimizations and comprehensive QA fixes**
+
+**Risk Mitigation & Success Criteria:**
+- **Feature flags for all major changes**
+- **A/B testing infrastructure setup in Phase 1**
+- **User feedback collection mechanism**
+- **Performance monitoring and alerting**
+- **Rollback procedures documented and tested**
+
+**User Testing Requirements:**
+- 10 user interviews with parents (mix of new/existing users)
+- Mobile usability testing on actual devices
+- Accessibility testing with disabled users
+- Performance testing on low-end devices
+
+**Definition of Done:**
+- All acceptance criteria met
+- Mobile-first responsive design validated
+- Accessibility compliance (WCAG 2.1 AA) verified
+- Performance benchmarks achieved
+- Analytics tracking implemented
+- User testing completed with positive feedback
+- Documentation updated

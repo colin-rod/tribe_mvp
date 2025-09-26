@@ -7,10 +7,18 @@ import ChildImage from '@/components/ui/ChildImage'
 import { getStatusDisplayText, getStatusColorClass } from '@/lib/utils/update-formatting'
 
 /**
- * UpdateCard component for displaying update previews in the dashboard
+ * Enhanced UpdateCard component for displaying update previews with timeline styling
  */
 const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
   const handleClick = () => {
+    // Analytics tracking
+    if (typeof window !== 'undefined') {
+      window.gtag?.('event', 'update_card_click', {
+        event_category: 'engagement',
+        event_label: update.id,
+        value: 1
+      })
+    }
     onClick(update.id)
   }
 
@@ -24,11 +32,12 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
   return (
     <div
       className={cn(
-        'bg-white rounded-lg shadow-sm border border-gray-200 p-4',
-        'cursor-pointer transition-all duration-200',
-        'hover:shadow-md hover:border-gray-300 hover:bg-gray-50',
+        'bg-white rounded-xl shadow-sm border border-neutral-200 p-4 sm:p-5',
+        'cursor-pointer transition-all duration-300 ease-out',
+        'hover:shadow-lg hover:border-primary-200 hover:-translate-y-0.5',
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-        'group',
+        'group relative overflow-hidden',
+        'animate-slide-up',
         className
       )}
       onClick={handleClick}
@@ -37,42 +46,46 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
       role="button"
       aria-label={`View update about ${update.child.name}: ${update.contentPreview}`}
     >
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary-50/0 via-primary-50/20 to-primary-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       {/* Header with child info and timestamp */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="relative z-10 flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3 min-w-0 flex-1">
-          {/* Child avatar */}
+          {/* Child avatar with enhanced styling */}
           <div className="flex-shrink-0">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-neutral-200 ring-2 ring-white shadow-sm group-hover:ring-primary-100 transition-all duration-300">
               <ChildImage
                 childId={update.child.id}
                 photoUrl={update.child.avatar}
+                name={update.child.name}
                 alt={`${update.child.name}'s photo`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           </div>
 
           {/* Child name and age */}
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">
+            <h3 className="text-base font-semibold text-neutral-900 truncate group-hover:text-primary-800 transition-colors duration-200">
               {update.child.name}
             </h3>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-neutral-600 mt-0.5">
               {update.child.age} old
             </p>
           </div>
         </div>
 
-        {/* Timestamp */}
-        <div className="flex-shrink-0 text-right">
-          <p className="text-xs text-gray-500">
+        {/* Timestamp and status */}
+        <div className="flex-shrink-0 text-right space-y-1">
+          <p className="text-sm text-neutral-500 font-medium">
             {update.timeAgo}
           </p>
           {update.distributionStatus !== 'sent' && (
-            <div className="mt-1">
+            <div>
               <span
                 className={cn(
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                  'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+                  'shadow-sm border',
                   getStatusColorClass(update.distributionStatus)
                 )}
               >
@@ -84,53 +97,58 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
       </div>
 
       {/* Content preview */}
-      <div className="mb-3">
-        <p className="text-sm text-gray-700 leading-relaxed">
+      <div className="relative z-10 mb-4">
+        <p className="text-sm text-neutral-700 leading-relaxed line-clamp-3">
           {update.contentPreview}
         </p>
       </div>
 
-      {/* Footer with response info */}
-      <div className="flex items-center justify-between">
+      {/* Footer with enhanced engagement metrics */}
+      <div className="relative z-10 flex items-center justify-between pt-3 border-t border-neutral-100">
         <div className="flex items-center space-x-4">
-          {/* Response count */}
-          <div className="flex items-center space-x-1">
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            <span className="text-xs text-gray-500">
-              {update.responseCount === 0 ? 'No responses' :
+          {/* Response count with icon */}
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 bg-neutral-100 rounded-full flex items-center justify-center group-hover:bg-primary-100 transition-colors duration-200">
+              <svg
+                className="w-3.5 h-3.5 text-neutral-500 group-hover:text-primary-600 transition-colors duration-200"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </div>
+            <span className="text-sm text-neutral-600 font-medium">
+              {update.responseCount === 0 ? 'No responses yet' :
                update.responseCount === 1 ? '1 response' :
                `${update.responseCount} responses`}
             </span>
           </div>
 
-          {/* Unread indicator */}
+          {/* Unread indicator with pulse */}
           {update.hasUnreadResponses && (
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-primary-500 rounded-full" />
-              <span className="text-xs text-primary-600 font-medium">
-                New
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
+              <span className="text-sm text-primary-600 font-semibold">
+                New responses
               </span>
             </div>
           )}
         </div>
 
-        {/* View arrow */}
-        <div className="text-gray-400 group-hover:text-gray-600 transition-colors">
+        {/* Enhanced view arrow */}
+        <div className="flex items-center space-x-1 text-neutral-400 group-hover:text-primary-600 transition-all duration-200">
+          <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            View
+          </span>
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform duration-200"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

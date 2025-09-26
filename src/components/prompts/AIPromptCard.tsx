@@ -14,7 +14,10 @@ import {
   ClockIcon,
   DocumentTextIcon,
   SparklesIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  TrophyIcon,
+  BoltIcon,
+  FaceSmileIcon
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -58,28 +61,28 @@ interface AIPromptCardProps {
 
 const PROMPT_CONFIG = {
   milestone: {
-    icon: '🎉',
+    icon: TrophyIcon,
     color: 'border-purple-200 bg-purple-50',
     textColor: 'text-purple-900',
     badgeColor: 'bg-purple-100 text-purple-700',
     label: 'Milestone'
   },
   activity: {
-    icon: '🎯',
+    icon: BoltIcon,
     color: 'border-blue-200 bg-blue-50',
     textColor: 'text-blue-900',
     badgeColor: 'bg-blue-100 text-blue-700',
     label: 'Activity'
   },
   fun: {
-    icon: '😄',
+    icon: FaceSmileIcon,
     color: 'border-yellow-200 bg-yellow-50',
     textColor: 'text-yellow-900',
     badgeColor: 'bg-yellow-100 text-yellow-700',
     label: 'Fun'
   },
   seasonal: {
-    icon: '🌟',
+    icon: SparklesIcon,
     color: 'border-green-200 bg-green-50',
     textColor: 'text-green-900',
     badgeColor: 'bg-green-100 text-green-700',
@@ -148,12 +151,13 @@ export function AIPromptCard({
   // RENDER HELPERS
   // =============================================================================
 
-  const renderPromptHeader = () => (
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex items-center gap-2 flex-1">
-        <span className="text-lg" aria-hidden="true">
-          {config.icon}
-        </span>
+  const renderPromptHeader = () => {
+    const HeaderIcon = config.icon
+
+    return (
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2 flex-1">
+          <HeaderIcon className={`h-5 w-5 ${config.textColor}`} aria-hidden="true" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-medium text-gray-900 capitalize">
@@ -206,8 +210,9 @@ export function AIPromptCard({
           <XMarkIcon className="h-4 w-4" />
         )}
       </button>
-    </div>
-  )
+      </div>
+    )
+  }
 
   const renderPromptContent = () => (
     <div className={cn('mb-4', compact && 'mb-3')}>

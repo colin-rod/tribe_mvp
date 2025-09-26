@@ -1,0 +1,562 @@
+/**
+ * Dashboard Updates Client Library
+ * Supabase client functions for dashboard functionality with search, engagement, and analytics
+ */
+
+import { createClient } from './client'
+import type {
+  Database,
+  UpdateWithChild,
+  DashboardStats,
+  TimelineUpdate,
+  DashboardFilters,
+  PaginationParams,
+  EnhancedUpdate,
+  EngagementUpdatePayload
+} from '../types/database'
+import { createLogger } from '../logger'
+
+const logger = createLogger('dashboard-client')
+
+export class DashboardClient {
+  private supabase = createClient()
+
+  /**
+   * Get paginated dashboard updates with search and filtering
+   */
+  async getDashboardUpdates(
+    parentId: string,
+    filters: DashboardFilters = {},
+    pagination: PaginationParams = {}
+  ): Promise<{
+    data: UpdateWithChild[]
+    error: Error | null
+    hasMore: boolean
+    nextCursor?: { createdAt: string; id: string }
+  }> {
+    try {
+      const {
+        search,
+        childIds,
+        milestoneTypes,
+        status,
+        dateFrom,
+        dateTo
+      } = filters
+
+      const {
+        limit = 20,
+        offset = 0,
+        cursorCreatedAt,
+        cursorId
+      } = pagination
+
+      logger.debug('Fetching dashboard updates', {
+        parentId,
+        filters,
+        pagination
+      })
+
+      const { data, error } = await this.supabase.rpc('get_dashboard_updates', {
+        p_parent_id: parentId,
+        p_search_query: search || null,
+        p_child_ids: childIds || null,
+        p_milestone_types: milestoneTypes || null,
+        p_status_filter: status || null,
+        p_date_from: dateFrom || null,
+        p_date_to: dateTo || null,
+        p_limit: limit + 1, // Fetch one extra to check if there are more
+        p_offset: offset,
+        p_cursor_created_at: cursorCreatedAt || null,
+        p_cursor_id: cursorId || null
+      })
+
+      if (error) {
+        logger.error('Error fetching dashboard updates', error)
+        return { data: [], error: new Error(error.message), hasMore: false }
+      }
+
+      const hasMore = data.length > limit
+      const updates = hasMore ? data.slice(0, -1) : data
+      const nextCursor = hasMore && updates.length > 0
+        ? { createdAt: updates[updates.length - 1].created_at, id: updates[updates.length - 1].id }
+        : undefined
+
+      logger.debug('Successfully fetched dashboard updates', {
+        count: updates.length,
+        hasMore,
+        nextCursor
+      })
+
+      return {
+        data: updates,
+        error: null,
+        hasMore,
+        nextCursor
+      }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error fetching dashboard updates', err as Error)
+      return {
+        data: [],
+        error: err as Error,
+        hasMore: false
+      }
+    }
+  }
+
+  /**
+   * Get timeline updates grouped by date
+   */
+  async getTimelineUpdates(
+    parentId: string,
+    filters: Omit<DashboardFilters, 'status'> = {},
+    limit: number = 100
+  ): Promise<{
+    data: TimelineUpdate[]
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Fetching timeline updates', { parentId, filters, limit })
+
+      const { data, error } = await this.supabase.rpc('get_timeline_updates', {
+        p_parent_id: parentId,
+        p_search_query: filters.search || null,
+        p_child_ids: filters.childIds || null,
+        p_date_from: filters.dateFrom || null,
+        p_date_to: filters.dateTo || null,
+        p_limit: limit
+      })
+
+      if (error) {
+        logger.error('Error fetching timeline updates', error)
+        return { data: [], error: new Error(error.message) }
+      }
+
+      logger.debug('Successfully fetched timeline updates', { count: data.length })
+
+      return { data: data || [], error: null }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error fetching timeline updates', err as Error)
+      return { data: [], error: err as Error }
+    }
+  }
+
+  /**
+   * Get dashboard statistics
+   */
+  async getDashboardStats(
+    parentId: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<{
+    data: DashboardStats | null
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Fetching dashboard stats', { parentId, dateFrom, dateTo })
+
+      const { data, error } = await this.supabase.rpc('get_dashboard_stats', {
+        p_parent_id: parentId,
+        p_date_from: dateFrom || null,
+        p_date_to: dateTo || null
+      })
+
+      if (error) {
+        logger.error('Error fetching dashboard stats', error)
+        return { data: null, error: new Error(error.message) }
+      }
+
+      const stats = data?.[0] || null
+
+      logger.debug('Successfully fetched dashboard stats', stats)
+
+      return { data: stats, error: null }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error fetching dashboard stats', err as Error)
+      return { data: null, error: err as Error }
+    }
+  }
+
+  /**
+   * Toggle like on an update
+   */
+  async toggleUpdateLike(
+    updateId: string,
+    parentId: string
+  ): Promise<{
+    data: { isLiked: boolean; likeCount: number } | null
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Toggling update like', { updateId, parentId })
+
+      const { data, error } = await this.supabase.rpc('toggle_update_like', {
+        p_update_id: updateId,
+        p_parent_id: parentId
+      })
+
+      if (error) {
+        logger.error('Error toggling update like', error)
+        return { data: null, error: new Error(error.message) }
+      }
+
+      const result = data?.[0]
+      if (!result) {
+        return { data: null, error: new Error('No result returned from toggle like') }
+      }
+
+      logger.debug('Successfully toggled update like', result)
+
+      return {
+        data: {
+          isLiked: result.is_liked,
+          likeCount: result.like_count
+        },
+        error: null
+      }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error toggling update like', err as Error)
+      return { data: null, error: err as Error }
+    }
+  }
+
+  /**
+   * Add comment to an update
+   */
+  async addUpdateComment(
+    updateId: string,
+    parentId: string,
+    content: string
+  ): Promise<{
+    data: { id: string; content: string; createdAt: string; commentCount: number } | null
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Adding update comment', { updateId, parentId, contentLength: content.length })
+
+      const { data, error } = await this.supabase.rpc('add_update_comment', {
+        p_update_id: updateId,
+        p_parent_id: parentId,
+        p_content: content
+      })
+
+      if (error) {
+        logger.error('Error adding update comment', error)
+        return { data: null, error: new Error(error.message) }
+      }
+
+      const result = data?.[0]
+      if (!result) {
+        return { data: null, error: new Error('No result returned from add comment') }
+      }
+
+      logger.debug('Successfully added update comment', result)
+
+      return {
+        data: {
+          id: result.id,
+          content: result.content,
+          createdAt: result.created_at,
+          commentCount: result.comment_count
+        },
+        error: null
+      }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error adding update comment', err as Error)
+      return { data: null, error: err as Error }
+    }
+  }
+
+  /**
+   * Get likes for an update
+   */
+  async getUpdateLikes(
+    updateId: string,
+    parentId: string
+  ): Promise<{
+    data: Array<{
+      id: string
+      parentId: string
+      parentName: string
+      createdAt: string
+    }>
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Fetching update likes', { updateId, parentId })
+
+      const { data, error } = await this.supabase.rpc('get_update_likes', {
+        p_update_id: updateId,
+        p_parent_id: parentId
+      })
+
+      if (error) {
+        logger.error('Error fetching update likes', error)
+        return { data: [], error: new Error(error.message) }
+      }
+
+      const likes = (data || []).map(like => ({
+        id: like.id,
+        parentId: like.parent_id,
+        parentName: like.parent_name,
+        createdAt: like.created_at
+      }))
+
+      logger.debug('Successfully fetched update likes', { count: likes.length })
+
+      return { data: likes, error: null }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error fetching update likes', err as Error)
+      return { data: [], error: err as Error }
+    }
+  }
+
+  /**
+   * Get comments for an update
+   */
+  async getUpdateComments(
+    updateId: string,
+    parentId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<{
+    data: Array<{
+      id: string
+      parentId: string
+      parentName: string
+      content: string
+      createdAt: string
+      updatedAt: string
+    }>
+    error: Error | null
+  }> {
+    try {
+      logger.debug('Fetching update comments', { updateId, parentId, limit, offset })
+
+      const { data, error } = await this.supabase.rpc('get_update_comments', {
+        p_update_id: updateId,
+        p_parent_id: parentId,
+        p_limit: limit,
+        p_offset: offset
+      })
+
+      if (error) {
+        logger.error('Error fetching update comments', error)
+        return { data: [], error: new Error(error.message) }
+      }
+
+      const comments = (data || []).map(comment => ({
+        id: comment.id,
+        parentId: comment.parent_id,
+        parentName: comment.parent_name,
+        content: comment.content,
+        createdAt: comment.created_at,
+        updatedAt: comment.updated_at
+      }))
+
+      logger.debug('Successfully fetched update comments', { count: comments.length })
+
+      return { data: comments, error: null }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error fetching update comments', err as Error)
+      return { data: [], error: err as Error }
+    }
+  }
+
+  /**
+   * Increment view count for an update (for engagement tracking)
+   */
+  async incrementViewCount(
+    updateId: string,
+    parentId: string
+  ): Promise<{ error: Error | null }> {
+    try {
+      logger.debug('Incrementing view count', { updateId, parentId })
+
+      const { error } = await this.supabase.rpc('increment_update_view_count', {
+        p_update_id: updateId,
+        p_parent_id: parentId
+      })
+
+      if (error) {
+        logger.error('Error incrementing view count', error)
+        return { error: new Error(error.message) }
+      }
+
+      logger.debug('Successfully incremented view count')
+      return { error: null }
+    } catch (err) {
+      logger.errorWithStack('Unexpected error incrementing view count', err as Error)
+      return { error: err as Error }
+    }
+  }
+
+  /**
+   * Subscribe to real-time engagement updates
+   */
+  subscribeToEngagementUpdates(
+    parentId: string,
+    callback: (payload: EngagementUpdatePayload) => void
+  ): () => void {
+    logger.debug('Setting up engagement updates subscription', { parentId })
+
+    const channel = this.supabase.channel('engagement_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'updates',
+          filter: `parent_id=eq.${parentId}`
+        },
+        (payload: any) => {
+          logger.debug('Received engagement update', payload)
+
+          const update = payload.new
+          if (update) {
+            callback({
+              update_id: update.id,
+              parent_id: update.parent_id,
+              like_count: update.like_count || 0,
+              response_count: update.response_count || 0,
+              view_count: update.view_count || 0
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    // Return unsubscribe function
+    return () => {
+      logger.debug('Unsubscribing from engagement updates')
+      this.supabase.removeChannel(channel)
+    }
+  }
+
+  /**
+   * Subscribe to new comments on updates
+   */
+  subscribeToUpdateComments(
+    parentId: string,
+    callback: (payload: { updateId: string; comment: any }) => void
+  ): () => void {
+    logger.debug('Setting up comments subscription', { parentId })
+
+    const channel = this.supabase.channel('update_comments')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments'
+        },
+        async (payload: any) => {
+          logger.debug('Received new comment', payload)
+
+          const comment = payload.new
+          if (comment) {
+            // Verify this comment belongs to an update owned by the parent
+            const { data: update } = await this.supabase
+              .from('updates')
+              .select('parent_id')
+              .eq('id', comment.update_id)
+              .single()
+
+            if (update && update.parent_id === parentId) {
+              callback({
+                updateId: comment.update_id,
+                comment
+              })
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    // Return unsubscribe function
+    return () => {
+      logger.debug('Unsubscribing from comments updates')
+      this.supabase.removeChannel(channel)
+    }
+  }
+
+  /**
+   * Search updates with full-text search
+   */
+  async searchUpdates(
+    parentId: string,
+    searchQuery: string,
+    options: {
+      childIds?: string[]
+      limit?: number
+      offset?: number
+    } = {}
+  ): Promise<{
+    data: UpdateWithChild[]
+    error: Error | null
+  }> {
+    if (!searchQuery.trim()) {
+      return { data: [], error: null }
+    }
+
+    return this.getDashboardUpdates(
+      parentId,
+      {
+        search: searchQuery.trim(),
+        childIds: options.childIds
+      },
+      {
+        limit: options.limit || 20,
+        offset: options.offset || 0
+      }
+    ).then(result => ({
+      data: result.data,
+      error: result.error
+    }))
+  }
+}
+
+// Export singleton instance
+export const dashboardClient = new DashboardClient()
+
+// Export helper functions for common operations
+export const dashboardQueries = {
+  async getRecentUpdates(parentId: string, limit: number = 10) {
+    return dashboardClient.getDashboardUpdates(parentId, {}, { limit })
+  },
+
+  async getMilestoneUpdates(parentId: string, milestoneTypes?: Database['public']['Enums']['milestone_type'][]) {
+    return dashboardClient.getDashboardUpdates(parentId, { milestoneTypes })
+  },
+
+  async getChildUpdates(parentId: string, childIds: string[]) {
+    return dashboardClient.getDashboardUpdates(parentId, { childIds })
+  },
+
+  async getUpdatesInDateRange(parentId: string, dateFrom: string, dateTo: string) {
+    return dashboardClient.getDashboardUpdates(parentId, { dateFrom, dateTo })
+  },
+
+  async searchUpdatesDebounced(
+    parentId: string,
+    searchQuery: string,
+    debounceMs: number = 300
+  ) {
+    // Simple debounce implementation
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        const result = await dashboardClient.searchUpdates(parentId, searchQuery)
+        resolve(result)
+      }, debounceMs)
+    })
+  }
+}
+
+// Export constants for dashboard functionality
+export const DASHBOARD_CONSTANTS = {
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
+  SEARCH_DEBOUNCE_MS: 300,
+  STATS_REFRESH_INTERVAL: 30000, // 30 seconds
+  REAL_TIME_RECONNECT_ATTEMPTS: 5
+} as const

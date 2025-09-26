@@ -1,16 +1,26 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
 import ChildManager from '@/components/children/ChildManager'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
+import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
 export default function ChildrenPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const {
+    openCreateUpdateModal,
+    createUpdateModal
+  } = useCreateUpdateModal()
+
+  const handleCreateUpdate = useCallback((type: UpdateType = 'photo') => {
+    openCreateUpdateModal(type)
+  }, [openCreateUpdateModal])
 
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
@@ -38,7 +48,7 @@ export default function ChildrenPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
+      <Navigation onCreateUpdate={handleCreateUpdate} />
 
       <Header
         title="Children"
@@ -48,6 +58,8 @@ export default function ChildrenPage() {
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <ChildManager />
       </main>
+
+      {createUpdateModal}
     </div>
   )
 }

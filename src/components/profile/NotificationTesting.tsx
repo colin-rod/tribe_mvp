@@ -173,7 +173,7 @@ export default function NotificationTesting() {
           ? { ...result, status: 'delivered' }
           : result
       ))
-      addDebugLog(`✅ ${method} notification test completed successfully for type: ${type}`)
+      addDebugLog(`SUCCESS: ${method} notification test completed successfully for type: ${type}`)
 
     } catch (error) {
       // Update test result to failed
@@ -182,7 +182,7 @@ export default function NotificationTesting() {
           ? { ...result, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' }
           : result
       ))
-      addDebugLog(`❌ ${method} notification test failed for type: ${type} - ${error}`)
+      addDebugLog(`ERROR: ${method} notification test failed for type: ${type} - ${error}`)
     } finally {
       setIsTesting(false)
     }

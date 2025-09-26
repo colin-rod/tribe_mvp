@@ -1,6 +1,13 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import type { ComponentType, SVGProps } from 'react'
+import {
+  ClockIcon,
+  PaperAirplaneIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from '@heroicons/react/24/solid'
 
 export type DeliveryStatus = 'queued' | 'sent' | 'delivered' | 'failed'
 
@@ -15,46 +22,46 @@ const statusConfig: Record<DeliveryStatus, {
   label: string
   bgColor: string
   textColor: string
-  icon: string
+  icon: ComponentType<SVGProps<SVGSVGElement>>
 }> = {
   queued: {
     label: 'Queued',
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-800',
-    icon: '⏳'
+    icon: ClockIcon
   },
   sent: {
     label: 'Sent',
     bgColor: 'bg-blue-100',
     textColor: 'text-blue-800',
-    icon: '📨'
+    icon: PaperAirplaneIcon
   },
   delivered: {
     label: 'Delivered',
     bgColor: 'bg-green-100',
     textColor: 'text-green-800',
-    icon: '✓'
+    icon: CheckCircleIcon
   },
   failed: {
     label: 'Failed',
     bgColor: 'bg-red-100',
     textColor: 'text-red-800',
-    icon: '✗'
+    icon: XCircleIcon
   }
 }
 
 const sizeConfig = {
   sm: {
     container: 'px-2 py-1 text-xs',
-    icon: 'text-xs mr-1'
+    icon: 'h-3.5 w-3.5 mr-1'
   },
   md: {
     container: 'px-2.5 py-1.5 text-sm',
-    icon: 'text-sm mr-1.5'
+    icon: 'h-4 w-4 mr-1.5'
   },
   lg: {
     container: 'px-3 py-2 text-base',
-    icon: 'text-base mr-2'
+    icon: 'h-5 w-5 mr-2'
   }
 }
 
@@ -66,6 +73,8 @@ export function DeliveryStatusBadge({
 }: DeliveryStatusBadgeProps) {
   const config = statusConfig[status]
   const sizeClasses = sizeConfig[size]
+
+  const Icon = config.icon
 
   return (
     <span
@@ -80,9 +89,7 @@ export function DeliveryStatusBadge({
       aria-label={`Delivery status: ${config.label}`}
     >
       {showIcon && (
-        <span className={sizeClasses.icon} aria-hidden="true">
-          {config.icon}
-        </span>
+        <Icon className={cn('flex-shrink-0', sizeClasses.icon)} aria-hidden="true" />
       )}
       {config.label}
     </span>

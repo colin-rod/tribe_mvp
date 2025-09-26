@@ -8,6 +8,7 @@ import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import { validateEmail, validatePhone, validateContactMethod, RELATIONSHIP_OPTIONS } from '@/lib/validation/recipients'
 import type { RecipientSetupData } from '@/hooks/useOnboarding'
 import type { CreateRecipientData } from '@/lib/recipients'
+import { UsersIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 interface RecipientSetupStepProps {
   data: Partial<RecipientSetupData>
@@ -166,7 +167,9 @@ export function RecipientSetupStep({
     <div className={cn('max-w-4xl mx-auto space-y-8', className)}>
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="text-4xl mb-2">👨‍👩‍👧‍👦</div>
+        <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
+          <UsersIcon className="h-10 w-10 text-primary-600" aria-hidden="true" />
+        </div>
         <h1 className="text-3xl font-bold text-gray-900">
           Build Your Circle
         </h1>
@@ -253,7 +256,9 @@ export function RecipientSetupStep({
       {/* Privacy Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="text-blue-600 text-lg">🔒</div>
+          <div className="text-blue-600">
+            <LockClosedIcon className="h-6 w-6" aria-hidden="true" />
+          </div>
           <div>
             <h4 className="font-medium text-blue-900 mb-1">Recipient Privacy</h4>
             <p className="text-sm text-blue-800">{privacyMessage}</p>

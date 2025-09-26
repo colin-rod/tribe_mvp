@@ -34,7 +34,7 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
 
   useEffect(() => {
     if (child.profile_photo_url) {
-      setPhotoPreview(getChildPhotoUrl(child.profile_photo_url))
+      setPhotoPreview(getChildPhotoUrl(child.profile_photo_url, child.name))
     }
   }, [child.profile_photo_url])
 
@@ -42,7 +42,7 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
     const file = e.target.files?.[0]
     if (!file) {
       setPhoto(null)
-      setPhotoPreview(child.profile_photo_url ? getChildPhotoUrl(child.profile_photo_url) : null)
+      setPhotoPreview(child.profile_photo_url ? getChildPhotoUrl(child.profile_photo_url, child.name) : null)
       setErrors(prev => ({ ...prev, photo: undefined }))
       setRemovePhoto(false)
       return

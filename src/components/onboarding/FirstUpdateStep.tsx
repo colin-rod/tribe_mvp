@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import type { FirstUpdateData } from '@/hooks/useOnboarding'
+import {
+  DocumentTextIcon,
+  PhotoIcon,
+  VideoCameraIcon,
+  CpuChipIcon,
+  ShieldCheckIcon
+} from '@heroicons/react/24/outline'
 
 interface FirstUpdateStepProps {
   data: Partial<FirstUpdateData>
@@ -44,8 +51,8 @@ export function FirstUpdateStep({
 
   // Sample update prompts to inspire users
   const updatePrompts = [
-    `${childName} just learned to roll over! 🎉`,
-    `Caught ${childName} smiling at me today ❤️`,
+    `${childName} just learned to roll over!`,
+    `Caught ${childName} smiling at me today`,
     `${childName}'s first day at daycare went amazing!`,
     `Look at how much ${childName} has grown this month!`,
     `${childName} said their first word today!`,
@@ -167,7 +174,9 @@ export function FirstUpdateStep({
     <div className={cn('max-w-3xl mx-auto space-y-8', className)}>
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="text-4xl mb-2">📝</div>
+        <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
+          <DocumentTextIcon className="h-10 w-10 text-primary-600" aria-hidden="true" />
+        </div>
         <h1 className="text-3xl font-bold text-gray-900">
           Share Your First Update
         </h1>
@@ -256,7 +265,7 @@ export function FirstUpdateStep({
             onClick={() => fileInputRef.current?.click()}
           >
             <div className="space-y-2">
-              <div className="text-2xl">📷</div>
+              <PhotoIcon className="mx-auto h-8 w-8 text-primary-600" aria-hidden="true" />
               <div className="text-gray-600">
                 {isDragOver ? 'Drop files here' : 'Click to upload or drag photos/videos here'}
               </div>
@@ -287,7 +296,7 @@ export function FirstUpdateStep({
                     />
                   ) : (
                     <div className="w-full h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                      <span className="text-2xl">🎥</span>
+                      <VideoCameraIcon className="h-8 w-8 text-gray-500" aria-hidden="true" />
                     </div>
                   )}
                   <button
@@ -342,7 +351,9 @@ export function FirstUpdateStep({
         {formData.content.trim() && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <div className="text-blue-600 text-lg">🤖</div>
+              <div className="text-blue-600">
+                <CpuChipIcon className="h-6 w-6" aria-hidden="true" />
+              </div>
               <div>
                 <h4 className="font-medium text-blue-900 mb-2">AI Analysis Preview</h4>
                 <p className="text-sm text-blue-800 mb-2">
@@ -362,7 +373,9 @@ export function FirstUpdateStep({
         {/* Privacy Notice */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <div className="text-gray-600 text-lg">🛡️</div>
+            <div className="text-gray-600">
+              <ShieldCheckIcon className="h-6 w-6" aria-hidden="true" />
+            </div>
             <div>
               <h4 className="font-medium text-gray-900 mb-1">Practice Mode</h4>
               <p className="text-sm text-gray-700">{privacyMessage}</p>
@@ -453,7 +466,9 @@ export function FirstUpdateStepCompact({
   return (
     <div className={cn('max-w-md mx-auto space-y-6', className)}>
       <div className="text-center space-y-2">
-        <div className="text-3xl">📝</div>
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
+          <DocumentTextIcon className="h-7 w-7 text-primary-600" aria-hidden="true" />
+        </div>
         <h1 className="text-2xl font-bold text-gray-900">Practice Update</h1>
         <p className="text-sm text-gray-600">Try creating your first update</p>
       </div>

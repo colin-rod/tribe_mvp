@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Tribe</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .offline-container {
+      max-width: 480px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .offline-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 30px;
+      opacity: 0.9;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      opacity: 0.9;
+      margin-bottom: 30px;
+    }
+
+    .offline-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 28px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .status.online {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status.offline {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    @media (max-width: 480px) {
+      .offline-container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <svg class="offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="m3 3 3 9-3 9 19-9Z"/>
+      <path d="m6 12h16"/>
+    </svg>
+
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Don't worry, you can still browse your cached timeline updates!</p>
+
+    <div class="offline-actions">
+      <a href="/dashboard/timeline" class="btn btn-primary">
+        View Cached Timeline
+      </a>
+      <button onclick="checkConnection()" class="btn">
+        Check Connection
+      </button>
+      <button onclick="goBack()" class="btn">
+        Go Back
+      </button>
+    </div>
+
+    <div class="status offline" id="connection-status">
+      📡 Connection Status: Offline
+    </div>
+  </div>
+
+  <script>
+    // Check online status
+    function updateConnectionStatus() {
+      const statusEl = document.getElementById('connection-status')
+
+      if (navigator.onLine) {
+        statusEl.textContent = '✅ Connection Status: Online'
+        statusEl.className = 'status online'
+
+        // Auto-redirect after a brief delay
+        setTimeout(() => {
+          window.location.href = '/dashboard/timeline'
+        }, 1500)
+      } else {
+        statusEl.textContent = '📡 Connection Status: Offline'
+        statusEl.className = 'status offline'
+      }
+    }
+
+    // Manual connection check
+    function checkConnection() {
+      updateConnectionStatus()
+
+      if (navigator.onLine) {
+        // Try to fetch a small resource to verify connection
+        fetch('/favicon.ico', { mode: 'no-cors', cache: 'no-cache' })
+          .then(() => {
+            window.location.href = '/dashboard/timeline'
+          })
+          .catch(() => {
+            alert('Still having connection issues. Please check your internet connection.')
+          })
+      } else {
+        alert('Still offline. Please check your internet connection and try again.')
+      }
+    }
+
+    // Go back to previous page
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back()
+      } else {
+        window.location.href = '/dashboard'
+      }
+    }
+
+    // Listen for connection changes
+    window.addEventListener('online', updateConnectionStatus)
+    window.addEventListener('offline', updateConnectionStatus)
+
+    // Check connection on load
+    updateConnectionStatus()
+
+    // Service Worker registration check
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        console.log('Service Worker ready for offline support')
+
+        // Listen for SW messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data.type === 'CACHE_UPDATED') {
+            const statusEl = document.getElementById('connection-status')
+            statusEl.innerHTML = '💾 Timeline cached for offline viewing'
+            statusEl.className = 'status'
+          }
+        })
+      })
+    }
+
+    // Auto-retry connection every 10 seconds
+    setInterval(() => {
+      if (!navigator.onLine) {
+        // Try a small network request to check connectivity
+        fetch('/favicon.ico', {
+          mode: 'no-cors',
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(5000)
+        })
+        .then(() => {
+          if (!navigator.onLine) {
+            // Force update online status if fetch succeeds
+            Object.defineProperty(navigator, 'onLine', {
+              writable: true,
+              value: true
+            })
+            updateConnectionStatus()
+          }
+        })
+        .catch(() => {
+          // Still offline
+        })
+      }
+    }, 10000)
+  </script>
+</body>
+</html>

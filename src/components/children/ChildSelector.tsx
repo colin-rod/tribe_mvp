@@ -91,6 +91,7 @@ export default function ChildSelector({
                 <ChildImage
                   childId={selectedChild.id}
                   photoUrl={selectedChild.profile_photo_url}
+                  name={selectedChild.name}
                   alt={`${selectedChild.name}'s profile`}
                   className="w-full h-full object-cover"
                 />
@@ -143,6 +144,7 @@ export default function ChildSelector({
                     <ChildImage
                       childId={child.id}
                       photoUrl={child.profile_photo_url}
+                      name={child.name}
                       alt={`${child.name}'s profile`}
                       className="w-full h-full object-cover"
                     />

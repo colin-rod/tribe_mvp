@@ -11,6 +11,7 @@ import { securitySchema, calculatePasswordStrength, type SecurityFormData } from
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { CheckIcon } from '@heroicons/react/24/outline'
 
 interface SecuritySettingsProps {
   onSuccess?: () => void
@@ -192,33 +193,38 @@ export default function SecuritySettings({ onSuccess }: SecuritySettingsProps) {
             <p className="text-sm text-gray-600 mb-2">Password requirements:</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-gray-500">
               <div className="flex items-center">
-                <span className={`mr-2 ${newPassword && newPassword.length >= 8 ? 'text-green-500' : 'text-gray-400'}`}>
-                  ✓
-                </span>
+                <CheckIcon
+                  className={`mr-2 h-4 w-4 ${newPassword && newPassword.length >= 8 ? 'text-green-500' : 'text-gray-400'}`}
+                  aria-hidden="true"
+                />
                 At least 8 characters
               </div>
               <div className="flex items-center">
-                <span className={`mr-2 ${newPassword && /[a-z]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}>
-                  ✓
-                </span>
+                <CheckIcon
+                  className={`mr-2 h-4 w-4 ${newPassword && /[a-z]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}
+                  aria-hidden="true"
+                />
                 One lowercase letter
               </div>
               <div className="flex items-center">
-                <span className={`mr-2 ${newPassword && /[A-Z]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}>
-                  ✓
-                </span>
+                <CheckIcon
+                  className={`mr-2 h-4 w-4 ${newPassword && /[A-Z]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}
+                  aria-hidden="true"
+                />
                 One uppercase letter
               </div>
               <div className="flex items-center">
-                <span className={`mr-2 ${newPassword && /[0-9]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}>
-                  ✓
-                </span>
+                <CheckIcon
+                  className={`mr-2 h-4 w-4 ${newPassword && /[0-9]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}
+                  aria-hidden="true"
+                />
                 One number
               </div>
               <div className="flex items-center sm:col-span-2">
-                <span className={`mr-2 ${newPassword && /[^a-zA-Z0-9]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}>
-                  ✓
-                </span>
+                <CheckIcon
+                  className={`mr-2 h-4 w-4 ${newPassword && /[^a-zA-Z0-9]/.test(newPassword) ? 'text-green-500' : 'text-gray-400'}`}
+                  aria-hidden="true"
+                />
                 One special character
               </div>
             </div>

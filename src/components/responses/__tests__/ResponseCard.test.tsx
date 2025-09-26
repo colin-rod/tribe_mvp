@@ -58,7 +58,7 @@ describe('ResponseCard', () => {
       />
     )
 
-    const mediaElement = screen.getAllByRole('img')[0]
+    const mediaElement = screen.getByAltText('Media 1')
     fireEvent.click(mediaElement)
 
     expect(mockOnMediaClick).toHaveBeenCalled()
@@ -71,10 +71,12 @@ describe('ResponseCard', () => {
     expect(screen.queryByText('What a wonderful update!')).not.toBeInTheDocument()
   })
 
-  it('displays correct avatar initial', () => {
+  it('renders a default avatar image', () => {
     render(<ResponseCard response={mockResponse} />)
 
-    expect(screen.getByText('J')).toBeInTheDocument()
+    const avatar = screen.getByAltText("John Doe's avatar") as HTMLImageElement
+    expect(avatar).toBeInTheDocument()
+    expect(avatar.src).toContain('ui-avatars.com')
   })
 
   it('handles different channel types correctly', () => {

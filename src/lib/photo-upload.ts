@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { getDefaultAvatarUrl } from './utils/avatar'
 
 export async function uploadChildPhoto(file: File, childId: string): Promise<string> {
   const supabase = createClient()
@@ -114,13 +115,12 @@ export function validateImageFile(file: File): string | null {
   return null
 }
 
-export function getChildPhotoUrl(photoUrl?: string): string {
+export function getChildPhotoUrl(photoUrl?: string, name?: string): string {
   if (photoUrl) {
     return photoUrl
   }
 
-  // Return a default avatar or placeholder
-  return '/placeholder-child.png'
+  return getDefaultAvatarUrl({ name })
 }
 
 /**

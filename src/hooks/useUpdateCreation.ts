@@ -5,7 +5,6 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('UseUpdateCreation')
 
 import { useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { uploadUpdatePhotos, validateUpdateMediaFiles, generatePreviewUrls, cleanupPreviewUrls } from '@/lib/photo-upload'
 import { createUpdate, updateUpdateAIAnalysis, updateUpdateMediaUrls, updateUpdateRecipients, markUpdateAsSent } from '@/lib/updates'
 import { analyzeUpdate } from '@/lib/ai-analysis'
@@ -17,7 +16,7 @@ import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Child } from '@/lib/children'
 
 export interface UpdateCreationStep {
-  id: 'create' | 'ai-review' | 'preview'
+  id: 'create' | 'preview'
   title: string
   description: string
   isComplete: boolean
@@ -32,9 +31,11 @@ export interface UseUpdateCreationReturn {
   aiAnalysis: AIAnalysisResponse | null
   children: Child[]
   isLoading: boolean
+  isAnalyzing: boolean
   error: string | null
   uploadProgress: number
   previewUrls: string[]
+  hasRequestedAnalysis: boolean
 
   // Actions
   setFormData: (data: Partial<UpdateFormData>) => void
@@ -50,8 +51,6 @@ export interface UseUpdateCreationReturn {
 }
 
 export function useUpdateCreation(): UseUpdateCreationReturn {
-  const router = useRouter()
-
   // State
   const [currentStep, setCurrentStep] = useState<UpdateCreationStep['id']>('create')
   const [formData, setFormDataState] = useState<Partial<UpdateFormData>>({
@@ -62,33 +61,28 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null)
   const [children, setChildren] = useState<Child[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [currentUpdateId, setCurrentUpdateId] = useState<string | null>(null)
+  const [hasRequestedAnalysis, setHasRequestedAnalysis] = useState(false)
 
   // Steps configuration
   const steps: UpdateCreationStep[] = [
     {
       id: 'create',
-      title: 'Create Update',
-      description: 'Write your update and add photos',
-      isComplete: Boolean(formData.content && formData.childId),
+      title: 'Create & Review',
+      description: 'Write your update and review AI suggestions',
+      isComplete: Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0),
       isAccessible: true
-    },
-    {
-      id: 'ai-review',
-      title: 'AI Review',
-      description: 'Review AI suggestions and select recipients',
-      isComplete: Boolean(aiAnalysis?.success),
-      isAccessible: Boolean(formData.content && formData.childId)
     },
     {
       id: 'preview',
       title: 'Preview & Send',
       description: 'Review and send your update',
       isComplete: false,
-      isAccessible: Boolean(aiAnalysis?.success && formData.confirmedRecipients?.length)
+      isAccessible: Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0)
     }
   ]
 
@@ -157,6 +151,8 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     }
 
     try {
+      setHasRequestedAnalysis(true)
+      setIsAnalyzing(true)
       setIsLoading(true)
       setError(null)
 
@@ -186,13 +182,13 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
         setFormData({
           confirmedRecipients: result.suggested_recipients || []
         })
-        setCurrentStep('ai-review')
       } else {
         setError(result.error || 'AI analysis failed')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'AI analysis failed')
     } finally {
+      setIsAnalyzing(false)
       setIsLoading(false)
     }
   }, [formData.content, formData.childId, formData.milestoneType, children, setFormData])
@@ -308,9 +304,6 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
 
       // Mark update as sent
       await markUpdateAsSent(currentUpdateId)
-
-      // Navigate to the dashboard
-      router.push('/dashboard')
     } catch (err) {
       logger.error('Failed to finalize update:', { error: err })
       setError(err instanceof Error ? err.message : 'Failed to finalize update')
@@ -318,7 +311,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [currentUpdateId, formData.confirmedRecipients, router])
+  }, [currentUpdateId, formData.confirmedRecipients])
 
   const reset = useCallback(() => {
     // Clean up preview URLs
@@ -337,6 +330,8 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     setUploadProgress(0)
     setPreviewUrls([])
     setCurrentUpdateId(null)
+    setHasRequestedAnalysis(false)
+    setIsAnalyzing(false)
   }, [previewUrls])
 
   return {
@@ -346,9 +341,11 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     aiAnalysis,
     children,
     isLoading,
+    isAnalyzing,
     error,
     uploadProgress,
     previewUrls,
+    hasRequestedAnalysis,
     setFormData,
     setCurrentStep,
     processMediaFiles,

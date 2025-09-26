@@ -10,6 +10,7 @@ const logger = createLogger('ChildImage')
 interface ChildImageProps {
   childId: string
   photoUrl?: string
+  name?: string
   alt: string
   className?: string
   onError?: () => void
@@ -21,6 +22,7 @@ interface ChildImageProps {
 export default function ChildImage({
   childId,
   photoUrl,
+  name,
   alt,
   className = '',
   onError,
@@ -66,24 +68,16 @@ export default function ChildImage({
     }
   }
 
-  if (!currentPhotoUrl || imageError) {
-    return (
-      <div className={`flex items-center justify-center bg-primary-100 ${className}`}>
-        <svg className="w-1/2 h-1/2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      </div>
-    )
-  }
+  const resolvedPhotoUrl = getChildPhotoUrl(imageError ? undefined : currentPhotoUrl, name)
 
   return (
     <Image
-      src={getChildPhotoUrl(currentPhotoUrl)}
+      src={resolvedPhotoUrl}
       alt={alt}
       width={width}
       height={height}
       className={className}
-      onError={handleImageError}
+      onError={imageError ? undefined : handleImageError}
       priority={priority}
       quality={85}
       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

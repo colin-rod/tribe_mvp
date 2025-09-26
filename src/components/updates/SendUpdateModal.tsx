@@ -11,6 +11,7 @@ import { useEmailDistribution } from '@/hooks/useEmailDistribution'
 import { getRecipients, type Recipient } from '@/lib/recipients'
 import DeliveryStatus from './DeliveryStatus'
 import EmailPreview from './EmailPreview'
+import { CheckIcon } from '@heroicons/react/24/outline'
 
 interface SendUpdateModalProps {
   updateId: string
@@ -163,7 +164,7 @@ export default function SendUpdateModal({
               'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
               currentStep === 'select' ? 'bg-primary-600 text-white' : 'bg-green-100 text-green-800'
             )}>
-              {currentStep === 'select' ? '1' : '✓'}
+              {currentStep === 'select' ? '1' : <CheckIcon className="h-4 w-4" aria-hidden="true" />}
             </div>
             <div className={cn('h-1 flex-1 rounded',
               ['preview', 'send', 'sent'].includes(currentStep) ? 'bg-primary-600' : 'bg-gray-200'
@@ -174,7 +175,7 @@ export default function SendUpdateModal({
               ['send', 'sent'].includes(currentStep) ? 'bg-green-100 text-green-800' :
               'bg-gray-200 text-gray-600'
             )}>
-              {['send', 'sent'].includes(currentStep) ? '✓' : '2'}
+              {['send', 'sent'].includes(currentStep) ? <CheckIcon className="h-4 w-4" aria-hidden="true" /> : '2'}
             </div>
             <div className={cn('h-1 flex-1 rounded',
               ['send', 'sent'].includes(currentStep) ? 'bg-primary-600' : 'bg-gray-200'
@@ -183,7 +184,7 @@ export default function SendUpdateModal({
               'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
               currentStep === 'sent' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
             )}>
-              {currentStep === 'sent' ? '✓' : '3'}
+              {currentStep === 'sent' ? <CheckIcon className="h-4 w-4" aria-hidden="true" /> : '3'}
             </div>
           </div>
         </div>

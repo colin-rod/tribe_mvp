@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { CheckIcon } from '@heroicons/react/24/outline'
 
 interface AddRecipientFormProps {
   onRecipientAdded: (recipient: Recipient) => void
@@ -218,7 +219,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               currentStep === 'contact' ? 'bg-primary-600 text-white' : 'bg-green-600 text-white'
             }`}>
-              {currentStep === 'contact' ? '1' : '✓'}
+              {currentStep === 'contact' ? '1' : <CheckIcon className="h-4 w-4" aria-hidden="true" />}
             </div>
             <span className="ml-2 text-sm font-medium text-gray-900">Contact Info</span>
           </div>
@@ -234,7 +235,7 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
               currentStep === 'preferences' ? 'bg-primary-600 text-white' :
               currentStep === 'review' ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
-              {currentStep === 'review' ? '✓' : '2'}
+              {currentStep === 'review' ? <CheckIcon className="h-4 w-4" aria-hidden="true" /> : '2'}
             </div>
             <span className="ml-2 text-sm font-medium text-gray-900">Preferences</span>
           </div>

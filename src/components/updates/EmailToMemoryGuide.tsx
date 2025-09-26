@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/logger'
 
   const logger = createLogger('EmailToMemoryGuide')
 import { Copy, Mail, Camera, Smartphone, Check } from 'lucide-react'
+import { LightBulbIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 
@@ -82,8 +83,9 @@ export function EmailToMemoryGuide({ domain = 'colinrodrigues.com' }: EmailToMem
 
       <div className="space-y-3">
         <div className="bg-blue-100 rounded-lg p-3">
-          <p className="text-xs text-blue-800 font-medium mb-1">
-            💡 Pro tip: Specify which child
+          <p className="text-xs text-blue-800 font-medium mb-1 flex items-center gap-1">
+            <LightBulbIcon className="h-4 w-4" aria-hidden="true" />
+            Pro tip: Specify which child
           </p>
           <p className="text-xs text-blue-700">
             Use subject line: <code>"Memory for [Child Name]: [description]"</code>
@@ -91,8 +93,9 @@ export function EmailToMemoryGuide({ domain = 'colinrodrigues.com' }: EmailToMem
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <p className="text-xs text-green-800 font-medium mb-1">
-            ✨ Example
+          <p className="text-xs text-green-800 font-medium mb-1 flex items-center gap-1">
+            <SparklesIcon className="h-4 w-4" aria-hidden="true" />
+            Example
           </p>
           <p className="text-xs text-green-700">
             Subject: <code>"Memory for Emma: First steps today!"</code><br />

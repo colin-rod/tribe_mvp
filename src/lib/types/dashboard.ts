@@ -58,6 +58,7 @@ export interface UpdatesListProps {
   limit?: number
   showViewAllLink?: boolean
   className?: string
+  onCreateUpdate?: (type?: 'photo' | 'text' | 'video' | 'milestone') => void
 }
 
 /**

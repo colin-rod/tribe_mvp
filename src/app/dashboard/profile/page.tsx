@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
 import { ProfileManager } from '@/components/profile'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
+import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
 function ProfileContent() {
   return <ProfileManager />
@@ -15,6 +17,14 @@ function ProfileContent() {
 export default function ProfilePage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const {
+    openCreateUpdateModal,
+    createUpdateModal
+  } = useCreateUpdateModal()
+
+  const handleCreateUpdate = useCallback((type: UpdateType = 'photo') => {
+    openCreateUpdateModal(type)
+  }, [openCreateUpdateModal])
 
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
@@ -42,7 +52,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
+      <Navigation onCreateUpdate={handleCreateUpdate} />
 
       <Header
         title="Profile Settings"
@@ -54,6 +64,8 @@ export default function ProfilePage() {
           <ProfileContent />
         </Suspense>
       </main>
+
+      {createUpdateModal}
     </div>
   )
 }

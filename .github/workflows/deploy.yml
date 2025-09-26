@@ -1,0 +1,108 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - development
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  CI: true
+  NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake-ci-key
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  SENDGRID_API_KEY: SG.fake-sendgrid-ci-key
+  SENDGRID_FROM_EMAIL: deploy@example.com
+  SENDGRID_FROM_NAME: Tribe Deploy
+  SUPABASE_SERVICE_ROLE_KEY: service-role-ci-key
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+  NEXTAUTH_SECRET: 0123456789abcdefghijklmnopqrstuv
+  NEXTAUTH_URL: http://localhost:3000
+
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'Production' || 'dev' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint checks
+        run: npm run lint
+        env:
+          NODE_ENV: test
+
+      - name: Run type checks
+        run: npm run type-check
+        env:
+          NODE_ENV: test
+
+      - name: Run unit tests
+        run: npm run test:ci
+        env:
+          NODE_ENV: test
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Set deployment context
+        id: context
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "environment_name=Production" >> "$GITHUB_OUTPUT"
+            echo "vercel_environment=production" >> "$GITHUB_OUTPUT"
+            echo "build_args=--prod" >> "$GITHUB_OUTPUT"
+            echo "deploy_args=--prebuilt --prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment_name=dev" >> "$GITHUB_OUTPUT"
+            echo "vercel_environment=preview" >> "$GITHUB_OUTPUT"
+            echo "build_args=" >> "$GITHUB_OUTPUT"
+            echo "deploy_args=--prebuilt" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull Vercel environment information
+        run: vercel pull --yes --environment=${{ steps.context.outputs.vercel_environment }} --token=$VERCEL_TOKEN
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build optimized bundle
+        run: vercel build ${{ steps.context.outputs.build_args }} --token=$VERCEL_TOKEN
+        env:
+          NODE_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy ${{ steps.context.outputs.deploy_args }} --token="$VERCEL_TOKEN")
+          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+          echo "Deployed to ${DEPLOY_URL}"
+        env:
+          NODE_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

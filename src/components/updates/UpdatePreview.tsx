@@ -101,6 +101,7 @@ export default function UpdatePreview({
                 <ChildImage
                   childId={child.id}
                   photoUrl={child.profile_photo_url}
+                  name={child.name}
                   alt={`${child.name}'s profile`}
                   className="w-full h-full object-cover"
                 />

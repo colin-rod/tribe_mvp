@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
 import { Container } from '@/components/ui/Container'
 import {
   ShieldCheckIcon,
@@ -11,9 +10,9 @@ import {
   UsersIcon,
   ChartBarIcon,
   LockClosedIcon,
-  StarIcon,
   CheckIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  XMarkIcon
 } from '@heroicons/react/24/solid'
 import { useState } from 'react'
 import { ConversionTracker, useConversionTracking } from '@/components/analytics/ConversionTracker'
@@ -146,7 +145,7 @@ function FAQSection() {
 }
 
 function Home() {
-  const { trackSignupStarted, trackDemoRequested, trackSocialProofViewed, trackFeaturesExplored } = useConversionTracking()
+  const { trackSignupStarted, trackDemoRequested, trackFeaturesExplored } = useConversionTracking()
 
   return (
     <>
@@ -174,14 +173,15 @@ function Home() {
               id="hero-heading"
               className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight"
             >
-              The Private Baby Update App
+              The Memories App
               <br />
-              <span className="text-primary-600">That Keeps Your Family Connected</span>
+              <span className="text-primary-600">Built for People</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Share photos, milestones & moments privately with family. No ads, no strangers,
-              no privacy worries. Just secure family memories that bring everyone closer.
+              Stay close by sharing photos, milestones, and little life updates with your friends and community.
+              AI helps prompt meaningful moments—no algorithm, no endless feed.
+              Celebrate milestones, share real moments, and stay connected in a more authentic way.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -221,15 +221,15 @@ function Home() {
               id="features-heading"
               className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
             >
-              Everything You Need for Private Family Sharing
+              Everything You Need for Meaningful Sharing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Built specifically for parents who want to keep family moments private and secure
+              Built people who want to stay close with friends, family, and community in a more intentional way.
             </p>
           </div>
 
           <div
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8"
             onMouseEnter={trackFeaturesExplored}
           >
 
@@ -240,7 +240,7 @@ function Home() {
               <CardHeader>
                 <CardTitle>Smart Milestone Tracking</CardTitle>
                 <CardDescription>
-                  Automatically organize first steps, words, and growth moments into a beautiful timeline you'll treasure forever.
+                  Celebrate life’s moments—big and small. From birthdays to everyday wins, everything is automatically organized into a timeline you’ll actually want to look back on.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -250,9 +250,9 @@ function Home() {
                 <UsersIcon className="w-8 h-8 text-purple-600" />
               </div>
               <CardHeader>
-                <CardTitle>Family-Only Privacy</CardTitle>
+                <CardTitle>Flexible Sharing</CardTitle>
                 <CardDescription>
-                  Invite only who you want. No strangers, no ads, no algorithm. Just your family enjoying your baby's journey.
+                  Post updates however it’s easiest—email, SMS, or WhatsApp. Share text, photos, or even voice notes. Your recipients receive simple digests at the pace they choose—instantly,daily, or weekly.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -276,7 +276,7 @@ function Home() {
               <CardHeader>
                 <CardTitle>Simple Setup</CardTitle>
                 <CardDescription>
-                  Get started in under 2 minutes. Invite family, start sharing immediately. No complicated settings or learning curve.
+                  Get started in minutes. Create your circle, invite your people, and start sharing right away.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -297,37 +297,37 @@ function Home() {
                 id="benefits-heading"
                 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6"
               >
-                Solve Your Biggest Family Communication Problems
+                Solve Your Biggest Connection Challenges
               </h2>
 
               <div className="space-y-8">
                 <div className="flex items-start">
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-4 mt-1 flex-shrink-0">
-                    <span className="text-red-600 font-bold">✗</span>
+                    <XMarkIcon className="w-4 h-4 text-red-600" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Privacy Concerns on Social Media</h3>
-                    <p className="text-gray-600">Stop worrying about strangers seeing your baby's photos or your data being sold to advertisers.</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">Overloaded Social Feeds</h3>
+                    <p className="text-gray-600">Skip the noise and clutter of traditional social media. Share what matters without getting lost in the feed.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-4 mt-1 flex-shrink-0">
-                    <span className="text-red-600 font-bold">✗</span>
+                    <XMarkIcon className="w-4 h-4 text-red-600" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Distant Family Missing Out</h3>
-                    <p className="text-gray-600">Ensure grandparents and relatives never miss important milestones, regardless of distance.</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">Feeling Out of the Loop</h3>
+                    <p className="text-gray-600">Make sure your friends, family, and community never miss the moments that matter—no matter where they are.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-4 mt-1 flex-shrink-0">
-                    <span className="text-red-600 font-bold">✗</span>
+                    <XMarkIcon className="w-4 h-4 text-red-600" aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Chaotic Group Text Messages</h3>
-                    <p className="text-gray-600">End the confusion of scattered messages across different platforms and multiple group chats.</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">Scattered Group Chats</h3>
+                    <p className="text-gray-600">No more juggling texts, DMs, and endless notifications. Keep your important memories organized in one place.</p>
                   </div>
                 </div>
               </div>
@@ -345,23 +345,23 @@ function Home() {
                 <div className="space-y-4">
                   <div className="flex items-center">
                     <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">Private, secure family-only environment</span>
+                    <span className="text-gray-700">Share on your terms: text, photos, or voice notes</span>
                   </div>
                   <div className="flex items-center">
                     <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">Real-time updates for all family members</span>
+                    <span className="text-gray-700">Digests delivered at the pace people choose</span>
                   </div>
                   <div className="flex items-center">
                     <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">Organized conversations in one place</span>
+                    <span className="text-gray-700">Organized conversations that enable human connection</span>
                   </div>
                   <div className="flex items-center">
                     <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">Automatic milestone organization</span>
+                    <span className="text-gray-700">Celebrate and share milestones</span>
                   </div>
                   <div className="flex items-center">
                     <CheckIcon className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">No ads or data selling</span>
+                    <span className="text-gray-700">No ads, no algorithms—just genuine connection</span>
                   </div>
                 </div>
               </Card>
@@ -369,82 +369,6 @@ function Home() {
           </div>
         </Container>
       </section>
-
-      {/* Social Proof Section */}
-      <section
-        id="testimonials"
-        className="py-16 lg:py-24 bg-white"
-        aria-labelledby="social-proof-heading"
-      >
-        <Container>
-          <div className="text-center mb-12">
-            <h2
-              id="social-proof-heading"
-              className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
-            >
-              Trusted by Over 50,000 Families
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              See why parents choose Tribe for their most precious moments
-            </p>
-          </div>
-
-          <div
-            className="grid md:grid-cols-3 gap-8 mb-12"
-            onMouseEnter={trackSocialProofViewed}
-          >
-            <Card className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5" />
-                  ))}
-                </div>
-                <Badge variant="secondary" className="ml-3">Verified Parent</Badge>
-              </div>
-              <p className="text-gray-600 mb-4">
-                "Finally, a safe place to share my daughter's photos! My parents love getting instant updates,
-                and I don't worry about privacy anymore. Tribe has made our family feel so much closer."
-              </p>
-              <div className="font-semibold text-gray-900">Sarah M., Mother of 2</div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5" />
-                  ))}
-                </div>
-                <Badge variant="secondary" className="ml-3">Verified Parent</Badge>
-              </div>
-              <p className="text-gray-600 mb-4">
-                "The milestone tracking is amazing! It automatically organized all of Tommy's first moments
-                into a beautiful timeline. It's like having a professional baby book that writes itself."
-              </p>
-              <div className="font-semibold text-gray-900">Mike R., Father of 1</div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon key={i} className="w-5 h-5" />
-                  ))}
-                </div>
-                <Badge variant="secondary" className="ml-3">Verified Grandparent</Badge>
-              </div>
-              <p className="text-gray-600 mb-4">
-                "As a grandparent living across the country, Tribe has been a blessing. I never miss
-                a moment of my granddaughter's life. It's so easy to use and keeps us all connected."
-              </p>
-              <div className="font-semibold text-gray-900">Linda K., Grandmother</div>
-            </Card>
-          </div>
-
-        </Container>
-      </section>
-
       {/* FAQ Section */}
       <FAQSection />
 
@@ -460,11 +384,11 @@ function Home() {
               id="cta-heading"
               className="text-3xl md:text-4xl font-bold mb-4"
             >
-              Ready to Create Your Private Family Circle?
+              Ready to Build Your Tribe?
             </h2>
             <p className="text-xl opacity-90 mb-8 max-w-3xl mx-auto">
-              Join 50,000+ families who trust Tribe with their most precious moments.
-              Start sharing securely in under 2 minutes.
+              Join members who trust Tribe o share moments, milestones, and memories with the people who matter most. 
+              Get started and start connecting in under 2 minutes.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

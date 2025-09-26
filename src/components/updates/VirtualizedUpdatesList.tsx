@@ -66,7 +66,8 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
   height = 600,
   itemHeight = 200,
   overscanCount = 5,
-  maxItems = 1000
+  maxItems = 1000,
+  onCreateUpdate
 }) {
   const router = useRouter()
   const [updates, setUpdates] = useState<UpdateCardData[]>([])
@@ -103,6 +104,14 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
   const handleRetry = useCallback(() => {
     loadUpdates()
   }, [loadUpdates])
+
+  const handleCreateUpdate = useCallback(() => {
+    if (onCreateUpdate) {
+      onCreateUpdate('photo')
+    } else {
+      router.push('/dashboard/create-update')
+    }
+  }, [onCreateUpdate, router])
 
   const itemData = useCallback(() => ({
     updates,
@@ -186,11 +195,9 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
           <p className="text-sm text-gray-600 mb-6">
             You haven't created any updates recently. Share your first update to get started!
           </p>
-          <Link href="/dashboard/create-update">
-            <Button>
-              Create Your First Update
-            </Button>
-          </Link>
+          <Button onClick={handleCreateUpdate}>
+            Create Your First Update
+          </Button>
         </div>
       </div>
     )

@@ -12,7 +12,8 @@ import { FormMessage } from '@/components/ui/FormMessage'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
-import { UserCircleIcon, CameraIcon } from '@heroicons/react/24/outline'
+import { CameraIcon } from '@heroicons/react/24/outline'
+import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
 
 interface ProfileSectionProps {
   user: User
@@ -165,9 +166,11 @@ export function ProfileSection({ user }: ProfileSectionProps) {
                 className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
               />
             ) : (
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200">
-                <UserCircleIcon className="w-8 h-8 text-gray-400" aria-hidden="true" />
-              </div>
+              <img
+                src={getDefaultAvatarUrl({ name: formData.name || user.user_metadata?.name })}
+                alt="Default profile avatar"
+                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+              />
             )}
             <button
               type="button"

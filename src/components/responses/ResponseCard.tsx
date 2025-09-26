@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import { EnvelopeIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import { MediaGallery } from '@/components/media/MediaGallery'
+import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
 
 interface ResponseCardProps {
   response: {
@@ -28,6 +30,7 @@ interface ResponseCardProps {
 export function ResponseCard({ response, showChannel = true, onMediaClick }: ResponseCardProps) {
   const [showFullContent, setShowFullContent] = useState(false)
   const recipient = response.recipients
+  const avatarUrl = getDefaultAvatarUrl({ name: recipient.name, size: 128 })
 
   const getChannelIcon = (channel: string) => {
     switch (channel) {
@@ -58,8 +61,14 @@ export function ResponseCard({ response, showChannel = true, onMediaClick }: Res
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium">
-            {recipient.name.charAt(0).toUpperCase()}
+          <div className="w-10 h-10 rounded-full overflow-hidden">
+            <Image
+              src={avatarUrl}
+              alt={`${recipient.name}'s avatar`}
+              width={40}
+              height={40}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           {/* Sender Info */}

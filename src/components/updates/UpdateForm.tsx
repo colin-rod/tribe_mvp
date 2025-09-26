@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import ChildSelector from '@/components/children/ChildSelector'
 import { milestoneTypes, getMilestoneLabel, validateUpdateContent } from '@/lib/validation/update'
@@ -10,8 +9,10 @@ import type { UpdateFormData, MilestoneType } from '@/lib/validation/update'
 interface UpdateFormProps {
   formData: Partial<UpdateFormData>
   onFormDataChange: (data: Partial<UpdateFormData>) => void
-  onSubmit: () => void
+  onGenerateSuggestions: () => void
   isLoading?: boolean
+  isAnalyzing?: boolean
+  hasRequestedAnalysis?: boolean
   error?: string | null
   childrenData: any[]
   loadChildren: () => Promise<void>
@@ -20,14 +21,15 @@ interface UpdateFormProps {
 export default function UpdateForm({
   formData,
   onFormDataChange,
-  onSubmit,
+  onGenerateSuggestions,
   isLoading = false,
+  isAnalyzing = false,
+  hasRequestedAnalysis = false,
   error,
   childrenData,
   loadChildren
 }: UpdateFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     loadChildren()
@@ -66,13 +68,7 @@ export default function UpdateForm({
       setContentError(contentValidationError)
       return
     }
-
-    setIsSubmitting(true)
-    try {
-      await onSubmit()
-    } finally {
-      setIsSubmitting(false)
-    }
+    await onGenerateSuggestions()
   }
 
   const isFormValid = Boolean(
@@ -140,6 +136,17 @@ export default function UpdateForm({
         {contentError && (
           <p className="mt-1 text-sm text-red-600">{contentError}</p>
         )}
+
+        <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+            These help the AI tailor suggestions:
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-blue-700">
+            <li>• Share the specific moment and why it mattered</li>
+            <li>• Include how your child and you felt</li>
+            <li>• Mention any outcomes or next steps for family</li>
+          </ul>
+        </div>
       </div>
 
       {/* Milestone Selection */}
@@ -167,37 +174,29 @@ export default function UpdateForm({
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end pt-4">
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <span className="text-xs text-gray-500">
+          Suggestions appear in the AI Review panel.
+        </span>
         <button
           type="submit"
-          disabled={!isFormValid || isLoading || isSubmitting}
+          disabled={!isFormValid || isLoading || isAnalyzing}
           className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting || isLoading ? (
+          {isAnalyzing ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />
-              Analyzing with AI...
+              Generating suggestions...
             </>
           ) : (
             <>
-              Next: AI Review
+              {hasRequestedAnalysis ? 'Regenerate Suggestions' : 'Generate Suggestions'}
               <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </>
           )}
         </button>
-      </div>
-
-      {/* Form Guidelines */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">Tips for great updates:</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Be specific about what happened and when</li>
-          <li>• Include emotional context (excitement, pride, concern)</li>
-          <li>• Mention any new developments or changes</li>
-          <li>• Add photos in the next step to make it more engaging</li>
-        </ul>
       </div>
     </form>
   )

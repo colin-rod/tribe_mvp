@@ -21,7 +21,7 @@ export function PerformanceProvider() {
         // Log navigation timing if available
         const navigationTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
         if (navigationTiming && process.env.NODE_ENV === 'development') {
-          console.log('🚀 Page Load Performance:', {
+          console.log('Page Load Performance:', {
             'DNS Lookup': `${navigationTiming.domainLookupEnd - navigationTiming.domainLookupStart}ms`,
             'Connection': `${navigationTiming.connectEnd - navigationTiming.connectStart}ms`,
             'Request': `${navigationTiming.responseStart - navigationTiming.requestStart}ms`,

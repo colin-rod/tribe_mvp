@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/Button'
 const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   limit = 5,
   showViewAllLink = true,
-  className
+  className,
+  onCreateUpdate
 }) {
   const router = useRouter()
   const [updates, setUpdates] = useState<UpdateCardData[]>([])
@@ -57,6 +58,14 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   const handleRetry = useCallback(() => {
     loadUpdates()
   }, [loadUpdates])
+
+  const handleCreateUpdate = useCallback(() => {
+    if (onCreateUpdate) {
+      onCreateUpdate('photo')
+    } else {
+      router.push('/dashboard/create-update')
+    }
+  }, [onCreateUpdate, router])
 
   // Loading state
   if (loading) {
@@ -135,11 +144,9 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
           <p className="text-sm text-gray-600 mb-6">
             You haven't created any updates recently. Share your first update to get started!
           </p>
-          <Link href="/dashboard/create-update">
-            <Button>
-              Create Your First Update
-            </Button>
-          </Link>
+          <Button onClick={handleCreateUpdate}>
+            Create Your First Update
+          </Button>
         </div>
       </div>
     )

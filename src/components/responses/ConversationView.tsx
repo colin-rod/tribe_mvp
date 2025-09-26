@@ -95,6 +95,7 @@ export function ConversationView({
                       <ChildImage
                         childId={update.children.id}
                         photoUrl={update.children.profile_photo_url || undefined}
+                        name={update.children.name}
                         alt={`${update.children.name}'s profile`}
                         className="w-full h-full object-cover"
                       />
