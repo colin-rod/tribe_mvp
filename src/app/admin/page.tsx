@@ -4,12 +4,13 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { createAnalyticsTracker } from '@/lib/template-analytics'
+import { createLogger } from '@/lib/logger'
 import {
   DocumentTextIcon,
   ChartBarIcon,
@@ -32,13 +33,10 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
+  const logger = useMemo(() => createLogger('AdminPage'), [])
 
-  useEffect(() => {
-    loadAdminStats()
-  }, [])
-
-  const loadAdminStats = async () => {
+  const loadAdminStats = useCallback(async () => {
     try {
       setLoading(true)
       const tracker = createAnalyticsTracker(supabase)
@@ -54,12 +52,16 @@ export default function AdminPage() {
           topTemplateType: systemAnalytics.type_performance[0]?.prompt_type || 'N/A'
         })
       }
-    } catch (_error) {
-      // Error loading admin stats
+    } catch (error) {
+      logger.errorWithStack('Error loading admin stats', error as Error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, logger])
+
+  useEffect(() => {
+    loadAdminStats()
+  }, [loadAdminStats])
 
   const generatePrompts = async () => {
     try {
@@ -73,8 +75,8 @@ export default function AdminPage() {
 
       alert('Prompts generated successfully!')
       loadAdminStats() // Reload stats
-    } catch (_error) {
-      // Error generating prompts
+    } catch (error) {
+      logger.errorWithStack('Error generating prompts', error as Error)
       alert('Failed to generate prompts. Please try again.')
     }
   }

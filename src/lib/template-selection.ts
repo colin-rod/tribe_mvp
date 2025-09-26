@@ -5,6 +5,10 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { PromptVariables, Child, User } from './prompt-context'
+import { createLogger } from '@/lib/logger'
+
+const templateSelectionLogger = createLogger('TemplateSelection')
+const templateSelectionAuditLogger = createLogger('TemplateSelectionAudit')
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -35,7 +39,7 @@ export interface NotificationPreferences {
     start: string
     end: string
   }
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface TemplateScore {
@@ -97,7 +101,7 @@ export async function selectTemplate(
 
     return scoredTemplates[0]?.template || null
   } catch (error) {
-    // console.error('Error in template selection:', error)
+    templateSelectionLogger.errorWithStack('Error in template selection', error as Error)
     return null
   }
 }
@@ -128,7 +132,7 @@ export function calculateTemplateScore(
 export function calculateDetailedTemplateScore(
   template: PromptTemplate,
   context: PromptVariables,
-  preferences: NotificationPreferences
+  _preferences: NotificationPreferences
 ): TemplateScore['scoreBreakdown'] {
   const breakdown = {
     ageAppropriatenesss: 0,
@@ -316,13 +320,13 @@ export async function getTemplatesByFilters(
     const { data, error } = await query
 
     if (error) {
-      // console.error('Error fetching templates:', error)
+      templateSelectionLogger.error('Error fetching templates', { error })
       return []
     }
 
     return data || []
   } catch (error) {
-    // console.error('Error in getTemplatesByFilters:', error)
+    templateSelectionLogger.errorWithStack('Error in getTemplatesByFilters', error as Error)
     return []
   }
 }
@@ -341,13 +345,13 @@ export async function getRecentTemplateIds(
       .gte('created_at', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString())
 
     if (error) {
-      // console.error('Error fetching recent template IDs:', error)
+      templateSelectionLogger.error('Error fetching recent template IDs', { error })
       return []
     }
 
     return data?.map(item => item.template_id).filter(Boolean) || []
   } catch (error) {
-    // console.error('Error in getRecentTemplateIds:', error)
+    templateSelectionLogger.errorWithStack('Error in getRecentTemplateIds', error as Error)
     return []
   }
 }
@@ -397,7 +401,7 @@ export const varietyStrategy: SelectionStrategy = {
     }, {} as Record<string, PromptTemplate[]>)
 
     // Score within each type
-    const topByType = Object.entries(typeGroups).map(([type, templates]) => {
+    const topByType = Object.entries(typeGroups).map(([, templates]) => {
       const scored = templates.map(template => ({
         template,
         score: calculateTemplateScore(template, context, preferences)
@@ -416,7 +420,7 @@ export const varietyStrategy: SelectionStrategy = {
 export const effectivenessStrategy: SelectionStrategy = {
   name: 'effectiveness',
   description: 'Prioritizes templates with highest historical effectiveness',
-  selectTemplate(candidates, context, preferences) {
+  selectTemplate(candidates, context, _preferences) {
     if (!candidates.length) return null
 
     // Filter age-appropriate first
@@ -440,7 +444,7 @@ export const effectivenessStrategy: SelectionStrategy = {
 export async function logTemplateSelection(
   templateId: string,
   childId: string,
-  selectionReason: string,
+  _selectionReason: string,
   supabase: SupabaseClient
 ): Promise<void> {
   try {
@@ -453,7 +457,7 @@ export async function logTemplateSelection(
       created_at: new Date().toISOString()
     })
   } catch (error) {
-    // console.error('Error logging template selection:', error)
+    templateSelectionAuditLogger.errorWithStack('Error logging template selection', error as Error)
   }
 }
 

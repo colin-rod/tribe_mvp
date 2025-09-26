@@ -1,5 +1,5 @@
 import { createClient } from './supabase/client'
-import type { UpdateCreateData, DistributionStatus, MilestoneType } from './validation/update'
+import type { DistributionStatus, MilestoneType } from './validation/update'
 import { createLogger } from '@/lib/logger'
 
 
@@ -11,7 +11,7 @@ export interface Update {
   content: string
   media_urls: string[]
   milestone_type?: MilestoneType
-  ai_analysis: Record<string, any>
+  ai_analysis: Record<string, unknown>
   suggested_recipients: string[]
   confirmed_recipients: string[]
   distribution_status: DistributionStatus
@@ -27,8 +27,14 @@ export interface CreateUpdateRequest {
   media_urls?: string[]
   scheduled_for?: Date
   confirmed_recipients?: string[]
-  ai_analysis?: Record<string, any>
+  ai_analysis?: Record<string, unknown>
   suggested_recipients?: string[]
+}
+
+export type UpdateWithStats = Update & {
+  response_count: number
+  last_response_at: string | null
+  has_unread_responses: boolean
 }
 
 /**
@@ -255,7 +261,7 @@ export async function updateUpdateRecipients(
  */
 export async function updateUpdateAIAnalysis(
   updateId: string,
-  aiAnalysis: Record<string, any>
+  aiAnalysis: Record<string, unknown>
 ): Promise<Update> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -409,7 +415,7 @@ export async function getDraftUpdates(): Promise<Update[]> {
 /**
  * Get recent updates with response counts for dashboard display
  */
-export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Update[]> {
+export async function getRecentUpdatesWithStats(limit: number = 5): Promise<UpdateWithStats[]> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -443,7 +449,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
 
   // Get response counts for each update
   const updatesWithStats = await Promise.all(
-    updates.map(async (update: any) => {
+    (updates as Update[]).map(async (update) => {
       const { count } = await supabase
         .from('responses')
         .select('*', { count: 'exact', head: true })
@@ -466,5 +472,5 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     })
   )
 
-  return updatesWithStats
+  return updatesWithStats as UpdateWithStats[]
 }

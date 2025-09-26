@@ -10,9 +10,14 @@ import { useAuth } from '@/hooks/useAuth'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import Navigation from '@/components/layout/Navigation'
 import Header from '@/components/layout/Header'
+import type { User } from '@supabase/supabase-js'
 
 interface AdminLayoutProps {
   children: React.ReactNode
+}
+
+const isAdminUser = (candidate: User | null): boolean => {
+  return candidate?.email?.endsWith('@tribe-mvp.com') ?? false
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -26,15 +31,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     // Check if user has admin privileges (tribe-mvp.com email)
-    if (!loading && user && !isAdmin(user)) {
+    if (!loading && user && !isAdminUser(user)) {
       router.push('/dashboard')
       return
     }
   }, [user, loading, router])
-
-  const isAdmin = (user: any): boolean => {
-    return user?.email?.endsWith('@tribe-mvp.com') || false
-  }
 
   if (loading) {
     return (
@@ -44,12 +45,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     )
   }
 
-  if (!user || !isAdmin(user)) {
+  if (!user || !isAdminUser(user)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-4">You don't have permission to access this area.</p>
+          <p className="text-gray-600 mb-4">You don&apos;t have permission to access this area.</p>
           <button
             onClick={() => router.push('/dashboard')}
             className="text-blue-600 hover:text-blue-800 underline"

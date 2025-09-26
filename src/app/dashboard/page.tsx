@@ -16,7 +16,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { UpdatesList } from '@/components/updates'
 import { PromptFeed } from '@/components/lazy'
-import DashboardHero from '@/components/dashboard/DashboardHero'
 import PersonalizedWelcome from '@/components/dashboard/PersonalizedWelcome'
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress'
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState'
@@ -189,7 +188,7 @@ const DashboardPage = memo(function DashboardPage() {
       default:
         break
     }
-  }, [router])
+  }, [router, openCreateUpdateModal])
 
   const handleCollapseOnboarding = useCallback((_collapsed: boolean) => {
     // Placeholder for persisting collapse preference

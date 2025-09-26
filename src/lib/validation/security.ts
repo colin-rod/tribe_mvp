@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom'
 // Create server-side DOMPurify instance
 const createDOMPurify = () => {
   const window = new JSDOM('').window
-  return DOMPurify(window as any)
+  return DOMPurify(window as unknown as Window)
 }
 
 /**
@@ -73,7 +73,7 @@ export const sanitizeHtml = (html: string): string => {
     }
 
     return purify.sanitize(html, config)
-  } catch (error) {
+  } catch {
     // Fallback: strip all HTML tags if sanitization fails
     return html.replace(/<[^>]*>/g, '')
   }

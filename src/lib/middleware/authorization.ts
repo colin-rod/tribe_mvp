@@ -210,7 +210,13 @@ export function withAuth<T extends any[]>(
  * Rate limiting per user (simple in-memory implementation)
  * In production, you'd want to use Redis or similar
  */
-const userRateLimits = new Map<string, { count: number; resetTime: number }>()
+type RateLimitEntry = { count: number; resetTime: number }
+
+const userRateLimits = new Map<string, RateLimitEntry>()
+
+export function resetRateLimitStore(): void {
+  userRateLimits.clear()
+}
 
 export function checkRateLimit(userId: string, maxRequests = 10, windowMinutes = 1): boolean {
   const now = Date.now()

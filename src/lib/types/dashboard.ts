@@ -1,5 +1,4 @@
 import type { Update as BaseUpdate } from '@/lib/updates'
-import type { Child } from '@/lib/children'
 
 /**
  * Enhanced Update interface for dashboard display with additional computed fields

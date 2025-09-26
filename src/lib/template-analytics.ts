@@ -4,6 +4,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
+import { createLogger } from '@/lib/logger'
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -79,12 +80,34 @@ export interface SystemWideAnalytics {
   }[]
 }
 
+interface TemporalPatternGroup {
+  items: TemplateAnalytics[]
+  day_of_week: string
+  time_of_day: string
+}
+
+interface TemplatePerformanceAccumulator {
+  template_id: string
+  template_text: string
+  prompt_type: string
+  total: number
+  actions: number
+}
+
+type TemplateAnalyticsWithTemplate = TemplateAnalytics & {
+  prompt_templates?: {
+    template_text: string
+    prompt_type: string
+  } | null
+}
+
 // =============================================================================
 // TEMPLATE ANALYTICS FUNCTIONS
 // =============================================================================
 
 export class TemplateAnalyticsTracker {
   private supabase: SupabaseClient
+  private logger = createLogger('TemplateAnalyticsTracker')
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase
@@ -98,7 +121,7 @@ export class TemplateAnalyticsTracker {
     userId: string,
     promptId: string,
     childAgeMonths: number,
-    context?: Record<string, any>
+    _context?: Record<string, unknown>
   ): Promise<void> {
     try {
       const { error } = await this.supabase
@@ -116,10 +139,10 @@ export class TemplateAnalyticsTracker {
         })
 
       if (error) {
-        // console.error('Error tracking template selection:', error)
+        this.logger.error('Error tracking template selection', { error })
       }
     } catch (error) {
-      // console.error('Failed to track template selection:', error)
+      this.logger.errorWithStack('Failed to track template selection', error as Error)
     }
   }
 
@@ -158,7 +181,7 @@ export class TemplateAnalyticsTracker {
           .eq('id', existing.id)
 
         if (error) {
-          // console.error('Error updating template analytics:', error)
+          this.logger.error('Error updating template analytics', { error })
         }
       } else {
         // Create new record
@@ -175,7 +198,7 @@ export class TemplateAnalyticsTracker {
           })
 
         if (error) {
-          // console.error('Error creating template analytics:', error)
+          this.logger.error('Error creating template analytics', { error })
         }
       }
 
@@ -183,7 +206,7 @@ export class TemplateAnalyticsTracker {
       await this.updateTemplateEffectiveness(templateId)
 
     } catch (error) {
-      // console.error('Failed to track prompt action:', error)
+      this.logger.errorWithStack('Failed to track prompt action', error as Error)
     }
   }
 
@@ -199,7 +222,7 @@ export class TemplateAnalyticsTracker {
         .eq('template_id', templateId)
 
       if (error || !analytics) {
-        // console.error('Error fetching template analytics:', error)
+        this.logger.error('Error fetching template analytics', { error })
         return null
       }
 
@@ -240,21 +263,21 @@ export class TemplateAnalyticsTracker {
       }))
 
       // Temporal patterns (simplified)
-      const temporalPatterns = analytics.reduce((acc, item) => {
+      const temporalPatterns = analytics.reduce<Record<string, TemporalPatternGroup>>((acc, item) => {
         const key = `${item.day_of_week}-${item.time_of_day}`
         if (!acc[key]) {
           acc[key] = { items: [], day_of_week: item.day_of_week, time_of_day: item.time_of_day }
         }
         acc[key].items.push(item)
         return acc
-      }, {} as Record<string, any>)
+      }, {})
 
-      const temporalPatternsArray = Object.values(temporalPatterns).map((group: any) => ({
+      const temporalPatternsArray = Object.values(temporalPatterns).map(group => ({
         day_of_week: group.day_of_week,
         hour_of_day: this.timeOfDayToHour(group.time_of_day),
         usage_count: group.items.length,
         engagement_rate: group.items.length > 0
-          ? (group.items.filter((i: any) => i.action_taken).length / group.items.length) * 100
+          ? (group.items.filter(item => item.action_taken).length / group.items.length) * 100
           : 0
       }))
 
@@ -277,7 +300,7 @@ export class TemplateAnalyticsTracker {
       }
 
     } catch (error) {
-      // console.error('Error getting template performance:', error)
+      this.logger.errorWithStack('Error getting template performance', error as Error)
       return null
     }
   }
@@ -299,9 +322,11 @@ export class TemplateAnalyticsTracker {
         `)
 
       if (analyticsError) {
-        // console.error('Error fetching system analytics:', analyticsError)
+        this.logger.error('Error fetching system analytics', { error: analyticsError })
         return null
       }
+
+      const analyticsWithTemplates = (allAnalytics ?? []) as TemplateAnalyticsWithTemplate[]
 
       // Get template count
       const { count: templateCount, error: countError } = await this.supabase
@@ -309,11 +334,11 @@ export class TemplateAnalyticsTracker {
         .select('*', { count: 'exact', head: true })
 
       if (countError) {
-        // console.error('Error fetching template count:', countError)
+        this.logger.error('Error fetching template count', { error: countError })
       }
 
-      const totalUsage = allAnalytics?.length || 0
-      const totalActions = allAnalytics?.filter(a => a.action_taken).length || 0
+      const totalUsage = analyticsWithTemplates.length
+      const totalActions = analyticsWithTemplates.filter(a => a.action_taken).length
       const overallEngagementRate = totalUsage > 0 ? (totalActions / totalUsage) * 100 : 0
 
       // Cost savings calculation
@@ -323,8 +348,8 @@ export class TemplateAnalyticsTracker {
       const estimatedAiCostAvoided = templateBasedPrompts * (estimatedAiCostPerPrompt - templateCostPerPrompt)
 
       // Top performing templates
-      const templatePerformance = new Map<string, any>()
-      allAnalytics?.forEach(item => {
+      const templatePerformance = new Map<string, TemplatePerformanceAccumulator>()
+      analyticsWithTemplates.forEach(item => {
         if (!templatePerformance.has(item.template_id)) {
           templatePerformance.set(item.template_id, {
             template_id: item.template_id,
@@ -335,8 +360,12 @@ export class TemplateAnalyticsTracker {
           })
         }
         const perf = templatePerformance.get(item.template_id)
-        perf.total += 1
-        if (item.action_taken) perf.actions += 1
+        if (perf) {
+          perf.total += 1
+          if (item.action_taken) {
+            perf.actions += 1
+          }
+        }
       })
 
       const topPerformingTemplates = Array.from(templatePerformance.values())
@@ -350,7 +379,7 @@ export class TemplateAnalyticsTracker {
 
       // Type performance
       const typePerformance = new Map<string, { total: number; actions: number }>()
-      allAnalytics?.forEach(item => {
+      analyticsWithTemplates.forEach(item => {
         const type = item.prompt_templates?.prompt_type || 'unknown'
         if (!typePerformance.has(type)) {
           typePerformance.set(type, { total: 0, actions: 0 })
@@ -382,7 +411,7 @@ export class TemplateAnalyticsTracker {
       }
 
     } catch (error) {
-      // console.error('Error getting system analytics:', error)
+      this.logger.errorWithStack('Error getting system analytics', error as Error)
       return null
     }
   }
@@ -447,11 +476,11 @@ export class TemplateAnalyticsTracker {
         .eq('id', templateId)
 
       if (updateError) {
-        // console.error('Error updating template effectiveness:', updateError)
+        this.logger.error('Error updating template effectiveness', { error: updateError })
       }
 
     } catch (error) {
-      // console.error('Failed to update template effectiveness:', error)
+      this.logger.errorWithStack('Failed to update template effectiveness', error as Error)
     }
   }
 
@@ -543,6 +572,7 @@ export async function generateAnalyticsReport(
   templateDetails: TemplatePerformanceMetrics[]
   recommendations: string[]
 }> {
+  const reportLogger = createLogger('TemplateAnalyticsReport')
   const tracker = createAnalyticsTracker(supabase)
 
   try {
@@ -583,7 +613,7 @@ export async function generateAnalyticsReport(
     }
 
   } catch (error) {
-    // console.error('Error generating analytics report:', error)
+    reportLogger.errorWithStack('Error generating analytics report', error as Error)
     throw error
   }
 }

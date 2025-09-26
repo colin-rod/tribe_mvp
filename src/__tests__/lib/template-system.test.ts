@@ -9,7 +9,8 @@ import {
   validateTemplateVariables,
   extractVariableNames,
   createSampleContext,
-  testTemplateSubstitution
+  testTemplateSubstitution,
+  PromptVariables
 } from '@/lib/prompt-context'
 
 import {
@@ -23,6 +24,7 @@ import {
   TemplateAnalyticsTracker,
   generateAnalyticsReport
 } from '@/lib/template-analytics'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // =============================================================================
 // MOCK DATA
@@ -135,7 +137,7 @@ describe('Variable Substitution Engine', () => {
 
     it('should handle empty context', () => {
       const template = 'Hello [child_name]!'
-      const result = substituteVariables(template, {} as any)
+      const result = substituteVariables(template, {} as PromptVariables)
 
       expect(result).toBe('Hello [child_name]!')
     })
@@ -214,7 +216,7 @@ describe('Template Selection Algorithm', () => {
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     or: jest.fn().mockReturnThis()
-  } as any
+  }
 
   describe('calculateTemplateScore', () => {
     it('should give high score for age-appropriate templates', () => {
@@ -282,7 +284,7 @@ describe('Template Selection Algorithm', () => {
         })
       })
 
-      const templates = await getTemplatesByFilters(mockSupabase, {
+      const templates = await getTemplatesByFilters(mockSupabase as unknown as SupabaseClient, {
         ageMonths: 8,
         enabledTypes: ['milestone', 'fun'],
         limit: 10
@@ -305,7 +307,7 @@ describe('Template Selection Algorithm', () => {
         })
       })
 
-      const recentIds = await getRecentTemplateIds('child-1', mockSupabase, 7)
+      const recentIds = await getRecentTemplateIds('child-1', mockSupabase as unknown as SupabaseClient, 7)
 
       expect(recentIds).toBeDefined()
       expect(Array.isArray(recentIds)).toBe(true)
@@ -330,10 +332,10 @@ describe('Template Analytics System', () => {
     single: jest.fn(),
     count: 'exact' as const,
     head: true
-  } as any
+  }
 
   beforeEach(() => {
-    analyticsTracker = new TemplateAnalyticsTracker(mockAnalyticsSupabase)
+    analyticsTracker = new TemplateAnalyticsTracker(mockAnalyticsSupabase as unknown as SupabaseClient)
     jest.clearAllMocks()
   })
 

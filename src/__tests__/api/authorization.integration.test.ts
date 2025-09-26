@@ -8,7 +8,8 @@ import {
   requireAuth,
   verifyResourceOwnership,
   verifyNotificationPermissions,
-  checkRateLimit
+  checkRateLimit,
+  resetRateLimitStore
 } from '@/lib/middleware/authorization'
 
 // Mock Supabase
@@ -65,7 +66,11 @@ describe('Authorization Middleware Integration Tests', () => {
       const result = await requireAuth(request)
 
       expect(result).toHaveProperty('user')
-      expect((result as any).user.id).toBe('user-123')
+      if ('user' in result) {
+        expect(result.user.id).toBe('user-123')
+      } else {
+        throw new Error('Expected authenticated user in result')
+      }
     })
 
     it('should handle authentication errors gracefully', async () => {
@@ -205,11 +210,7 @@ describe('Authorization Middleware Integration Tests', () => {
 
   describe('Rate Limiting Tests', () => {
     beforeEach(() => {
-      // Clear rate limit storage
-      const userRateLimits = (checkRateLimit as any).__rateLimits
-      if (userRateLimits) {
-        userRateLimits.clear()
-      }
+      resetRateLimitStore()
     })
 
     it('should allow requests within rate limit', () => {

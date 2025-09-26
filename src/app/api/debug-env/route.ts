@@ -2,6 +2,105 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getEnv, getClientEnv, checkEnvironmentHealth, getFeatureFlags } from '@/lib/env'
 import { withSecurity, SecurityConfigs } from '@/lib/middleware/security'
 
+type RawEnvironmentSummary = {
+  nodeEnv: string | undefined
+  totalEnvVars: number
+  nextPublicVars: string[]
+  criticalVarsPresent: Record<string, boolean>
+  criticalVarsLengths: Record<string, number>
+  supabaseUrlPreview: string
+}
+
+type ServerValidationSuccess = {
+  status: 'SUCCESS'
+  validatedFields: number
+  supabaseConfig: {
+    url: string
+    keyLength: number
+    isProduction: boolean
+    domain: string
+  }
+  features: {
+    sendgrid: boolean
+    linear: boolean
+    database: boolean
+  }
+  allFields: {
+    nodeEnv: string
+    port: number
+    appUrl?: string
+    sendgridFromEmail?: string
+    sendgridFromName?: string
+    hasLinearProjectId: boolean
+  }
+}
+
+type ServerValidationFailure = {
+  status: 'FAILED'
+  error: string
+}
+
+type ServerValidationResult = ServerValidationSuccess | ServerValidationFailure
+
+type ClientValidationSuccess = {
+  status: 'SUCCESS'
+  context: {
+    isSSR: boolean
+    nodeEnv: string | undefined
+  }
+  clientFields: {
+    supabaseUrl: string
+    supabaseUrlLength: number
+    supabaseKeyLength: number
+    appUrl?: string
+    supabaseDomain: string
+  }
+  integrationReadiness: {
+    supabaseReady: boolean
+    isProduction: boolean
+    isValidJWT: boolean
+  }
+}
+
+type ClientValidationFailure = {
+  status: 'FAILED'
+  error: string
+}
+
+type ClientValidationResult = ClientValidationSuccess | ClientValidationFailure
+
+type FeatureFlags = ReturnType<typeof getFeatureFlags>
+type HealthCheck = ReturnType<typeof checkEnvironmentHealth>
+type AugmentedHealthCheck = HealthCheck & { totalErrors: number }
+
+type RuntimeContext = {
+  timestamp: string
+  nodeVersion: string
+  platform: NodeJS.Platform
+  environment: string
+  region: string
+}
+
+type OverallStatus = {
+  healthy: boolean
+  serverValid: boolean
+  clientValid: boolean
+  allFeaturesEnabled: boolean
+  productionReady: boolean
+}
+
+type DebugReport = {
+  timestamp: string
+  status: 'success'
+  rawEnvironment: RawEnvironmentSummary
+  serverValidation: ServerValidationResult
+  clientValidation: ClientValidationResult
+  healthCheck: AugmentedHealthCheck
+  featureFlags: FeatureFlags
+  runtimeContext: RuntimeContext
+  overallStatus: OverallStatus
+}
+
 /**
  * Debug endpoint for comprehensive environment validation information
  * Returns detailed environment validation data directly in the response
@@ -11,13 +110,7 @@ import { withSecurity, SecurityConfigs } from '@/lib/middleware/security'
 export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequest) => {
   try {
     const timestamp = new Date().toISOString()
-    const debugReport: any = {
-      timestamp,
-      status: 'success'
-    }
-
-    // 1. Raw Environment Inspection (server-side only, sanitized)
-    debugReport.rawEnvironment = {
+    const rawEnvironment: RawEnvironmentSummary = {
       nodeEnv: process.env.NODE_ENV,
       totalEnvVars: Object.keys(process.env).length,
       nextPublicVars: Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')),
@@ -37,9 +130,10 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
     }
 
     // 2. Server-side Validation Results
+    let serverValidation: ServerValidationResult
     try {
       const serverEnv = getEnv()
-      debugReport.serverValidation = {
+      serverValidation = {
         status: 'SUCCESS',
         validatedFields: Object.keys(serverEnv).length,
         supabaseConfig: {
@@ -63,16 +157,17 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
         }
       }
     } catch (error) {
-      debugReport.serverValidation = {
+      serverValidation = {
         status: 'FAILED',
         error: (error as Error).message.substring(0, 200)
       }
     }
 
     // 3. Client-side Validation Results (simulated server-side)
+    let clientValidation: ClientValidationResult
     try {
       const clientEnv = getClientEnv()
-      debugReport.clientValidation = {
+      clientValidation = {
         status: 'SUCCESS',
         context: {
           isSSR: true, // This endpoint runs server-side
@@ -92,7 +187,7 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
         }
       }
     } catch (error) {
-      debugReport.clientValidation = {
+      clientValidation = {
         status: 'FAILED',
         error: (error as Error).message.substring(0, 200)
       }
@@ -100,19 +195,16 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
 
     // 4. Health Check Results
     const health = checkEnvironmentHealth()
-    debugReport.healthCheck = {
-      isValid: health.isValid,
-      missingRequired: health.missingRequired,
-      missingOptional: health.missingOptional,
-      totalErrors: health.errors.length,
-      errors: health.errors
+    const healthCheck: AugmentedHealthCheck = {
+      ...health,
+      totalErrors: health.errors.length
     }
 
     // 5. Feature Flags Status
-    debugReport.featureFlags = getFeatureFlags()
+    const featureFlags = getFeatureFlags()
 
     // 6. Runtime Context Information
-    debugReport.runtimeContext = {
+    const runtimeContext: RuntimeContext = {
       timestamp,
       nodeVersion: process.version,
       platform: process.platform,
@@ -121,12 +213,26 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
     }
 
     // 7. Overall Status Assessment
-    debugReport.overallStatus = {
-      healthy: debugReport.serverValidation.status === 'SUCCESS' && debugReport.clientValidation.status === 'SUCCESS',
-      serverValid: debugReport.serverValidation.status === 'SUCCESS',
-      clientValid: debugReport.clientValidation.status === 'SUCCESS',
-      allFeaturesEnabled: debugReport.featureFlags.supabaseEnabled && debugReport.featureFlags.emailEnabled,
-      productionReady: debugReport.serverValidation?.supabaseConfig?.isProduction === true
+    const overallStatus: OverallStatus = {
+      healthy: serverValidation.status === 'SUCCESS' && clientValidation.status === 'SUCCESS',
+      serverValid: serverValidation.status === 'SUCCESS',
+      clientValid: clientValidation.status === 'SUCCESS',
+      allFeaturesEnabled: featureFlags.supabaseEnabled && featureFlags.emailEnabled,
+      productionReady: serverValidation.status === 'SUCCESS'
+        ? serverValidation.supabaseConfig.isProduction
+        : false
+    }
+
+    const debugReport: DebugReport = {
+      timestamp,
+      status: 'success',
+      rawEnvironment,
+      serverValidation,
+      clientValidation,
+      healthCheck,
+      featureFlags,
+      runtimeContext,
+      overallStatus
     }
 
     return NextResponse.json(debugReport, {

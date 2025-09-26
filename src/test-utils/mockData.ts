@@ -1,3 +1,5 @@
+type ResponseChannel = 'email' | 'sms' | 'whatsapp'
+
 export const mockUpdate = {
   id: 'test-update-1',
   content: 'Test update content for our little one',
@@ -100,7 +102,7 @@ export const mockEmptyResponse = {
 export const mockInvalidChannelResponse = {
   ...mockResponse,
   id: 'test-response-invalid',
-  channel: 'invalid-channel' as any,
+  channel: 'invalid-channel' as unknown as ResponseChannel,
 }
 
 // Helper function to create responses with different properties
