@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('EditChildModal')
@@ -202,10 +203,13 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
                 {photoPreview && !removePhoto && (
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200">
-                      <img
+                      <Image
                         src={photoPreview}
                         alt="Current photo"
-                        className="w-full h-full object-cover"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                        unoptimized
                       />
                     </div>
                     <Button

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -31,11 +32,16 @@ const ImagePreview = ({
     lg: 'w-24 h-24'
   }
 
+  const dimension = size === 'sm' ? 48 : 96
+
   return (
-    <img
+    <Image
       src={src}
       alt={alt}
+      width={dimension}
+      height={dimension}
       className={`${sizeClasses[size]} rounded-full object-cover ${className || ''}`}
+      unoptimized
     />
   )
 }

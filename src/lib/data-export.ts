@@ -133,7 +133,7 @@ export async function exportCSV(
   const supabase = createClient()
 
   try {
-    let data: any[] = []
+    let data: Array<Record<string, unknown>> = []
     let filename = ''
 
     switch (dataType) {
@@ -148,7 +148,7 @@ export async function exportCSV(
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        data = recipients || []
+        data = (recipients as Array<Record<string, unknown>>) || []
         filename = `recipients-${formatDate(new Date())}.csv`
         break
       }
@@ -161,7 +161,7 @@ export async function exportCSV(
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        data = children || []
+        data = (children as Array<Record<string, unknown>>) || []
         filename = `children-${formatDate(new Date())}.csv`
         break
       }
@@ -177,7 +177,7 @@ export async function exportCSV(
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        data = updates || []
+        data = (updates as Array<Record<string, unknown>>) || []
         filename = `updates-${formatDate(new Date())}.csv`
         break
       }
@@ -191,7 +191,7 @@ export async function exportCSV(
     await downloadCSV(csv, filename)
 
   } catch (error) {
-    logger.errorWithStack('Error exporting ${dataType}:', error as Error)
+    logger.errorWithStack(`Error exporting ${dataType}:`, error as Error)
     throw new Error(`Failed to export ${dataType}. Please try again.`)
   }
 }
@@ -199,7 +199,7 @@ export async function exportCSV(
 /**
  * Convert array of objects to CSV string
  */
-function convertToCSV(data: any[]): string {
+function convertToCSV(data: Array<Record<string, unknown>>): string {
   if (data.length === 0) return ''
 
   // Get all unique keys from all objects
@@ -234,7 +234,10 @@ function convertToCSV(data: any[]): string {
 /**
  * Download JSON data as a file
  */
-async function downloadJSON(data: any, filename: string): Promise<void> {
+async function downloadJSON(
+  data: ExportData | Array<Record<string, unknown>> | Record<string, unknown>,
+  filename: string
+): Promise<void> {
   const jsonString = JSON.stringify(data, null, 2)
   const blob = new Blob([jsonString], { type: 'application/json' })
   await downloadBlob(blob, filename)

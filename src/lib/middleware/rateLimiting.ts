@@ -199,9 +199,9 @@ export function simpleRateLimit(userId: string, maxRequests: number = 10, window
  */
 export function withRateLimit(config: RateLimitConfig) {
   return function rateLimitMiddleware(
-    handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+    handler: (request: NextRequest, ...args: unknown[]) => Promise<NextResponse>
   ) {
-    return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+    return async (request: NextRequest, ...args: unknown[]): Promise<NextResponse> => {
       // Extract user ID if available (for user-based limiting)
       let userId: string | undefined
 

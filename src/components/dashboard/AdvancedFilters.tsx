@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useAdvancedFiltering } from '@/hooks/useAdvancedFiltering'
 import type { SearchFilters } from '@/hooks/useSearchDebounced'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AdvancedFilters')
 
 export interface FilterPreset {
   id: string
@@ -261,7 +264,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     try {
       await action.action(selectedItems)
     } catch (error) {
-      console.error('Bulk action failed:', error)
+      logger.error('Bulk action failed', { error, actionId: action.id, selectedItems })
     } finally {
       setBulkActionLoading(null)
     }
@@ -278,7 +281,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     try {
       await action.action(selectedItems)
     } catch (error) {
-      console.error('Bulk action failed:', error)
+      logger.error('Bulk action failed', { error, actionId: action.id, selectedItems })
     } finally {
       setBulkActionLoading(null)
     }

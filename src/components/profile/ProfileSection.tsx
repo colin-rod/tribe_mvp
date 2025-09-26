@@ -1,8 +1,7 @@
 'use client'
 
+import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
-
-  const logger = createLogger('ProfileSection')
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
@@ -14,6 +13,8 @@ import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
 import { CameraIcon } from '@heroicons/react/24/outline'
 import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
+
+const logger = createLogger('ProfileSection')
 
 interface ProfileSectionProps {
   user: User
@@ -146,6 +147,9 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     logger.info('Avatar upload clicked')
   }
 
+  const avatarSrc = formData.avatar || getDefaultAvatarUrl({ name: formData.name || user.user_metadata?.name })
+  const avatarAlt = formData.avatar ? 'Profile picture' : 'Default profile avatar'
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -159,19 +163,14 @@ export function ProfileSection({ user }: ProfileSectionProps) {
         {/* Avatar Section */}
         <div className="flex items-center space-x-4">
           <div className="relative">
-            {formData.avatar ? (
-              <img
-                src={formData.avatar}
-                alt="Profile picture"
-                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-              />
-            ) : (
-              <img
-                src={getDefaultAvatarUrl({ name: formData.name || user.user_metadata?.name })}
-                alt="Default profile avatar"
-                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-              />
-            )}
+            <Image
+              src={avatarSrc}
+              alt={avatarAlt}
+              width={64}
+              height={64}
+              className="h-16 w-16 rounded-full border-2 border-gray-200 object-cover"
+              unoptimized
+            />
             <button
               type="button"
               onClick={handleAvatarUpload}

@@ -23,7 +23,7 @@ jest.mock('@/lib/supabase/client', () => ({
 }))
 
 describe('useResponses', () => {
-  let realtimeCallback: (payload: any) => void
+  let realtimeCallback: (payload: unknown) => void
 
   beforeEach(() => {
     jest.clearAllMocks()

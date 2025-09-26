@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('AddChildForm')
@@ -201,10 +202,13 @@ export default function AddChildForm({ onChildAdded, onCancel }: AddChildFormPro
           </div>
           {photoPreview && (
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-              <img
+              <Image
                 src={photoPreview}
                 alt="Preview"
-                className="w-full h-full object-cover"
+                width={64}
+                height={64}
+                className="h-full w-full object-cover"
+                unoptimized
               />
             </div>
           )}

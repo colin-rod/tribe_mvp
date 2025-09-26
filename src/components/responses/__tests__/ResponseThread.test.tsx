@@ -18,7 +18,7 @@ jest.mock('@/hooks/useResponses', () => ({
 
 // Mock ResponseCard component
 jest.mock('../ResponseCard', () => {
-  return function MockResponseCard({ response, showChannel }: any) {
+  return function MockResponseCard({ response, showChannel }: Record<string, unknown>) {
     return (
       <div data-testid="response-card" data-response-id={response.id}>
         <div>Response from {response.recipients.name}</div>

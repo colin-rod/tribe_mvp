@@ -1,15 +1,15 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('GroupEditor')
-
 import { useState } from 'react'
+import { ZodError } from 'zod'
+import { createLogger } from '@/lib/logger'
 import { RecipientGroup, updateGroup } from '@/lib/recipient-groups'
 import { recipientGroupSchema, RecipientGroupFormData, FREQUENCY_OPTIONS, CHANNEL_OPTIONS } from '@/lib/validation/recipients'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+
+const logger = createLogger('GroupEditor')
 
 interface GroupEditorProps {
   group: RecipientGroup
@@ -36,14 +36,14 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
       recipientGroupSchema.parse(formData)
       setErrors({})
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       const newErrors: typeof errors = {}
 
-      if (error.errors) {
-        error.errors.forEach((err: any) => {
-          if (err.path && err.path.length > 0) {
-            const field = err.path[0] as keyof typeof errors
-            newErrors[field] = err.message
+      if (error instanceof ZodError) {
+        error.issues.forEach(issue => {
+          if (issue.path && issue.path.length > 0) {
+            const field = issue.path[0] as keyof typeof errors
+            newErrors[field] = issue.message
           }
         })
       }
@@ -62,7 +62,7 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
     setErrors({})
 
     try {
-      const updates: any = {}
+      const updates: Partial<RecipientGroupFormData> = {}
 
       // Only include changed fields
       if (formData.name !== group.name) {

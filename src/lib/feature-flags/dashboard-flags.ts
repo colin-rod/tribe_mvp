@@ -15,17 +15,19 @@ export interface FeatureFlag {
   enabledForGroups?: string[]
   conditions?: FeatureFlagCondition[]
   variants?: FeatureFlagVariant[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
   expiresAt?: Date
 }
 
+type FeatureFlagConditionValue = string | number | boolean | Array<string | number> | null
+
 export interface FeatureFlagCondition {
   type: 'user_property' | 'device' | 'location' | 'time' | 'custom'
   property: string
   operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'in' | 'not_in'
-  value: any
+  value: FeatureFlagConditionValue
   negated?: boolean
 }
 
@@ -33,7 +35,7 @@ export interface FeatureFlagVariant {
   id: string
   name: string
   weight: number
-  payload?: any
+  payload?: unknown
 }
 
 export interface ExperimentConfig {
@@ -61,14 +63,14 @@ export interface FeatureFlagEvaluation {
   enabled: boolean
   variant?: FeatureFlagVariant
   reason: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   evaluationTime: number
 }
 
 export interface UserContext {
   userId?: string
   email?: string
-  properties: Record<string, any>
+  properties: Record<string, unknown>
   device: {
     type: 'mobile' | 'tablet' | 'desktop'
     os: string
@@ -82,12 +84,30 @@ export interface UserContext {
   timestamp: Date
 }
 
+interface FeatureFlagStats {
+  totalFlags: number
+  enabledFlags: number
+  totalEvaluations: number
+  flagUsage: Map<string, number>
+}
+
+type StoredFeatureFlag = Omit<FeatureFlag, 'createdAt' | 'updatedAt' | 'expiresAt'> & {
+  createdAt: string
+  updatedAt: string
+  expiresAt?: string
+}
+
+type StoredExperimentConfig = Omit<ExperimentConfig, 'startDate' | 'endDate'> & {
+  startDate: string
+  endDate?: string
+}
+
 class DashboardFeatureFlags {
   private flags: Map<string, FeatureFlag> = new Map()
   private experiments: Map<string, ExperimentConfig> = new Map()
   private evaluationCache: Map<string, FeatureFlagEvaluation> = new Map()
   private userContext?: UserContext
-  private analyticsCallback?: (event: string, data: any) => void
+  private analyticsCallback?: (event: string, data: Record<string, unknown>) => void
 
   private readonly STORAGE_KEY = 'dashboard_feature_flags'
   private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
@@ -288,10 +308,13 @@ class DashboardFeatureFlags {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (stored) {
-        const { flags, experiments } = JSON.parse(stored)
+        const { flags, experiments } = JSON.parse(stored) as {
+          flags?: Record<string, StoredFeatureFlag>
+          experiments?: Record<string, StoredExperimentConfig>
+        }
 
         if (flags) {
-          Object.entries(flags).forEach(([id, flag]: [string, any]) => {
+          Object.entries(flags).forEach(([id, flag]) => {
             this.flags.set(id, {
               ...flag,
               createdAt: new Date(flag.createdAt),
@@ -302,7 +325,7 @@ class DashboardFeatureFlags {
         }
 
         if (experiments) {
-          Object.entries(experiments).forEach(([id, experiment]: [string, any]) => {
+          Object.entries(experiments).forEach(([id, experiment]) => {
             this.experiments.set(id, {
               ...experiment,
               startDate: new Date(experiment.startDate),
@@ -342,7 +365,7 @@ class DashboardFeatureFlags {
     logger.info('User context updated:', this.userContext)
   }
 
-  public setAnalyticsCallback(callback: (event: string, data: any) => void) {
+  public setAnalyticsCallback(callback: (event: string, data: Record<string, unknown>) => void) {
     this.analyticsCallback = callback
   }
 
@@ -362,7 +385,7 @@ class DashboardFeatureFlags {
   private evaluateCondition(condition: FeatureFlagCondition): boolean {
     if (!this.userContext) return false
 
-    let value: any
+    let value: unknown
     switch (condition.type) {
       case 'user_property':
         value = this.userContext.properties[condition.property]
@@ -389,22 +412,26 @@ class DashboardFeatureFlags {
         result = value !== condition.value
         break
       case 'contains':
-        result = typeof value === 'string' && value.includes(condition.value)
+        result = typeof value === 'string' && typeof condition.value === 'string' && value.includes(condition.value)
         break
       case 'not_contains':
-        result = typeof value === 'string' && !value.includes(condition.value)
+        result = typeof value === 'string' && typeof condition.value === 'string' && !value.includes(condition.value)
         break
       case 'greater_than':
-        result = typeof value === 'number' && value > condition.value
+        result = typeof value === 'number' && typeof condition.value === 'number' && value > condition.value
         break
       case 'less_than':
-        result = typeof value === 'number' && value < condition.value
+        result = typeof value === 'number' && typeof condition.value === 'number' && value < condition.value
         break
       case 'in':
-        result = Array.isArray(condition.value) && condition.value.includes(value)
+        if (Array.isArray(condition.value) && (typeof value === 'string' || typeof value === 'number')) {
+          result = condition.value.includes(value)
+        }
         break
       case 'not_in':
-        result = Array.isArray(condition.value) && !condition.value.includes(value)
+        if (Array.isArray(condition.value) && (typeof value === 'string' || typeof value === 'number')) {
+          result = !condition.value.includes(value)
+        }
         break
     }
 
@@ -470,7 +497,7 @@ class DashboardFeatureFlags {
       return evaluation
     }
 
-    let evaluation: FeatureFlagEvaluation = {
+    const evaluation: FeatureFlagEvaluation = {
       flagId,
       enabled: false,
       reason: 'Default disabled',
@@ -600,8 +627,8 @@ class DashboardFeatureFlags {
     )
   }
 
-  public getEvaluationStats(): any {
-    const stats = {
+  public getEvaluationStats(): FeatureFlagStats {
+    const stats: FeatureFlagStats = {
       totalFlags: this.flags.size,
       enabledFlags: 0,
       totalEvaluations: this.evaluationCache.size,

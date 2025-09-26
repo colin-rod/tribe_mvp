@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo, useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useSearchDebounced } from '@/hooks/useSearchDebounced'
+import type { SearchFilters } from '@/hooks/useSearchDebounced'
 import { useTimelineData } from '@/hooks/useTimelineData'
 import VirtualScrollContainer from '@/components/ui/VirtualScrollContainer'
 import TimelineSearch from './TimelineSearch'
@@ -14,6 +15,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import MobileTimelineContainer from '@/components/dashboard/MobileTimelineContainer'
 import MobileSearchBar from '@/components/dashboard/MobileSearchBar'
+import type { UpdateCardData } from '@/lib/types/dashboard'
 
 interface TimelineProps {
   className?: string
@@ -29,10 +31,28 @@ interface TimelineProps {
   enableSmartCaching?: boolean
 }
 
+type TimelineVirtualItem =
+  | {
+      id: string
+      itemType: 'date-header'
+      displayDate: string
+      count: number
+    }
+  | (UpdateCardData & { itemType: 'update' })
+
+interface TimelineVirtualData {
+  flattenedItems: TimelineVirtualItem[]
+  onUpdateClick?: (updateId: string) => void
+  compact: boolean
+  enableProgressiveImages: boolean
+  selectedUpdates: string[]
+  onUpdateSelection?: (updateId: string, selected: boolean) => void
+}
+
 interface TimelineItemProps {
   index: number
   style: React.CSSProperties
-  data: any
+  data: TimelineVirtualData
 }
 
 const TimelineItem = memo<TimelineItemProps>(function TimelineItem({ index, style, data }) {
@@ -51,7 +71,7 @@ const TimelineItem = memo<TimelineItemProps>(function TimelineItem({ index, styl
   }
 
   // Date header
-  if (item.type === 'date-header') {
+  if (item.itemType === 'date-header') {
     return (
       <div style={style} className="px-4 py-6">
         <div className="relative">
@@ -271,14 +291,14 @@ const Timeline = memo<TimelineProps>(function Timeline({
   }, [refresh])
 
   // Flatten timeline groups for virtual scrolling
-  const flattenedItems = useMemo(() => {
-    const items: any[] = []
+  const flattenedItems = useMemo<TimelineVirtualItem[]>(() => {
+    const items: TimelineVirtualItem[] = []
 
     filteredGroups.forEach((group, groupIndex) => {
       // Add date header
       items.push({
         id: `header-${group.date}`,
-        type: 'date-header',
+        itemType: 'date-header',
         displayDate: group.displayDate,
         count: group.count
       })
@@ -287,7 +307,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
       group.updates.forEach(update => {
         items.push({
           ...update,
-          type: 'update'
+          itemType: 'update'
         })
       })
     })
@@ -300,7 +320,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
     const item = flattenedItems[index]
     if (!item) return compact ? 120 : 160
 
-    if (item.type === 'date-header') {
+    if (item.itemType === 'date-header') {
       return 80
     }
 
@@ -319,7 +339,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
   }, [flattenedItems, compact])
 
   // Virtual scroll data
-  const virtualScrollData = useMemo(() => ({
+  const virtualScrollData = useMemo<TimelineVirtualData>(() => ({
     flattenedItems,
     onUpdateClick: handleUpdateClick,
     compact,

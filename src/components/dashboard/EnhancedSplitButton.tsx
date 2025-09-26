@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('EnhancedSplitButton')
 
 export interface SplitButtonOption {
   id: string
@@ -181,7 +184,7 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
         setAnalytics(parsedAnalytics)
       }
     } catch (error) {
-      console.error('Error loading split button analytics:', error)
+      logger.error('Error loading split button analytics', { error })
     }
   }, [])
 
@@ -192,7 +195,7 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
       setAnalytics(newAnalytics)
       onAnalyticsUpdate?.(newAnalytics)
     } catch (error) {
-      console.error('Error saving split button analytics:', error)
+      logger.error('Error saving split button analytics', { error })
     }
   }, [onAnalyticsUpdate])
 
@@ -248,7 +251,7 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
       updateAnalytics(option.id)
       onOptionSelect?.(option)
     } catch (error) {
-      console.error('Error executing option action:', error)
+      logger.error('Error executing option action', { error, optionId: option.id })
     } finally {
       setLoadingOption(null)
     }

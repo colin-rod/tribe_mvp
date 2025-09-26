@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import type { PostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 
-interface Response {
+export interface Response {
   id: string
   update_id: string
   recipient_id: string
@@ -17,6 +18,8 @@ interface Response {
     email: string | null
   }
 }
+
+type ResponseRow = Omit<Response, 'recipients'>
 
 export function useResponses(updateId: string) {
   const logger = createLogger('UseResponses')
@@ -101,7 +104,7 @@ export function useResponses(updateId: string) {
           table: 'responses',
           filter: `update_id=eq.${updateId}`
         },
-        (payload: any) => {
+        (payload: PostgresChangesPayload<ResponseRow>) => {
           logger.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
           fetchNewResponse(payload.new.id)

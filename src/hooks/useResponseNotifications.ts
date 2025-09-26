@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { PostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 
@@ -8,6 +9,13 @@ interface NotificationData {
   relationship: string
   content: string
   updateId: string
+}
+
+interface ResponseInsertPayload {
+  id: string
+  update_id: string
+  recipient_id: string
+  content: string | null
 }
 
 export function useResponseNotifications() {
@@ -30,7 +38,7 @@ export function useResponseNotifications() {
           schema: 'public',
           table: 'responses'
         },
-        async (payload: any) => {
+        async (payload: PostgresChangesPayload<ResponseInsertPayload>) => {
           try {
             // Get the current user
             const { data: { user } } = await supabase.auth.getUser()

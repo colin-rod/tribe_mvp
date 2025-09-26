@@ -1,8 +1,7 @@
 'use client'
 
+import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('PersonalInfoForm')
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,6 +12,8 @@ import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+
+const logger = createLogger('PersonalInfoForm')
 
 interface PersonalInfoFormProps {
   onSuccess?: () => void
@@ -142,27 +143,21 @@ export default function PersonalInfoForm({ onSuccess }: PersonalInfoFormProps) {
           <div className="flex items-center space-x-6">
             <div className="flex-shrink-0">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                {photoPreview && !removePhoto ? (
-                  <img
-                    src={photoPreview}
-                    alt="Profile preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : user.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="Current profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={getDefaultAvatarUrl({
-                      name: profile.name || user.user_metadata?.name || user.email
-                    })}
-                    alt="Default profile avatar"
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                <Image
+                  src={
+                    photoPreview && !removePhoto
+                      ? photoPreview
+                      : user.user_metadata?.avatar_url ||
+                        getDefaultAvatarUrl({
+                          name: profile.name || user.user_metadata?.name || user.email
+                        })
+                  }
+                  alt={photoPreview && !removePhoto ? 'Profile preview' : 'Profile avatar'}
+                  width={80}
+                  height={80}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
               </div>
             </div>
 

@@ -22,9 +22,9 @@ export interface SecurityConfig {
  */
 export function withSecurity(config: SecurityConfig = {}) {
   return function securityMiddleware(
-    handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+    handler: (request: NextRequest, ...args: unknown[]) => Promise<NextResponse>
   ) {
-    return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+    return async (request: NextRequest, ...args: unknown[]): Promise<NextResponse> => {
       try {
         // Check if endpoint is allowed in production
         if (!config.allowInProduction && process.env.NODE_ENV === 'production') {
@@ -208,7 +208,7 @@ function detectSuspiciousHeaders(request: NextRequest): string[] {
 /**
  * Validate request body for security issues
  */
-export function validateRequestBody(body: any): { valid: boolean; errors: string[] } {
+export function validateRequestBody(body: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
   if (!body) {
@@ -244,7 +244,7 @@ export function validateRequestBody(body: any): { valid: boolean; errors: string
     }
 
     // Check for nested depth (prevent JSON bomb attacks)
-    if (typeof body === 'object') {
+    if (typeof body === 'object' && body !== null) {
       const depth = getObjectDepth(body)
       if (depth > 10) {
         errors.push('Request body structure too deep')
@@ -261,7 +261,7 @@ export function validateRequestBody(body: any): { valid: boolean; errors: string
 /**
  * Calculate object nesting depth
  */
-function getObjectDepth(obj: any, currentDepth = 0): number {
+function getObjectDepth(obj: unknown, currentDepth = 0): number {
   if (currentDepth > 20) return 20 // Prevent stack overflow
 
   if (typeof obj !== 'object' || obj === null) {
@@ -269,7 +269,8 @@ function getObjectDepth(obj: any, currentDepth = 0): number {
   }
 
   if (Array.isArray(obj)) {
-    return Math.max(currentDepth, ...obj.map(item => getObjectDepth(item, currentDepth + 1)))
+    const depths = obj.map(item => getObjectDepth(item, currentDepth + 1))
+    return Math.max(currentDepth, ...depths)
   }
 
   const values = Object.values(obj)

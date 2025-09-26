@@ -1,9 +1,8 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('AddRecipientForm')
 import { useState, useEffect } from 'react'
+import { ZodError } from 'zod'
+import { createLogger } from '@/lib/logger'
 import { Recipient, createRecipient } from '@/lib/recipients'
 import { RecipientGroup, getUserGroups } from '@/lib/recipient-groups'
 import {
@@ -18,6 +17,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { CheckIcon } from '@heroicons/react/24/outline'
+
+const logger = createLogger('AddRecipientForm')
 
 interface AddRecipientFormProps {
   onRecipientAdded: (recipient: Recipient) => void
@@ -158,13 +159,13 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
       })
 
       onRecipientAdded(newRecipient)
-    } catch (error: any) {
-      logger.errorWithStack('Error creating recipient:', error as Error)
-      if (error.errors) {
+    } catch (error: unknown) {
+      logger.errorWithStack('Error creating recipient', error instanceof Error ? error : new Error('Unknown error'))
+      if (error instanceof ZodError) {
         const newErrors: Record<string, string> = {}
-        error.errors.forEach((err: any) => {
-          if (err.path && err.path.length > 0) {
-            newErrors[err.path[0]] = err.message
+        error.issues.forEach(issue => {
+          if (issue.path && issue.path.length > 0) {
+            newErrors[String(issue.path[0])] = issue.message
           }
         })
         setErrors(newErrors)

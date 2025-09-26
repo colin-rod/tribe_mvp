@@ -372,10 +372,20 @@ export interface ValidationResult {
   warnings: string[]
 }
 
+interface StepValidationData {
+  name?: string
+  timezone?: string
+  birth_date?: string
+  profile_photo?: unknown
+  recipients?: unknown[]
+  content?: string
+  mediaFiles?: unknown[]
+}
+
 /**
  * Validate step completion requirements
  */
-export function validateStepCompletion(stepId: OnboardingStep, data: any): ValidationResult {
+export function validateStepCompletion(stepId: OnboardingStep, data: StepValidationData): ValidationResult {
   const result: ValidationResult = { isValid: true, errors: [], warnings: [] }
 
   switch (stepId) {

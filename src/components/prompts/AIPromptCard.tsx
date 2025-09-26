@@ -22,10 +22,15 @@ import {
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('AIPromptCard')
 
 // =============================================================================
 // TYPE DEFINITIONS
 // =============================================================================
+
+type PromptVariableValue = string | number | boolean | null
 
 export interface AIPrompt {
   id: string
@@ -34,7 +39,7 @@ export interface AIPrompt {
   child_id: string
   child_name?: string
   template_id?: string
-  substituted_variables?: Record<string, any>
+  substituted_variables?: Record<string, PromptVariableValue>
   created_at: string
   sent_at?: string
   status: 'pending' | 'sent' | 'acted_on' | 'dismissed'
@@ -128,7 +133,7 @@ export function AIPromptCard({
 
       router.push(`/dashboard/create-update?${params.toString()}`)
     } catch (error) {
-      console.error('Failed to act on prompt:', error)
+      logger.error('Failed to act on prompt', { error, promptId: prompt.id })
     } finally {
       setIsActing(false)
     }
@@ -141,7 +146,7 @@ export function AIPromptCard({
     try {
       await onDismiss(prompt.id)
     } catch (error) {
-      console.error('Failed to dismiss prompt:', error)
+      logger.error('Failed to dismiss prompt', { error, promptId: prompt.id })
     } finally {
       setIsDismissing(false)
     }

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -129,10 +130,13 @@ export default function EmailPreview({
             <div className="flex items-start space-x-4">
               {childPhotoUrl && (
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                  <img
+                  <Image
                     src={childPhotoUrl}
                     alt={childName}
-                    className="w-full h-full object-cover"
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover"
+                    unoptimized
                   />
                 </div>
               )}
@@ -165,10 +169,14 @@ export default function EmailPreview({
                   {mediaUrls.map((url, index) => (
                     <div key={index} className="rounded-lg overflow-hidden bg-gray-100">
                       {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img
+                        <Image
                           src={url}
                           alt={`Update media ${index + 1}`}
-                          className="w-full h-auto"
+                          width={800}
+                          height={600}
+                          className="h-auto w-full"
+                          sizes="100vw"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-48 flex items-center justify-center">

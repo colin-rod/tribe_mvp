@@ -1,15 +1,15 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('AddGroupForm')
-
 import { useState } from 'react'
+import { ZodError } from 'zod'
+import { createLogger } from '@/lib/logger'
 import { RecipientGroup, createGroup } from '@/lib/recipient-groups'
 import { recipientGroupSchema, RecipientGroupFormData, FREQUENCY_OPTIONS, CHANNEL_OPTIONS } from '@/lib/validation/recipients'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+
+const logger = createLogger('AddGroupForm')
 
 interface AddGroupFormProps {
   onGroupAdded: (group: RecipientGroup) => void
@@ -35,14 +35,14 @@ export default function AddGroupForm({ onGroupAdded, onCancel }: AddGroupFormPro
       recipientGroupSchema.parse(formData)
       setErrors({})
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       const newErrors: typeof errors = {}
 
-      if (error.errors) {
-        error.errors.forEach((err: any) => {
-          if (err.path && err.path.length > 0) {
-            const field = err.path[0] as keyof typeof errors
-            newErrors[field] = err.message
+      if (error instanceof ZodError) {
+        error.issues.forEach(issue => {
+          if (issue.path && issue.path.length > 0) {
+            const field = issue.path[0] as keyof typeof errors
+            newErrors[field] = issue.message
           }
         })
       }

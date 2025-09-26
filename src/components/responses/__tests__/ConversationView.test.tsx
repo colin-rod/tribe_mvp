@@ -18,7 +18,7 @@ jest.mock('@/hooks/useResponses', () => ({
 
 // Mock child components
 jest.mock('../ResponseThread', () => {
-  return function MockResponseThread({ updateId, responses, loading, showNotifications }: any) {
+  return function MockResponseThread({ updateId, responses, loading, showNotifications }: Record<string, unknown>) {
     return (
       <div data-testid="response-thread">
         <div>Update ID: {updateId}</div>
@@ -31,7 +31,7 @@ jest.mock('../ResponseThread', () => {
 })
 
 jest.mock('../ResponseAnalytics', () => {
-  return function MockResponseAnalytics({ updateId }: any) {
+  return function MockResponseAnalytics({ updateId }: Record<string, unknown>) {
     return (
       <div data-testid="response-analytics">
         <div>Analytics for: {updateId}</div>

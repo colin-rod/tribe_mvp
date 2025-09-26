@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
@@ -338,14 +339,6 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
     }
   }, [])
 
-  // Generate srcset for responsive images
-  const generateSrcSet = useCallback(() => {
-    if (!enableRetina || !width) return undefined
-
-    const baseSrc = imageState.currentSrc || src
-    return `${baseSrc} 1x, ${baseSrc.replace(/\.([^.]+)$/, '_2x.$1')} 2x`
-  }, [enableRetina, width, imageState.currentSrc, src])
-
   return (
     <div
       ref={containerRef}
@@ -377,10 +370,9 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
       {/* Main image */}
       {(imageState.currentSrc || src) && (
-        <img
+        <Image
           ref={imgRef}
           src={imageState.currentSrc || src}
-          srcSet={generateSrcSet()}
           sizes={sizes}
           alt={alt}
           className={cn(
@@ -394,7 +386,11 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
           onLoad={handleImageLoad}
           onError={handleImageError}
           loading={priority ? 'eager' : loading}
-          decoding="async"
+          priority={priority}
+          fill={!width || !height}
+          width={width}
+          height={height}
+          unoptimized
         />
       )}
 

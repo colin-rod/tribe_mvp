@@ -6,7 +6,7 @@ import type { SearchFilters } from '@/hooks/useSearchDebounced'
 
 const logger = createLogger('TimelineCache')
 
-export interface CacheEntry<T = any> {
+export interface CacheEntry<T = unknown> {
   data: T
   timestamp: number
   ttl: number
@@ -14,7 +14,7 @@ export interface CacheEntry<T = any> {
   lastAccessed: number
   size: number
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface CacheStats {
@@ -84,6 +84,12 @@ const DEFAULT_CONFIG: CacheConfig = {
 /**
  * Advanced caching system with LRU eviction, compression, and intelligent preloading
  */
+type DetailedCacheStats = CacheStats & {
+  topAccessedEntries: Array<{ key: string; accessCount: number; size: number; age: number }>
+  sizeDistribution: Record<string, number>
+  tagDistribution: Record<string, number>
+}
+
 export class TimelineCache {
   private cache: Map<string, CacheEntry> = new Map()
   private stats: CacheStats = {
@@ -122,7 +128,7 @@ export class TimelineCache {
     return `${namespace}:${identifier}`
   }
 
-  private calculateSize(data: any): number {
+  private calculateSize(data: unknown): number {
     try {
       return new Blob([JSON.stringify(data)]).size
     } catch {
@@ -131,7 +137,7 @@ export class TimelineCache {
     }
   }
 
-  private async compressData(data: any): Promise<string> {
+  private async compressData(data: unknown): Promise<string> {
     if (!this.config.enableCompression) return JSON.stringify(data)
 
     try {
@@ -172,7 +178,7 @@ export class TimelineCache {
     }
   }
 
-  private async decompressData(compressedData: string): Promise<any> {
+  private async decompressData(compressedData: string): Promise<unknown> {
     if (!this.config.enableCompression) {
       return JSON.parse(compressedData)
     }
@@ -501,7 +507,7 @@ export class TimelineCache {
     return this.get(key)
   }
 
-  async cacheImage(url: string, blob: Blob, optimizedVersions: any = {}): Promise<void> {
+  async cacheImage(url: string, blob: Blob, optimizedVersions: Record<string, string> = {}): Promise<void> {
     const key = this.generateKey('image', url)
     await this.set(key, {
       url,
@@ -534,7 +540,7 @@ export class TimelineCache {
     return { ...this.stats }
   }
 
-  async getDetailedStats(): Promise<any> {
+  async getDetailedStats(): Promise<DetailedCacheStats> {
     const stats = this.getStats()
     const entries = Array.from(this.cache.entries())
 

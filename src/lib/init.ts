@@ -41,8 +41,7 @@ export function initializeApp(): void {
 
     // In production, exit on critical startup failures (Node.js only)
     if (process.env.NODE_ENV === 'production' && typeof process !== 'undefined' && process.exit) {
-      // eslint-disable-next-line no-console
-      console.error('\n💥 Critical startup failure - application cannot continue\n')
+      logger.error('Critical startup failure - application cannot continue')
       // eslint-disable-next-line no-restricted-syntax
       process.exit(1)
     }

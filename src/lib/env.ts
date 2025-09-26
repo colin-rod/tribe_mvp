@@ -740,8 +740,7 @@ export function initializeEnvironment(): void {
 
     // In production, exit the process for critical errors (Node.js only)
     if (process.env.NODE_ENV === 'production' && typeof process !== 'undefined' && process.exit) {
-      // eslint-disable-next-line no-console
-      console.error('\n💥 Application failed to start due to environment configuration errors\n')
+      logger.error('Application failed to start due to environment configuration errors')
       // eslint-disable-next-line no-restricted-syntax
       process.exit(1)
     }

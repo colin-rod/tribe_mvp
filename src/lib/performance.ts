@@ -3,7 +3,10 @@
  * Integrated with Vercel Analytics for comprehensive performance insights
  */
 
-import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals'
+import { onCLS, onFCP, onLCP, onTTFB, onINP, type Metric } from 'web-vitals'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Performance')
 
 // Performance thresholds (in milliseconds)
 export const PERFORMANCE_THRESHOLDS = {
@@ -66,14 +69,11 @@ export function getPerformanceRating(metric: MetricName, value: number): Perform
 export function logPerformanceMetric(metric: PerformanceMetric) {
   if (process.env.NODE_ENV === 'development') {
     const emoji = metric.rating === 'good' ? '✅' : metric.rating === 'needs-improvement' ? '⚠️' : '❌'
-    console.log(
-      `${emoji} ${metric.name}: ${metric.value}ms (${metric.rating})`,
-      {
-        delta: metric.delta,
-        id: metric.id,
-        threshold: PERFORMANCE_THRESHOLDS[metric.name]
-      }
-    )
+    logger.debug(`${emoji} ${metric.name}: ${metric.value}ms (${metric.rating})`, {
+      delta: metric.delta,
+      id: metric.id,
+      threshold: PERFORMANCE_THRESHOLDS[metric.name]
+    })
   }
 }
 
@@ -104,7 +104,7 @@ export function sendPerformanceMetric(metric: PerformanceMetric) {
 export function initPerformanceMonitoring() {
   if (typeof window === 'undefined') return
 
-  const handleMetric = (metric: any) => {
+  const handleMetric = (metric: Metric) => {
     const performanceMetric: PerformanceMetric = {
       name: metric.name as MetricName,
       value: metric.value,
@@ -139,7 +139,7 @@ export function usePerformanceMonitoring(componentName: string) {
       const renderTime = endTime - startTime
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🎨 ${componentName} render time: ${renderTime.toFixed(2)}ms`)
+        logger.debug(`${componentName} render time`, { durationMs: Number(renderTime.toFixed(2)) })
       }
 
       return renderTime
@@ -153,7 +153,9 @@ export function usePerformanceMonitoring(componentName: string) {
         const interactionTime = interactionEndTime - interactionStartTime
 
         if (process.env.NODE_ENV === 'development') {
-          console.log(`⚡ ${componentName}.${interactionName}: ${interactionTime.toFixed(2)}ms`)
+        logger.debug(`${componentName}.${interactionName} interaction`, {
+          durationMs: Number(interactionTime.toFixed(2))
+        })
         }
 
         return interactionTime
@@ -181,12 +183,14 @@ export function measurePerformance(name: string, startMark: string, endMark: str
       const measure = performance.getEntriesByName(name, 'measure')[0]
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`📊 ${name}: ${measure.duration.toFixed(2)}ms`)
+        logger.debug(`${name} measure`, {
+          durationMs: Number(measure.duration.toFixed(2))
+        })
       }
 
       return measure.duration
     } catch (error) {
-      console.warn('Performance measurement failed:', error)
+      logger.warn('Performance measurement failed', { error, name, startMark, endMark })
       return null
     }
   }

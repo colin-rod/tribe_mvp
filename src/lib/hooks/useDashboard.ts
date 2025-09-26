@@ -408,7 +408,7 @@ export function useEngagementUpdates(
 export function useDashboardFilters(initialFilters: DashboardFilters = {}) {
   const [filters, setFilters] = useState<DashboardFilters>(initialFilters)
 
-  const updateFilter = useCallback((key: keyof DashboardFilters, value: any) => {
+  const updateFilter = useCallback((key: keyof DashboardFilters, value: unknown) => {
     setFilters(prev => ({ ...prev, [key]: value }))
   }, [])
 

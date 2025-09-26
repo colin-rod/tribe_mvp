@@ -92,7 +92,7 @@ export function useAdvancedFiltering(): UseAdvancedFilteringReturn {
   }, [])
 
   // Save data to localStorage
-  const saveToStorage = useCallback((key: string, data: any) => {
+  const saveToStorage = useCallback((key: string, data: unknown) => {
     try {
       localStorage.setItem(key, JSON.stringify(data))
     } catch (err) {

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
 import {
   SparklesIcon,
   ArrowPathIcon,
@@ -21,6 +22,8 @@ import {
   ChartBarIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline'
+
+const logger = createLogger('PromptFeed')
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -195,7 +198,7 @@ export function PromptFeed({
       }
 
     } catch (error) {
-      console.error('Error fetching prompts:', error)
+      logger.error('Error fetching prompts', { error })
       setError(error instanceof Error ? error.message : 'Failed to fetch prompts')
     } finally {
       setLoading(false)
@@ -211,13 +214,13 @@ export function PromptFeed({
       })
 
       if (error) {
-        console.error('Error fetching stats:', error)
+        logger.error('Error fetching stats', { error })
         return
       }
 
       setStats(data)
     } catch (error) {
-      console.error('Error fetching prompt stats:', error)
+      logger.error('Error fetching prompt stats', { error })
     }
   }
 
@@ -264,7 +267,7 @@ export function PromptFeed({
       }
 
     } catch (error) {
-      console.error('Error acting on prompt:', error)
+      logger.error('Error acting on prompt', { error, promptId, action })
       throw error
     }
   }
@@ -307,7 +310,7 @@ export function PromptFeed({
       }
 
     } catch (error) {
-      console.error('Error dismissing prompt:', error)
+      logger.error('Error dismissing prompt', { error, promptId })
       throw error
     }
   }
@@ -327,13 +330,13 @@ export function PromptFeed({
         throw error
       }
 
-      console.log('Generated new prompts:', data)
+        logger.info('Generated new prompts', { data })
 
       // Refresh the prompt list
       await fetchPrompts(true)
 
     } catch (error) {
-      console.error('Error generating new prompts:', error)
+      logger.error('Error generating new prompts', { error, childId, promptType })
       setError('Failed to generate new prompts. Please try again.')
     } finally {
       setRefreshing(false)

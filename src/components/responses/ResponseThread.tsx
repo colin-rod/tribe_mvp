@@ -1,13 +1,14 @@
 'use client'
 
 import { useResponses } from '@/hooks/useResponses'
+import type { Response as UpdateResponse } from '@/hooks/useResponses'
 import { ResponseCard } from './ResponseCard'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 
 interface ResponseThreadProps {
   updateId: string
-  responses?: any[] // Allow passing responses directly for performance
+  responses?: UpdateResponse[]
   loading?: boolean
   showNotifications?: boolean
   maxHeight?: string

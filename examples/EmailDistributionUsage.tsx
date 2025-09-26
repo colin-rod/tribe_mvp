@@ -7,6 +7,7 @@
  * into your update creation workflow.
  */
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import {
@@ -15,6 +16,7 @@ import {
   EmailPreview
 } from '@/components/updates'
 import { useEmailDistribution } from '@/hooks/useEmailDistribution'
+import { logger } from '@/lib/logger'
 
 // Example update data structure
 interface ExampleUpdate {
@@ -78,10 +80,13 @@ export default function EmailDistributionUsage() {
         <div className="flex items-start space-x-4 mb-4">
           {exampleUpdate.child.profile_photo_url && (
             <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200">
-              <img
+              <Image
                 src={exampleUpdate.child.profile_photo_url}
                 alt={exampleUpdate.child.name}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
+                unoptimized
               />
             </div>
           )}
@@ -135,7 +140,7 @@ export default function EmailDistributionUsage() {
           <DeliveryStatus
             updateId={lastUpdateId}
             onStatusChange={(jobs) => {
-              console.log('Delivery status updated:', jobs)
+              logger.info('Delivery status updated', { jobs })
             }}
           />
         </div>
@@ -185,7 +190,7 @@ await distributeUpdate({
   childName="Emma"
   childBirthDate="2022-12-15"
   onClose={() => setShowModal(false)}
-  onSent={() => console.log('Update sent!')}
+  onSent={() => logger.info('Update sent')}
 />`}
             </pre>
           </div>
@@ -196,7 +201,7 @@ await distributeUpdate({
             <pre className="mt-2 p-2 bg-blue-100 rounded text-xs overflow-x-auto">
 {`<DeliveryStatus
   updateId="update_123"
-  onStatusChange={(jobs) => console.log('Status updated:', jobs)}
+          onStatusChange={(jobs) => logger.info('Status updated', { jobs })}
 />`}
             </pre>
           </div>

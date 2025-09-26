@@ -10,7 +10,7 @@ interface LogContext {
   requestId?: string
   component?: string
   action?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface LogEntry {
@@ -41,7 +41,7 @@ class SecureLogger {
   /**
    * Sanitize sensitive data from log entries
    */
-  private sanitizeData(data: any): any {
+  private sanitizeData(data: unknown): unknown {
     if (typeof data === 'string') {
       // Check if string contains sensitive patterns
       for (const field of this.sensitiveFields) {
@@ -60,7 +60,7 @@ class SecureLogger {
       return data.map(item => this.sanitizeData(item))
     }
 
-    const sanitized: any = {}
+    const sanitized: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(data)) {
       const keyLower = key.toLowerCase()
 
@@ -210,7 +210,7 @@ export const logger = new SecureLogger()
 export const createLogger = (component: string) => logger.scope(component)
 
 // Export for compatibility (will be removed after migration)
-export const devLog = (message: string, data?: any) => {
+export const devLog = (message: string, data?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
     logger.debug(message, data)
   }

@@ -25,6 +25,20 @@ interface ResponseAnalytics {
   }>
 }
 
+interface ResponseRow {
+  channel: string
+  received_at: string
+  recipients: {
+    name: string
+    relationship: string
+  }
+}
+
+interface UpdateRow {
+  id: string
+  created_at: string
+}
+
 export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
   const logger = createLogger('UseResponseAnalytics')
   const [analytics, setAnalytics] = useState<ResponseAnalytics | null>(null)
@@ -70,7 +84,10 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
         }
 
         if (responsesData && updatesData) {
-          const analytics = calculateAnalytics(responsesData, updatesData)
+          const analytics = calculateAnalytics(
+            responsesData as ResponseRow[],
+            updatesData as UpdateRow[]
+          )
           setAnalytics(analytics)
         }
       } catch (err) {
@@ -87,14 +104,14 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
   return { analytics, loading, error }
 }
 
-function calculateAnalytics(responses: any[], updates: any[]): ResponseAnalytics {
+function calculateAnalytics(responses: ResponseRow[], updates: UpdateRow[]): ResponseAnalytics {
   // Calculate response rate
   const responseRate = updates.length > 0
     ? Math.round((responses.length / updates.length) * 100)
     : 0
 
   // Top responders
-  const responderCounts = responses.reduce((acc, response) => {
+  const responderCounts = responses.reduce<Record<string, { recipient: string; relationship: string; count: number }>>((acc, response) => {
     const key = response.recipients.name
     if (!acc[key]) {
       acc[key] = {
@@ -105,11 +122,11 @@ function calculateAnalytics(responses: any[], updates: any[]): ResponseAnalytics
     }
     acc[key].count++
     return acc
-  }, {} as Record<string, any>)
+  }, {})
 
   const topResponders = Object.values(responderCounts)
-    .sort((a: any, b: any) => b.count - a.count)
-    .slice(0, 5) as { recipient: string; count: number; relationship: string; }[]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
 
   // Responses by hour
   const hourCounts = Array(24).fill(0)
@@ -121,14 +138,14 @@ function calculateAnalytics(responses: any[], updates: any[]): ResponseAnalytics
   const responsesByHour = hourCounts.map((count, hour) => ({ hour, count }))
 
   // Responses by channel
-  const channelCounts = responses.reduce((acc, response) => {
+  const channelCounts = responses.reduce<Record<string, number>>((acc, response) => {
     acc[response.channel] = (acc[response.channel] || 0) + 1
     return acc
-  }, {} as Record<string, number>)
+  }, {})
 
   const responsesByChannel = Object.entries(channelCounts).map(([channel, count]) => ({
     channel: channel.charAt(0).toUpperCase() + channel.slice(1),
-    count: count as number
+    count
   }))
 
   // Engagement trend (last 7 days)

@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react'
 import { initPerformanceMonitoring } from '@/lib/performance'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('PerformanceProvider')
 
 /**
  * Performance Provider Component
@@ -21,7 +24,7 @@ export function PerformanceProvider() {
         // Log navigation timing if available
         const navigationTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
         if (navigationTiming && process.env.NODE_ENV === 'development') {
-          console.log('Page Load Performance:', {
+          logger.info('Page Load Performance', {
             'DNS Lookup': `${navigationTiming.domainLookupEnd - navigationTiming.domainLookupStart}ms`,
             'Connection': `${navigationTiming.connectEnd - navigationTiming.connectStart}ms`,
             'Request': `${navigationTiming.responseStart - navigationTiming.requestStart}ms`,

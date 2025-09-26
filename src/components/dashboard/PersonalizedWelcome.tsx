@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { createLogger } from '@/lib/logger'
 import {
   ArrowTrendingUpIcon,
   BellIcon,
@@ -14,6 +15,8 @@ import {
   ChartBarIcon,
   CameraIcon
 } from '@heroicons/react/24/outline'
+
+const logger = createLogger('PersonalizedWelcome')
 
 interface PersonalizedWelcomeProps {
   userName?: string
@@ -77,7 +80,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
       try {
         setDismissedReminders(new Set(JSON.parse(saved)))
       } catch (error) {
-        console.error('Error loading dismissed reminders:', error)
+        logger.error('Error loading dismissed reminders', { error })
       }
     }
   }, [])

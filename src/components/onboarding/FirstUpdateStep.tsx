@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -287,12 +288,18 @@ export function FirstUpdateStep({
           {formData.mediaFiles.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {formData.mediaFiles.map((file, index) => (
-                <div key={index} className="relative group">
+                <div
+                  key={index}
+                  className="relative group h-24 w-full border border-gray-200 rounded-lg"
+                >
                   {file.type.startsWith('image/') ? (
-                    <img
+                    <Image
                       src={previewUrls[index]}
                       alt="Preview"
-                      className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="(min-width: 768px) 33vw, 50vw"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">

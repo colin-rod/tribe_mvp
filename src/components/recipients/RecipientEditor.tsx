@@ -1,9 +1,8 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('RecipientEditor')
 import { useState, useEffect } from 'react'
+import { ZodError } from 'zod'
+import { createLogger } from '@/lib/logger'
 import { Recipient, updateRecipient } from '@/lib/recipients'
 import { RecipientGroup, getUserGroups } from '@/lib/recipient-groups'
 import {
@@ -17,6 +16,8 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+
+const logger = createLogger('RecipientEditor')
 
 interface RecipientEditorProps {
   recipient: Recipient
@@ -164,13 +165,13 @@ export default function RecipientEditor({
 
       const updatedRecipient = await updateRecipient(recipient.id, updates)
       onRecipientUpdated(updatedRecipient)
-    } catch (error: any) {
-      logger.errorWithStack('Error updating recipient:', error as Error)
-      if (error.errors) {
+    } catch (error: unknown) {
+      logger.errorWithStack('Error updating recipient', error instanceof Error ? error : new Error('Unknown error'))
+      if (error instanceof ZodError) {
         const newErrors: Record<string, string> = {}
-        error.errors.forEach((err: any) => {
-          if (err.path && err.path.length > 0) {
-            newErrors[err.path[0]] = err.message
+        error.issues.forEach(issue => {
+          if (issue.path && issue.path.length > 0) {
+            newErrors[String(issue.path[0])] = issue.message
           }
         })
         setErrors(newErrors)

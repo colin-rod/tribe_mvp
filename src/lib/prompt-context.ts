@@ -4,6 +4,9 @@
  */
 
 import { differenceInDays, differenceInWeeks, differenceInMonths, format, getDay } from 'date-fns'
+import { createLogger } from './logger'
+
+const logger = createLogger('PromptContext')
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -49,7 +52,7 @@ export interface User {
   id: string
   email: string
   name?: string
-  user_metadata?: any
+  user_metadata?: Record<string, unknown>
 }
 
 export interface LastUpdate {
@@ -317,7 +320,7 @@ export function substituteVariables(templateText: string, context: PromptVariabl
 
     // Handle different value types
     if (value === undefined || value === null) {
-      console.warn(`Variable ${variableName} not found in context, keeping placeholder`)
+      logger.warn('Variable not found in context, keeping placeholder', { variableName })
       return match // Keep original placeholder if variable not found
     }
 

@@ -274,7 +274,6 @@ export default function CreateUpdateWizard({
                     onFormDataChange={setFormData}
                     onGenerateSuggestions={handleFormSubmit}
                     error={error ?? undefined}
-                    childrenData={children}
                     loadChildren={loadChildren}
                     isLoading={isLoading}
                     isAnalyzing={isAnalyzing}

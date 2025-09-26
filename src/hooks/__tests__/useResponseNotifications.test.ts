@@ -57,7 +57,7 @@ afterAll(() => {
 })
 
 describe('useResponseNotifications', () => {
-  let realtimeCallback: (payload: any) => void
+  let realtimeCallback: (payload: unknown) => void
 
   beforeEach(() => {
     jest.clearAllMocks()

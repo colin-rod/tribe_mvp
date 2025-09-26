@@ -14,7 +14,6 @@ interface UpdateFormProps {
   isAnalyzing?: boolean
   hasRequestedAnalysis?: boolean
   error?: string | null
-  childrenData: any[]
   loadChildren: () => Promise<void>
 }
 
@@ -26,7 +25,6 @@ export default function UpdateForm({
   isAnalyzing = false,
   hasRequestedAnalysis = false,
   error,
-  childrenData,
   loadChildren
 }: UpdateFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)

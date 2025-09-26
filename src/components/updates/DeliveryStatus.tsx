@@ -1,13 +1,14 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('DeliveryStatus')
 import { useState, useEffect } from 'react'
+import type { PostgresChangesPayload } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { DeliveryStatusBadge, type DeliveryStatus } from '@/components/ui/DeliveryStatusBadge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('DeliveryStatus')
 
 interface DeliveryJob {
   id: string
@@ -25,6 +26,8 @@ interface DeliveryJob {
     relationship: string
   }
 }
+
+type DeliveryJobRow = Omit<DeliveryJob, 'recipients'>
 
 interface DeliveryStatusProps {
   updateId: string
@@ -92,7 +95,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
           table: 'delivery_jobs',
           filter: `update_id=eq.${updateId}`
         },
-        async (payload: any) => {
+        async (payload: PostgresChangesPayload<DeliveryJobRow>) => {
           logger.info('Delivery job update:', { data: payload })
 
           if (payload.eventType === 'INSERT') {

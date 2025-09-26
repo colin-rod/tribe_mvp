@@ -12,7 +12,7 @@ export interface UserInteraction {
   timestamp: Date
   userId?: string
   sessionId: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   duration?: number
   context?: {
     page: string
@@ -46,7 +46,7 @@ export interface PerformanceMetric {
     component: string
     device: 'mobile' | 'tablet' | 'desktop'
   }
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export type MetricType =
@@ -98,6 +98,10 @@ export interface AnalyticsConfiguration {
   maxStorageSize: number
   enableDebugMode: boolean
 }
+
+type StoredUserInteraction = Omit<UserInteraction, 'timestamp'> & { timestamp: string }
+type StoredPerformanceMetric = Omit<PerformanceMetric, 'timestamp'> & { timestamp: string }
+type StoredUserBehaviorPattern = Omit<UserBehaviorPattern, 'lastUpdated'> & { lastUpdated: string }
 
 class DashboardAnalyticsManager {
   private interactions: UserInteraction[] = []
@@ -297,9 +301,10 @@ class DashboardAnalyticsManager {
       this.performanceObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries()
         entries.forEach((entry) => {
+          const metricEntry = entry as PerformanceEntry & { value?: number }
           this.trackPerformanceMetric({
             type: this.mapPerformanceEntryType(entry.entryType),
-            value: entry.duration || (entry as any).value || 0,
+            value: metricEntry.duration || metricEntry.value || 0,
             metadata: {
               name: entry.name,
               entryType: entry.entryType,
@@ -319,13 +324,22 @@ class DashboardAnalyticsManager {
     // Memory usage monitoring
     if ('memory' in performance) {
       setInterval(() => {
-        const memory = (performance as any).memory
+        const memoryInfo = (performance as Performance & {
+          memory?: {
+            usedJSHeapSize: number
+            totalJSHeapSize: number
+            jsHeapSizeLimit: number
+          }
+        }).memory
+
+        if (!memoryInfo) return
+
         this.trackPerformanceMetric({
           type: 'memory_usage',
-          value: memory.usedJSHeapSize,
+          value: memoryInfo.usedJSHeapSize,
           metadata: {
-            totalJSHeapSize: memory.totalJSHeapSize,
-            jsHeapSizeLimit: memory.jsHeapSizeLimit
+            totalJSHeapSize: memoryInfo.totalJSHeapSize,
+            jsHeapSizeLimit: memoryInfo.jsHeapSizeLimit
           }
         })
       }, 60000) // Every minute
@@ -389,24 +403,26 @@ class DashboardAnalyticsManager {
     try {
       const storedInteractions = localStorage.getItem(this.STORAGE_KEYS.INTERACTIONS)
       if (storedInteractions) {
-        this.interactions = JSON.parse(storedInteractions).map((i: any) => ({
-          ...i,
-          timestamp: new Date(i.timestamp)
+        const parsedInteractions = JSON.parse(storedInteractions) as StoredUserInteraction[]
+        this.interactions = parsedInteractions.map(({ timestamp, ...interaction }) => ({
+          ...interaction,
+          timestamp: new Date(timestamp)
         }))
       }
 
       const storedMetrics = localStorage.getItem(this.STORAGE_KEYS.METRICS)
       if (storedMetrics) {
-        this.performanceMetrics = JSON.parse(storedMetrics).map((m: any) => ({
-          ...m,
-          timestamp: new Date(m.timestamp)
+        const parsedMetrics = JSON.parse(storedMetrics) as StoredPerformanceMetric[]
+        this.performanceMetrics = parsedMetrics.map(({ timestamp, ...metric }) => ({
+          ...metric,
+          timestamp: new Date(timestamp)
         }))
       }
 
       const storedPatterns = localStorage.getItem(this.STORAGE_KEYS.PATTERNS)
       if (storedPatterns) {
-        const patterns = JSON.parse(storedPatterns)
-        Object.entries(patterns).forEach(([userId, pattern]: [string, any]) => {
+        const patterns = JSON.parse(storedPatterns) as Record<string, StoredUserBehaviorPattern>
+        Object.entries(patterns).forEach(([userId, pattern]) => {
           this.userPatterns.set(userId, {
             ...pattern,
             lastUpdated: new Date(pattern.lastUpdated)
@@ -515,7 +531,7 @@ class DashboardAnalyticsManager {
     }
   }
 
-  public trackCustomEvent(eventName: string, eventData: Record<string, any>) {
+  public trackCustomEvent(eventName: string, eventData: Record<string, unknown>) {
     this.trackInteraction({
       type: 'performance_event',
       element: 'custom',
@@ -697,7 +713,7 @@ export function trackDashboardPerformance(metric: Omit<PerformanceMetric, 'id' |
   analyticsInstance?.trackPerformanceMetric(metric)
 }
 
-export function trackCustomDashboardEvent(eventName: string, eventData: Record<string, any>) {
+export function trackCustomDashboardEvent(eventName: string, eventData: Record<string, unknown>) {
   analyticsInstance?.trackCustomEvent(eventName, eventData)
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { validateUpdateMediaFiles } from '@/lib/photo-upload'
 
@@ -202,12 +203,15 @@ export default function MediaUpload({
                 onDrop={(e) => handleDropItem(e, index)}
               >
                 {/* Image Preview */}
-                <div className="aspect-square bg-gray-100">
+                <div className="relative aspect-square bg-gray-100">
                   {previewUrls[index] ? (
-                    <img
+                    <Image
                       src={previewUrls[index]}
                       alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 768px) 25vw, 50vw"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

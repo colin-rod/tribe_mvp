@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useResponses } from '@/hooks/useResponses'
 import { ResponseThread } from './ResponseThread'
@@ -8,6 +9,12 @@ import { formatDistanceToNow } from 'date-fns'
 import { ChatBubbleLeftIcon, ArrowTrendingUpIcon, UsersIcon, CalendarDaysIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import ChildImage from '@/components/ui/ChildImage'
 
+interface ConfirmedRecipient {
+  id: string
+  name?: string
+  email?: string
+}
+
 interface Update {
   id: string
   content: string
@@ -15,7 +22,7 @@ interface Update {
   child_id: string
   parent_id: string
   media_urls: string[]
-  confirmed_recipients?: any[]
+  confirmed_recipients?: ConfirmedRecipient[]
   children: {
     id: string
     name: string
@@ -133,18 +140,25 @@ export function ConversationView({
                         Photos ({update.media_urls.length})
                       </h4>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {update.media_urls.map((url, index) => (
-                        <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                          <img
-                            src={url}
-                            alt={`Update photo ${index + 1}`}
-                            className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => window.open(url, '_blank')}
-                          />
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {update.media_urls.map((url, index) => (
+                            <div
+                              key={index}
+                              className="relative aspect-square rounded-lg bg-gray-100"
+                              role="presentation"
+                            >
+                              <Image
+                                src={url}
+                                alt={`Update photo ${index + 1}`}
+                                fill
+                                className="cursor-pointer rounded-lg object-cover hover:opacity-90 transition-opacity"
+                                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                                onClick={() => window.open(url, '_blank')}
+                                unoptimized
+                              />
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
                   </div>
                 )}
               </div>

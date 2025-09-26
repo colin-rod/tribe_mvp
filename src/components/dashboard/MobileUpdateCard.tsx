@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import Image from 'next/image'
+import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { ChevronRightIcon, ChatBubbleOvalLeftIcon, HeartIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, ChatBubbleOvalLeftIcon, HeartIcon, ShareIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import ChildImage from '@/components/ui/ChildImage'
 
@@ -68,8 +69,18 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
   showMediaPreview = true
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [imageError, setImageError] = useState(false)
+  const [isImageAvailable, setIsImageAvailable] = useState(true)
   const contentRef = useRef<HTMLParagraphElement>(null)
+
+  const primaryMediaUrl = useMemo(() => update.mediaUrls?.[0] ?? null, [update.mediaUrls])
+  const isVideo = useMemo(() => {
+    if (!primaryMediaUrl) return false
+    return /\.(mp4|mov|webm)$/i.test(primaryMediaUrl)
+  }, [primaryMediaUrl])
+
+  useEffect(() => {
+    setIsImageAvailable(true)
+  }, [primaryMediaUrl])
 
   const handleCardClick = () => {
     onClick(update.id)
@@ -190,15 +201,24 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
       </div>
 
       {/* Media Preview */}
-      {showMediaPreview && update.mediaUrls && update.mediaUrls.length > 0 && (
+      {showMediaPreview && primaryMediaUrl && (
         <div className="px-4 pb-3">
-          <div className="relative bg-neutral-100 rounded-lg overflow-hidden">
-            <img
-              src={update.mediaUrls[0]}
-              alt={`Photo from ${update.child.name}'s update`}
-              className="w-full h-40 object-cover"
-              onError={() => setImageError(true)}
-            />
+          <div className="relative h-40 bg-neutral-100 rounded-lg overflow-hidden">
+            {!isVideo && isImageAvailable ? (
+              <Image
+                src={primaryMediaUrl}
+                alt={`Photo from ${update.child.name}'s update`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                onError={() => setIsImageAvailable(false)}
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-neutral-200">
+                <PhotoIcon className="h-10 w-10 text-neutral-500" aria-hidden="true" />
+              </div>
+            )}
 
             {/* Multiple media indicator */}
             {update.mediaCount && update.mediaCount > 1 && (
@@ -208,7 +228,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
             )}
 
             {/* Play button for videos */}
-            {update.mediaUrls[0].includes('.mp4') && (
+            {isVideo && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 bg-black/60 rounded-full flex items-center justify-center">
                   <div className="w-0 h-0 border-l-4 border-t-2 border-b-2 border-l-white border-t-transparent border-b-transparent ml-1" />

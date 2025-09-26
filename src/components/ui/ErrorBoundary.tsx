@@ -9,6 +9,9 @@ import {
   BugAntIcon,
   HomeIcon
 } from '@heroicons/react/24/outline'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('ErrorBoundary')
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -46,7 +49,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 
   const handleReportError = () => {
     // In a real app, this would send error reports to your error tracking service
-    console.log('Error reported:', { errorId, error })
+    logger.info('Error reported', { errorId, error })
 
     // You could integrate with services like Sentry, LogRocket, etc.
     if (typeof window !== 'undefined' && window.gtag) {
@@ -196,7 +199,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error details
-    console.error('Error Boundary caught an error:', {
+    logger.error('Error Boundary caught an error', {
       error,
       errorInfo,
       errorId: this.state.errorId,
@@ -259,7 +262,7 @@ export const useErrorHandler = () => {
   }, [])
 
   const captureError = React.useCallback((error: Error) => {
-    console.error('Error captured:', error)
+    logger.error('Error captured', { error })
     setError(error)
   }, [])
 

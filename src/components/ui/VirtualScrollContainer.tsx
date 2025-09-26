@@ -1,12 +1,16 @@
 'use client'
 
 import { memo, forwardRef, useCallback, useMemo, useRef, useEffect } from 'react'
+import type { MutableRefObject } from 'react'
 import { FixedSizeList as List, VariableSizeList as VariableList, areEqual } from 'react-window'
 import { useInView } from 'react-intersection-observer'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('VirtualScrollContainer')
 
 interface VirtualScrollContainerProps {
-  items: any[]
+  items: unknown[]
   itemHeight?: number | ((index: number) => number)
   height: number
   width?: number | string
@@ -18,7 +22,7 @@ interface VirtualScrollContainerProps {
   children: (props: {
     index: number
     style: React.CSSProperties
-    data: any
+    data: unknown
   }) => React.ReactNode
   overscan?: number
   threshold?: number
@@ -31,7 +35,7 @@ interface ItemRendererProps {
   index: number
   style: React.CSSProperties
   data: {
-    items: any[]
+    items: unknown[]
     children: VirtualScrollContainerProps['children']
     hasNextPage?: boolean
     isLoading?: boolean
@@ -98,11 +102,13 @@ const ItemRenderer = memo(({ index, style, data }: ItemRendererProps) => {
   const item = items[index]
 
   // Memory optimization: only render data that's needed
-  const optimizedItemData = memoryOptimization ? {
-    ...item,
-    // Remove heavy data that's not immediately needed
-    __optimized: true
-  } : item
+  let optimizedItemData = item
+  if (memoryOptimization && typeof item === 'object' && item !== null) {
+    optimizedItemData = {
+      ...(item as Record<string, unknown>),
+      __optimized: true
+    }
+  }
 
   return (
     <div
@@ -122,7 +128,7 @@ ItemRenderer.displayName = 'ItemRenderer'
  * High-performance virtual scrolling container that handles large datasets efficiently
  * Supports both fixed and variable item heights, infinite loading, and intersection observer
  */
-const VirtualScrollContainer = forwardRef<any, VirtualScrollContainerProps>(
+const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
   ({
     items,
     itemHeight = 100,
@@ -150,7 +156,7 @@ const VirtualScrollContainer = forwardRef<any, VirtualScrollContainerProps>(
       averageRenderTime: 0
     })
 
-    const listRef = useRef<any>(null)
+    const listRef = useRef<unknown>(null)
 
     // Track rendering performance
     useEffect(() => {
@@ -168,7 +174,9 @@ const VirtualScrollContainer = forwardRef<any, VirtualScrollContainerProps>(
             / performanceRef.current.renderCount
 
           if (renderTime > 16) { // > 60fps
-            console.warn(`VirtualScrollContainer: Slow render detected (${renderTime.toFixed(2)}ms)`)
+            logger.warn('VirtualScrollContainer slow render detected', {
+              renderTimeMs: Number(renderTime.toFixed(2))
+            })
           }
         }
       }
@@ -219,7 +227,7 @@ const VirtualScrollContainer = forwardRef<any, VirtualScrollContainerProps>(
     }, [items.length])
 
     // Scroll performance optimization
-    const handleScroll = useCallback((event: any) => {
+    const handleScroll = useCallback(() => {
       if (enablePerformanceTracking) {
         // Throttle scroll events for better performance
         if (listRef.current) {
@@ -231,12 +239,12 @@ const VirtualScrollContainer = forwardRef<any, VirtualScrollContainerProps>(
     }, [enablePerformanceTracking])
 
     const listProps = {
-      ref: (node: any) => {
+      ref: (node: unknown) => {
         listRef.current = node
         if (typeof ref === 'function') {
           ref(node)
-        } else if (ref) {
-          ref.current = node
+        } else if (ref && 'current' in ref) {
+          (ref as MutableRefObject<unknown>).current = node
         }
       },
       height,
