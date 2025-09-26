@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { updatePreferencesSchema } from '@/lib/validation/recipients'
 import { getRecipientGroups } from '@/lib/group-management'
 import { validateRecipientTokenAccess } from '@/middleware/group-security'
 import { GroupCacheManager } from '@/lib/group-cache'
@@ -65,7 +64,7 @@ export async function GET(
       group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
     }
 
-    let enhancedData: any = { recipient }
+    const enhancedData: Record<string, unknown> = { recipient }
 
     // Include comprehensive group information if requested
     if (includeGroups) {
@@ -219,7 +218,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid or expired preference link' }, { status: 404 })
     }
 
-    let updateResults: any[] = []
+    type UpdateResult =
+      | {
+        type: 'legacy'
+        success: boolean
+        updated_fields: string[]
+      }
+      | {
+        type: 'group_specific'
+        group_id: string
+        success: boolean
+        error?: string
+        action?: 'reset_to_defaults' | 'custom_preferences'
+        updated_fields?: string[]
+      }
+      | {
+        type: 'notification_preferences'
+        success: boolean
+        updated_fields?: string[]
+        error?: string
+      }
+
+    const updateResults: UpdateResult[] = []
 
     if (preferences.update_mode === 'legacy' || (preferences.frequency || preferences.preferred_channels || preferences.content_types)) {
       // Handle legacy preference updates (backward compatibility)
@@ -229,11 +249,17 @@ export async function PUT(
         (preferences.preferred_channels && !arraysEqual(preferences.preferred_channels, group.default_channels)) :
         true
 
-      const legacyUpdate: any = {}
+      const legacyUpdate: {
+        frequency?: typeof preferences.frequency
+        preferred_channels?: typeof preferences.preferred_channels
+        content_types?: typeof preferences.content_types
+        overrides_group_default: boolean
+      } = {
+        overrides_group_default: overridesGroupDefault
+      }
       if (preferences.frequency) legacyUpdate.frequency = preferences.frequency
       if (preferences.preferred_channels) legacyUpdate.preferred_channels = preferences.preferred_channels
       if (preferences.content_types) legacyUpdate.content_types = preferences.content_types
-      legacyUpdate.overrides_group_default = overridesGroupDefault
 
       const { error: legacyError } = await supabase
         .from('recipients')
@@ -302,7 +328,11 @@ export async function PUT(
             })
           } else {
             // Apply custom preferences for this group
-            const groupUpdate: any = {}
+            const groupUpdate: {
+              notification_frequency?: typeof groupPrefs.notification_frequency
+              preferred_channels?: typeof groupPrefs.preferred_channels
+              content_types?: typeof groupPrefs.content_types
+            } = {}
             if (groupPrefs.notification_frequency) groupUpdate.notification_frequency = groupPrefs.notification_frequency
             if (groupPrefs.preferred_channels) groupUpdate.preferred_channels = groupPrefs.preferred_channels
             if (groupPrefs.content_types) groupUpdate.content_types = groupPrefs.content_types

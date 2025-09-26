@@ -1,13 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { getRecipientGroups } from '@/lib/group-management'
 import { validateRecipientTokenAccess } from '@/middleware/group-security'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('RecipientMembershipAPI')
+
+type SupabaseServerClient = SupabaseClient<Database>
+type MembershipRecord = {
+  id: string
+  group_id: string
+  notification_frequency: string | null
+  preferred_channels: string[] | null
+  content_types: string[] | null
+  role: string | null
+  joined_at: string | null
+  is_active: boolean
+  created_at: string | null
+  updated_at: string | null
+  recipient_groups: {
+    id: string
+    name: string
+    default_frequency: string | null
+    default_channels: string[] | null
+    notification_settings: Record<string, unknown> | null
+    access_settings: Record<string, unknown> | null
+    is_default_group: boolean
+    created_at: string | null
+  }
+}
+type EnhancedGroup = MembershipRecord['recipient_groups'] & Record<string, unknown>
+type EffectiveSettings = {
+  frequency: string
+  channels: string[]
+  content_types: string[]
+  source: string
+} & Record<string, unknown>
+type EnhancedMembership = MembershipRecord & {
+  group: EnhancedGroup
+  has_custom_settings: boolean
+  effective_settings: EffectiveSettings
+  recent_activity?: {
+    update_count: number
+    last_update: string | null
+    updates: Array<{ id: string; created_at: string; delivery_status: string | null }>
+  }
+}
+type MembershipActionResult = {
+  action: string
+  message: string
+  group_name: string
+}
 
 // Schema for membership visibility preferences
 const membershipVisibilitySchema = z.object({
@@ -122,9 +169,10 @@ export async function GET(
     }
 
     // Enhance membership data with additional information
+    const membershipList = (memberships as MembershipRecord[]) || []
     const enhancedMemberships = await Promise.all(
-      (memberships || []).map(async (membership: any) => {
-        const enhanced: any = {
+      membershipList.map(async (membership): Promise<EnhancedMembership> => {
+        const enhanced: EnhancedMembership = {
           ...membership,
           group: membership.recipient_groups,
           has_custom_settings: !!(
@@ -344,7 +392,7 @@ export async function POST(
       )
     }
 
-    let result: any = {}
+    let result: MembershipActionResult | null = null
 
     switch (validatedData.action) {
       case 'leave':
@@ -463,6 +511,10 @@ export async function POST(
     // Invalidate cache
     GroupCacheManager.invalidateRecipientCache(securityContext.recipient_id)
 
+    if (!result) {
+      throw new Error('Membership action did not produce a result')
+    }
+
     return NextResponse.json(result)
 
   } catch (error) {
@@ -483,11 +535,11 @@ export async function POST(
 
 // Helper function to get effective notification settings
 async function getEffectiveSettings(
-  supabase: any,
+  supabase: SupabaseServerClient,
   recipientId: string,
   groupId: string,
-  membership: any
-) {
+  membership: MembershipRecord
+): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
     const { data, error } = await supabase.rpc(
@@ -514,7 +566,7 @@ async function getEffectiveSettings(
       }
     }
 
-    return data
+    return data as EffectiveSettings
   } catch (error) {
     logger.errorWithStack('Error getting effective settings:', error as Error)
     return {

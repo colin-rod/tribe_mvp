@@ -38,6 +38,22 @@ const batchDeliverySchema = z.object({
   }).optional()
 })
 
+type DeliveryRequest = z.infer<typeof deliveryRequestSchema>
+type BatchDeliveryRequest = z.infer<typeof batchDeliverySchema>
+type DeliveryCollection = {
+  deliveries: DeliveryRequest[]
+  batch_options?: BatchDeliveryRequest['batch_options']
+}
+type DeliveryResult = {
+  update_id: string
+  group_id: string
+  success: boolean
+  jobs_created?: number
+  scheduled_delivery?: string | null
+  test_results?: unknown
+  error?: string
+}
+
 /**
  * POST /api/notifications/group-delivery - Queue notifications for group delivery
  */
@@ -54,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Check if this is a batch request or single delivery
     const isBatch = Array.isArray(body.deliveries)
-    let validatedData: any
+    let validatedData: DeliveryCollection
 
     if (isBatch) {
       validatedData = batchDeliverySchema.parse(body)
@@ -63,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     const notificationService = new GroupNotificationService()
-    const results: any[] = []
+    const results: DeliveryResult[] = []
 
     for (const delivery of validatedData.deliveries) {
       try {
@@ -203,7 +219,40 @@ export async function GET(request: NextRequest) {
     }
 
     const notificationService = new GroupNotificationService()
-    let response: any = {}
+    const response: Partial<{
+      delivery_status: {
+        update_id: string
+        total_jobs: number
+        pending_jobs: number
+        sent_jobs: number
+        failed_jobs: number
+        skipped_jobs: number
+        jobs: Array<{
+          id: string
+          recipient_name: string
+          recipient_email: string
+          group_name: string
+          delivery_method: string
+          status: string
+          scheduled_for: string | null
+          processed_at: string | null
+          failure_reason: string | null
+        }>
+      }
+      analytics: {
+        group_id: string
+        group_name: string
+        period_days: number
+        error?: string
+      } & Record<string, unknown>
+      overview: {
+        period_days: number
+        total_jobs: number
+        status_breakdown: Array<{ status: string; count: number }>
+        delivery_method_breakdown: Array<{ method: string; count: number }>
+        notification_type_breakdown: Array<{ type: string; count: number }>
+      }
+    }> = {}
 
     // Get delivery status for specific update
     if (updateId) {
@@ -365,12 +414,15 @@ export async function PATCH(request: NextRequest) {
     const validatedData = actionSchema.parse(body)
     const notificationService = new GroupNotificationService()
 
-    let results: any[] = []
+    const results: Array<Record<string, unknown>> = []
 
     switch (validatedData.action) {
       case 'process_pending':
         // Process pending notification jobs
-        results = await notificationService.processPendingJobs(validatedData.batch_size)
+        {
+          const processed = await notificationService.processPendingJobs(validatedData.batch_size) as Array<Record<string, unknown>>
+          results.push(...processed)
+        }
         break
 
       case 'retry_failed':
@@ -407,10 +459,10 @@ export async function PATCH(request: NextRequest) {
             throw new Error('Failed to reset failed jobs')
           }
 
-          results = failedJobs.map(job => ({
+          results.push(...failedJobs.map(job => ({
             job_id: job.id,
             status: 'reset_for_retry'
-          }))
+          })))
         }
         break
 
@@ -445,10 +497,10 @@ export async function PATCH(request: NextRequest) {
           throw new Error('Failed to cancel jobs')
         }
 
-        results = (cancelledJobs || []).map(job => ({
+        results.push(...(cancelledJobs || []).map(job => ({
           job_id: job.id,
           status: 'cancelled'
-        }))
+        })))
         break
     }
 

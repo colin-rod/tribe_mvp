@@ -4,6 +4,8 @@ import { cookies } from 'next/headers'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('BulkPreferencesAPI')
 
@@ -43,6 +45,33 @@ const bulkPreferenceQuerySchema = z.object({
   settings_summary: z.boolean().default(false)
 })
 
+type BulkPreferenceOperation = z.infer<typeof bulkPreferenceOperationSchema>
+type BulkPreferenceTarget = BulkPreferenceOperation['target']
+type BulkPreferenceSettings = NonNullable<BulkPreferenceOperation['settings']>
+type BulkPreferenceQuery = z.infer<typeof bulkPreferenceQuerySchema>
+type SupabaseServerClient = SupabaseClient<Database>
+type TargetGroup = {
+  id: string
+  name: string
+  is_default_group: boolean
+}
+type TargetRecipient = {
+  recipient_id: string
+  group_id: string
+  notification_frequency: string | null
+  preferred_channels: string[] | null
+  content_types: string[] | null
+}
+type OperationResult = {
+  recipient_id: string
+  group_id: string
+  success: boolean
+  updates_applied?: string[]
+  skipped_reason?: string | null
+  error?: string
+  action?: string
+}
+
 /**
  * GET /api/preferences/bulk - Get bulk preference information
  */
@@ -67,7 +96,7 @@ export async function GET(request: NextRequest) {
       queryParams.recipient_ids = queryParams.recipient_ids.split(',')
     }
 
-    const validatedQuery = bulkPreferenceQuerySchema.parse(queryParams)
+    const validatedQuery: BulkPreferenceQuery = bulkPreferenceQuerySchema.parse(queryParams)
 
     // Base query for groups
     let groupQuery = supabase
@@ -155,7 +184,7 @@ export async function GET(request: NextRequest) {
     }) || []
 
     // Generate summary if requested
-    let summary = {}
+    let summary: Record<string, unknown> = {}
     if (validatedQuery.settings_summary) {
       const allMemberships = memberships || []
       const frequencyDistribution = new Map<string, number>()
@@ -225,13 +254,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const validatedData = bulkPreferenceOperationSchema.parse(body)
+    const validatedData: BulkPreferenceOperation = bulkPreferenceOperationSchema.parse(body)
 
     // Get target groups/recipients based on filters
     const targetGroups = await getTargetGroups(supabase, user.id, validatedData.target)
     const targetRecipients = await getTargetRecipients(supabase, user.id, validatedData.target, targetGroups)
 
-    let results: any[] = []
+    let results: OperationResult[] = []
     let successCount = 0
     let errorCount = 0
 
@@ -335,7 +364,11 @@ export async function POST(request: NextRequest) {
 
 // Helper functions
 
-async function getTargetGroups(supabase: any, userId: string, target: any) {
+async function getTargetGroups(
+  supabase: SupabaseServerClient,
+  userId: string,
+  target: BulkPreferenceTarget
+): Promise<TargetGroup[]> {
   let groupQuery = supabase
     .from('recipient_groups')
     .select('id, name, is_default_group')
@@ -350,10 +383,15 @@ async function getTargetGroups(supabase: any, userId: string, target: any) {
   }
 
   const { data: groups } = await groupQuery
-  return groups || []
+  return (groups as TargetGroup[]) || []
 }
 
-async function getTargetRecipients(supabase: any, userId: string, target: any, targetGroups: any[]) {
+async function getTargetRecipients(
+  supabase: SupabaseServerClient,
+  userId: string,
+  target: BulkPreferenceTarget,
+  targetGroups: TargetGroup[]
+): Promise<TargetRecipient[]> {
   let membershipQuery = supabase
     .from('group_memberships')
     .select(`
@@ -398,22 +436,26 @@ async function getTargetRecipients(supabase: any, userId: string, target: any, t
   membershipQuery = membershipQuery.eq('recipients.parent_id', userId)
 
   const { data: memberships } = await membershipQuery
-  return memberships || []
+  return (memberships as TargetRecipient[]) || []
 }
 
 async function executeUpdateOperation(
-  supabase: any,
-  targetRecipients: any[],
-  settings: any,
+  supabase: SupabaseServerClient,
+  targetRecipients: TargetRecipient[],
+  settings: BulkPreferenceSettings,
   preserveCustomOverrides: boolean
 ) {
-  const results: any[] = []
+  const results: OperationResult[] = []
   let successCount = 0
   let errorCount = 0
 
   for (const recipient of targetRecipients) {
     try {
-      const updateData: any = {}
+      const updateData: {
+        notification_frequency?: typeof settings.notification_frequency
+        preferred_channels?: typeof settings.preferred_channels
+        content_types?: typeof settings.content_types
+      } = {}
 
       // Only update if preserveCustomOverrides is false or recipient doesn't have custom settings
       const hasCustomSettings = recipient.notification_frequency ||
@@ -458,8 +500,11 @@ async function executeUpdateOperation(
   return { results, successCount, errorCount }
 }
 
-async function executeResetOperation(supabase: any, targetRecipients: any[]) {
-  const results: any[] = []
+async function executeResetOperation(
+  supabase: SupabaseServerClient,
+  targetRecipients: TargetRecipient[]
+) {
+  const results: OperationResult[] = []
   let successCount = 0
   let errorCount = 0
 
@@ -499,10 +544,10 @@ async function executeResetOperation(supabase: any, targetRecipients: any[]) {
 }
 
 async function executeCopyOperation(
-  supabase: any,
+  supabase: SupabaseServerClient,
   userId: string,
   sourceGroupId: string,
-  targetRecipients: any[],
+  targetRecipients: TargetRecipient[],
   preserveCustomOverrides: boolean
 ) {
   // Get source group settings
@@ -517,7 +562,7 @@ async function executeCopyOperation(
     throw new Error('Source group not found or access denied')
   }
 
-  const settings = {
+  const settings: BulkPreferenceSettings = {
     notification_frequency: sourceGroup.default_frequency,
     preferred_channels: sourceGroup.default_channels,
     content_types: sourceGroup.notification_settings?.content_types || ['photos', 'text', 'milestones']
@@ -527,16 +572,16 @@ async function executeCopyOperation(
 }
 
 async function executeTemplateOperation(
-  supabase: any,
-  userId: string,
+  _supabase: SupabaseServerClient,
+  _userId: string,
   templateId: string,
-  targetRecipients: any[]
+  _targetRecipients: TargetRecipient[]
 ) {
   // This would integrate with your template system
   // For now, return a placeholder implementation
-  const results: any[] = []
-  let successCount = 0
-  let errorCount = 0
+  const results: OperationResult[] = []
+  const successCount = 0
+  const errorCount = 0
 
   // Template functionality would go here
   logger.info(`Template operation requested for template ${templateId}`)

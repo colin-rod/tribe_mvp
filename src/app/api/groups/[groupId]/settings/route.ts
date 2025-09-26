@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { updateGroupNotificationSettings, getGroupWithMembers } from '@/lib/group-management'
+import { updateGroupNotificationSettings } from '@/lib/group-management'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
@@ -262,7 +262,7 @@ export async function PATCH(
     }
 
     // Update specific setting path
-    let updatedSettings = { ...group.notification_settings }
+    const updatedSettings = { ...group.notification_settings }
     const pathParts = validatedData.setting_path.split('.')
 
     // Handle nested path updates
@@ -292,7 +292,10 @@ export async function PATCH(
     // Optionally apply to members
     if (validatedData.apply_to_members) {
       // Apply specific setting to all members without custom overrides
-      const memberUpdate: any = {}
+      const memberUpdate: Partial<{
+        notification_frequency: string | null
+        preferred_channels: string[] | null
+      }> = {}
 
       if (validatedData.setting_path === 'default_frequency') {
         memberUpdate.notification_frequency = validatedData.value

@@ -5,8 +5,42 @@ import { validateRecipientTokenAccess } from '@/middleware/group-security'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('MuteAPI')
+
+type SupabaseServerClient = SupabaseClient<Database>
+type GroupMembershipMuteRecord = {
+  group_id: string
+  notification_frequency: string | null
+  mute_until: string | null
+  mute_settings: Record<string, unknown> | null
+  is_active: boolean
+  recipient_groups: {
+    id: string
+    name: string
+    is_default_group: boolean
+  }
+}
+type GroupMuteStatus = {
+  group_id: string
+  group_name: string
+  is_default_group: boolean
+  is_muted: boolean
+  mute_until: string | null
+  mute_expires_in: number | null
+  mute_settings: {
+    reason: string | null
+    preserve_urgent: boolean
+    auto_summary: boolean
+    muted_by: string
+    muted_at: string | null
+  }
+}
+type NotificationPreferences = Record<string, unknown> & {
+  mute_settings?: Record<string, unknown>
+}
 
 // Schema for mute operations
 const muteOperationSchema = z.object({
@@ -113,10 +147,11 @@ export async function GET(
     const now = new Date()
 
     // Process mute status for each group
-    const groupMuteStatus = (memberships || []).map((membership: any) => {
+    const membershipList = (memberships as GroupMembershipMuteRecord[]) || []
+    const groupMuteStatus: GroupMuteStatus[] = membershipList.map(membership => {
       const muteUntil = membership.mute_until ? new Date(membership.mute_until) : null
       const isCurrentlyMuted = muteUntil && muteUntil > now
-      const muteSettings = membership.mute_settings || {}
+      const muteSettings = (membership.mute_settings as Record<string, unknown> | null) || {}
 
       return {
         group_id: membership.group_id,
@@ -128,11 +163,11 @@ export async function GET(
           ? Math.max(0, Math.ceil((muteUntil!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
           : null,
         mute_settings: {
-          reason: muteSettings.reason || null,
-          preserve_urgent: muteSettings.preserve_urgent !== false,
-          auto_summary: muteSettings.auto_summary === true,
-          muted_by: muteSettings.muted_by || 'recipient',
-          muted_at: muteSettings.muted_at || null
+          reason: (muteSettings.reason as string | undefined) || null,
+          preserve_urgent: (muteSettings.preserve_urgent as boolean | undefined) !== false,
+          auto_summary: (muteSettings.auto_summary as boolean | undefined) === true,
+          muted_by: (muteSettings.muted_by as string | undefined) || 'recipient',
+          muted_at: (muteSettings.muted_at as string | undefined) || null
         }
       }
     })
@@ -257,7 +292,7 @@ export async function POST(
       mute_until: muteUntil?.toISOString() || null
     }
 
-    let results: any[] = []
+    const results: Array<Record<string, unknown>> = []
 
     switch (validatedData.action) {
       case 'mute':
@@ -307,7 +342,7 @@ export async function POST(
           }
 
           // Apply mute to each group
-          for (const group of validGroups) {
+          for (const group of validGroups as Array<{ group_id: string; recipient_groups: { name: string } }>) {
             const { error } = await supabase
               .from('group_memberships')
               .update({
@@ -341,7 +376,9 @@ export async function POST(
         if (validatedData.scope === 'all') {
           // Global unmute
           const currentPrefs = await getNotificationPreferences(supabase, securityContext.recipient_id)
-          delete currentPrefs.mute_settings
+          if ('mute_settings' in currentPrefs) {
+            delete currentPrefs.mute_settings
+          }
 
           const { error } = await supabase
             .from('recipients')
@@ -490,8 +527,10 @@ export async function DELETE(
     const supabase = createClient(cookieStore)
 
     // Clear global mute
-    const currentPrefs = await getNotificationPreferences(supabase, securityContext.recipient_id)
-    delete currentPrefs.mute_settings
+          const currentPrefs = await getNotificationPreferences(supabase, securityContext.recipient_id)
+          if ('mute_settings' in currentPrefs) {
+            delete currentPrefs.mute_settings
+          }
 
     const [globalResult, groupResult] = await Promise.all([
       supabase
@@ -537,12 +576,15 @@ export async function DELETE(
 }
 
 // Helper function to get current notification preferences
-async function getNotificationPreferences(supabase: any, recipientId: string) {
+async function getNotificationPreferences(
+  supabase: SupabaseServerClient,
+  recipientId: string
+): Promise<NotificationPreferences> {
   const { data: recipient } = await supabase
     .from('recipients')
     .select('notification_preferences')
     .eq('id', recipientId)
     .single()
 
-  return recipient?.notification_preferences || {}
+  return (recipient?.notification_preferences as NotificationPreferences) || {}
 }

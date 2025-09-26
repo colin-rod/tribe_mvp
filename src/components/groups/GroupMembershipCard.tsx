@@ -43,14 +43,13 @@ interface GroupMembershipCardProps {
 export default function GroupMembershipCard({
   membership,
   onToggleMute,
-  onUpdatePreferences,
+  onUpdatePreferences: _onUpdatePreferences,
   onResetToDefaults,
   onViewSettings,
   isLoading = false,
   className
 }: GroupMembershipCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [showPreferenceOverrides, setShowPreferenceOverrides] = useState(false)
 
   // Determine effective preferences (personal overrides or group defaults)
   const effectiveFrequency = membership.personal_preferences.frequency || membership.group_defaults.frequency
@@ -314,7 +313,7 @@ export default function GroupMembershipCard({
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">Custom Preferences Active</p>
-                      <p className="text-xs text-gray-500">You're using personal settings instead of group defaults</p>
+                      <p className="text-xs text-gray-500">You&apos;re using personal settings instead of group defaults</p>
                     </div>
                     <Button
                       variant="outline"

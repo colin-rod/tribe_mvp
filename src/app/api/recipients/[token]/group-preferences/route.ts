@@ -80,7 +80,12 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      notification_frequency?: typeof validatedData.notification_frequency
+      preferred_channels?: typeof validatedData.preferred_channels
+      content_types?: typeof validatedData.content_types
+      updated_at: string
+    } = {
       updated_at: new Date().toISOString()
     }
 

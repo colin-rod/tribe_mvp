@@ -101,6 +101,7 @@ export default function BulkPreferenceActions({
     channels: ['email'],
     content_types: ['photos', 'text']
   })
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const selectedCount = selectedGroupIds.length
 
@@ -111,11 +112,12 @@ export default function BulkPreferenceActions({
     }
 
     setIsProcessing(true)
+    setErrorMessage(null)
     try {
       await onBulkAction(action.type)
       onClearSelection()
-    } catch (error) {
-      console.error('Bulk action failed:', error)
+    } catch (_error) {
+      setErrorMessage('Could not complete that action. Please try again.')
     } finally {
       setIsProcessing(false)
     }
@@ -125,6 +127,7 @@ export default function BulkPreferenceActions({
     if (!activeAction) return
 
     setIsProcessing(true)
+    setErrorMessage(null)
     try {
       const preferences: BulkPreferences = {}
 
@@ -139,8 +142,8 @@ export default function BulkPreferenceActions({
       await onBulkAction(activeAction.type, preferences)
       setActiveAction(null)
       onClearSelection()
-    } catch (error) {
-      console.error('Bulk preference action failed:', error)
+    } catch (_error) {
+      setErrorMessage('Could not update preferences for the selected groups.')
     } finally {
       setIsProcessing(false)
     }
@@ -203,8 +206,14 @@ export default function BulkPreferenceActions({
           >
             Clear Selection
           </Button>
-        </div>
       </div>
+    </div>
+
+      {errorMessage && (
+        <div className="px-4 py-2">
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        </div>
+      )}
 
       {/* Quick Actions */}
       {!activeAction && (
