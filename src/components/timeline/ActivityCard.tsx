@@ -2,7 +2,6 @@
 
 import { memo, useState, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { UpdateCardData } from '@/lib/types/dashboard'
 import { Badge } from '@/components/ui/Badge'

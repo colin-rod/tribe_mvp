@@ -70,7 +70,7 @@ export function ResponseNotifications() {
                   New Response
                 </p>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {notification.recipientName} replied to {notification.childName}'s update
+                  {notification.recipientName} replied to {notification.childName}&rsquo;s update
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {formatDistanceToNow(notification.timestamp, { addSuffix: true })}

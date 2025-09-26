@@ -1,8 +1,83 @@
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
-import { GroupCacheManager } from './group-cache'
+import type { GroupMembership, GroupNotificationSettings, NotificationChannel } from './group-management'
 
 const logger = createLogger('GroupNotificationIntegration')
+
+type NotificationFrequency = 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
+
+interface GroupContext {
+  group_id: string
+  group_name: string
+  role: string
+  joined_at: string
+}
+
+interface GroupMembershipWithGroup extends GroupMembership {
+  recipient_groups?: {
+    id: string
+    name: string
+    default_frequency: string
+    default_channels: NotificationChannel[]
+    notification_settings: GroupNotificationSettings | null
+  }
+}
+
+interface RecipientWithMemberships {
+  id: string
+  name: string
+  email?: string | null
+  phone?: string | null
+  preference_token?: string
+  group_memberships?: GroupMembershipWithGroup[]
+}
+
+interface RecipientRecord {
+  id: string
+  name: string
+  email?: string | null
+  phone?: string | null
+  preference_token?: string
+}
+
+interface UpdateRecord {
+  id: string
+  content?: string | null
+  created_at: string
+}
+
+interface DeliveryJobInsert {
+  update_id: string
+  recipient_id: string
+  group_context: string
+  channel: NotificationChannel
+  priority: number
+  scheduled_for: string | null
+}
+
+interface DeliveryJobWithRelations {
+  id: string
+  recipient_id: string
+  channel: NotificationChannel
+  group_context: string | null
+  recipients: RecipientRecord
+  updates: UpdateRecord
+}
+
+interface DigestContent {
+  subject: string
+  html: string
+  text: string
+}
+
+type DigestUpdate = UpdateRecord & { group_context: GroupContext }
+
+const DEFAULT_GROUP_CONTEXT: GroupContext = {
+  group_id: 'default',
+  group_name: 'Family',
+  role: 'member',
+  joined_at: ''
+}
 
 /**
  * Integration layer between group management and notification system
@@ -12,15 +87,10 @@ export interface NotificationRecipient {
   name: string
   email?: string
   phone?: string
-  effective_frequency: string
-  effective_channels: string[]
+  effective_frequency: NotificationFrequency
+  effective_channels: NotificationChannel[]
   effective_content_types: string[]
-  group_context: {
-    group_id: string
-    group_name: string
-    role: string
-    joined_at: string
-  }
+  group_context: GroupContext
 }
 
 export interface GroupNotificationContext {
@@ -61,10 +131,9 @@ export class GroupNotificationResolver {
       // Process each recipient to determine effective settings
       const notificationRecipients: NotificationRecipient[] = []
 
-      for (const recipient of recipients || []) {
+      for (const recipient of (recipients as RecipientWithMemberships[] | null) || []) {
         const effectiveSettings = await this.calculateEffectiveSettings(
-          recipient.id,
-          recipient.group_memberships,
+          recipient.group_memberships ?? [],
           context
         )
 
@@ -101,12 +170,11 @@ export class GroupNotificationResolver {
    * Calculate effective notification settings considering group hierarchy
    */
   private static async calculateEffectiveSettings(
-    recipientId: string,
-    groupMemberships: any[],
+    groupMemberships: GroupMembershipWithGroup[],
     context: GroupNotificationContext
   ): Promise<{
-    frequency: string
-    channels: string[]
+    frequency: NotificationFrequency
+    channels: NotificationChannel[]
     content_types: string[]
     primary_group_id: string
     primary_group_name: string
@@ -114,25 +182,25 @@ export class GroupNotificationResolver {
     joined_at: string
   }> {
     // Priority order: individual override > group settings > platform defaults
-    let effectiveFrequency = 'weekly_digest'
-    let effectiveChannels = ['email']
-    let effectiveContentTypes = ['photos', 'text', 'milestones']
+    let effectiveFrequency: NotificationFrequency = 'weekly_digest'
+    let effectiveChannels: NotificationChannel[] = ['email']
+    let effectiveContentTypes: string[] = ['photos', 'text', 'milestones']
 
     // Find the most relevant group membership
     let primaryMembership = groupMemberships[0] // Default to first membership
 
     // If target groups specified, prioritize those
     if (context.target_groups && context.target_groups.length > 0) {
-      primaryMembership = groupMemberships.find(m =>
-        context.target_groups!.includes(m.group_id)
-      ) || primaryMembership
+      primaryMembership =
+        groupMemberships.find(m => context.target_groups?.includes(m.group_id)) ||
+        primaryMembership
     }
 
     // Apply group defaults
     if (primaryMembership?.recipient_groups) {
       const groupSettings = primaryMembership.recipient_groups
       effectiveFrequency = groupSettings.default_frequency || effectiveFrequency
-      effectiveChannels = groupSettings.default_channels || effectiveChannels
+      effectiveChannels = (groupSettings.default_channels as NotificationChannel[] | undefined) || effectiveChannels
 
       // Apply group notification settings
       if (groupSettings.notification_settings) {
@@ -143,6 +211,9 @@ export class GroupNotificationResolver {
         if (settings.sms_notifications === false) {
           effectiveChannels = effectiveChannels.filter(c => c !== 'sms')
         }
+        if (settings.whatsapp_notifications === false) {
+          effectiveChannels = effectiveChannels.filter(c => c !== 'whatsapp')
+        }
       }
     }
 
@@ -150,7 +221,7 @@ export class GroupNotificationResolver {
     if (primaryMembership?.notification_frequency) {
       effectiveFrequency = primaryMembership.notification_frequency
     }
-    if (primaryMembership?.preferred_channels) {
+    if (primaryMembership?.preferred_channels && primaryMembership.preferred_channels.length > 0) {
       effectiveChannels = primaryMembership.preferred_channels
     }
     if (primaryMembership?.content_types) {
@@ -161,10 +232,10 @@ export class GroupNotificationResolver {
       frequency: effectiveFrequency,
       channels: effectiveChannels,
       content_types: effectiveContentTypes,
-      primary_group_id: primaryMembership?.group_id || '',
-      primary_group_name: primaryMembership?.recipient_groups?.name || '',
-      role: primaryMembership?.role || 'member',
-      joined_at: primaryMembership?.joined_at || ''
+      primary_group_id: primaryMembership?.group_id || DEFAULT_GROUP_CONTEXT.group_id,
+      primary_group_name: primaryMembership?.recipient_groups?.name || DEFAULT_GROUP_CONTEXT.group_name,
+      role: primaryMembership?.role || DEFAULT_GROUP_CONTEXT.role,
+      joined_at: primaryMembership?.joined_at || DEFAULT_GROUP_CONTEXT.joined_at
     }
   }
 
@@ -172,7 +243,7 @@ export class GroupNotificationResolver {
    * Determine if recipient should receive notification based on settings and context
    */
   private static shouldReceiveNotification(
-    settings: { frequency: string; channels: string[]; content_types: string[] },
+    settings: { frequency: NotificationFrequency; channels: NotificationChannel[]; content_types: string[] },
     context: GroupNotificationContext
   ): boolean {
     // Check content type preference
@@ -211,11 +282,11 @@ export class GroupNotificationDelivery {
   static async createGroupedDeliveryJobs(
     updateId: string,
     recipients: NotificationRecipient[]
-  ): Promise<{ immediate: any[]; digest: any[] }> {
+  ): Promise<{ immediate: DeliveryJobInsert[]; digest: DeliveryJobInsert[] }> {
     const supabase = createClient()
 
-    const immediateJobs: any[] = []
-    const digestJobs: any[] = []
+    const immediateJobs: DeliveryJobInsert[] = []
+    const digestJobs: DeliveryJobInsert[] = []
 
     for (const recipient of recipients) {
       const baseJob = {
@@ -226,11 +297,13 @@ export class GroupNotificationDelivery {
 
       // Create jobs for each preferred channel
       for (const channel of recipient.effective_channels) {
-        const job = {
+        const scheduledFor = this.calculateDeliveryTime(recipient.effective_frequency)
+
+        const job: DeliveryJobInsert = {
           ...baseJob,
           channel,
           priority: this.calculatePriority(recipient.effective_frequency, channel),
-          scheduled_for: this.calculateDeliveryTime(recipient.effective_frequency)
+          scheduled_for: scheduledFor
         }
 
         if (recipient.effective_frequency === 'every_update') {
@@ -269,7 +342,7 @@ export class GroupNotificationDelivery {
   /**
    * Calculate delivery priority based on frequency and channel
    */
-  private static calculatePriority(frequency: string, channel: string): number {
+  private static calculatePriority(frequency: NotificationFrequency, channel: NotificationChannel): number {
     const basePriority = {
       'every_update': 1, // Highest priority
       'daily_digest': 2,
@@ -289,25 +362,25 @@ export class GroupNotificationDelivery {
   /**
    * Calculate when notification should be delivered
    */
-  private static calculateDeliveryTime(frequency: string): Date | null {
+  private static calculateDeliveryTime(frequency: NotificationFrequency): string | null {
     const now = new Date()
 
     switch (frequency) {
       case 'every_update':
-        return now // Immediate
-      case 'daily_digest':
-        // Schedule for next digest time (e.g., 8 AM)
+        return now.toISOString()
+      case 'daily_digest': {
         const tomorrow = new Date(now)
         tomorrow.setDate(tomorrow.getDate() + 1)
         tomorrow.setHours(8, 0, 0, 0)
-        return tomorrow
-      case 'weekly_digest':
-        // Schedule for next Sunday at 8 AM
+        return tomorrow.toISOString()
+      }
+      case 'weekly_digest': {
         const nextSunday = new Date(now)
         const daysUntilSunday = (7 - now.getDay()) % 7 || 7
         nextSunday.setDate(now.getDate() + daysUntilSunday)
         nextSunday.setHours(8, 0, 0, 0)
-        return nextSunday
+        return nextSunday.toISOString()
+      }
       default:
         return null
     }
@@ -350,7 +423,7 @@ export class GroupDigestProcessor {
       }
 
       // Group jobs by recipient and channel
-      const groupedJobs = this.groupJobsByRecipientAndChannel(pendingJobs || [])
+      const groupedJobs = this.groupJobsByRecipientAndChannel((pendingJobs ?? []) as DeliveryJobWithRelations[])
 
       let processed = 0
       let errors = 0
@@ -387,9 +460,9 @@ export class GroupDigestProcessor {
    * Group delivery jobs by recipient and channel for digest creation
    */
   private static groupJobsByRecipientAndChannel(
-    jobs: any[]
-  ): Map<string, any[]> {
-    const grouped = new Map<string, any[]>()
+    jobs: DeliveryJobWithRelations[]
+  ): Map<string, DeliveryJobWithRelations[]> {
+    const grouped = new Map<string, DeliveryJobWithRelations[]>()
 
     for (const job of jobs) {
       const key = `${job.recipient_id}_${job.channel}`
@@ -407,10 +480,13 @@ export class GroupDigestProcessor {
    */
   private static async sendDigestNotification(
     recipientKey: string,
-    jobs: any[],
+    jobs: DeliveryJobWithRelations[],
     digestType: 'daily' | 'weekly'
   ): Promise<void> {
-    const [recipientId, channel] = recipientKey.split('_')
+    if (jobs.length === 0) {
+      return
+    }
+    const [recipientId, channel] = recipientKey.split('_') as [string, NotificationChannel]
     const recipient = jobs[0].recipients
     const updates = jobs.map(job => job.updates)
 
@@ -433,20 +509,23 @@ export class GroupDigestProcessor {
         await this.sendWhatsAppDigest(recipient, digestContent)
         break
       default:
-        logger.warn(`Unsupported digest channel: ${channel}`)
+        logger.warn(`Unsupported digest channel: ${channel} for recipient ${recipientId}`)
     }
   }
 
   /**
    * Group updates by group context for better digest organization
    */
-  private static groupUpdatesByContext(updates: any[], jobs: any[]): any {
-    const grouped: { [groupId: string]: any[] } = {}
+  private static groupUpdatesByContext(
+    updates: UpdateRecord[],
+    jobs: DeliveryJobWithRelations[]
+  ): Record<string, DigestUpdate[]> {
+    const grouped: Record<string, DigestUpdate[]> = {}
 
     updates.forEach((update, index) => {
       const job = jobs[index]
-      const groupContext = JSON.parse(job.group_context || '{}')
-      const groupId = groupContext.group_id || 'default'
+      const groupContext = this.parseGroupContext(job.group_context)
+      const groupId = groupContext.group_id || DEFAULT_GROUP_CONTEXT.group_id
 
       if (!grouped[groupId]) {
         grouped[groupId] = []
@@ -461,22 +540,40 @@ export class GroupDigestProcessor {
     return grouped
   }
 
+  private static parseGroupContext(rawContext: string | null): GroupContext {
+    if (!rawContext) {
+      return { ...DEFAULT_GROUP_CONTEXT }
+    }
+
+    try {
+      const parsed = JSON.parse(rawContext) as Partial<GroupContext>
+      return {
+        group_id: parsed.group_id || DEFAULT_GROUP_CONTEXT.group_id,
+        group_name: parsed.group_name || DEFAULT_GROUP_CONTEXT.group_name,
+        role: parsed.role || DEFAULT_GROUP_CONTEXT.role,
+        joined_at: parsed.joined_at || DEFAULT_GROUP_CONTEXT.joined_at
+      }
+    } catch {
+      return { ...DEFAULT_GROUP_CONTEXT }
+    }
+  }
+
   /**
    * Create digest content organized by groups
    */
   private static async createDigestContent(
-    recipient: any,
-    groupedUpdates: any,
-    digestType: string
-  ): Promise<{
-    subject: string
-    html: string
-    text: string
-  }> {
+    recipient: RecipientRecord,
+    groupedUpdates: Record<string, DigestUpdate[]>,
+    digestType: 'daily' | 'weekly'
+  ): Promise<DigestContent> {
     const totalUpdates = Object.values(groupedUpdates).flat().length
     const groupCount = Object.keys(groupedUpdates).length
 
     const subject = `Your ${digestType} update digest (${totalUpdates} updates from ${groupCount} groups)`
+
+    const preferenceLink = recipient.preference_token
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/preferences/${recipient.preference_token}`
+      : `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/preferences`
 
     let html = `
       <h1>Hello ${recipient.name}!</h1>
@@ -486,25 +583,26 @@ export class GroupDigestProcessor {
     let text = `Hello ${recipient.name}!\n\nHere's your ${digestType} digest of baby updates:\n\n`
 
     // Process each group's updates
-    for (const [groupId, updates] of Object.entries(groupedUpdates)) {
-      const groupName = (updates as any[])[0]?.group_context?.group_name || 'Unknown Group'
+    for (const [, updates] of Object.entries(groupedUpdates)) {
+      const groupName = updates[0]?.group_context.group_name || 'Unknown Group'
 
       html += `
-        <h2>${groupName} (${(updates as any[]).length} updates)</h2>
+        <h2>${groupName} (${updates.length} updates)</h2>
         <div style="margin-left: 20px;">
       `
 
-      text += `${groupName} (${(updates as any[]).length} updates):\n`
+      text += `${groupName} (${updates.length} updates):\n`
 
-      for (const update of updates as any[]) {
+      for (const update of updates) {
+        const updateContent = update.content || 'New update'
         html += `
           <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-            <p>${update.content}</p>
+            <p>${updateContent}</p>
             <small>Posted on ${new Date(update.created_at).toLocaleDateString()}</small>
           </div>
         `
 
-        text += `- ${update.content} (${new Date(update.created_at).toLocaleDateString()})\n`
+        text += `- ${updateContent} (${new Date(update.created_at).toLocaleDateString()})\n`
       }
 
       html += '</div>'
@@ -514,14 +612,14 @@ export class GroupDigestProcessor {
     html += `
       <hr>
       <p><small>
-        You received this digest because you're a member of these groups.
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences/${recipient.preference_token}">
+        You received this digest because you&apos;re a member of these groups.
+        <a href="${preferenceLink}">
           Manage your notification preferences
         </a>
       </small></p>
     `
 
-    text += `\nYou received this digest because you're a member of these groups.\nManage your preferences: ${process.env.NEXT_PUBLIC_APP_URL}/preferences/${recipient.preference_token}`
+    text += `\nYou received this digest because you're a member of these groups.\nManage your preferences: ${preferenceLink}`
 
     return { subject, html, text }
   }
@@ -529,18 +627,30 @@ export class GroupDigestProcessor {
   /**
    * Send email digest
    */
-  private static async sendEmailDigest(recipient: any, content: any): Promise<void> {
-    // Integration with existing email service
-    logger.info(`Sending email digest to ${recipient.email}`)
+  private static async sendEmailDigest(recipient: RecipientRecord, content: DigestContent): Promise<void> {
+    if (!recipient.email) {
+      logger.warn(`Attempted to send email digest without recipient email for ${recipient.id}`)
+      return
+    }
+
+    logger.info(`Sending email digest to ${recipient.email}`, {
+      subject: content.subject
+    })
     // Implementation would use the existing email service
   }
 
   /**
    * Send WhatsApp digest
    */
-  private static async sendWhatsAppDigest(recipient: any, content: any): Promise<void> {
-    // Integration with WhatsApp service
-    logger.info(`Sending WhatsApp digest to ${recipient.phone}`)
+  private static async sendWhatsAppDigest(recipient: RecipientRecord, content: DigestContent): Promise<void> {
+    if (!recipient.phone) {
+      logger.warn(`Attempted to send WhatsApp digest without recipient phone for ${recipient.id}`)
+      return
+    }
+
+    logger.info(`Sending WhatsApp digest to ${recipient.phone}`, {
+      subject: content.subject
+    })
     // Implementation would use WhatsApp API
   }
 }

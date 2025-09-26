@@ -1,8 +1,20 @@
 import { createClient } from './supabase/client'
-import type { Database } from './types/database'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('GroupManagement')
+
+export type NotificationChannel = 'email' | 'sms' | 'whatsapp'
+
+export interface GroupNotificationSettings {
+  email_notifications?: boolean
+  sms_notifications?: boolean
+  whatsapp_notifications?: boolean
+  quiet_hours?: {
+    start: string
+    end: string
+  }
+  [key: string]: unknown
+}
 
 /**
  * Enhanced group membership management interfaces
@@ -27,7 +39,7 @@ export interface GroupWithMembers {
   name: string
   default_frequency: string
   default_channels: string[]
-  notification_settings: any
+  notification_settings: GroupNotificationSettings | null
   member_count: number
   members: (GroupMembership & {
     recipient: {
@@ -45,13 +57,33 @@ export interface RecipientGroupView {
   group_name: string
   default_frequency: string
   default_channels: string[]
-  notification_settings: any
+  notification_settings: GroupNotificationSettings | null
   member_notification_frequency?: string
   member_preferred_channels?: string[]
   member_content_types?: string[]
   role: string
   joined_at: string
   is_active: boolean
+}
+
+interface GroupMembershipWithGroup extends GroupMembership {
+  recipient_groups: {
+    id: string
+    name: string
+    default_frequency: string
+    default_channels: string[]
+    notification_settings: GroupNotificationSettings | null
+  }
+}
+
+interface GroupMembershipWithRecipient extends GroupMembership {
+  recipients: {
+    id: string
+    name: string
+    email?: string | null
+    phone?: string | null
+    relationship: string
+  }
 }
 
 /**
@@ -93,7 +125,9 @@ export async function getRecipientGroups(token: string): Promise<RecipientGroupV
     throw new Error('Failed to fetch groups')
   }
 
-  return data.map((membership: any) => ({
+  const memberships = (data ?? []) as GroupMembershipWithGroup[]
+
+  return memberships.map((membership) => ({
     group_id: membership.group_id,
     group_name: membership.recipient_groups.name,
     default_frequency: membership.recipient_groups.default_frequency,
@@ -192,13 +226,16 @@ export async function getGroupWithMembers(groupId: string): Promise<GroupWithMem
     throw new Error('Failed to fetch group members')
   }
 
+  const membershipRecords = (memberships ?? []) as GroupMembershipWithRecipient[]
+
   return {
     ...group,
-    member_count: memberships?.length || 0,
-    members: memberships?.map((m: any) => ({
-      ...m,
-      recipient: m.recipients
-    })) || []
+    notification_settings: (group.notification_settings ?? null) as GroupNotificationSettings | null,
+    member_count: membershipRecords.length,
+    members: membershipRecords.map((membership) => ({
+      ...membership,
+      recipient: membership.recipients
+    }))
   }
 }
 
@@ -245,7 +282,7 @@ export async function addRecipientsToGroup(
   }
 
   // Create memberships
-  const memberships = recipientIds.map(recipientId => ({
+  const memberships: Partial<GroupMembership>[] = recipientIds.map(recipientId => ({
     recipient_id: recipientId,
     group_id: groupId,
     notification_frequency: defaultSettings?.notification_frequency,
@@ -314,7 +351,7 @@ export async function removeRecipientFromGroup(
 export async function updateGroupNotificationSettings(
   groupId: string,
   settings: {
-    notification_settings?: any
+    notification_settings?: GroupNotificationSettings
     default_frequency?: string
     default_channels?: string[]
     apply_to_existing_members?: boolean
@@ -326,16 +363,34 @@ export async function updateGroupNotificationSettings(
   if (!user) throw new Error('Not authenticated')
 
   // Update group settings
-  const groupUpdates: any = {}
-  if (settings.notification_settings) groupUpdates.notification_settings = settings.notification_settings
-  if (settings.default_frequency) groupUpdates.default_frequency = settings.default_frequency
-  if (settings.default_channels) groupUpdates.default_channels = settings.default_channels
+  const groupUpdates: Partial<{
+    notification_settings: GroupNotificationSettings
+    default_frequency: string
+    default_channels: string[]
+  }> = {}
 
-  const { error: groupError } = await supabase
-    .from('recipient_groups')
-    .update(groupUpdates)
-    .eq('id', groupId)
-    .eq('parent_id', user.id)
+  if (settings.notification_settings) {
+    groupUpdates.notification_settings = settings.notification_settings
+  }
+  if (settings.default_frequency) {
+    groupUpdates.default_frequency = settings.default_frequency
+  }
+  if (settings.default_channels) {
+    groupUpdates.default_channels = settings.default_channels
+  }
+
+  let groupError: Error | null = null
+  if (Object.keys(groupUpdates).length > 0) {
+    const { error } = await supabase
+      .from('recipient_groups')
+      .update(groupUpdates)
+      .eq('id', groupId)
+      .eq('parent_id', user.id)
+
+    if (error) {
+      groupError = error
+    }
+  }
 
   if (groupError) {
     logger.errorWithStack('Error updating group settings:', groupError as Error)
@@ -344,21 +399,27 @@ export async function updateGroupNotificationSettings(
 
   // Optionally apply to existing members who haven't overridden settings
   if (settings.apply_to_existing_members) {
-    const memberUpdates: any = {}
-    if (settings.default_frequency) memberUpdates.notification_frequency = settings.default_frequency
-    if (settings.default_channels) memberUpdates.preferred_channels = settings.default_channels
+    const memberUpdates: Partial<Pick<GroupMembership, 'notification_frequency' | 'preferred_channels'>> = {}
+    if (settings.default_frequency) {
+      memberUpdates.notification_frequency = settings.default_frequency
+    }
+    if (settings.default_channels) {
+      memberUpdates.preferred_channels = settings.default_channels
+    }
 
-    const { error: memberError } = await supabase
-      .from('group_memberships')
-      .update(memberUpdates)
-      .eq('group_id', groupId)
-      .is('notification_frequency', null) // Only update members without custom settings
-      .eq('is_active', true)
+    if (Object.keys(memberUpdates).length > 0) {
+      const { error: memberError } = await supabase
+        .from('group_memberships')
+        .update(memberUpdates)
+        .eq('group_id', groupId)
+        .is('notification_frequency', null) // Only update members without custom settings
+        .eq('is_active', true)
 
-    if (memberError) {
-      logger.errorWithStack('Error updating member settings:', memberError as Error)
-      // Don't throw here, group update succeeded
-      return false
+      if (memberError) {
+        logger.errorWithStack('Error updating member settings:', memberError as Error)
+        // Don't throw here, group update succeeded
+        return false
+      }
     }
   }
 

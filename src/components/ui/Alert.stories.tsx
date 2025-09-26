@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs'
 import { fn } from '@storybook/test'
 import { HeartIcon, BellIcon } from '@heroicons/react/24/outline'
+import type { ComponentType } from 'react'
 
 import { Alert } from './Alert'
 
@@ -47,9 +48,9 @@ const meta = {
     onDismiss: fn(),
   },
   decorators: [
-    (Story) => (
+    (StoryComponent: ComponentType) => (
       <div className="w-96">
-        <Story />
+        <StoryComponent />
       </div>
     ),
   ],
@@ -98,13 +99,13 @@ export const WithTitles: Story = {
   render: () => (
     <div className="space-y-4 w-96">
       <Alert variant="info" title="New Feature Available">
-        We've added a new way to share updates with your family.
+        We&apos;ve added a new way to share updates with your family.
       </Alert>
       <Alert variant="success" title="Update Sent">
         Your baby update has been successfully shared with 5 family members.
       </Alert>
       <Alert variant="warning" title="Storage Almost Full">
-        You're using 90% of your media storage. Consider upgrading your plan.
+        You&apos;re using 90% of your media storage. Consider upgrading your plan.
       </Alert>
       <Alert variant="error" title="Connection Failed">
         Unable to connect to the server. Check your internet connection.
@@ -170,7 +171,7 @@ export const DismissibleVariants: Story = {
         Your update was shared successfully.
       </Alert>
       <Alert variant="warning" dismissible title="Storage Warning">
-        You're running low on storage space.
+        You&apos;re running low on storage space.
       </Alert>
       <Alert variant="error" dismissible title="Upload Failed">
         Failed to upload image. Please try again.
@@ -206,7 +207,7 @@ export const CustomIconVariants: Story = {
         Your update received 5 likes
       </Alert>
       <Alert variant="warning" icon={<BellIcon className="w-5 h-5" />} title="Reminder">
-        Don't forget to share today's milestone
+        Don&apos;t forget to share today&apos;s milestone
       </Alert>
     </div>
   ),
@@ -234,10 +235,10 @@ export const BabyUpdateExamples: Story = {
   render: () => (
     <div className="space-y-4 w-96">
       <Alert variant="success" title="Update Shared" dismissible>
-        Your baby update "First Steps!" has been sent to 8 family members.
+        Your baby update &ldquo;First Steps!&rdquo; has been sent to 8 family members.
       </Alert>
       <Alert variant="info" title="New Response">
-        Grandma commented on your recent photo: "So adorable! 😍"
+        Grandma commented on your recent photo: &ldquo;So adorable! 😍&rdquo;
       </Alert>
       <Alert variant="warning" title="Photo Quality">
         The uploaded photo is quite large. Consider compressing for faster sharing.
@@ -263,7 +264,7 @@ export const NotificationExamples: Story = {
         You have 3 new family responses to review.
       </Alert>
       <Alert variant="success" icon={<HeartIcon className="w-5 h-5" />} title="Milestone Celebrated">
-        Your "First Word" update received 12 reactions from family!
+        Your &ldquo;First Word&rdquo; update received 12 reactions from family!
       </Alert>
       <Alert variant="warning" title="Quiet Hours Active">
         Notifications are paused until 8:00 AM to respect family sleep schedules.
@@ -285,7 +286,7 @@ export const LongContent: Story = {
     variant: 'info',
     title: 'Privacy Update',
     dismissible: true,
-    children: 'We\'ve updated our privacy policy to better protect your family\'s data. The changes include enhanced encryption for photos and videos, improved control over who can see your updates, and new options for automatically deleting old content. Please review the changes in your account settings.',
+    children: 'We&apos;ve updated our privacy policy to better protect your family&apos;s data. The changes include enhanced encryption for photos and videos, improved control over who can see your updates, and new options for automatically deleting old content. Please review the changes in your account settings.',
   },
 }
 
@@ -333,7 +334,7 @@ export const WithActions: Story = {
       </Alert>
       <Alert variant="warning" title="Storage Full">
         <div>
-          <p className="mb-3">You've reached your storage limit. Upgrade to continue sharing.</p>
+          <p className="mb-3">You&apos;ve reached your storage limit. Upgrade to continue sharing.</p>
           <button className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600">
             Upgrade Plan
           </button>

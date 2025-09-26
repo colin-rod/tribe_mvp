@@ -8,8 +8,6 @@ import { useTimelineData } from '@/hooks/useTimelineData'
 import VirtualScrollContainer from '@/components/ui/VirtualScrollContainer'
 import TimelineSearch from './TimelineSearch'
 import ActivityCard from './ActivityCard'
-import ProgressiveImage from '@/components/ui/ProgressiveImage'
-import { getTimelineCache } from '@/lib/cache/timeline-cache'
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
@@ -40,8 +38,10 @@ type TimelineVirtualItem =
     }
   | (UpdateCardData & { itemType: 'update' })
 
-interface TimelineVirtualData {
-  flattenedItems: TimelineVirtualItem[]
+interface TimelineItemProps {
+  index: number
+  style: React.CSSProperties
+  items: TimelineVirtualItem[]
   onUpdateClick?: (updateId: string) => void
   compact: boolean
   enableProgressiveImages: boolean
@@ -49,22 +49,17 @@ interface TimelineVirtualData {
   onUpdateSelection?: (updateId: string, selected: boolean) => void
 }
 
-interface TimelineItemProps {
-  index: number
-  style: React.CSSProperties
-  data: TimelineVirtualData
-}
-
-const TimelineItem = memo<TimelineItemProps>(function TimelineItem({ index, style, data }) {
-  const {
-    flattenedItems,
-    onUpdateClick,
-    compact,
-    enableProgressiveImages,
-    selectedUpdates,
-    onUpdateSelection
-  } = data
-  const item = flattenedItems[index]
+const TimelineItem = memo<TimelineItemProps>(function TimelineItem({
+  index,
+  style,
+  items,
+  onUpdateClick,
+  compact,
+  enableProgressiveImages,
+  selectedUpdates,
+  onUpdateSelection
+}) {
+  const item = items[index]
 
   if (!item) {
     return <div style={style} />
@@ -144,12 +139,10 @@ const Timeline = memo<TimelineProps>(function Timeline({
   filters: externalFilters,
   onSelectionChange,
   enableProgressiveImages = false,
-  enableSmartCaching = false
+  enableSmartCaching: _enableSmartCaching = false
 }) {
-  const [selectedUpdate, setSelectedUpdate] = useState<string | null>(null)
   const [selectedUpdates, setSelectedUpdates] = useState<string[]>([])
   const [isMobile, setIsMobile] = useState(false)
-  const cache = enableSmartCaching ? getTimelineCache() : null
 
   // Detect mobile screen size
   useEffect(() => {
@@ -279,7 +272,6 @@ const Timeline = memo<TimelineProps>(function Timeline({
 
   // Handle update click
   const handleUpdateClick = useCallback((updateId: string) => {
-    setSelectedUpdate(updateId)
     if (onUpdateClick) {
       onUpdateClick(updateId)
     }
@@ -294,7 +286,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
   const flattenedItems = useMemo<TimelineVirtualItem[]>(() => {
     const items: TimelineVirtualItem[] = []
 
-    filteredGroups.forEach((group, groupIndex) => {
+    filteredGroups.forEach((group) => {
       // Add date header
       items.push({
         id: `header-${group.date}`,
@@ -339,14 +331,6 @@ const Timeline = memo<TimelineProps>(function Timeline({
   }, [flattenedItems, compact])
 
   // Virtual scroll data
-  const virtualScrollData = useMemo<TimelineVirtualData>(() => ({
-    flattenedItems,
-    onUpdateClick: handleUpdateClick,
-    compact,
-    enableProgressiveImages,
-    selectedUpdates,
-    onUpdateSelection: onSelectionChange ? handleUpdateSelection : undefined
-  }), [flattenedItems, handleUpdateClick, compact, enableProgressiveImages, selectedUpdates, onSelectionChange, handleUpdateSelection])
 
   // Loading state
   if (loading && filteredGroups.length === 0) {
@@ -584,11 +568,16 @@ const Timeline = memo<TimelineProps>(function Timeline({
             </div>
           )}
         >
-          {({ index, style, data }) => (
+          {({ index, style }) => (
             <TimelineItem
               index={index}
               style={style}
-              data={data}
+              items={flattenedItems}
+              onUpdateClick={handleUpdateClick}
+              compact={compact}
+              enableProgressiveImages={enableProgressiveImages}
+              selectedUpdates={selectedUpdates}
+              onUpdateSelection={onSelectionChange ? handleUpdateSelection : undefined}
             />
           )}
         </VirtualScrollContainer>

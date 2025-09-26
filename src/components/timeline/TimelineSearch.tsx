@@ -76,13 +76,6 @@ const TimelineSearch = memo<TimelineSearchProps>(function TimelineSearch({
     })
   }, [filters, onFiltersChange])
 
-  const handleChildChange = useCallback((childId: string) => {
-    onFiltersChange({
-      ...filters,
-      childId: childId || undefined
-    })
-  }, [filters, onFiltersChange])
-
   const removeFilter = useCallback((filterKey: keyof SearchFilters) => {
     const newFilters = { ...filters }
     delete newFilters[filterKey]
