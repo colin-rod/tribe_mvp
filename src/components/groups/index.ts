@@ -1,4 +1,5 @@
 // Group management components
+export { default as GroupManager } from './GroupManager'
 export { default as GroupMembershipCard, type GroupMembership } from './GroupMembershipCard'
 export { default as GroupPreferenceManager } from './GroupPreferenceManager'
 export { default as MuteControls, type MuteOption } from './MuteControls'

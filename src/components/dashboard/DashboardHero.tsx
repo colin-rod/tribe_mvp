@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import {
   ChevronDownIcon,
   CameraIcon,
-  VideoIcon,
+  VideoCameraIcon,
   PencilIcon,
   TrophyIcon,
   HandRaisedIcon,
@@ -26,7 +26,7 @@ type UpdateType = 'photo' | 'text' | 'video' | 'milestone'
 const UPDATE_OPTIONS = [
   { id: 'photo' as UpdateType, label: 'Photo Update', icon: CameraIcon, description: 'Share a moment' },
   { id: 'text' as UpdateType, label: 'Text Update', icon: PencilIcon, description: 'Write an update' },
-  { id: 'video' as UpdateType, label: 'Video Update', icon: VideoIcon, description: 'Record a video' },
+  { id: 'video' as UpdateType, label: 'Video Update', icon: VideoCameraIcon, description: 'Record a video' },
   { id: 'milestone' as UpdateType, label: 'Milestone', icon: TrophyIcon, description: 'Mark a milestone' },
 ]
 

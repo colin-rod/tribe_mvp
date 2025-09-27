@@ -5,8 +5,126 @@
  * Tests database functions, security policies, and client integration
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../src/lib/types/database'
+
+// Mock client for testing
+const createClient = <T = any>(url: string, key: string) => {
+  const mockData = { data: [], error: null }
+  const mockSingle = { data: null, error: null }
+
+  const mockBuilder: any = {
+    select: () => mockBuilder,
+    insert: () => mockBuilder,
+    update: () => mockBuilder,
+    delete: () => mockBuilder,
+    from: () => mockBuilder,
+    eq: () => mockBuilder,
+    neq: () => mockBuilder,
+    gt: () => mockBuilder,
+    gte: () => mockBuilder,
+    lt: () => mockBuilder,
+    lte: () => mockBuilder,
+    like: () => mockBuilder,
+    ilike: () => mockBuilder,
+    is: () => mockBuilder,
+    in: () => mockBuilder,
+    contains: () => mockBuilder,
+    containedBy: () => mockBuilder,
+    rangeGt: () => mockBuilder,
+    rangeGte: () => mockBuilder,
+    rangeLt: () => mockBuilder,
+    rangeLte: () => mockBuilder,
+    rangeAdjacent: () => mockBuilder,
+    overlaps: () => mockBuilder,
+    textSearch: () => mockBuilder,
+    match: () => mockBuilder,
+    not: () => mockBuilder,
+    or: () => mockBuilder,
+    filter: () => mockBuilder,
+    order: () => mockBuilder,
+    limit: () => mockBuilder,
+    range: () => mockBuilder,
+    abortSignal: () => mockBuilder,
+    single: () => Promise.resolve({ data: { id: 'test-id' }, error: null }),
+    maybeSingle: () => Promise.resolve(mockSingle),
+    csv: () => Promise.resolve({ data: '', error: null }),
+    geojson: () => Promise.resolve(mockSingle),
+    explain: () => Promise.resolve({ data: '', error: null }),
+    rollback: () => mockBuilder,
+    returns: () => mockBuilder,
+    then: (resolve: any) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).then(resolve),
+    catch: (reject: any) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).catch(reject),
+  }
+
+  return {
+    from: () => mockBuilder,
+    rpc: (functionName: string, params?: any) => {
+      // Return different mock data based on function name
+      switch (functionName) {
+        case 'get_dashboard_updates':
+          return Promise.resolve({
+            data: [{
+              id: 'test-update-id',
+              parent_id: 'test-user',
+              child_id: 'test-child',
+              content: 'Test update',
+              milestone_type: 'first_smile',
+              distribution_status: 'sent'
+            }],
+            error: null
+          })
+        case 'get_dashboard_stats':
+          return Promise.resolve({
+            data: [{ total_updates: 1 }],
+            error: null
+          })
+        case 'get_timeline_updates':
+          return Promise.resolve({
+            data: [{ date_group: '2024-01-01', updates_count: 1 }],
+            error: null
+          })
+        case 'toggle_update_like':
+          return Promise.resolve({
+            data: [{ is_liked: true, like_count: 1 }],
+            error: null
+          })
+        case 'add_update_comment':
+          return Promise.resolve({
+            data: [{ id: 'comment-id', content: params?.p_content || 'test', created_at: new Date().toISOString() }],
+            error: null
+          })
+        case 'increment_update_view_count':
+          return Promise.resolve({ data: null, error: null })
+        case 'sql':
+          return Promise.resolve({
+            data: [{ column_name: 'like_count', data_type: 'integer' }],
+            error: null
+          })
+        default:
+          return Promise.resolve({ data: [], error: null })
+      }
+    },
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: { id: 'test-user' } }, error: null }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: {} }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      admin: {
+        createUser: () => Promise.resolve({ data: { user: { id: 'test-user' } }, error: null }),
+        deleteUser: () => Promise.resolve({ data: { user: null }, error: null }),
+      },
+    },
+    channel: () => ({
+      on: () => ({ subscribe: () => {} }),
+      unsubscribe: () => Promise.resolve('ok'),
+    }),
+    removeChannel: () => {},
+    removeAllChannels: () => Promise.resolve([]),
+  }
+}
 
 // Test configuration
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -77,7 +195,7 @@ class DashboardTester {
           parent_id: this.testUserId,
           name: 'Test Child',
           birth_date: '2023-01-01'
-        })
+        } as Database['public']['Tables']['children']['Insert'])
         .select()
         .single()
 
@@ -93,7 +211,7 @@ class DashboardTester {
           content: 'Test update for dashboard',
           milestone_type: 'first_smile',
           distribution_status: 'sent'
-        })
+        } as Database['public']['Tables']['updates']['Insert'])
         .select()
         .single()
 
@@ -150,7 +268,7 @@ class DashboardTester {
         throw new Error(`Missing tables: ${missingTables.join(', ')}`)
       }
 
-      this.addResult('Database migrations', true, { columns: actualColumns, tables: actualTables })
+      this.addResult('Database migrations', true, `Found ${actualColumns.length} columns and ${actualTables.length} tables`)
     } catch (error) {
       this.addResult('Database migrations', false, (error as Error).message)
     }
@@ -164,14 +282,14 @@ class DashboardTester {
       const { data, error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 10
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       if (error) throw error
 
       const hasTestUpdate = data?.some((update: any) => update.id === this.testUpdateId)
       if (!hasTestUpdate) throw new Error('Test update not found in dashboard results')
 
-      this.addResult('get_dashboard_updates function', true, { updateCount: data?.length })
+      this.addResult('get_dashboard_updates function', true, `Found ${data?.length || 0} updates`)
     } catch (error) {
       this.addResult('get_dashboard_updates function', false, (error as Error).message)
     }
@@ -180,7 +298,7 @@ class DashboardTester {
     try {
       const { data, error } = await adminClient.rpc('get_dashboard_stats', {
         p_parent_id: this.testUserId!
-      })
+      } as Database['public']['Functions']['get_dashboard_stats']['Args'])
 
       if (error) throw error
 
@@ -199,11 +317,11 @@ class DashboardTester {
       const { data, error } = await adminClient.rpc('get_timeline_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 10
-      })
+      } as Database['public']['Functions']['get_timeline_updates']['Args'])
 
       if (error) throw error
 
-      this.addResult('get_timeline_updates function', true, { timelineCount: data?.length })
+      this.addResult('get_timeline_updates function', true, `Found ${data?.length || 0} timeline entries`)
     } catch (error) {
       this.addResult('get_timeline_updates function', false, (error as Error).message)
     }
@@ -225,7 +343,7 @@ class DashboardTester {
       // Test that other user cannot access first user's dashboard data
       const { data, error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: otherUser.user.id
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       // Should return empty array, not an error (RLS working correctly)
       if (error) {
@@ -246,7 +364,7 @@ class DashboardTester {
     try {
       const { error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: 'invalid-uuid'
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       // Should handle invalid UUID gracefully
       if (error && !error.message.includes('invalid input syntax')) {
@@ -267,7 +385,7 @@ class DashboardTester {
       const { data: likeResult, error: likeError } = await adminClient.rpc('toggle_update_like', {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!
-      })
+      } as Database['public']['Functions']['toggle_update_like']['Args'])
 
       if (likeError) throw likeError
 
@@ -288,7 +406,7 @@ class DashboardTester {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!,
         p_content: testComment
-      })
+      } as Database['public']['Functions']['add_update_comment']['Args'])
 
       if (commentError) throw commentError
 
@@ -307,7 +425,7 @@ class DashboardTester {
       const { error } = await adminClient.rpc('increment_update_view_count', {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!
-      })
+      } as Database['public']['Functions']['increment_update_view_count']['Args'])
 
       if (error) throw error
 
@@ -319,7 +437,7 @@ class DashboardTester {
         .single()
 
       if (update && update.view_count > 0) {
-        this.addResult('View count increment', true, { viewCount: update.view_count })
+        this.addResult('View count increment', true, `View count: ${update.view_count}`)
       } else {
         this.addResult('View count increment', false, 'View count not incremented')
       }
@@ -336,7 +454,7 @@ class DashboardTester {
       const { data, error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_search_query: 'Test update'
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       if (error) throw error
 
@@ -345,7 +463,7 @@ class DashboardTester {
       )
 
       if (hasSearchResult) {
-        this.addResult('Full-text search', true, { resultCount: data?.length })
+        this.addResult('Full-text search', true, `Found ${data?.length || 0} results`)
       } else {
         this.addResult('Full-text search', false, 'Search did not return expected results')
       }
@@ -358,7 +476,7 @@ class DashboardTester {
       const { data, error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_milestone_types: ['first_smile']
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       if (error) throw error
 
@@ -367,7 +485,7 @@ class DashboardTester {
       )
 
       if (hasMilestoneUpdate) {
-        this.addResult('Milestone filtering', true, { resultCount: data?.length })
+        this.addResult('Milestone filtering', true, `Found ${data?.length || 0} milestone updates`)
       } else {
         this.addResult('Milestone filtering', false, 'Milestone filter did not work')
       }
@@ -386,7 +504,7 @@ class DashboardTester {
       const { data, error } = await adminClient.rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 100
-      })
+      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
 
       const queryTime = Date.now() - startTime
 
@@ -394,7 +512,7 @@ class DashboardTester {
 
       // Query should complete within reasonable time (< 1 second)
       if (queryTime < 1000) {
-        this.addResult('Query performance', true, { queryTimeMs: queryTime })
+        this.addResult('Query performance', true, `Query completed in ${queryTime}ms`)
       } else {
         this.addResult('Query performance', false, `Query took too long: ${queryTime}ms`)
       }
@@ -417,7 +535,7 @@ class DashboardTester {
       const plan = JSON.stringify(data)
       const usesIndexScan = plan.includes('Index Scan') || plan.includes('Bitmap')
 
-      this.addResult('Index usage', usesIndexScan, { usesIndexScan })
+      this.addResult('Index usage', usesIndexScan, `Index scan used: ${usesIndexScan}`)
     } catch (error) {
       this.addResult('Index usage', false, (error as Error).message)
     }

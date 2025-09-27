@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/nextjs'
-import { fn } from '@storybook/test'
+import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { fn } from '@storybook/addon-actions'
 import { HeartIcon, UserIcon, CalendarIcon } from '@heroicons/react/24/outline'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './Card'

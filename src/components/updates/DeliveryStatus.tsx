@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { PostgresChangesPayload } from '@supabase/supabase-js'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { DeliveryStatusBadge, type DeliveryStatus } from '@/components/ui/DeliveryStatusBadge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -95,7 +95,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
           table: 'delivery_jobs',
           filter: `update_id=eq.${updateId}`
         },
-        async (payload: PostgresChangesPayload<DeliveryJobRow>) => {
+        async (payload: RealtimePostgresChangesPayload<DeliveryJobRow>) => {
           logger.info('Delivery job update:', { data: payload })
 
           if (payload.eventType === 'INSERT') {

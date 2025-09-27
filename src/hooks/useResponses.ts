@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { PostgresChangesPayload } from '@supabase/supabase-js'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 
@@ -104,10 +104,10 @@ export function useResponses(updateId: string) {
           table: 'responses',
           filter: `update_id=eq.${updateId}`
         },
-        (payload: PostgresChangesPayload<ResponseRow>) => {
+        (payload: RealtimePostgresChangesPayload<ResponseRow>) => {
           loggerRef.current.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
-          fetchNewResponse(payload.new.id)
+          fetchNewResponse((payload.new as any)?.id)
           setNewResponseCount(prev => prev + 1)
         }
       )

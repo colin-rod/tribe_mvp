@@ -67,6 +67,7 @@ const TimelinePage = () => {
   } = usePerformanceMonitoring({
     enableRealTimeMonitoring: performanceMonitoringFlag.enabled,
     enableAlerts: true,
+    enableAutoOptimization: true,
     thresholds: {
       timelineRenderTime: 100,
       searchResponseTime: 300,
@@ -128,7 +129,7 @@ const TimelinePage = () => {
       })
 
     } catch (err) {
-      logger.error('Error loading dashboard stats:', err)
+      logger.error('Error loading dashboard stats:', err as any)
       setError('Failed to load dashboard data')
       trackDashboardInteraction({
         type: 'performance_event',

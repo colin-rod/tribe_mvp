@@ -57,20 +57,70 @@ export function createClient() {
 }
 
 function createMockClient(): SupabaseClientType {
+  const mockQueryBuilder = {
+    select: () => mockQueryBuilder,
+    insert: () => mockQueryBuilder,
+    update: () => mockQueryBuilder,
+    delete: () => mockQueryBuilder,
+    eq: () => mockQueryBuilder,
+    neq: () => mockQueryBuilder,
+    gt: () => mockQueryBuilder,
+    gte: () => mockQueryBuilder,
+    lt: () => mockQueryBuilder,
+    lte: () => mockQueryBuilder,
+    like: () => mockQueryBuilder,
+    ilike: () => mockQueryBuilder,
+    is: () => mockQueryBuilder,
+    in: () => mockQueryBuilder,
+    contains: () => mockQueryBuilder,
+    containedBy: () => mockQueryBuilder,
+    rangeGt: () => mockQueryBuilder,
+    rangeGte: () => mockQueryBuilder,
+    rangeLt: () => mockQueryBuilder,
+    rangeLte: () => mockQueryBuilder,
+    rangeAdjacent: () => mockQueryBuilder,
+    overlaps: () => mockQueryBuilder,
+    textSearch: () => mockQueryBuilder,
+    match: () => mockQueryBuilder,
+    not: () => mockQueryBuilder,
+    or: () => mockQueryBuilder,
+    filter: () => mockQueryBuilder,
+    order: () => mockQueryBuilder,
+    limit: () => mockQueryBuilder,
+    range: () => mockQueryBuilder,
+    abortSignal: () => mockQueryBuilder,
+    single: () => Promise.resolve({ data: null, error: null }),
+    maybeSingle: () => Promise.resolve({ data: null, error: null }),
+    csv: () => Promise.resolve({ data: '', error: null }),
+    geojson: () => Promise.resolve({ data: null, error: null }),
+    explain: () => Promise.resolve({ data: '', error: null }),
+    rollback: () => mockQueryBuilder,
+    returns: () => mockQueryBuilder,
+    then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
+    catch: (reject: any) => Promise.resolve({ data: [], error: null }).catch(reject),
+  }
+
   return {
-    from: () => ({
-      select: () => ({ data: [], error: null }),
-      insert: () => ({ data: [], error: null }),
-      update: () => ({ data: [], error: null }),
-      delete: () => ({ data: [], error: null }),
-    }),
+    from: () => mockQueryBuilder,
+    rpc: () => Promise.resolve({ data: [], error: null }),
     auth: {
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: {} }, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
+      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
+      admin: {
+        createUser: () => Promise.resolve({ data: { user: null }, error: null }),
+        deleteUser: () => Promise.resolve({ data: { user: null }, error: null }),
+      },
     },
     channel: () => ({
       on: () => ({ subscribe: () => {} }),
+      unsubscribe: () => Promise.resolve('ok'),
     }),
     removeChannel: () => {},
+    removeAllChannels: () => Promise.resolve([]),
   } as unknown as SupabaseClientType
 }
 

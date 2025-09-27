@@ -5,7 +5,7 @@
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-interface LogContext {
+export interface LogContext {
   userId?: string
   requestId?: string
   component?: string
@@ -84,7 +84,7 @@ class SecureLogger {
     return {
       level,
       message,
-      context: context ? this.sanitizeData(context) : undefined,
+      context: context ? this.sanitizeData(context) as LogContext : undefined,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'unknown'
     }
@@ -210,7 +210,7 @@ export const logger = new SecureLogger()
 export const createLogger = (component: string) => logger.scope(component)
 
 // Export for compatibility (will be removed after migration)
-export const devLog = (message: string, data?: unknown) => {
+export const devLog = (message: string, data?: LogContext) => {
   if (process.env.NODE_ENV === 'development') {
     logger.debug(message, data)
   }

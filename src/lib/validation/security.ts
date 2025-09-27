@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom'
 // Create server-side DOMPurify instance
 const createDOMPurify = () => {
   const window = new JSDOM('').window
-  return DOMPurify(window as unknown as Window)
+  return DOMPurify(window as any)
 }
 
 /**
@@ -132,10 +132,10 @@ export const createSecureStringSchema = (
   maxLength: number = 1000,
   allowHtml: boolean = false
 ) => {
-  let schema = z.string().min(minLength).max(maxLength)
+  let schema: any = z.string().min(minLength).max(maxLength)
 
   if (allowHtml) {
-    schema = schema.transform(sanitizeHtml).refine((value) => {
+    schema = schema.transform(sanitizeHtml).refine((value: string) => {
       // Check for remaining malicious patterns after sanitization
       const maliciousPatterns = [
         /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
@@ -146,7 +146,7 @@ export const createSecureStringSchema = (
       return !maliciousPatterns.some(pattern => pattern.test(value))
     }, 'Content contains potentially malicious code')
   } else {
-    schema = schema.transform(sanitizeText).refine((value) => {
+    schema = schema.transform(sanitizeText).refine((value: string) => {
       // Check for SQL injection patterns
       const sqlPatterns = [
         /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)/i,

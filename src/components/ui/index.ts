@@ -26,12 +26,12 @@ export { Alert, type AlertProps } from './Alert'
 // Form Components (re-export existing ones)
 export { FormField } from './FormField'
 export { FormMessage } from './FormMessage'
-export { DateInput } from './DateInput'
+export { default as DateInput } from './DateInput'
 export { ConfirmationDialog } from './ConfirmationDialog'
 export { DeliveryStatusBadge } from './DeliveryStatusBadge'
-export { ChildImage } from './ChildImage'
+export { default as ChildImage } from './ChildImage'
 export { PasswordStrengthIndicator } from './PasswordStrengthIndicator'
 export { DevelopmentBanner, DevelopmentIndicator } from './DevelopmentBanner'
 
 // Legacy export for backward compatibility
-export { DateInputDemo } from './DateInputDemo'
+export { default as DateInputDemo } from './DateInputDemo'

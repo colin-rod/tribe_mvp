@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { PostgresChangesPayload } from '@supabase/supabase-js'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 
@@ -38,7 +38,7 @@ export function useResponseNotifications() {
           schema: 'public',
           table: 'responses'
         },
-        async (payload: PostgresChangesPayload<ResponseInsertPayload>) => {
+        async (payload: RealtimePostgresChangesPayload<ResponseInsertPayload>) => {
           try {
             // Get the current user
             const { data: { user } } = await supabase.auth.getUser()
@@ -55,7 +55,7 @@ export function useResponseNotifications() {
                   name
                 )
               `)
-              .eq('id', payload.new.update_id)
+              .eq('id', (payload.new as any)?.update_id)
               .eq('parent_id', user.id)
               .single()
 
@@ -64,7 +64,7 @@ export function useResponseNotifications() {
               const { data: recipient } = await supabase
                 .from('recipients')
                 .select('name, relationship')
-                .eq('id', payload.new.recipient_id)
+                .eq('id', (payload.new as any)?.recipient_id)
                 .single()
 
               if (recipient) {
@@ -72,7 +72,7 @@ export function useResponseNotifications() {
                   childName: update.children.name,
                   recipientName: recipient.name,
                   relationship: recipient.relationship,
-                  content: payload.new.content || 'Sent a photo',
+                  content: (payload.new as any)?.content || 'Sent a photo',
                   updateId: update.id
                 })
               }

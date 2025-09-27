@@ -52,6 +52,14 @@ type DeliveryResult = {
   scheduled_delivery?: string | null
   test_results?: unknown
   error?: string
+  job_id?: string
+  status?: string
+  group_name?: string
+  recipient_count?: number
+  delivery_method?: string
+  notification_type?: string
+  created_at?: string
+  completed_at?: string | null
 }
 
 /**
@@ -264,12 +272,12 @@ export async function GET(request: NextRequest) {
           recipient_groups!inner(name)
         `)
         .eq('update_id', updateId)
-        .in('group_id',
-          supabase
+        .in('group_id', (
+          await supabase
             .from('recipient_groups')
             .select('id')
             .eq('parent_id', user.id)
-        )
+        ).data?.map(g => g.id) || [])
 
       if (jobsError) {
         logger.errorWithStack('Error fetching job status:', jobsError as Error)
@@ -321,7 +329,12 @@ export async function GET(request: NextRequest) {
         }
       } catch (error) {
         logger.errorWithStack('Error fetching analytics:', error as Error)
-        response.analytics = { error: 'Failed to fetch analytics' }
+        response.analytics = {
+          group_id: groupId || '',
+          group_name: '',
+          period_days: 7,
+          error: 'Failed to fetch analytics'
+        }
       }
     }
 
@@ -414,13 +427,13 @@ export async function PATCH(request: NextRequest) {
     const validatedData = actionSchema.parse(body)
     const notificationService = new GroupNotificationService()
 
-    const results: Array<Record<string, unknown>> = []
+    const results: DeliveryResult[] = []
 
     switch (validatedData.action) {
       case 'process_pending':
         // Process pending notification jobs
         {
-          const processed = await notificationService.processPendingJobs(validatedData.batch_size) as Array<Record<string, unknown>>
+          const processed = await notificationService.processPendingJobs(validatedData.batch_size) as DeliveryResult[]
           results.push(...processed)
         }
         break
@@ -432,12 +445,12 @@ export async function PATCH(request: NextRequest) {
           .select('id')
           .eq('status', 'failed')
           .lt('retry_count', 3)
-          .in('group_id',
-            supabase
+          .in('group_id', (
+            await supabase
               .from('recipient_groups')
               .select('id')
               .eq('parent_id', user.id)
-          )
+          ).data?.map(g => g.id) || [])
           .limit(validatedData.batch_size)
 
         if (failedError) {
@@ -450,7 +463,7 @@ export async function PATCH(request: NextRequest) {
             .from('notification_jobs')
             .update({
               status: 'pending',
-              retry_count: supabase.raw('retry_count + 1'),
+              retry_count: 1,
               scheduled_for: new Date().toISOString()
             })
             .in('id', failedJobs.map(j => j.id))
@@ -460,8 +473,17 @@ export async function PATCH(request: NextRequest) {
           }
 
           results.push(...failedJobs.map(job => ({
+            update_id: '',
             job_id: job.id,
-            status: 'reset_for_retry'
+            status: 'reset_for_retry',
+            group_id: '',
+            group_name: '',
+            recipient_count: 0,
+            delivery_method: 'email' as const,
+            notification_type: 'immediate' as const,
+            created_at: new Date().toISOString(),
+            completed_at: null,
+            success: true
           })))
         }
         break
@@ -472,12 +494,12 @@ export async function PATCH(request: NextRequest) {
           .from('notification_jobs')
           .update({ status: 'cancelled' })
           .eq('status', 'pending')
-          .in('group_id',
-            supabase
+          .in('group_id', (
+            await supabase
               .from('recipient_groups')
               .select('id')
               .eq('parent_id', user.id)
-          )
+          ).data?.map(g => g.id) || [])
 
         if (validatedData.job_ids && validatedData.job_ids.length > 0) {
           cancelQuery = cancelQuery.in('id', validatedData.job_ids)
@@ -498,6 +520,9 @@ export async function PATCH(request: NextRequest) {
         }
 
         results.push(...(cancelledJobs || []).map(job => ({
+          update_id: '',
+          group_id: '',
+          success: true,
           job_id: job.id,
           status: 'cancelled'
         })))

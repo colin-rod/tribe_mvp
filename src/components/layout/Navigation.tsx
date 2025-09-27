@@ -14,9 +14,10 @@ import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
 interface NavigationProps {
   onCreateUpdate?: (type?: UpdateType) => void
+  customActions?: React.ReactNode
 }
 
-export default function Navigation({ onCreateUpdate }: NavigationProps = {}) {
+export default function Navigation({ onCreateUpdate, customActions }: NavigationProps = {}) {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -131,13 +132,15 @@ export default function Navigation({ onCreateUpdate }: NavigationProps = {}) {
                 >
                   Groups
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => triggerCreateUpdate('photo')}
-                  className="bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Create Update
-                </button>
+                {customActions || (
+                  <button
+                    type="button"
+                    onClick={() => triggerCreateUpdate('photo')}
+                    className="bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    Create Update
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -316,16 +319,18 @@ export default function Navigation({ onCreateUpdate }: NavigationProps = {}) {
               Groups
             </Link>
             <div className="pt-2 border-t border-neutral-200">
-              <button
-                type="button"
-                onClick={() => triggerCreateUpdate('photo')}
-                className="block w-full min-h-[44px] px-3 py-3 rounded-md text-base font-medium bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center justify-center hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                <svg className="mr-3 h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create Update
-              </button>
+              {customActions || (
+                <button
+                  type="button"
+                  onClick={() => triggerCreateUpdate('photo')}
+                  className="block w-full min-h-[44px] px-3 py-3 rounded-md text-base font-medium bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center justify-center hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <svg className="mr-3 h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Update
+                </button>
+              )}
             </div>
           </div>
         </div>
