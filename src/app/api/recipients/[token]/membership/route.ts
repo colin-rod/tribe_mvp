@@ -56,6 +56,9 @@ type MembershipActionResult = {
   group_name: string
 }
 
+type EffectiveSettingsFunctionArgs = Database['public']['Functions']['get_effective_notification_settings']['Args']
+type EffectiveSettingsFunctionReturns = Database['public']['Functions']['get_effective_notification_settings']['Returns']
+
 // Schema for membership visibility preferences
 const membershipVisibilitySchema = z.object({
   show_all_groups: z.boolean().default(true),
@@ -542,31 +545,44 @@ async function getEffectiveSettings(
 ): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
-    const { data, error } = await (supabase as any).rpc(
-      'get_effective_notification_settings',
-      {
-        p_recipient_id: recipientId,
-        p_group_id: groupId
-      }
-    )
+    const { data, error } = await supabase.rpc<
+      EffectiveSettingsFunctionReturns,
+      EffectiveSettingsFunctionArgs
+    >('get_effective_notification_settings', {
+      p_recipient_id: recipientId,
+      p_group_id: groupId
+    })
 
-    if (error) {
+    const effectiveSettings = Array.isArray(data) ? data[0] : null
+
+    if (error || !effectiveSettings) {
       // Fallback to manual resolution
+      type RecipientGroupDefaults = {
+        default_frequency: string | null
+        default_channels: string[] | null
+        notification_settings: { content_types?: string[] } | null
+      }
+
       const { data: group } = await supabase
         .from('recipient_groups')
         .select('default_frequency, default_channels, notification_settings')
         .eq('id', groupId)
-        .single()
+        .single<RecipientGroupDefaults>()
 
       return {
-        frequency: membership.notification_frequency || (group as any)?.default_frequency || 'every_update',
-        channels: membership.preferred_channels || (group as any)?.default_channels || ['email'],
-        content_types: membership.content_types || ['photos', 'text', 'milestones'],
+        frequency: membership.notification_frequency || group?.default_frequency || 'every_update',
+        channels: membership.preferred_channels || group?.default_channels || ['email'],
+        content_types: membership.content_types || group?.notification_settings?.content_types || ['photos', 'text', 'milestones'],
         source: membership.notification_frequency ? 'member_override' : 'group_default'
       }
     }
 
-    return data as EffectiveSettings
+    return {
+      frequency: effectiveSettings.frequency,
+      channels: effectiveSettings.channels,
+      content_types: effectiveSettings.content_types,
+      source: effectiveSettings.source
+    }
   } catch (error) {
     logger.errorWithStack('Error getting effective settings:', error as Error)
     return {

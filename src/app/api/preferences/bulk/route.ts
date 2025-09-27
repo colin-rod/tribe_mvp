@@ -470,7 +470,7 @@ async function executeUpdateOperation(
       }
 
       if (Object.keys(updateData).length > 0) {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('group_memberships')
           .update(updateData)
           .eq('recipient_id', recipient.recipient_id)
@@ -511,7 +511,7 @@ async function executeResetOperation(
 
   for (const recipient of targetRecipients) {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('group_memberships')
         .update({
           notification_frequency: null,

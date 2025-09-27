@@ -41,6 +41,9 @@ type GroupMuteStatus = {
 type NotificationPreferences = Record<string, unknown> & {
   mute_settings?: Record<string, unknown>
 }
+type RecipientNotificationPreferencesRow = {
+  notification_preferences: NotificationPreferences | null
+}
 
 // Schema for mute operations
 const muteOperationSchema = z.object({
@@ -584,7 +587,7 @@ async function getNotificationPreferences(
     .from('recipients')
     .select('notification_preferences')
     .eq('id', recipientId)
-    .single()
+    .single<RecipientNotificationPreferencesRow>()
 
-  return (recipient as any)?.notification_preferences || {}
+  return recipient?.notification_preferences || {}
 }

@@ -70,7 +70,6 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isImageAvailable, setIsImageAvailable] = useState(true)
-  const [imageError, setImageError] = useState(false)
   const contentRef = useRef<HTMLParagraphElement>(null)
 
   const primaryMediaUrl = useMemo(() => update.mediaUrls?.[0] ?? null, [update.mediaUrls])
@@ -141,7 +140,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
                 name={update.child.name}
                 alt={`${update.child.name}'s photo`}
                 className="w-full h-full object-cover"
-                onError={() => setImageError(true)}
+                onError={() => setIsImageAvailable(false)}
               />
             </div>
 

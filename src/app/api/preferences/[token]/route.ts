@@ -98,6 +98,13 @@ export async function GET(
         const isGloballyMuted = globalMuteUntil && globalMuteUntil > new Date()
 
         // Check group-specific mutes
+        type GroupMuteRecord = {
+          group_id: string
+          mute_until: string
+          mute_settings: Record<string, unknown> | null
+          recipient_groups: { name: string } | { name: string }[] | null
+        }
+
         const { data: groupMutes } = await supabase
           .from('group_memberships')
           .select(`
@@ -109,10 +116,12 @@ export async function GET(
           .eq('recipient_id', recipient.id)
           .eq('is_active', true)
           .not('mute_until', 'is', null)
+          .returns<GroupMuteRecord[]>()
 
-        const activeGroupMutes = (groupMutes || []).filter(m => {
+        const activeGroupMutes = (groupMutes || []).filter((m): m is GroupMuteRecord => {
+          if (!m?.mute_until) return false
           const muteUntil = new Date(m.mute_until)
-          return muteUntil > new Date()
+          return Number.isFinite(muteUntil.getTime()) && muteUntil > new Date()
         })
 
         enhancedData.mute_status = {
@@ -121,7 +130,13 @@ export async function GET(
           active_group_mutes: activeGroupMutes.length,
           group_mutes: activeGroupMutes.map(m => ({
             group_id: m.group_id,
-            group_name: Array.isArray(m.recipient_groups) ? m.recipient_groups[0]?.name : (m.recipient_groups as any)?.name,
+            group_name: (() => {
+              const groupRelation = m.recipient_groups
+              if (Array.isArray(groupRelation)) {
+                return groupRelation[0]?.name ?? 'Unknown group'
+              }
+              return groupRelation?.name ?? 'Unknown group'
+            })(),
             mute_until: m.mute_until,
             settings: m.mute_settings
           })),
