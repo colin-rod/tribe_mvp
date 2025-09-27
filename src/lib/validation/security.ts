@@ -4,8 +4,8 @@ import { JSDOM } from 'jsdom'
 
 // Create server-side DOMPurify instance
 const createDOMPurify = () => {
-  const window = new JSDOM('').window
-  return DOMPurify(window as any)
+  const dom = new JSDOM('')
+  return DOMPurify(dom.window as unknown as Window)
 }
 
 /**
@@ -132,10 +132,10 @@ export const createSecureStringSchema = (
   maxLength: number = 1000,
   allowHtml: boolean = false
 ) => {
-  let schema: any = z.string().min(minLength).max(maxLength)
+  const baseSchema = z.string().min(minLength).max(maxLength)
 
   if (allowHtml) {
-    schema = schema.transform(sanitizeHtml).refine((value: string) => {
+    return baseSchema.transform(sanitizeHtml).refine((value: string) => {
       // Check for remaining malicious patterns after sanitization
       const maliciousPatterns = [
         /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
@@ -145,32 +145,30 @@ export const createSecureStringSchema = (
       ]
       return !maliciousPatterns.some(pattern => pattern.test(value))
     }, 'Content contains potentially malicious code')
-  } else {
-    schema = schema.transform(sanitizeText).refine((value: string) => {
-      // Check for SQL injection patterns
-      const sqlPatterns = [
-        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)/i,
-        /('|(\\x27)|(\\x2D){2})/i,
-        /(\||\\x7C)/i,
-        /(\*|\\x2A)/i
-      ]
-
-      // Check for XSS patterns
-      const xssPatterns = [
-        /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-        /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
-        /javascript:/gi,
-        /vbscript:/gi,
-        /on\w+\s*=/gi,
-        /data:text\/html/gi
-      ]
-
-      const suspiciousPatterns = [...sqlPatterns, ...xssPatterns]
-      return !suspiciousPatterns.some(pattern => pattern.test(value))
-    }, 'Content contains potentially malicious code')
   }
 
-  return schema
+  return baseSchema.transform(sanitizeText).refine((value: string) => {
+    // Check for SQL injection patterns
+    const sqlPatterns = [
+      /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b)/i,
+      /('|(\\x27)|(\\x2D){2})/i,
+      /(\||\\x7C)/i,
+      /(\*|\\x2A)/i
+    ]
+
+    // Check for XSS patterns
+    const xssPatterns = [
+      /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+      /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
+      /javascript:/gi,
+      /vbscript:/gi,
+      /on\w+\s*=/gi,
+      /data:text\/html/gi
+    ]
+
+    const suspiciousPatterns = [...sqlPatterns, ...xssPatterns]
+    return !suspiciousPatterns.some(pattern => pattern.test(value))
+  }, 'Content contains potentially malicious code')
 }
 
 /**

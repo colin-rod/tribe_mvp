@@ -129,7 +129,7 @@ const TimelinePage = () => {
       })
 
     } catch (err) {
-      logger.error('Error loading dashboard stats:', err as any)
+      logger.error('Error loading dashboard stats:', { error: err })
       setError('Failed to load dashboard data')
       trackDashboardInteraction({
         type: 'performance_event',

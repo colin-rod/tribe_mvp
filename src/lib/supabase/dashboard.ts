@@ -416,17 +416,14 @@ export class DashboardClient {
           logger.debug('Received engagement update', payload)
 
           const update = payload.new
-          if (update) {
-            const updateData = update as any
-            if (updateData?.id) {
-              callback({
-                update_id: updateData.id,
-                parent_id: updateData.parent_id,
-                like_count: updateData.like_count || 0,
-                response_count: updateData.response_count || 0,
-                view_count: updateData.view_count || 0
-              })
-            }
+          if (update?.id) {
+            callback({
+              update_id: update.id,
+              parent_id: update.parent_id,
+              like_count: update.like_count ?? 0,
+              response_count: update.response_count ?? 0,
+              view_count: update.view_count ?? 0
+            })
           }
         }
       )
@@ -465,14 +462,13 @@ export class DashboardClient {
             const { data: update } = await this.supabase
               .from('updates')
               .select('parent_id')
-              .eq('id', (comment as any)?.update_id)
-              .single()
+              .eq('id', comment.update_id)
+              .single<{ parent_id: string }>()
 
-            if (update && (update as any)?.parent_id === parentId) {
-              const commentData = comment as any
+            if (update?.parent_id === parentId) {
               callback({
-                updateId: commentData?.update_id,
-                comment: commentData
+                updateId: comment.update_id,
+                comment
               })
             }
           }

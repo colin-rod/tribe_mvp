@@ -107,7 +107,10 @@ export function useResponses(updateId: string) {
         (payload: RealtimePostgresChangesPayload<ResponseRow>) => {
           loggerRef.current.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
-          fetchNewResponse((payload.new as any)?.id)
+          const newResponse = payload.new
+          if (newResponse?.id) {
+            fetchNewResponse(newResponse.id)
+          }
           setNewResponseCount(prev => prev + 1)
         }
       )

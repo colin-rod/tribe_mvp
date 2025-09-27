@@ -96,8 +96,10 @@ function createMockClient(): SupabaseClientType {
     explain: () => Promise.resolve({ data: '', error: null }),
     rollback: () => mockQueryBuilder,
     returns: () => mockQueryBuilder,
-    then: (resolve: any) => Promise.resolve({ data: [], error: null }).then(resolve),
-    catch: (reject: any) => Promise.resolve({ data: [], error: null }).catch(reject),
+    then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+      Promise.resolve({ data: [], error: null }).then(resolve),
+    catch: (reject: (reason: unknown) => unknown) =>
+      Promise.resolve({ data: [], error: null }).catch(reject),
   }
 
   return {

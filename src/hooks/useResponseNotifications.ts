@@ -44,6 +44,9 @@ export function useResponseNotifications() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
+            const newResponse = payload.new
+            if (!newResponse) return
+
             // Verify this response is for user's update
             const { data: update } = await supabase
               .from('updates')
@@ -55,7 +58,7 @@ export function useResponseNotifications() {
                   name
                 )
               `)
-              .eq('id', (payload.new as any)?.update_id)
+              .eq('id', newResponse.update_id)
               .eq('parent_id', user.id)
               .single()
 
@@ -64,7 +67,7 @@ export function useResponseNotifications() {
               const { data: recipient } = await supabase
                 .from('recipients')
                 .select('name, relationship')
-                .eq('id', (payload.new as any)?.recipient_id)
+                .eq('id', newResponse.recipient_id)
                 .single()
 
               if (recipient) {
@@ -72,7 +75,7 @@ export function useResponseNotifications() {
                   childName: update.children.name,
                   recipientName: recipient.name,
                   relationship: recipient.relationship,
-                  content: (payload.new as any)?.content || 'Sent a photo',
+                  content: newResponse.content || 'Sent a photo',
                   updateId: update.id
                 })
               }
