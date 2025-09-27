@@ -470,6 +470,7 @@ async function executeUpdateOperation(
       }
 
       if (Object.keys(updateData).length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase as any)
           .from('group_memberships')
           .update(updateData)
@@ -511,6 +512,7 @@ async function executeResetOperation(
 
   for (const recipient of targetRecipients) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from('group_memberships')
         .update({
