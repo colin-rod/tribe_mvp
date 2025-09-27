@@ -19,7 +19,7 @@ const meta = {
   argTypes: {
     variant: {
       control: { type: 'select' },
-      options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link', 'success', 'warning'],
+      options: ['default', 'primary', 'destructive', 'outline', 'secondary', 'ghost', 'link', 'success', 'warning'],
       description: 'Visual style variant of the button',
     },
     size: {
@@ -70,6 +70,13 @@ export const Default: Story = {
   args: {
     variant: 'default',
     children: 'Default Button',
+  },
+}
+
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+    children: 'Primary Button',
   },
 }
 
@@ -150,6 +157,7 @@ export const AllVariants: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4 max-w-md">
       <Button variant="default">Default</Button>
+      <Button variant="primary">Primary</Button>
       <Button variant="destructive">Destructive</Button>
       <Button variant="outline">Outline</Button>
       <Button variant="secondary">Secondary</Button>

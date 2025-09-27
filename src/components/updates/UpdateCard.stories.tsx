@@ -14,6 +14,8 @@ const mockChild = {
 
 const baseUpdate: UpdateCardData = {
   id: 'update-1',
+  parent_id: 'parent-1',
+  child_id: 'child-1',
   content: 'Emma took her first independent steps today! She was so excited and kept walking back and forth between the couch and coffee table. We managed to capture it on video and she seemed so proud of herself.',
   contentPreview: 'Emma took her first independent steps today! She was so excited and kept walking back and forth...',
   child: mockChild,
@@ -23,6 +25,13 @@ const baseUpdate: UpdateCardData = {
   hasUnreadResponses: true,
   lastResponseAt: new Date('2024-12-25T15:45:00Z'),
   distributionStatus: 'sent',
+  media_urls: ['https://example.com/video.mp4'],
+  milestone_type: 'first_steps',
+  ai_analysis: { confidence: 0.95, tags: ['walking', 'milestone'] },
+  suggested_recipients: ['grandma@example.com', 'grandpa@example.com'],
+  confirmed_recipients: ['grandma@example.com', 'grandpa@example.com'],
+  scheduled_for: undefined,
+  sent_at: '2024-12-25T14:30:00Z'
 }
 
 const meta = {

@@ -106,11 +106,16 @@ export function useResponses(updateId: string) {
         },
         (payload: RealtimePostgresChangesPayload<ResponseRow>) => {
           loggerRef.current.info('New response received:', { data: payload })
-          // Fetch complete response data with recipient info
+
+          // Type guard to ensure payload.new exists and has required properties
           const newResponse = payload.new
-          if (newResponse?.id) {
-            fetchNewResponse(newResponse.id)
+          if (!newResponse || !newResponse.id || !newResponse.update_id) {
+            loggerRef.current.warn('Invalid response payload received', { payload: newResponse })
+            return
           }
+
+          // Fetch complete response data with recipient info
+          fetchNewResponse(newResponse.id)
           setNewResponseCount(prev => prev + 1)
         }
       )

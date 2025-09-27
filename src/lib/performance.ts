@@ -177,18 +177,23 @@ export function markPerformance(name: string) {
  * Measure performance between two marks
  */
 export function measurePerformance(name: string, startMark: string, endMark: string) {
-  if (typeof window !== 'undefined' && 'performance' in window) {
+  if (typeof window !== 'undefined' && 'performance' in window && performance.measure) {
     try {
       performance.measure(name, startMark, endMark)
-      const measure = performance.getEntriesByName(name, 'measure')[0]
+      const measures = performance.getEntriesByName(name, 'measure')
+      const measure = measures[0]
 
-      if (process.env.NODE_ENV === 'development') {
-        logger.debug(`${name} measure`, {
-          durationMs: Number(measure.duration.toFixed(2))
-        })
+      if (measure && typeof measure.duration === 'number') {
+        if (process.env.NODE_ENV === 'development') {
+          logger.debug(`${name} measure`, {
+            durationMs: Number(measure.duration.toFixed(2))
+          })
+        }
+
+        return measure.duration
       }
 
-      return measure.duration
+      return null
     } catch (error) {
       logger.warn('Performance measurement failed', { error, name, startMark, endMark })
       return null

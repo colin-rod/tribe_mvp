@@ -44,8 +44,12 @@ export function useResponseNotifications() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
+            // Type guard to ensure payload.new exists and has required properties
             const newResponse = payload.new
-            if (!newResponse) return
+            if (!newResponse || !newResponse.id || !newResponse.update_id || !newResponse.recipient_id) {
+              loggerRef.current.warn('Invalid response payload received', { payload: newResponse })
+              return
+            }
 
             // Verify this response is for user's update
             const { data: update } = await supabase
@@ -62,7 +66,7 @@ export function useResponseNotifications() {
               .eq('parent_id', user.id)
               .single()
 
-            if (update) {
+            if (update && update.children) {
               // Get recipient info
               const { data: recipient } = await supabase
                 .from('recipients')
@@ -70,7 +74,7 @@ export function useResponseNotifications() {
                 .eq('id', newResponse.recipient_id)
                 .single()
 
-              if (recipient) {
+              if (recipient && recipient.name && recipient.relationship) {
                 showResponseNotification({
                   childName: update.children.name,
                   recipientName: recipient.name,

@@ -45,6 +45,8 @@ export function transformToCardData(update: DashboardUpdate): UpdateCardData {
 
   return {
     id: update.id,
+    parent_id: update.parent_id,
+    child_id: update.child_id,
     content: update.content,
     contentPreview: truncateContent(update.content),
     child: formatChildInfo(update.children),
@@ -53,7 +55,14 @@ export function transformToCardData(update: DashboardUpdate): UpdateCardData {
     responseCount: update.response_count || 0,
     hasUnreadResponses: update.has_unread_responses || false,
     lastResponseAt,
-    distributionStatus: update.distribution_status
+    distributionStatus: update.distribution_status,
+    media_urls: update.media_urls,
+    milestone_type: update.milestone_type,
+    ai_analysis: update.ai_analysis,
+    suggested_recipients: update.suggested_recipients,
+    confirmed_recipients: update.confirmed_recipients,
+    scheduled_for: update.scheduled_for,
+    sent_at: update.sent_at
   }
 }
 

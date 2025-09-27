@@ -7,13 +7,14 @@
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../src/lib/types/database'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Mock client for testing
-const createClient = <T = any>(url: string, key: string) => {
+const createClient = (url: string, key: string): SupabaseClient<Database> => {
   const mockData = { data: [], error: null }
   const mockSingle = { data: null, error: null }
 
-  const mockBuilder: any = {
+  const mockBuilder = {
     select: () => mockBuilder,
     insert: () => mockBuilder,
     update: () => mockBuilder,
@@ -53,8 +54,8 @@ const createClient = <T = any>(url: string, key: string) => {
     explain: () => Promise.resolve({ data: '', error: null }),
     rollback: () => mockBuilder,
     returns: () => mockBuilder,
-    then: (resolve: any) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).then(resolve),
-    catch: (reject: any) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).catch(reject),
+    then: (resolve: (value: { data: unknown[]; error: null }) => unknown) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).then(resolve),
+    catch: (reject: (reason: unknown) => unknown) => Promise.resolve({ data: [{ id: 'test-id' }], error: null }).catch(reject),
   }
 
   return {
@@ -123,7 +124,7 @@ const createClient = <T = any>(url: string, key: string) => {
     }),
     removeChannel: () => {},
     removeAllChannels: () => Promise.resolve([]),
-  }
+  } as unknown as SupabaseClient<Database>
 }
 
 // Test configuration

@@ -22,16 +22,47 @@ export function PerformanceProvider() {
         performance.mark('app-initialized')
 
         // Log navigation timing if available
-        const navigationTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-        if (navigationTiming && process.env.NODE_ENV === 'development') {
-          logger.info('Page Load Performance', {
-            'DNS Lookup': `${navigationTiming.domainLookupEnd - navigationTiming.domainLookupStart}ms`,
-            'Connection': `${navigationTiming.connectEnd - navigationTiming.connectStart}ms`,
-            'Request': `${navigationTiming.responseStart - navigationTiming.requestStart}ms`,
-            'Response': `${navigationTiming.responseEnd - navigationTiming.responseStart}ms`,
-            'DOM Processing': `${navigationTiming.domComplete - navigationTiming.domLoading}ms`,
-            'Total Load Time': `${navigationTiming.loadEventEnd - navigationTiming.navigationStart}ms`
-          })
+        try {
+          const navigationEntries = performance.getEntriesByType('navigation')
+          const navigationTiming = navigationEntries[0] as PerformanceNavigationTiming
+
+          if (navigationTiming && process.env.NODE_ENV === 'development') {
+            // Add type guards to ensure properties exist
+            const perfData: Record<string, string> = {}
+
+            if (typeof navigationTiming.domainLookupEnd === 'number' && typeof navigationTiming.domainLookupStart === 'number') {
+              perfData['DNS Lookup'] = `${navigationTiming.domainLookupEnd - navigationTiming.domainLookupStart}ms`
+            }
+
+            if (typeof navigationTiming.connectEnd === 'number' && typeof navigationTiming.connectStart === 'number') {
+              perfData['Connection'] = `${navigationTiming.connectEnd - navigationTiming.connectStart}ms`
+            }
+
+            if (typeof navigationTiming.responseStart === 'number' && typeof navigationTiming.requestStart === 'number') {
+              perfData['Request'] = `${navigationTiming.responseStart - navigationTiming.requestStart}ms`
+            }
+
+            if (typeof navigationTiming.responseEnd === 'number' && typeof navigationTiming.responseStart === 'number') {
+              perfData['Response'] = `${navigationTiming.responseEnd - navigationTiming.responseStart}ms`
+            }
+
+            if (typeof navigationTiming.domComplete === 'number' && typeof navigationTiming.domLoading === 'number') {
+              perfData['DOM Processing'] = `${navigationTiming.domComplete - navigationTiming.domLoading}ms`
+            }
+
+            if (typeof navigationTiming.loadEventEnd === 'number' && typeof navigationTiming.navigationStart === 'number') {
+              perfData['Total Load Time'] = `${navigationTiming.loadEventEnd - navigationTiming.navigationStart}ms`
+            }
+
+            if (Object.keys(perfData).length > 0) {
+              logger.info('Page Load Performance', perfData)
+            }
+          }
+        } catch (error) {
+          // Silently handle performance API errors
+          if (process.env.NODE_ENV === 'development') {
+            logger.warn('Performance navigation timing not available', { error })
+          }
         }
       })
 

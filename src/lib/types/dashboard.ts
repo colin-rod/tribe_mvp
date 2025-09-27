@@ -30,6 +30,8 @@ export interface UpdateChildInfo {
  */
 export interface UpdateCardData {
   id: string
+  parent_id: string
+  child_id: string
   content: string
   contentPreview: string
   child: UpdateChildInfo
@@ -39,6 +41,13 @@ export interface UpdateCardData {
   hasUnreadResponses: boolean
   lastResponseAt?: Date
   distributionStatus: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
+  media_urls: string[]
+  milestone_type?: string
+  ai_analysis: Record<string, unknown>
+  suggested_recipients: string[]
+  confirmed_recipients: string[]
+  scheduled_for?: string
+  sent_at?: string
 }
 
 /**

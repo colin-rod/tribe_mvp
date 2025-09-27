@@ -98,7 +98,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
         async (payload: RealtimePostgresChangesPayload<DeliveryJobRow>) => {
           logger.info('Delivery job update:', { data: payload })
 
-          if (payload.eventType === 'INSERT') {
+          if (payload.eventType === 'INSERT' && payload.new?.id) {
             // Fetch the new job with recipient details
             const { data } = await supabase
               .from('delivery_jobs')
@@ -121,19 +121,19 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
                 return updated
               })
             }
-          } else if (payload.eventType === 'UPDATE') {
+          } else if (payload.eventType === 'UPDATE' && payload.new?.id) {
             setJobs(prev => {
               const updated = prev.map(job =>
-                job.id === payload.new.id
+                job.id === payload.new!.id
                   ? { ...job, ...payload.new }
                   : job
               )
               onStatusChange?.(updated)
               return updated
             })
-          } else if (payload.eventType === 'DELETE') {
+          } else if (payload.eventType === 'DELETE' && payload.old?.id) {
             setJobs(prev => {
-              const updated = prev.filter(job => job.id !== payload.old.id)
+              const updated = prev.filter(job => job.id !== payload.old!.id)
               onStatusChange?.(updated)
               return updated
             })
