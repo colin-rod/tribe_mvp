@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
-import { fn } from '@storybook/addon-actions'
 import { EnvelopeIcon, UserIcon, MagnifyingGlassIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 import { Input } from './Input'

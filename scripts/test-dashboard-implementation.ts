@@ -59,7 +59,14 @@ const createClient = (url: string, key: string): SupabaseClient<Database> => {
   }
 
   return {
-    from: () => mockBuilder,
+    from: (table: string) => ({
+      ...mockBuilder,
+      insert: (values: any) => ({
+        ...mockBuilder,
+        single: () => Promise.resolve({ data: { id: 'test-id', ...values }, error: null })
+      }),
+      select: (columns?: string) => mockBuilder,
+    }),
     rpc: (functionName: string, params?: any) => {
       // Return different mock data based on function name
       switch (functionName) {
@@ -139,7 +146,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 
 // Create admin client for testing
-const adminClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 interface TestResult {
   name: string
@@ -190,13 +197,13 @@ class DashboardTester {
       this.testUserId = user.user.id
 
       // Create test child
-      const { data: child, error: childError } = await adminClient
+      const { data: child, error: childError } = await (adminClient as any)
         .from('children')
         .insert({
           parent_id: this.testUserId,
           name: 'Test Child',
           birth_date: '2023-01-01'
-        } as Database['public']['Tables']['children']['Insert'])
+        })
         .select()
         .single()
 
@@ -204,7 +211,7 @@ class DashboardTester {
       this.testChildId = child.id
 
       // Create test update
-      const { data: update, error: updateError } = await adminClient
+      const { data: update, error: updateError } = await (adminClient as any)
         .from('updates')
         .insert({
           parent_id: this.testUserId,
@@ -212,7 +219,7 @@ class DashboardTester {
           content: 'Test update for dashboard',
           milestone_type: 'first_smile',
           distribution_status: 'sent'
-        } as Database['public']['Tables']['updates']['Insert'])
+        })
         .select()
         .single()
 
@@ -231,7 +238,7 @@ class DashboardTester {
 
     try {
       // Test that new columns exist
-      const { data: columns } = await adminClient.rpc('sql', {
+      const { data: columns } = await (adminClient as any).rpc('sql', {
         query: `
           SELECT column_name, data_type
           FROM information_schema.columns
@@ -239,7 +246,7 @@ class DashboardTester {
           AND column_name IN ('like_count', 'comment_count', 'response_count', 'view_count', 'search_vector')
           ORDER BY column_name;
         `
-      } as any)
+      })
 
       const expectedColumns = ['like_count', 'comment_count', 'response_count', 'view_count', 'search_vector']
       const actualColumns = columns?.map((col: any) => col.column_name) || []
@@ -251,7 +258,7 @@ class DashboardTester {
       }
 
       // Test that new tables exist
-      const { data: tables } = await adminClient.rpc('sql', {
+      const { data: tables } = await (adminClient as any).rpc('sql', {
         query: `
           SELECT table_name
           FROM information_schema.tables
@@ -259,7 +266,7 @@ class DashboardTester {
           AND table_name IN ('likes', 'comments')
           ORDER BY table_name;
         `
-      } as any)
+      })
 
       const expectedTables = ['comments', 'likes']
       const actualTables = tables?.map((table: any) => table.table_name) || []
@@ -280,10 +287,10 @@ class DashboardTester {
 
     // Test get_dashboard_updates function
     try {
-      const { data, error } = await adminClient.rpc('get_dashboard_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 10
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       if (error) throw error
 
@@ -297,9 +304,9 @@ class DashboardTester {
 
     // Test get_dashboard_stats function
     try {
-      const { data, error } = await adminClient.rpc('get_dashboard_stats', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_stats', {
         p_parent_id: this.testUserId!
-      } as Database['public']['Functions']['get_dashboard_stats']['Args'])
+      })
 
       if (error) throw error
 
@@ -315,10 +322,10 @@ class DashboardTester {
 
     // Test get_timeline_updates function
     try {
-      const { data, error } = await adminClient.rpc('get_timeline_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_timeline_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 10
-      } as Database['public']['Functions']['get_timeline_updates']['Args'])
+      })
 
       if (error) throw error
 
@@ -342,9 +349,9 @@ class DashboardTester {
       if (userError) throw userError
 
       // Test that other user cannot access first user's dashboard data
-      const { data, error } = await adminClient.rpc('get_dashboard_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: otherUser.user.id
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       // Should return empty array, not an error (RLS working correctly)
       if (error) {
@@ -363,9 +370,9 @@ class DashboardTester {
 
     // Test function-level security
     try {
-      const { error } = await adminClient.rpc('get_dashboard_updates', {
+      const { error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: 'invalid-uuid'
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       // Should handle invalid UUID gracefully
       if (error && !error.message.includes('invalid input syntax')) {
@@ -383,10 +390,10 @@ class DashboardTester {
 
     // Test toggle like functionality
     try {
-      const { data: likeResult, error: likeError } = await adminClient.rpc('toggle_update_like', {
+      const { data: likeResult, error: likeError } = await (adminClient as any).rpc('toggle_update_like', {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!
-      } as Database['public']['Functions']['toggle_update_like']['Args'])
+      })
 
       if (likeError) throw likeError
 
@@ -403,11 +410,11 @@ class DashboardTester {
     // Test add comment functionality
     try {
       const testComment = 'This is a test comment'
-      const { data: commentResult, error: commentError } = await adminClient.rpc('add_update_comment', {
+      const { data: commentResult, error: commentError } = await (adminClient as any).rpc('add_update_comment', {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!,
         p_content: testComment
-      } as Database['public']['Functions']['add_update_comment']['Args'])
+      })
 
       if (commentError) throw commentError
 
@@ -423,10 +430,10 @@ class DashboardTester {
 
     // Test view count increment
     try {
-      const { error } = await adminClient.rpc('increment_update_view_count', {
+      const { error } = await (adminClient as any).rpc('increment_update_view_count', {
         p_update_id: this.testUpdateId!,
         p_parent_id: this.testUserId!
-      } as Database['public']['Functions']['increment_update_view_count']['Args'])
+      })
 
       if (error) throw error
 
@@ -452,10 +459,10 @@ class DashboardTester {
 
     // Test full-text search
     try {
-      const { data, error } = await adminClient.rpc('get_dashboard_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_search_query: 'Test update'
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       if (error) throw error
 
@@ -474,10 +481,10 @@ class DashboardTester {
 
     // Test milestone filter
     try {
-      const { data, error } = await adminClient.rpc('get_dashboard_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_milestone_types: ['first_smile']
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       if (error) throw error
 
@@ -502,10 +509,10 @@ class DashboardTester {
     try {
       const startTime = Date.now()
 
-      const { data, error } = await adminClient.rpc('get_dashboard_updates', {
+      const { data, error } = await (adminClient as any).rpc('get_dashboard_updates', {
         p_parent_id: this.testUserId!,
         p_limit: 100
-      } as Database['public']['Functions']['get_dashboard_updates']['Args'])
+      })
 
       const queryTime = Date.now() - startTime
 
@@ -523,12 +530,12 @@ class DashboardTester {
 
     // Test index usage
     try {
-      const { data, error } = await adminClient.rpc('sql', {
+      const { data, error } = await (adminClient as any).rpc('sql', {
         query: `
           EXPLAIN (FORMAT JSON)
           SELECT * FROM get_dashboard_updates('${this.testUserId}', NULL, NULL, NULL, NULL, NULL, NULL, 20, 0, NULL, NULL);
         `
-      } as any)
+      })
 
       if (error) throw error
 

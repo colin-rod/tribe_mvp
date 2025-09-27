@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
-import { fn } from '@storybook/addon-actions'
 
 import ChildCard from './ChildCard'
 import type { Child } from '@/lib/children'

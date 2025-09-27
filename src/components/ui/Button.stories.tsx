@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
-import { fn } from '@storybook/addon-actions'
 import { HeartIcon, PlusIcon } from '@heroicons/react/24/outline'
 
 import { Button } from './Button'

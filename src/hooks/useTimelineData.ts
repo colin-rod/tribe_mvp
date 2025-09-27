@@ -114,16 +114,16 @@ export function useTimelineData({
         if (searchQuery) {
           const searchLower = searchQuery.toLowerCase()
           const matchesText =
-            update.title.toLowerCase().includes(searchLower) ||
-            (update.excerpt && update.excerpt.toLowerCase().includes(searchLower)) ||
-            (update.tags && update.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+            update.content.toLowerCase().includes(searchLower) ||
+            (update.contentPreview && update.contentPreview.toLowerCase().includes(searchLower)) ||
+            (update.milestone_type && update.milestone_type.toLowerCase().includes(searchLower))
 
           if (!matchesText) return false
         }
 
         // Content type filter
         if (searchFilters.contentType && searchFilters.contentType !== 'all') {
-          if (update.type !== searchFilters.contentType) return false
+          if (update.milestone_type !== searchFilters.contentType) return false
         }
 
         // Date range filter
@@ -138,17 +138,16 @@ export function useTimelineData({
         }
 
         // Child filter
-        if (searchFilters.childId && update.childId !== searchFilters.childId) {
+        if (searchFilters.childId && update.child_id !== searchFilters.childId) {
           return false
         }
 
-        // Tags filter
+        // Milestone filter (replacing tags)
         if (searchFilters.tags?.length) {
-          const updateTags = update.tags || []
-          const hasMatchingTag = searchFilters.tags.some(tag =>
-            updateTags.includes(tag)
+          const hasMatchingMilestone = searchFilters.tags.some(tag =>
+            update.milestone_type === tag
           )
-          if (!hasMatchingTag) return false
+          if (!hasMatchingMilestone) return false
         }
 
         return true

@@ -115,7 +115,6 @@ const TimelineItem = memo<TimelineItemProps>(function TimelineItem({
           compact={compact}
           showActions={true}
           showMetadata={true}
-          enableProgressiveImages={enableProgressiveImages}
         />
       </div>
     </div>
@@ -231,22 +230,20 @@ const Timeline = memo<TimelineProps>(function Timeline({
       group.updates.map(update => ({
         id: update.id,
         child: {
-          id: update.childId || 'default',
-          name: update.childName || 'Little one',
-          avatar: update.childAvatar,
-          age: update.childAge || '0 months'
+          id: update.child_id || 'default',
+          name: update.child.name || 'Little one',
+          avatar: update.child.avatar,
+          age: update.child.age || '0 months'
         },
-        content: update.title,
-        contentPreview: update.excerpt || update.title,
+        content: update.content,
+        contentPreview: update.contentPreview,
         createdAt: new Date(update.createdAt),
         timeAgo: formatTimeAgo(new Date(update.createdAt)),
-        mediaUrls: update.media?.map(m => m.url) || [],
-        mediaCount: update.media?.length || 0,
-        responseCount: update.stats?.responses || 0,
-        hasUnreadResponses: false, // TODO: implement unread responses
-        distributionStatus: update.deliveryStatus === 'sent' ? 'sent' as const :
-                          update.deliveryStatus === 'pending' ? 'sending' as const :
-                          update.deliveryStatus === 'failed' ? 'failed' as const : 'draft' as const,
+        mediaUrls: update.media_urls || [],
+        mediaCount: update.media_urls?.length || 0,
+        responseCount: update.responseCount || 0,
+        hasUnreadResponses: update.hasUnreadResponses || false,
+        distributionStatus: update.distributionStatus,
         isLiked: false, // TODO: implement likes
         likeCount: 0 // TODO: implement like count
       }))
@@ -318,14 +315,14 @@ const Timeline = memo<TimelineProps>(function Timeline({
 
     // Estimate height based on content
     const baseHeight = compact ? 120 : 160
-    const hasMedia = item.media?.length > 0
-    const hasLongText = item.excerpt?.length > 100
-    const hasTags = item.tags?.length > 0
+    const hasMedia = item.media_urls?.length > 0
+    const hasLongText = item.contentPreview?.length > 100
+    const hasMilestone = item.milestone_type
 
     let height = baseHeight
     if (hasMedia) height += compact ? 128 : 192
     if (hasLongText) height += 40
-    if (hasTags) height += 30
+    if (hasMilestone) height += 30
 
     return Math.min(height, 400) // Cap maximum height
   }, [flattenedItems, compact])

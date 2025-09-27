@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
-import { fn } from '@storybook/addon-actions'
 
 import UpdateCard from './UpdateCard'
 import type { UpdateCardData } from '@/lib/types/dashboard'

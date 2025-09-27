@@ -46,12 +46,12 @@ export function PerformanceProvider() {
               perfData['Response'] = `${navigationTiming.responseEnd - navigationTiming.responseStart}ms`
             }
 
-            if (typeof navigationTiming.domComplete === 'number' && typeof navigationTiming.domLoading === 'number') {
-              perfData['DOM Processing'] = `${navigationTiming.domComplete - navigationTiming.domLoading}ms`
+            if (typeof navigationTiming.domComplete === 'number' && typeof navigationTiming.domInteractive === 'number') {
+              perfData['DOM Processing'] = `${navigationTiming.domComplete - navigationTiming.domInteractive}ms`
             }
 
-            if (typeof navigationTiming.loadEventEnd === 'number' && typeof navigationTiming.navigationStart === 'number') {
-              perfData['Total Load Time'] = `${navigationTiming.loadEventEnd - navigationTiming.navigationStart}ms`
+            if (typeof navigationTiming.loadEventEnd === 'number' && typeof navigationTiming.fetchStart === 'number') {
+              perfData['Total Load Time'] = `${navigationTiming.loadEventEnd - navigationTiming.fetchStart}ms`
             }
 
             if (Object.keys(perfData).length > 0) {
