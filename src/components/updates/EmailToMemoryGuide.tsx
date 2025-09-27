@@ -88,7 +88,7 @@ export function EmailToMemoryGuide({ domain = 'colinrodrigues.com' }: EmailToMem
             Pro tip: Specify which child
           </p>
           <p className="text-xs text-blue-700">
-            Use subject line: <code>"Memory for [Child Name]: [description]"</code>
+            Use subject line: <code>{'"Memory for [Child Name]: [description]"'}</code>
           </p>
         </div>
 
@@ -98,8 +98,8 @@ export function EmailToMemoryGuide({ domain = 'colinrodrigues.com' }: EmailToMem
             Example
           </p>
           <p className="text-xs text-green-700">
-            Subject: <code>"Memory for Emma: First steps today!"</code><br />
-            Body: "She walked from the couch to the coffee table!"
+            Subject: <code>{'"Memory for Emma: First steps today!"'}</code><br />
+            Body: {"\"She walked from the couch to the coffee table!\""}
           </p>
         </div>
       </div>

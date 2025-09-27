@@ -3,6 +3,30 @@ import { createLogger } from './logger'
 
 const logger = createLogger('env-validation')
 
+interface PublicRuntimeConfig {
+  [key: string]: string | undefined
+}
+
+interface NextData {
+  props?: {
+    pageProps?: {
+      publicRuntimeConfig?: PublicRuntimeConfig
+    }
+  }
+}
+
+interface ExtendedWindow extends Window {
+  __NEXT_DATA__?: NextData
+  __ENV__?: Record<string, string | undefined>
+}
+
+function getExtendedWindow(): ExtendedWindow | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  return window as ExtendedWindow
+}
+
 /**
  * Helper function to get expected Zod field type for detailed error logging
  */
@@ -272,9 +296,10 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     } else {
       // Strategy 2: Next.js publicRuntimeConfig (production fallback)
       let runtimeConfigValue: string | undefined
-      if (typeof window !== 'undefined') {
+      const extendedWindow = getExtendedWindow()
+      if (extendedWindow) {
         try {
-          const publicRuntimeConfig = (window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+          const publicRuntimeConfig = extendedWindow.__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
           runtimeConfigValue = publicRuntimeConfig?.[key]
           strategies.push({
             strategy: 2,
@@ -313,9 +338,9 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
       }
 
       // Strategy 3: Check if variables are embedded in window object (Vercel deployment)
-      if (!finalValue && typeof window !== 'undefined') {
+      if (!finalValue && extendedWindow) {
         try {
-          const env = (window as any).__ENV__
+          const env = extendedWindow.__ENV__
           const windowEnvValue = env?.[key]
           strategies.push({
             strategy: 3,
@@ -349,7 +374,7 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
           strategy: 3,
           name: 'window.__ENV__',
           attempted: false,
-          reason: typeof window === 'undefined' ? 'window not available (SSR/build context)' : 'already found value'
+          reason: extendedWindow ? 'already found value' : 'window not available (SSR/build context)'
         })
       }
 
@@ -473,6 +498,7 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     const result = clientSchema.safeParse(clientEnv)
 
     if (!result.success) {
+      const extendedWindowForLog = getExtendedWindow()
       const errors = result.error.errors.map(err => ({
         path: err.path.join('.'),
         message: err.message,
@@ -498,8 +524,8 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
         environmentAnalysis: {
           processEnvKeys: typeof process !== 'undefined' ? Object.keys(process.env).length : 0,
           nextPublicVarsInProcess: typeof process !== 'undefined' ? Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')).length : 0,
-          windowEnvAvailable: typeof window !== 'undefined' && !!(window as any).__ENV__,
-          runtimeConfigAvailable: typeof window !== 'undefined' && !!(window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig
+          windowEnvAvailable: extendedWindowForLog ? !!extendedWindowForLog.__ENV__ : false,
+          runtimeConfigAvailable: extendedWindowForLog ? !!extendedWindowForLog.__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig : false
         },
         retrievedValues: {
           supabaseUrl: {
@@ -900,14 +926,15 @@ export function debugEnvironmentState(): void {
   logger.info('5. Feature Flags', features)
 
   // 6. Runtime Context Information
+  const extendedWindowInfo = getExtendedWindow()
   const runtimeInfo = {
     timestamp,
     nodeVersion: typeof process !== 'undefined' ? process.version : 'unknown',
     platform: typeof process !== 'undefined' ? process.platform : 'unknown',
-    isNextjs: typeof window !== 'undefined' ? !!(window as any).__NEXT_DATA__ : 'unknown',
-    hasWindowEnv: typeof window !== 'undefined' ? !!(window as any).__ENV__ : 'N/A',
-    hasRuntimeConfig: typeof window !== 'undefined' ?
-      !!(window as any).__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig : 'N/A'
+    isNextjs: extendedWindowInfo ? !!extendedWindowInfo.__NEXT_DATA__ : 'unknown',
+    hasWindowEnv: extendedWindowInfo ? !!extendedWindowInfo.__ENV__ : 'N/A',
+    hasRuntimeConfig: extendedWindowInfo ?
+      !!extendedWindowInfo.__NEXT_DATA__?.props?.pageProps?.publicRuntimeConfig : 'N/A'
   }
 
   logger.info('6. Runtime Context', runtimeInfo)

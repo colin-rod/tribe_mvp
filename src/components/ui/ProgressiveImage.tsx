@@ -92,6 +92,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const preloadRef = useRef<HTMLImageElement | null>(null)
   const retryTimeoutRef = useRef<NodeJS.Timeout>()
+  const retryLoadRef = useRef<() => void>(() => {})
 
   const cache = getTimelineCache()
 
@@ -122,7 +123,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
     // Add retina versions if enabled
     if (enableRetina && window.devicePixelRatio > 1) {
-      sources.fullsize = originalSrc.replace /\.([^.]+)$/, `_2x.$1`)
+      sources.fullsize = originalSrc.replace(/\.([^.]+)$/, '_2x.$1')
     }
 
     return sources
@@ -217,30 +218,6 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   }, [cache, cacheKey, quality])
 
   // Retry loading with exponential backoff
-  const retryLoad = useCallback(() => {
-    if (imageState.retryCount >= MAX_RETRY_ATTEMPTS) {
-      logger.error('Max retry attempts reached for image:', src)
-      setImageState(prev => ({ ...prev, hasError: true, isLoading: false }))
-      onLoadingStateChange?.(false)
-      return
-    }
-
-    const delay = RETRY_DELAYS[imageState.retryCount] || 4000
-
-    retryTimeoutRef.current = setTimeout(() => {
-      setImageState(prev => ({
-        ...prev,
-        retryCount: prev.retryCount + 1,
-        hasError: false,
-        isLoading: true
-      }))
-      onLoadingStateChange?.(true)
-      loadImage()
-    }, delay)
-
-    logger.info(`Retrying image load in ${delay}ms (attempt ${imageState.retryCount + 1}/${MAX_RETRY_ATTEMPTS})`)
-  }, [imageState.retryCount, src, onLoadingStateChange])
-
   // Progressive loading implementation
   const loadImage = useCallback(async () => {
     if (!src) return
@@ -284,9 +261,37 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
       onLoadingStateChange?.(false)
 
       // Retry loading
-      retryLoad()
+      retryLoadRef.current()
     }
-  }, [src, generateOptimizedSources, getBestImageSource, enableProgressiveEnhancement, imageState.loadedSources, loadImageWithCache, onLoadingStateChange, retryLoad])
+  }, [src, generateOptimizedSources, getBestImageSource, enableProgressiveEnhancement, imageState.loadedSources, loadImageWithCache, onLoadingStateChange])
+
+  const retryLoad = useCallback(() => {
+    if (imageState.retryCount >= MAX_RETRY_ATTEMPTS) {
+      logger.error('Max retry attempts reached for image:', src)
+      setImageState(prev => ({ ...prev, hasError: true, isLoading: false }))
+      onLoadingStateChange?.(false)
+      return
+    }
+
+    const delay = RETRY_DELAYS[imageState.retryCount] || 4000
+
+    retryTimeoutRef.current = setTimeout(() => {
+      setImageState(prev => ({
+        ...prev,
+        retryCount: prev.retryCount + 1,
+        hasError: false,
+        isLoading: true
+      }))
+      onLoadingStateChange?.(true)
+      void loadImage()
+    }, delay)
+
+    logger.info(`Retrying image load in ${delay}ms (attempt ${imageState.retryCount + 1}/${MAX_RETRY_ATTEMPTS})`)
+  }, [imageState.retryCount, src, onLoadingStateChange, loadImage])
+
+  useEffect(() => {
+    retryLoadRef.current = retryLoad
+  }, [retryLoad])
 
   // Handle image load success
   const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -328,13 +333,15 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
   // Cleanup
   useEffect(() => {
+    const preloadedImage = preloadRef.current
+
     return () => {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current)
       }
-      if (preloadRef.current) {
-        preloadRef.current.onload = null
-        preloadRef.current.onerror = null
+      if (preloadedImage) {
+        preloadedImage.onload = null
+        preloadedImage.onerror = null
       }
     }
   }, [])

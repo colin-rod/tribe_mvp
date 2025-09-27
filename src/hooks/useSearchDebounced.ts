@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
@@ -106,6 +106,7 @@ export function useSearchDebounced({
     totalQueries: 0,
     lastSearchTime: undefined as Date | undefined
   })
+  const initializedRef = useRef(false)
 
   // Update URL with search parameters
   const updateUrl = useCallback((searchQuery: string, searchFilters: SearchFilters) => {
@@ -237,26 +238,26 @@ export function useSearchDebounced({
 
   // Initialize state from URL on mount
   useEffect(() => {
-    if (enableUrlPersistence) {
-      const { query: initialUrlQuery, filters: initialUrlFilters } = initializeFromUrl()
-
-      if (initialUrlQuery !== query) {
-        setQuery(initialUrlQuery)
-        setDebouncedQuery(initialUrlQuery)
-      }
-
-      if (JSON.stringify(initialUrlFilters) !== JSON.stringify(filters)) {
-        setFilters(initialUrlFilters)
-      }
-
-      // Trigger initial search if there are URL parameters
-      if (initialUrlQuery || Object.keys(initialUrlFilters).length > 0) {
-        if (onSearch) {
-          onSearch(initialUrlQuery, initialUrlFilters)
-        }
-      }
+    if (!enableUrlPersistence || initializedRef.current) {
+      return
     }
-  }, []) // Only run on mount
+
+    initializedRef.current = true
+    const { query: initialUrlQuery, filters: initialUrlFilters } = initializeFromUrl()
+
+    if (initialUrlQuery !== query) {
+      setQuery(initialUrlQuery)
+      setDebouncedQuery(initialUrlQuery)
+    }
+
+    if (JSON.stringify(initialUrlFilters) !== JSON.stringify(filters)) {
+      setFilters(initialUrlFilters)
+    }
+
+    if (onSearch && (initialUrlQuery || Object.keys(initialUrlFilters).length > 0)) {
+      onSearch(initialUrlQuery, initialUrlFilters)
+    }
+  }, [enableUrlPersistence, initializeFromUrl, onSearch, query, filters])
 
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {

@@ -57,8 +57,6 @@ const ItemRenderer = memo(({ index, style, data }: ItemRendererProps) => {
     memoryOptimization = false
   } = data
 
-  const loadMoreTriggerRef = useRef<HTMLDivElement>(null)
-
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: false,
@@ -160,27 +158,30 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
 
     // Track rendering performance
     useEffect(() => {
-      if (enablePerformanceTracking) {
-        const startTime = performance.now()
+      if (!enablePerformanceTracking) {
+        return
+      }
 
-        return () => {
-          const endTime = performance.now()
-          const renderTime = endTime - startTime
+      const startTime = performance.now()
+      const performanceSnapshot = performanceRef.current
 
-          performanceRef.current.renderCount++
-          performanceRef.current.lastRenderTime = renderTime
-          performanceRef.current.averageRenderTime =
-            (performanceRef.current.averageRenderTime * (performanceRef.current.renderCount - 1) + renderTime)
-            / performanceRef.current.renderCount
+      return () => {
+        const endTime = performance.now()
+        const renderTime = endTime - startTime
 
-          if (renderTime > 16) { // > 60fps
-            logger.warn('VirtualScrollContainer slow render detected', {
-              renderTimeMs: Number(renderTime.toFixed(2))
-            })
-          }
+        performanceSnapshot.renderCount += 1
+        performanceSnapshot.lastRenderTime = renderTime
+        performanceSnapshot.averageRenderTime =
+          (performanceSnapshot.averageRenderTime * (performanceSnapshot.renderCount - 1) + renderTime)
+          / performanceSnapshot.renderCount
+
+        if (renderTime > 16) {
+          logger.warn('VirtualScrollContainer slow render detected', {
+            renderTimeMs: Number(renderTime.toFixed(2))
+          })
         }
       }
-    })
+    }, [enablePerformanceTracking])
 
     // Memory optimization: Only keep necessary data in itemData
     const itemData = useMemo(() => ({

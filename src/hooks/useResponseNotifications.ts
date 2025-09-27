@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { PostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
@@ -19,7 +19,7 @@ interface ResponseInsertPayload {
 }
 
 export function useResponseNotifications() {
-  const logger = createLogger('UseResponseNotifications')
+  const loggerRef = useRef(createLogger('UseResponseNotifications'))
   useEffect(() => {
     // Request notification permission if not already granted
     if ('Notification' in window && Notification.permission === 'default') {
@@ -78,7 +78,7 @@ export function useResponseNotifications() {
               }
             }
           } catch (error) {
-            logger.errorWithStack('Error processing response notification:', error as Error)
+            loggerRef.current.errorWithStack('Error processing response notification:', error as Error)
           }
         }
       )

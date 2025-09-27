@@ -1,10 +1,7 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('OnboardingHook')
-
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createChild } from '@/lib/children'
@@ -107,7 +104,7 @@ const SKIPPABLE_STEPS: OnboardingStep[] = [
 ]
 
 export function useOnboarding(): UseOnboardingReturn {
-  const logger = createLogger('UseOnboarding')
+  const loggerRef = useRef(createLogger('UseOnboarding'))
   const router = useRouter()
   const { user } = useAuth()
   const supabase = createClient()
@@ -125,13 +122,6 @@ export function useOnboarding(): UseOnboardingReturn {
   const [data, setData] = useState<OnboardingData>({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Load existing progress on mount
-  useEffect(() => {
-    if (user) {
-      loadProgress()
-    }
-  }, [user])
 
   // Update state when step changes
   useEffect(() => {
@@ -175,12 +165,19 @@ export function useOnboarding(): UseOnboardingReturn {
         }))
       }
     } catch (err) {
-      logger.error('Failed to load onboarding progress:', { error: err })
+      loggerRef.current.error('Failed to load onboarding progress:', { error: err })
       setError('Failed to load progress')
     } finally {
       setIsLoading(false)
     }
   }, [user, supabase, router])
+
+  // Load existing progress when user changes
+  useEffect(() => {
+    if (user) {
+      void loadProgress()
+    }
+  }, [user, loadProgress])
 
   const saveProgress = useCallback(async () => {
     if (!user) return
@@ -196,10 +193,87 @@ export function useOnboarding(): UseOnboardingReturn {
 
       if (error) throw error
     } catch (err) {
-      logger.error('Failed to save progress:', { error: err })
+      loggerRef.current.error('Failed to save progress:', { error: err })
       // Don't throw here as it's a background operation
     }
   }, [user, supabase, state.currentStepIndex])
+
+  const completeOnboarding = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Save child data if provided
+      if (data.child && data.child.name && data.child.birth_date) {
+        try {
+          await createChild({
+            name: data.child.name,
+            birth_date: data.child.birth_date,
+            // Note: Profile photo upload would be handled separately
+          })
+        } catch (childError) {
+          loggerRef.current.errorWithStack('Failed to create child:', childError as Error)
+          // Continue with onboarding completion even if child creation fails
+        }
+      }
+
+      // Save recipient data if provided
+      if (data.recipients?.recipients && data.recipients.recipients.length > 0) {
+        try {
+          for (const recipient of data.recipients.recipients) {
+            await createRecipient(recipient)
+          }
+        } catch (recipientError) {
+          loggerRef.current.errorWithStack('Failed to create recipients:', recipientError as Error)
+          // Continue with onboarding completion
+        }
+      }
+
+      // Update profile notifications if provided
+      if (data.profile) {
+        try {
+          const notificationPrefs = {
+            email: data.profile.emailNotifications,
+            sms: data.profile.smsNotifications,
+            push: data.profile.pushNotifications,
+            timezone: data.profile.timezone
+          }
+
+          await supabase
+            .from('profiles')
+            .update({
+              name: data.profile.name,
+              notification_preferences: notificationPrefs,
+              onboarding_completed: true,
+              onboarding_step: STEP_ORDER.length,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id)
+        } catch (profileError) {
+          loggerRef.current.errorWithStack('Failed to update profile:', profileError as Error)
+        }
+      } else {
+        // Just mark onboarding as completed
+        await supabase
+          .from('profiles')
+          .update({
+            onboarding_completed: true,
+            onboarding_step: STEP_ORDER.length,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id)
+      }
+
+      // Navigate to dashboard
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to complete onboarding')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, data, supabase, router])
 
   const nextStep = useCallback(async () => {
     const currentIndex = state.currentStepIndex
@@ -225,7 +299,7 @@ export function useOnboarding(): UseOnboardingReturn {
       // Complete onboarding
       await completeOnboarding()
     }
-  }, [state, saveProgress])
+  }, [state, saveProgress, completeOnboarding])
 
   const previousStep = useCallback(() => {
     const currentIndex = state.currentStepIndex
@@ -303,83 +377,6 @@ export function useOnboarding(): UseOnboardingReturn {
     }))
     setError(null)
   }, [])
-
-  const completeOnboarding = useCallback(async () => {
-    if (!user) return
-
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      // Save child data if provided
-      if (data.child && data.child.name && data.child.birth_date) {
-        try {
-          await createChild({
-            name: data.child.name,
-            birth_date: data.child.birth_date,
-            // Note: Profile photo upload would be handled separately
-          })
-        } catch (childError) {
-          logger.errorWithStack('Failed to create child:', childError as Error)
-          // Continue with onboarding completion even if child creation fails
-        }
-      }
-
-      // Save recipient data if provided
-      if (data.recipients?.recipients && data.recipients.recipients.length > 0) {
-        try {
-          for (const recipient of data.recipients.recipients) {
-            await createRecipient(recipient)
-          }
-        } catch (recipientError) {
-          logger.errorWithStack('Failed to create recipients:', recipientError as Error)
-          // Continue with onboarding completion
-        }
-      }
-
-      // Update profile notifications if provided
-      if (data.profile) {
-        try {
-          const notificationPrefs = {
-            email: data.profile.emailNotifications,
-            sms: data.profile.smsNotifications,
-            push: data.profile.pushNotifications,
-            timezone: data.profile.timezone
-          }
-
-          await supabase
-            .from('profiles')
-            .update({
-              name: data.profile.name,
-              notification_preferences: notificationPrefs,
-              onboarding_completed: true,
-              onboarding_step: STEP_ORDER.length,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user.id)
-        } catch (profileError) {
-          logger.errorWithStack('Failed to update profile:', profileError as Error)
-        }
-      } else {
-        // Just mark onboarding as completed
-        await supabase
-          .from('profiles')
-          .update({
-            onboarding_completed: true,
-            onboarding_step: STEP_ORDER.length,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id)
-      }
-
-      // Navigate to dashboard
-      router.push('/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete onboarding')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user, data, supabase, router])
 
   const resetOnboarding = useCallback(async () => {
     if (!user) return

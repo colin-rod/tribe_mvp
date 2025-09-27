@@ -142,7 +142,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
             No Recent Activity
           </h3>
           <p className="text-sm text-gray-600 mb-6">
-            You haven't created any updates recently. Share your first update to get started!
+            {"You haven't created any updates recently. Share your first update to get started!"}
           </p>
           <Button onClick={handleCreateUpdate}>
             Create Your First Update

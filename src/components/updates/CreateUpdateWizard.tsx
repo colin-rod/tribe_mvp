@@ -164,7 +164,7 @@ export default function CreateUpdateWizard({
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Create Update</h1>
           <p className="mt-2 text-gray-600">
-            Share what's happening with your little one
+            {"Share what's happening with your little one"}
           </p>
         </div>
         <button

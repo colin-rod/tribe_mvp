@@ -77,7 +77,7 @@ export default function MediaUpload({
     e.dataTransfer.effectAllowed = 'move'
   }, [])
 
-  const handleDragOverItem = useCallback((e: React.DragEvent, index: number) => {
+  const handleDragOverItem = useCallback((e: React.DragEvent, _index: number) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
   }, [])

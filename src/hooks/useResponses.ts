@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { PostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
@@ -22,7 +22,7 @@ export interface Response {
 type ResponseRow = Omit<Response, 'recipients'>
 
 export function useResponses(updateId: string) {
-  const logger = createLogger('UseResponses')
+  const loggerRef = useRef(createLogger('UseResponses'))
   const [responses, setResponses] = useState<Response[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +49,7 @@ export function useResponses(updateId: string) {
           .order('received_at', { ascending: true })
 
         if (fetchError) {
-          logger.errorWithStack('Error fetching responses:', fetchError as Error)
+          loggerRef.current.errorWithStack('Error fetching responses:', fetchError as Error)
           if (mounted) {
             setError('Failed to load responses')
           }
@@ -61,7 +61,7 @@ export function useResponses(updateId: string) {
           setLoading(false)
         }
       } catch (err) {
-        logger.error('Unexpected error:', { error: err })
+        loggerRef.current.error('Unexpected error:', { error: err })
         if (mounted) {
           setError('An unexpected error occurred')
           setLoading(false)
@@ -105,7 +105,7 @@ export function useResponses(updateId: string) {
           filter: `update_id=eq.${updateId}`
         },
         (payload: PostgresChangesPayload<ResponseRow>) => {
-          logger.info('New response received:', { data: payload })
+          loggerRef.current.info('New response received:', { data: payload })
           // Fetch complete response data with recipient info
           fetchNewResponse(payload.new.id)
           setNewResponseCount(prev => prev + 1)

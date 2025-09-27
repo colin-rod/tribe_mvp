@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createLogger } from '@/lib/logger'
 import { trackDashboardPerformance, trackCustomDashboardEvent } from '@/lib/analytics/dashboard-analytics'
+import type { MetricType } from '@/lib/analytics/dashboard-analytics'
 
 const logger = createLogger('PerformanceMonitoring')
 
@@ -37,14 +38,7 @@ export interface UsePerformanceMonitoringOptions {
 
 export interface UsePerformanceMonitoringReturn {
   isMonitoring: boolean
-  currentMetrics: {
-    timelineRenderTime: number
-    searchResponseTime: number
-    imageLoadTime: number
-    memoryUsage: number
-    fps: number
-    cacheHitRate: number
-  }
+  currentMetrics: PerformanceMetrics
   alerts: PerformanceAlert[]
   performanceScore: number
   recommendations: string[]
@@ -55,7 +49,56 @@ export interface UsePerformanceMonitoringReturn {
   measureSearchResponse: () => () => void
   measureImageLoad: (imageUrl: string) => () => void
   updateCacheStats: (hits: number, misses: number) => void
-  getPerformanceReport: () => any
+  getPerformanceReport: () => PerformanceReport
+}
+
+interface PerformanceMetrics {
+  timelineRenderTime: number
+  searchResponseTime: number
+  imageLoadTime: number
+  memoryUsage: number
+  fps: number
+  cacheHitRate: number
+}
+
+interface CacheStats {
+  hits: number
+  misses: number
+}
+
+interface FpsCounter {
+  frames: number
+  lastTime: number
+  fps: number
+}
+
+interface PerformanceReport {
+  timestamp: string
+  metrics: PerformanceMetrics
+  thresholds: PerformanceThresholds
+  alerts: number
+  score: number
+  recommendations: string[]
+  cacheStats: CacheStats
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number
+  }
+}
+
+interface PerformanceMonitoringWindow extends Window {
+  __performanceMonitoringCleanup?: () => void
+}
+
+const METRIC_TYPE_MAP: Record<keyof PerformanceMetrics, MetricType> = {
+  timelineRenderTime: 'timeline_render_time',
+  searchResponseTime: 'search_response_time',
+  imageLoadTime: 'image_load_time',
+  memoryUsage: 'memory_usage',
+  fps: 'virtual_scroll_fps',
+  cacheHitRate: 'cache_hit_rate'
 }
 
 const DEFAULT_THRESHOLDS: PerformanceThresholds = {
@@ -79,7 +122,7 @@ export function usePerformanceMonitoring({
 }: UsePerformanceMonitoringOptions = {}): UsePerformanceMonitoringReturn {
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [alerts, setAlerts] = useState<PerformanceAlert[]>([])
-  const [currentMetrics, setCurrentMetrics] = useState({
+  const [currentMetrics, setCurrentMetrics] = useState<PerformanceMetrics>({
     timelineRenderTime: 0,
     searchResponseTime: 0,
     imageLoadTime: 0,
@@ -88,11 +131,11 @@ export function usePerformanceMonitoring({
     cacheHitRate: 0
   })
 
-  const thresholdsRef = useRef({ ...DEFAULT_THRESHOLDS, ...thresholds })
-  const metricsRef = useRef(currentMetrics)
+  const thresholdsRef = useRef<PerformanceThresholds>({ ...DEFAULT_THRESHOLDS, ...thresholds })
+  const metricsRef = useRef<PerformanceMetrics>(currentMetrics)
   const performanceObserverRef = useRef<PerformanceObserver | null>(null)
-  const fpsCounterRef = useRef({ frames: 0, lastTime: 0, fps: 0 })
-  const cacheStatsRef = useRef({ hits: 0, misses: 0 })
+  const fpsCounterRef = useRef<FpsCounter>({ frames: 0, lastTime: 0, fps: 0 })
+  const cacheStatsRef = useRef<CacheStats>({ hits: 0, misses: 0 })
 
   // Update refs when state changes
   useEffect(() => {
@@ -170,7 +213,7 @@ export function usePerformanceMonitoring({
   }, [createAlert, addAlert])
 
   // Update metric and check threshold
-  const updateMetric = useCallback((metric: keyof typeof currentMetrics, value: number, component?: string) => {
+  const updateMetric = useCallback((metric: keyof PerformanceMetrics, value: number, component?: string) => {
     setCurrentMetrics(prev => ({ ...prev, [metric]: value }))
 
     if (enableAlerts) {
@@ -178,10 +221,11 @@ export function usePerformanceMonitoring({
     }
 
     // Track performance metric
+    const metricType = METRIC_TYPE_MAP[metric]
     trackDashboardPerformance({
-      type: metric as any,
+      type: metricType,
       value,
-      metadata: { component }
+      ...(component ? { metadata: { component } } : {})
     })
   }, [enableAlerts, checkThreshold])
 
@@ -210,10 +254,10 @@ export function usePerformanceMonitoring({
 
   // Memory monitoring
   const measureMemory = useCallback(() => {
-    if ('memory' in performance) {
-      const memory = (performance as any).memory
-      const memoryUsage = memory.usedJSHeapSize
-      updateMetric('memoryUsage', memoryUsage)
+    const performanceWithMemory = performance as PerformanceWithMemory
+    const usedJSHeapSize = performanceWithMemory.memory?.usedJSHeapSize
+    if (typeof usedJSHeapSize === 'number') {
+      updateMetric('memoryUsage', usedJSHeapSize)
     }
   }, [updateMetric])
 
@@ -318,7 +362,7 @@ export function usePerformanceMonitoring({
       }
 
       // Store cleanup function
-      ;(window as any).__performanceMonitoringCleanup = cleanup
+      ;(window as PerformanceMonitoringWindow).__performanceMonitoringCleanup = cleanup
     }
 
     trackCustomDashboardEvent('performance_monitoring_started', {
@@ -336,10 +380,10 @@ export function usePerformanceMonitoring({
     logger.info('Performance monitoring stopped')
 
     // Execute cleanup
-    const cleanup = (window as any).__performanceMonitoringCleanup
+    const cleanup = (window as PerformanceMonitoringWindow).__performanceMonitoringCleanup
     if (cleanup) {
       cleanup()
-      delete (window as any).__performanceMonitoringCleanup
+      delete (window as PerformanceMonitoringWindow).__performanceMonitoringCleanup
     }
 
     trackCustomDashboardEvent('performance_monitoring_stopped', {})
@@ -434,15 +478,15 @@ export function usePerformanceMonitoring({
   }, [])
 
   // Get performance report
-  const getPerformanceReport = useCallback(() => {
+  const getPerformanceReport = useCallback((): PerformanceReport => {
     return {
       timestamp: new Date().toISOString(),
-      metrics: metricsRef.current,
-      thresholds: thresholdsRef.current,
+      metrics: { ...metricsRef.current },
+      thresholds: { ...thresholdsRef.current },
       alerts: alerts.length,
       score: performanceScore(),
       recommendations: recommendations(),
-      cacheStats: cacheStatsRef.current
+      cacheStats: { ...cacheStatsRef.current }
     }
   }, [alerts.length, performanceScore, recommendations])
 
@@ -510,7 +554,7 @@ function generateAlertMessage(
   return messages[type]
 }
 
-function generateOptimizationSuggestion(metric: string, value: number, threshold: number): string {
+function generateOptimizationSuggestion(metric: string, _value: number, _threshold: number): string {
   const suggestions = {
     timelineRenderTime: 'Consider using React.memo, useMemo, or virtual scrolling to improve render performance',
     searchResponseTime: 'Implement debounced search or move filtering to a Web Worker',

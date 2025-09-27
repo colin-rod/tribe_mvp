@@ -643,7 +643,7 @@ class DashboardFeatureFlags {
     })
 
     // Count flag usage from cache
-    this.evaluationCache.forEach((evaluation, key) => {
+    this.evaluationCache.forEach((evaluation, _key) => {
       const flagId = evaluation.flagId
       stats.flagUsage.set(flagId, (stats.flagUsage.get(flagId) || 0) + 1)
     })

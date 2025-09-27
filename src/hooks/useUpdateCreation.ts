@@ -6,7 +6,7 @@ const logger = createLogger('UseUpdateCreation')
 
 import { useState, useCallback } from 'react'
 import { uploadUpdatePhotos, validateUpdateMediaFiles, generatePreviewUrls, cleanupPreviewUrls } from '@/lib/photo-upload'
-import { createUpdate, updateUpdateAIAnalysis, updateUpdateMediaUrls, updateUpdateRecipients, markUpdateAsSent } from '@/lib/updates'
+import { createUpdate, updateUpdateMediaUrls, updateUpdateRecipients, markUpdateAsSent } from '@/lib/updates'
 import { analyzeUpdate } from '@/lib/ai-analysis'
 import { getChildren } from '@/lib/children'
 import { getAgeInMonths } from '@/lib/age-utils'

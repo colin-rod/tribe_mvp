@@ -45,12 +45,6 @@ export default function UpdatePreview({
     onSchedule?.(scheduledFor)
   }
 
-  const getMinDateTime = () => {
-    const now = new Date()
-    now.setMinutes(now.getMinutes() + 15) // Minimum 15 minutes from now
-    return now.toISOString().slice(0, 16)
-  }
-
   const selectedRecipients = recipients.filter(r =>
     formData.confirmedRecipients?.includes(r.id)
   )

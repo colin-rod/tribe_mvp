@@ -3,7 +3,7 @@
 import { createLogger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { getChildPhotoUrl, refreshChildPhotoUrl, isSignedUrlExpired } from '@/lib/photo-upload'
+import { getChildPhotoUrl, refreshChildPhotoUrl } from '@/lib/photo-upload'
 
 const logger = createLogger('ChildImage')
 

@@ -195,7 +195,7 @@ export const CardGrid: Story = {
       <Card>
         <CardHeader>
           <CardTitle>First Steps</CardTitle>
-          <CardDescription>Emma's milestone</CardDescription>
+          <CardDescription>{"Emma's milestone"}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600">
@@ -211,7 +211,7 @@ export const CardGrid: Story = {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600">
-            She's now saying "mama", "dada", and "more" consistently.
+            {"She's now saying \"mama\", \"dada\", and \"more\" consistently."}
           </p>
         </CardContent>
       </Card>
@@ -235,7 +235,7 @@ export const CardGrid: Story = {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600">
-            Loves bananas, avocado, and anything we're eating at the table.
+            {"Loves bananas, avocado, and anything we're eating at the table."}
           </p>
         </CardContent>
       </Card>
@@ -261,7 +261,7 @@ export const ProfileCard: Story = {
           </div>
           <div>
             <h4 className="font-semibold">Sarah Johnson</h4>
-            <p className="text-sm text-gray-600">Emma's Mom</p>
+            <p className="text-sm text-gray-600">{"Emma's Mom"}</p>
           </div>
         </div>
         <div className="mt-4 space-y-2">

@@ -35,25 +35,33 @@ Object.defineProperty(window, 'Notification', {
 // Mock window.location
 const mockLocationHref = jest.fn()
 const originalLocation = window.location
+
 beforeAll(() => {
-  delete (window as any).location
-  window.location = {
+  const mutableLocation: Location = {
     ...originalLocation,
     href: '',
     assign: jest.fn(),
     replace: jest.fn(),
     reload: jest.fn(),
-  } as any
+  }
+
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: mutableLocation,
+  })
 
   Object.defineProperty(window.location, 'href', {
-    set: mockLocationHref,
-    get: () => '',
     configurable: true,
+    get: () => '',
+    set: mockLocationHref,
   })
 })
 
 afterAll(() => {
-  window.location = originalLocation
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: originalLocation,
+  })
 })
 
 describe('useResponseNotifications', () => {

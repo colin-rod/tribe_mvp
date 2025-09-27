@@ -470,7 +470,7 @@ class DashboardAnalyticsManager {
         }
       })
       return size
-    } catch (error) {
+    } catch {
       return 0
     }
   }
@@ -596,7 +596,6 @@ class DashboardAnalyticsManager {
 
   private calculateAggregatedStats() {
     const totalInteractions = this.interactions.length
-    const sessions = new Set(this.interactions.map(i => i.sessionId))
 
     return {
       totalInteractions,
@@ -616,7 +615,6 @@ class DashboardAnalyticsManager {
       sessionDurations.set(interaction.sessionId, Math.max(existing, interaction.timestamp.getTime()))
     })
 
-    const durations = Array.from(sessionDurations.values())
     const sessionStarts = new Map<string, number>()
 
     this.interactions.forEach(interaction => {

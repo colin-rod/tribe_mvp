@@ -1,13 +1,12 @@
 'use client'
 
-import { memo, useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import type { ComponentType, SVGProps } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import {
   CameraIcon,
-  PencilIcon,
-  VideoIcon,
   SparklesIcon,
   HeartIcon,
   UserGroupIcon,
@@ -36,11 +35,13 @@ interface EnhancedEmptyStateProps {
   }
 }
 
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+
 interface QuickStartTemplate {
   id: string
   title: string
   description: string
-  icon: React.ComponentType<any>
+  icon: IconComponent
   tags: string[]
   seasonal?: boolean
 }
@@ -342,7 +343,7 @@ export const EnhancedEmptyState: React.FC<EnhancedEmptyStateProps> = ({
       {comparisonStats && (
         <div className="max-w-sm mx-auto mb-8 p-4 bg-neutral-50 rounded-xl">
           <h3 className="text-sm font-semibold text-neutral-800 mb-3">
-            How you're doing
+            {"How you're doing"}
           </h3>
           <div className="grid grid-cols-2 gap-4 text-center">
             <div>

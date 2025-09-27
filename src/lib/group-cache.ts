@@ -1,13 +1,21 @@
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const logger = createLogger('GroupCache')
+
+type UnknownRecord = Record<string, unknown>
+
+interface CacheEntry<T> {
+  data: T
+  expiry: number
+}
 
 /**
  * Group cache management for high-performance group operations
  */
 export class GroupCacheManager {
-  private static cache = new Map<string, { data: any; expiry: number }>()
+  private static cache = new Map<string, CacheEntry<unknown>>()
   private static readonly CACHE_DURATION = {
     GROUP_LIST: 5 * 60 * 1000, // 5 minutes
     GROUP_MEMBERS: 2 * 60 * 1000, // 2 minutes
@@ -23,7 +31,7 @@ export class GroupCacheManager {
     fetcher: () => Promise<T>,
     duration: number
   ): Promise<T> {
-    const cached = this.cache.get(key)
+    const cached = this.cache.get(key) as CacheEntry<T> | undefined
     const now = Date.now()
 
     if (cached && now < cached.expiry) {
@@ -59,7 +67,7 @@ export class GroupCacheManager {
   /**
    * Cache user's groups with member counts
    */
-  static async getUserGroups(userId: string): Promise<any[]> {
+  static async getUserGroups(userId: string): Promise<UnknownRecord[]> {
     return this.getCached(
       `user:${userId}:groups`,
       async () => {
@@ -84,7 +92,7 @@ export class GroupCacheManager {
   /**
    * Cache group members with their settings
    */
-  static async getGroupMembers(groupId: string, userId: string): Promise<any[]> {
+  static async getGroupMembers(groupId: string, _userId: string): Promise<UnknownRecord[]> {
     return this.getCached(
       `group:${groupId}:members`,
       async () => {
@@ -115,7 +123,7 @@ export class GroupCacheManager {
   /**
    * Cache recipient's group memberships (for token access)
    */
-  static async getRecipientGroups(recipientId: string): Promise<any[]> {
+  static async getRecipientGroups(recipientId: string): Promise<UnknownRecord[]> {
     return this.getCached(
       `recipient:${recipientId}:groups`,
       async () => {
@@ -145,7 +153,7 @@ export class GroupCacheManager {
   /**
    * Cache group settings and notification preferences
    */
-  static async getGroupSettings(groupId: string): Promise<any> {
+  static async getGroupSettings(groupId: string): Promise<UnknownRecord | null> {
     return this.getCached(
       `group:${groupId}:settings`,
       async () => {
@@ -260,7 +268,7 @@ export class GroupQueryOptimizer {
   /**
    * Batch load groups for multiple users
    */
-  static async batchLoadUserGroups(userIds: string[]): Promise<Map<string, any[]>> {
+  static async batchLoadUserGroups(userIds: string[]): Promise<Map<string, UnknownRecord[]>> {
     const supabase = createClient()
 
     const { data, error } = await supabase
@@ -276,7 +284,7 @@ export class GroupQueryOptimizer {
     if (error) throw error
 
     // Group results by user ID
-    const result = new Map<string, any[]>()
+    const result = new Map<string, UnknownRecord[]>()
     userIds.forEach(userId => result.set(userId, []))
 
     data?.forEach(group => {
@@ -297,7 +305,7 @@ export class GroupQueryOptimizer {
       type: 'insert' | 'update' | 'delete'
       recipient_id: string
       group_id: string
-      settings?: any
+      settings?: UnknownRecord
     }>
   ): Promise<void> {
     const supabase = createClient()
@@ -308,7 +316,7 @@ export class GroupQueryOptimizer {
     const deletes = operations.filter(op => op.type === 'delete')
 
     // Execute operations in parallel where possible
-    const promises: Promise<any>[] = []
+    const promises: Promise<unknown>[] = []
 
     if (inserts.length > 0) {
       promises.push(
@@ -379,11 +387,11 @@ export class GroupQueryOptimizer {
  * Real-time subscription management for group updates
  */
 export class GroupRealtimeManager {
-  private static subscriptions = new Map<string, any>()
+  private static subscriptions = new Map<string, RealtimeChannel>()
 
   static subscribeToUserGroups(
     userId: string,
-    callback: (payload: any) => void
+    callback: (payload: RealtimePostgresChangesPayload<UnknownRecord>) => void
   ): () => void {
     const supabase = createClient()
 
@@ -422,7 +430,7 @@ export class GroupRealtimeManager {
 
   static subscribeToGroupMembers(
     groupId: string,
-    callback: (payload: any) => void
+    callback: (payload: RealtimePostgresChangesPayload<UnknownRecord>) => void
   ): () => void {
     const supabase = createClient()
 

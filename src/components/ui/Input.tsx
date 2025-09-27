@@ -27,7 +27,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     ...props
   }, ref) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-    const [isFocused, setIsFocused] = useState(false)
 
     const isError = variant === 'error' || !!errorMessage
     const isSuccess = variant === 'success'
@@ -75,11 +74,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             disabled={disabled}
             onFocus={(e) => {
-              setIsFocused(true)
               props.onFocus?.(e)
             }}
             onBlur={(e) => {
-              setIsFocused(false)
               props.onBlur?.(e)
             }}
             aria-invalid={isError}

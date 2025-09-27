@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 
@@ -40,7 +40,7 @@ interface UpdateRow {
 }
 
 export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
-  const logger = createLogger('UseResponseAnalytics')
+  const loggerRef = useRef(createLogger('UseResponseAnalytics'))
   const [analytics, setAnalytics] = useState<ResponseAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -91,7 +91,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
           setAnalytics(analytics)
         }
       } catch (err) {
-        logger.error('Error fetching response analytics:', { error: err })
+        loggerRef.current.error('Error fetching response analytics:', { error: err })
         setError('Failed to load analytics')
       } finally {
         setLoading(false)

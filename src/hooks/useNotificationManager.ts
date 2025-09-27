@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { NotificationPreferences } from '@/lib/types/profile'
 
@@ -9,10 +9,6 @@ export function useNotificationManager() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadPreferences()
-  }, [])
 
   const getDefaultPreferences = (): NotificationPreferences => ({
     response_notifications: 'immediate',
@@ -29,7 +25,7 @@ export function useNotificationManager() {
     digest_email_time: '09:00'
   })
 
-  const loadPreferences = async () => {
+  const loadPreferences = useCallback(async () => {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -49,7 +45,11 @@ export function useNotificationManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void loadPreferences()
+  }, [loadPreferences])
 
   const updatePreferences = async (updates: Partial<NotificationPreferences>) => {
     if (!preferences) return false
