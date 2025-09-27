@@ -158,7 +158,7 @@ export interface Database {
           ai_analysis: Record<string, unknown>
           suggested_recipients: string[]
           confirmed_recipients: string[]
-          distribution_status: 'draft' | 'confirmed' | 'sent' | 'failed'
+          distribution_status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
           like_count: number
           comment_count: number
           response_count: number
@@ -179,7 +179,7 @@ export interface Database {
           ai_analysis?: Record<string, unknown>
           suggested_recipients?: string[]
           confirmed_recipients?: string[]
-          distribution_status?: 'draft' | 'confirmed' | 'sent' | 'failed'
+          distribution_status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
           like_count?: number
           comment_count?: number
           response_count?: number
@@ -199,7 +199,7 @@ export interface Database {
           ai_analysis?: Record<string, unknown>
           suggested_recipients?: string[]
           confirmed_recipients?: string[]
-          distribution_status?: 'draft' | 'confirmed' | 'sent' | 'failed'
+          distribution_status?: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
           like_count?: number
           comment_count?: number
           response_count?: number
@@ -332,6 +332,47 @@ export interface Database {
           received_at?: string
         }
       }
+      group_memberships: {
+        Row: {
+          id: string
+          recipient_id: string
+          group_id: string
+          notification_frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only' | null
+          preferred_channels: ('email' | 'whatsapp' | 'sms')[] | null
+          content_types: string[] | null
+          role: 'member' | 'admin'
+          joined_at: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          recipient_id: string
+          group_id: string
+          notification_frequency?: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only' | null
+          preferred_channels?: ('email' | 'whatsapp' | 'sms')[] | null
+          content_types?: string[] | null
+          role?: 'member' | 'admin'
+          joined_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          recipient_id?: string
+          group_id?: string
+          notification_frequency?: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only' | null
+          preferred_channels?: ('email' | 'whatsapp' | 'sms')[] | null
+          content_types?: string[] | null
+          role?: 'member' | 'admin'
+          joined_at?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -462,12 +503,58 @@ export interface Database {
         }
         Returns: undefined
       }
+      get_effective_notification_settings: {
+        Args: {
+          p_recipient_id: string
+          p_group_id: string
+        }
+        Returns: Array<{
+          frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
+          channels: ('email' | 'whatsapp' | 'sms')[]
+          content_types: string[]
+          source: 'member_override' | 'group_default'
+        }>
+      }
+      get_recipient_memberships: {
+        Args: {
+          p_recipient_id: string
+        }
+        Returns: Array<{
+          id: string
+          group_id: string
+          notification_frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only' | null
+          preferred_channels: ('email' | 'whatsapp' | 'sms')[] | null
+          content_types: string[] | null
+          role: 'member' | 'admin'
+          joined_at: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+          recipient_groups: {
+            id: string
+            name: string
+            default_frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only' | null
+            default_channels: ('email' | 'whatsapp' | 'sms')[] | null
+            notification_settings: Record<string, unknown> | null
+            access_settings: Record<string, unknown> | null
+            is_default_group: boolean
+            created_at: string | null
+          }
+        }>
+      }
+      set_config: {
+        Args: {
+          parameter: string
+          value: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       delivery_status: 'queued' | 'sent' | 'delivered' | 'failed'
       communication_channel: 'email' | 'sms' | 'push'
       milestone_type: 'first_smile' | 'rolling' | 'sitting' | 'crawling' | 'first_steps' | 'first_words' | 'first_tooth' | 'walking' | 'potty_training' | 'first_day_school' | 'birthday' | 'other'
-      distribution_status: 'draft' | 'confirmed' | 'sent' | 'failed'
+      distribution_status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
     }
   }
 }

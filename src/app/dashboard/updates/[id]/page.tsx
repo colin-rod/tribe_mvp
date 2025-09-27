@@ -10,6 +10,12 @@ import { ConversationView } from '@/components/responses'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
+interface ConfirmedRecipient {
+  id: string
+  name?: string
+  email?: string
+}
+
 interface Update {
   id: string
   content: string
@@ -17,7 +23,7 @@ interface Update {
   child_id: string
   parent_id: string
   media_urls: string[]
-  confirmed_recipients?: string[]
+  confirmed_recipients?: ConfirmedRecipient[]
   children: {
     id: string
     name: string

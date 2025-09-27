@@ -386,13 +386,16 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
     lg: 'w-5 h-5'
   }
 
+  // Map split button size to button size
+  const buttonSize = size === 'md' ? 'default' : size
+
   return (
     <div className={cn('relative inline-flex', className)}>
       {/* Main Button */}
       <Button
         ref={buttonRef}
         variant={variant}
-        size={size}
+        size={buttonSize}
         disabled={disabled}
         onClick={handlePrimaryAction}
         className={cn(
@@ -411,7 +414,7 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
       {/* Dropdown Button */}
       <Button
         variant={variant}
-        size={size}
+        size={buttonSize}
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(

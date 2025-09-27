@@ -354,7 +354,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
                     {insights.nextMilestone.description}
                   </p>
                 </div>
-                <Badge variant="outline" className="ml-2">
+                <Badge outline className="ml-2">
                   {insights.nextMilestone.remaining} to go
                 </Badge>
               </div>

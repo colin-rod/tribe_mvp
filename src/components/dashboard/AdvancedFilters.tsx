@@ -383,7 +383,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   className="flex items-center space-x-1"
                 >
                   {bulkActionLoading === action.id ? (
-                    <LoadingSpinner size="xs" />
+                    <LoadingSpinner size="sm" />
                   ) : (
                     <action.icon className="w-3 h-3" />
                   )}
@@ -494,7 +494,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   key={type.value}
                   onClick={() => onFiltersChange({
                     ...filters,
-                    contentType: type.value === 'all' ? undefined : type.value
+                    contentType: type.value === 'all' ? undefined : type.value as ('photo' | 'text' | 'video' | 'milestone')
                   })}
                   className={cn(
                     'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
@@ -525,7 +525,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   disabled={!presetName.trim() || filtersLoading}
                   size="sm"
                 >
-                  {filtersLoading ? <LoadingSpinner size="xs" /> : 'Save Preset'}
+                  {filtersLoading ? <LoadingSpinner size="sm" /> : 'Save Preset'}
                 </Button>
               </div>
             </div>

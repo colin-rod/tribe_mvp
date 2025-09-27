@@ -147,7 +147,7 @@ export async function GET(
     const now = new Date()
 
     // Process mute status for each group
-    const membershipList = (memberships as GroupMembershipMuteRecord[]) || []
+    const membershipList = (memberships || []) as unknown as GroupMembershipMuteRecord[]
     const groupMuteStatus: GroupMuteStatus[] = membershipList.map(membership => {
       const muteUntil = membership.mute_until ? new Date(membership.mute_until) : null
       const isCurrentlyMuted = muteUntil && muteUntil > now
@@ -157,7 +157,7 @@ export async function GET(
         group_id: membership.group_id,
         group_name: membership.recipient_groups.name,
         is_default_group: membership.recipient_groups.is_default_group,
-        is_muted: isCurrentlyMuted,
+        is_muted: !!isCurrentlyMuted,
         mute_until: membership.mute_until,
         mute_expires_in: isCurrentlyMuted
           ? Math.max(0, Math.ceil((muteUntil!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
@@ -342,7 +342,7 @@ export async function POST(
           }
 
           // Apply mute to each group
-          for (const group of validGroups as Array<{ group_id: string; recipient_groups: { name: string } }>) {
+          for (const group of validGroups as unknown as Array<{ group_id: string; recipient_groups: { name: string } }>) {
             const { error } = await supabase
               .from('group_memberships')
               .update({
@@ -586,5 +586,5 @@ async function getNotificationPreferences(
     .eq('id', recipientId)
     .single()
 
-  return (recipient?.notification_preferences as NotificationPreferences) || {}
+  return (recipient as any)?.notification_preferences || {}
 }

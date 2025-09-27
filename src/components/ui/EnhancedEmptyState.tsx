@@ -413,7 +413,7 @@ export const EnhancedEmptyState: React.FC<EnhancedEmptyStateProps> = ({
                   {template.tags.map((tag) => (
                     <Badge
                       key={tag}
-                      variant="outline"
+                      outline
                       size="sm"
                       className="text-xs"
                     >

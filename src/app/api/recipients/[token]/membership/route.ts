@@ -169,7 +169,7 @@ export async function GET(
     }
 
     // Enhance membership data with additional information
-    const membershipList = (memberships as MembershipRecord[]) || []
+    const membershipList = (memberships || []) as unknown as MembershipRecord[]
     const enhancedMemberships = await Promise.all(
       membershipList.map(async (membership): Promise<EnhancedMembership> => {
         const enhanced: EnhancedMembership = {
@@ -542,7 +542,7 @@ async function getEffectiveSettings(
 ): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await (supabase as any).rpc(
       'get_effective_notification_settings',
       {
         p_recipient_id: recipientId,
@@ -559,8 +559,8 @@ async function getEffectiveSettings(
         .single()
 
       return {
-        frequency: membership.notification_frequency || group?.default_frequency || 'every_update',
-        channels: membership.preferred_channels || group?.default_channels || ['email'],
+        frequency: membership.notification_frequency || (group as any)?.default_frequency || 'every_update',
+        channels: membership.preferred_channels || (group as any)?.default_channels || ['email'],
         content_types: membership.content_types || ['photos', 'text', 'milestones'],
         source: membership.notification_frequency ? 'member_override' : 'group_default'
       }

@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
         logger.error('Code exchange failed', {
           requestId,
           errorCode: exchangeError.message,
-          errorType: exchangeError.__isAuthError ? 'auth_error' : 'unknown_error'
+          errorType: exchangeError.name === 'AuthError' ? 'auth_error' : 'unknown_error'
         })
         return createErrorResponse(origin, 'auth_failed')
       }

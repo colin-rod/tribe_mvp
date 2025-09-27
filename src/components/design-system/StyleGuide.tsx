@@ -10,9 +10,7 @@ import { Container } from '@/components/ui/Container'
 import {
   BabyUpdateCard,
   CreateUpdateForm,
-  FamilyDashboard,
-  ButtonShowcase,
-  TypographyShowcase
+  LayoutShowcase
 } from '@/design-system/examples'
 
 interface StyleGuideProps {
@@ -22,11 +20,11 @@ interface StyleGuideProps {
 const SECTIONS = {
   typography: {
     title: 'Typography',
-    component: <TypographyShowcase />
+    component: <div>Typography showcase not available</div>
   },
   components: {
     title: 'Components',
-    component: <ButtonShowcase />
+    component: <div>Component showcase not available</div>
   },
   examples: {
     title: 'Example Implementations',
@@ -45,8 +43,8 @@ const SECTIONS = {
         </div>
 
         <div>
-          <h2 className="h2 mb-6">Family Dashboard</h2>
-          <FamilyDashboard />
+          <h2 className="h2 mb-6">Layout Showcase</h2>
+          <LayoutShowcase />
         </div>
       </div>
     )

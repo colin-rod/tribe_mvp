@@ -264,7 +264,7 @@ export function PromptFeed({
       }
 
     } catch (error) {
-      logger.error('Error acting on prompt', { error, promptId, action })
+      logger.error('Error acting on prompt', { error, promptId, action: 'create_update' })
       throw error
     }
   }
@@ -333,7 +333,7 @@ export function PromptFeed({
       await fetchPrompts(true)
 
     } catch (error) {
-      logger.error('Error generating new prompts', { error, childId, promptType })
+      logger.error('Error generating new prompts', { error, childId, promptType: 'milestone' })
       setError('Failed to generate new prompts. Please try again.')
     } finally {
       setRefreshing(false)

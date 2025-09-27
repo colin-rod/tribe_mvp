@@ -90,7 +90,7 @@ const TimelinePage = () => {
       const cached = await cache.get(cacheKey)
       if (cached) {
         updateCacheStats(1, 0) // Cache hit
-        setUserStats(cached)
+        setUserStats(cached as UserStats)
         setLoadingStats(false)
         endMeasure()
         return

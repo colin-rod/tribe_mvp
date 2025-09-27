@@ -121,7 +121,7 @@ export async function GET(
           active_group_mutes: activeGroupMutes.length,
           group_mutes: activeGroupMutes.map(m => ({
             group_id: m.group_id,
-            group_name: Array.isArray(m.recipient_groups) ? m.recipient_groups[0]?.name : m.recipient_groups?.name,
+            group_name: Array.isArray(m.recipient_groups) ? m.recipient_groups[0]?.name : (m.recipient_groups as any)?.name,
             mute_until: m.mute_until,
             settings: m.mute_settings
           })),
