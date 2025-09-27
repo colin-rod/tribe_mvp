@@ -2,7 +2,7 @@
 
 declare global {
   interface Window {
-    gtag?: (
+    gtag?: ((
       command: 'event',
       eventName: string,
       eventParameters: {
@@ -11,7 +11,11 @@ declare global {
         value?: number
         custom_parameter?: string
       }
-    ) => void
+    ) => void) & ((
+      command: 'config' | 'event',
+      targetId: string,
+      config?: Record<string, unknown>
+    ) => void)
   }
 }
 

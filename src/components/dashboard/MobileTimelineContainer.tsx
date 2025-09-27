@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { FixedSizeList as List } from 'react-window'
+import { VariableSizeList as List } from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns'
 import MobileUpdateCard from './MobileUpdateCard'
@@ -24,7 +24,7 @@ interface Update {
   mediaCount?: number
   responseCount: number
   hasUnreadResponses: boolean
-  distributionStatus: 'draft' | 'sending' | 'sent' | 'failed'
+  distributionStatus: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
   isLiked?: boolean
   likeCount?: number
 }
@@ -263,6 +263,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
             height={containerHeight}
             itemCount={groupedItems.length}
             itemSize={getItemHeight}
+            estimatedItemSize={200}
             overscanCount={5}
             className="scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-neutral-100"
           >

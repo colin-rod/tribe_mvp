@@ -545,13 +545,10 @@ async function getEffectiveSettings(
 ): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
-    const { data, error } = await supabase.rpc<
-      EffectiveSettingsFunctionReturns,
-      EffectiveSettingsFunctionArgs
-    >('get_effective_notification_settings', {
+    const { data, error } = await supabase.rpc('get_effective_notification_settings', {
       p_recipient_id: recipientId,
       p_group_id: groupId
-    })
+    }) as { data: EffectiveSettingsFunctionReturns | null, error: any }
 
     const effectiveSettings = Array.isArray(data) ? data[0] : null
 

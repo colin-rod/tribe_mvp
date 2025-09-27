@@ -10,15 +10,6 @@ interface ConversionEvent {
   value?: number
 }
 
-declare global {
-  interface Window {
-    gtag?: (
-      command: 'config' | 'event',
-      targetId: string,
-      config?: Record<string, unknown>
-    ) => void
-  }
-}
 
 const logger = createLogger('ConversionTracker')
 
@@ -27,7 +18,7 @@ export function trackConversion(event: ConversionEvent) {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', event.action, {
       event_category: event.category,
-      event_label: event.label,
+      event_label: event.label || 'unknown',
       value: event.value,
     })
   }

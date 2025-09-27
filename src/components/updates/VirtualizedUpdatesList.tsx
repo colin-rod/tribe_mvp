@@ -208,6 +208,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
     <div className={cn('space-y-4', className)}>
       <List
         height={height}
+        width="100%"
         itemCount={updates.length}
         itemSize={itemHeight}
         itemData={itemData()}

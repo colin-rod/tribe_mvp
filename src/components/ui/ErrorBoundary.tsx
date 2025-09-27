@@ -54,9 +54,9 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
     // You could integrate with services like Sentry, LogRocket, etc.
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'exception', {
-        description: error?.message || 'Unknown error',
-        fatal: false,
-        custom_map: { error_id: errorId }
+        event_category: 'error',
+        event_label: error?.message || 'Unknown error',
+        custom_parameter: errorId
       })
     }
   }
@@ -282,11 +282,14 @@ export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
   errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
 ) => {
-  const WrappedComponent = React.forwardRef<unknown, P>((props, ref) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} ref={ref} />
-    </ErrorBoundary>
-  ))
+  const WrappedComponent = React.forwardRef<unknown, P>((props, ref) => {
+    const componentProps = ref ? { ...props, ref } : props
+    return (
+      <ErrorBoundary {...errorBoundaryProps}>
+        <Component {...componentProps as P} />
+      </ErrorBoundary>
+    )
+  })
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
 

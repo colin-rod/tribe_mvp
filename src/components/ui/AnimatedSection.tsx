@@ -51,7 +51,7 @@ export function AnimatedSection({
 
   return (
     <div
-      ref={ref}
+      ref={ref as React.RefObject<HTMLDivElement>}
       className={cn(
         'transition-all ease-out',
         `duration-${duration}`,

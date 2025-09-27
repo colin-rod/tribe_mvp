@@ -42,6 +42,7 @@ interface ItemRendererProps {
     loadingComponent?: React.ComponentType
     onLoadMore?: () => void
     threshold?: number
+    memoryOptimization?: boolean
   }
 }
 
@@ -249,7 +250,7 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
         }
       },
       height,
-      width,
+      width: width || '100%',
       itemCount: totalItemCount,
       itemData,
       overscanCount: Math.min(overscan, 10), // Limit overscan for performance
@@ -258,7 +259,7 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
         memoryOptimization && 'will-change-transform', // CSS optimization hint
         className
       ),
-      direction: direction === 'horizontal' ? 'horizontal' : 'vertical',
+      direction: direction === 'horizontal' ? 'horizontal' as const : 'vertical' as const,
       onScroll: handleScroll
     }
 
