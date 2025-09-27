@@ -143,7 +143,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
         avif: 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A='
       }
 
-      return (testFormats as any)[format] ? canvas.toDataURL('image/' + format).startsWith('data:image/' + format) : false
+      return (testFormats as Record<string, string>)[format] ? canvas.toDataURL('image/' + format).startsWith('data:image/' + format) : false
     } catch {
       return false
     }
@@ -175,7 +175,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
     // Load image
     return new Promise((resolve, reject) => {
-      const img = new (Image as any)()
+      const img = new (globalThis.Image as { new(): HTMLImageElement })()
 
       img.onload = async () => {
         try {

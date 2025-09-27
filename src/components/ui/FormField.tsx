@@ -70,7 +70,7 @@ export function FormField({
           id: fieldId,
           'aria-describedby': describedBy || undefined,
           'aria-invalid': Boolean(error)
-        } as any)
+        } as React.HTMLAttributes<HTMLElement>)
       })}
 
       {error && (

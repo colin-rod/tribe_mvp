@@ -456,7 +456,7 @@ class DashboardAnalyticsManager {
         })
       }
     } catch (error) {
-      logger.error('Error flushing analytics data:', error as any)
+      logger.error('Error flushing analytics data:', error as Error | unknown)
     }
   }
 
