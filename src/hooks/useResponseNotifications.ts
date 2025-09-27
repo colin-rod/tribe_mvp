@@ -46,7 +46,9 @@ export function useResponseNotifications() {
 
             // Type guard to ensure payload.new exists and has required properties
             const newResponse = payload.new
-            if (!newResponse || !newResponse.id || !newResponse.update_id || !newResponse.recipient_id) {
+            if (!newResponse || typeof newResponse !== 'object' ||
+                !('id' in newResponse) || !('update_id' in newResponse) || !('recipient_id' in newResponse) ||
+                !newResponse.id || !newResponse.update_id || !newResponse.recipient_id) {
               loggerRef.current.warn('Invalid response payload received', { payload: newResponse })
               return
             }

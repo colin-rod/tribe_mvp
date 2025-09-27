@@ -59,7 +59,6 @@ const meta = {
     },
   },
   args: {
-    onClick: fn(),
     update: baseUpdate,
   },
   decorators: [
@@ -259,7 +258,7 @@ export const CardList: Story = {
           responseCount: 5,
           hasUnreadResponses: true,
         }}
-        onClick={fn()}
+        onClick={() => {}}
       />
       <UpdateCard
         update={{
@@ -276,7 +275,7 @@ export const CardList: Story = {
           responseCount: 8,
           hasUnreadResponses: false,
         }}
-        onClick={fn()}
+        onClick={() => {}}
       />
       <UpdateCard
         update={{
@@ -288,7 +287,7 @@ export const CardList: Story = {
           hasUnreadResponses: false,
           distributionStatus: 'sent',
         }}
-        onClick={fn()}
+        onClick={() => {}}
       />
       <UpdateCard
         update={{
@@ -300,7 +299,7 @@ export const CardList: Story = {
           hasUnreadResponses: false,
           distributionStatus: 'draft',
         }}
-        onClick={fn()}
+        onClick={() => {}}
       />
     </div>
   ),
@@ -385,14 +384,14 @@ export const InteractiveStates: Story = {
     <div className="space-y-8 max-w-md">
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">Normal State</h3>
-        <UpdateCard update={baseUpdate} onClick={fn()} />
+        <UpdateCard update={baseUpdate} onClick={() => {}} />
       </div>
 
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">Hover State (hover over card)</h3>
         <UpdateCard
           update={baseUpdate}
-          onClick={fn()}
+          onClick={() => {}}
           className="hover:shadow-md hover:border-gray-300 hover:bg-gray-50"
         />
       </div>

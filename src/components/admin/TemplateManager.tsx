@@ -647,7 +647,10 @@ export function TemplateManager() {
       {showForm && (
         <TemplateForm
           template={selectedTemplate}
-          onSave={selectedTemplate ? updateTemplate : createTemplate}
+          onSave={selectedTemplate
+            ? (formData: TemplateFormData) => updateTemplate(selectedTemplate.id, formData)
+            : createTemplate
+          }
           onCancel={() => {
             setShowForm(false)
             setSelectedTemplate(null)
@@ -672,7 +675,7 @@ export function TemplateManager() {
 
 interface TemplateFormProps {
   template?: PromptTemplate | null
-  onSave: (id: string, formData: TemplateFormData) => Promise<void> | ((formData: TemplateFormData) => Promise<void>)
+  onSave: (formData: TemplateFormData) => Promise<void>
   onCancel: () => void
   saving: boolean
 }
@@ -691,12 +694,7 @@ function TemplateForm({ template, onSave, onCancel, saving }: TemplateFormProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (template) {
-      await onSave(template.id, formData)
-    } else {
-      await (onSave as (formData: TemplateFormData) => Promise<void>)(formData)
-    }
+    await onSave(formData)
   }
 
   const addTag = () => {

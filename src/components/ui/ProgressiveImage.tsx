@@ -206,7 +206,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
             }
           }, 'image/webp', quality / 100)
         } catch (error) {
-          logger.warn('Failed to cache image:', error)
+          logger.warn('Failed to cache image:', { error })
           resolve(imageSrc)
         }
       }
@@ -239,7 +239,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
             loadedSources: new Set([...prev.loadedSources, 'thumbnail'])
           }))
         } catch (error) {
-          logger.debug('Thumbnail load failed, continuing with main image:', error)
+          logger.debug('Thumbnail load failed, continuing with main image:', { error })
         }
       }
 
@@ -267,7 +267,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
   const retryLoad = useCallback(() => {
     if (imageState.retryCount >= MAX_RETRY_ATTEMPTS) {
-      logger.error('Max retry attempts reached for image:', src)
+      logger.error('Max retry attempts reached for image:', { src })
       setImageState(prev => ({ ...prev, hasError: true, isLoading: false }))
       onLoadingStateChange?.(false)
       return

@@ -89,14 +89,13 @@ export async function GET(request: NextRequest) {
     const queryParams = Object.fromEntries(url.searchParams.entries())
 
     // Parse array parameters
-    if (queryParams.group_ids) {
-      queryParams.group_ids = queryParams.group_ids.split(',')
-    }
-    if (queryParams.recipient_ids) {
-      queryParams.recipient_ids = queryParams.recipient_ids.split(',')
+    const parsedParams = {
+      ...queryParams,
+      group_ids: queryParams.group_ids ? queryParams.group_ids.split(',') : undefined,
+      recipient_ids: queryParams.recipient_ids ? queryParams.recipient_ids.split(',') : undefined
     }
 
-    const validatedQuery: BulkPreferenceQuery = bulkPreferenceQuerySchema.parse(queryParams)
+    const validatedQuery: BulkPreferenceQuery = bulkPreferenceQuerySchema.parse(parsedParams)
 
     // Base query for groups
     let groupQuery = supabase
@@ -195,7 +194,7 @@ export async function GET(request: NextRequest) {
         frequencyDistribution.set(freq, (frequencyDistribution.get(freq) || 0) + 1)
 
         if (m.preferred_channels) {
-          m.preferred_channels.forEach(channel => {
+          m.preferred_channels.forEach((channel: string) => {
             channelDistribution.set(channel, (channelDistribution.get(channel) || 0) + 1)
           })
         }
@@ -469,7 +468,7 @@ async function executeUpdateOperation(
       }
 
       if (Object.keys(updateData).length > 0) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('group_memberships')
           .update(updateData)
           .eq('recipient_id', recipient.recipient_id)
@@ -510,7 +509,7 @@ async function executeResetOperation(
 
   for (const recipient of targetRecipients) {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('group_memberships')
         .update({
           notification_frequency: null,
@@ -563,9 +562,9 @@ async function executeCopyOperation(
   }
 
   const settings: BulkPreferenceSettings = {
-    notification_frequency: sourceGroup.default_frequency,
-    preferred_channels: sourceGroup.default_channels,
-    content_types: sourceGroup.notification_settings?.content_types || ['photos', 'text', 'milestones']
+    notification_frequency: (sourceGroup as any)?.default_frequency,
+    preferred_channels: (sourceGroup as any)?.default_channels,
+    content_types: (sourceGroup as any)?.notification_settings?.content_types || ['photos', 'text', 'milestones']
   }
 
   return executeUpdateOperation(supabase, targetRecipients, settings, preserveCustomOverrides)

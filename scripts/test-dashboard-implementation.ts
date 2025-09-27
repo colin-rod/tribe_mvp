@@ -438,7 +438,7 @@ class DashboardTester {
       if (error) throw error
 
       // Verify view count increased
-      const { data: update } = await adminClient
+      const { data: update } = await (adminClient as any)
         .from('updates')
         .select('view_count')
         .eq('id', this.testUpdateId!)

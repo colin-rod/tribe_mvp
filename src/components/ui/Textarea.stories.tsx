@@ -62,11 +62,7 @@ const meta = {
       description: 'Maximum character limit',
     },
   },
-  args: {
-    onChange: fn(),
-    onFocus: fn(),
-    onBlur: fn(),
-  },
+  args: {},
   decorators: [
     (Story) => (
       <div className="w-96">

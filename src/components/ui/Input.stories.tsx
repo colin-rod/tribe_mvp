@@ -71,11 +71,7 @@ const meta = {
       },
     },
   },
-  args: {
-    onChange: fn(),
-    onFocus: fn(),
-    onBlur: fn(),
-  },
+  args: {},
   decorators: [
     (Story) => (
       <div className="w-80">

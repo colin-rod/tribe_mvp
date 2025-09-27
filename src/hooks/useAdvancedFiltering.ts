@@ -84,7 +84,7 @@ export function useAdvancedFiltering(): UseAdvancedFilteringReturn {
 
       setError(null)
     } catch (err) {
-      logger.error('Error loading stored filter data:', err)
+      logger.error('Error loading stored filter data:', { error: err })
       setError('Failed to load filter preferences')
     } finally {
       setIsLoading(false)
@@ -96,7 +96,7 @@ export function useAdvancedFiltering(): UseAdvancedFilteringReturn {
     try {
       localStorage.setItem(key, JSON.stringify(data))
     } catch (err) {
-      logger.error(`Error saving ${key} to storage:`, err)
+      logger.error(`Error saving ${key} to storage:`, { error: err, key })
     }
   }, [])
 

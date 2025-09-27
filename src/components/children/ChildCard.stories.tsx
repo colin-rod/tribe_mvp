@@ -43,10 +43,10 @@ const meta = {
     },
   },
   args: {
-    onEdit: fn(),
-    onDelete: fn(),
     child: baseChild,
     showActions: true,
+    onEdit: () => {},
+    onDelete: () => {},
   },
   decorators: [
     (Story) => (
@@ -64,6 +64,8 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   args: {
     child: baseChild,
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -71,6 +73,8 @@ export const WithoutActions: Story = {
   args: {
     child: baseChild,
     showActions: false,
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -83,6 +87,8 @@ export const NewBorn: Story = {
       name: 'Oliver Smith',
       birth_date: new Date().toISOString().split('T')[0], // Today's date
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -94,6 +100,8 @@ export const InfantThreeMonths: Story = {
       name: 'Sophia Davis',
       birth_date: new Date(Date.now() - 3 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 months ago
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -105,6 +113,8 @@ export const SixMonthOld: Story = {
       name: 'Liam Wilson',
       birth_date: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months ago
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -116,6 +126,8 @@ export const OneYearOld: Story = {
       name: 'Ava Brown',
       birth_date: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year ago
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -127,6 +139,8 @@ export const TwoYearOld: Story = {
       name: 'Noah Garcia',
       birth_date: new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 years ago
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -138,6 +152,8 @@ export const ThreeYearOld: Story = {
       name: 'Isabella Martinez',
       birth_date: new Date(Date.now() - 3 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 years ago
     },
+    onEdit: () => {},
+    onDelete: () => {},
   },
 }
 
@@ -208,8 +224,8 @@ export const ChildrenGrid: Story = {
           birth_date: '2023-12-25',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
       <ChildCard
         child={{
@@ -219,8 +235,8 @@ export const ChildrenGrid: Story = {
           birth_date: '2022-06-15',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
       <ChildCard
         child={{
@@ -230,8 +246,8 @@ export const ChildrenGrid: Story = {
           birth_date: '2024-03-01',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
       <ChildCard
         child={{
@@ -241,8 +257,8 @@ export const ChildrenGrid: Story = {
           birth_date: '2021-11-20',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
     </div>
   ),
@@ -352,8 +368,8 @@ export const ReadOnlyCards: Story = {
           birth_date: '2023-12-25',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
         showActions={false}
       />
       <ChildCard
@@ -364,8 +380,8 @@ export const ReadOnlyCards: Story = {
           birth_date: '2022-06-15',
           created_at: '2024-01-15T10:00:00Z',
         }}
-        onEdit={fn()}
-        onDelete={fn()}
+        onEdit={() => {}}
+        onDelete={() => {}}
         showActions={false}
       />
     </div>

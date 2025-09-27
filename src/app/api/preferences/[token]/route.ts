@@ -121,7 +121,7 @@ export async function GET(
           active_group_mutes: activeGroupMutes.length,
           group_mutes: activeGroupMutes.map(m => ({
             group_id: m.group_id,
-            group_name: m.recipient_groups.name,
+            group_name: Array.isArray(m.recipient_groups) ? m.recipient_groups[0]?.name : m.recipient_groups?.name,
             mute_until: m.mute_until,
             settings: m.mute_settings
           })),
@@ -255,7 +255,7 @@ export async function PUT(
         content_types?: typeof preferences.content_types
         overrides_group_default: boolean
       } = {
-        overrides_group_default: overridesGroupDefault
+        overrides_group_default: overridesGroupDefault ?? true
       }
       if (preferences.frequency) legacyUpdate.frequency = preferences.frequency
       if (preferences.preferred_channels) legacyUpdate.preferred_channels = preferences.preferred_channels

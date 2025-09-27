@@ -46,9 +46,20 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
   }, [])
 
   // Get primary media for preview
-  const primaryMedia = update.media_urls?.[0]
-  const hasMedia = primaryMedia && !imageError
+  const primaryMediaUrl = update.media_urls?.[0]
+  const hasMedia = primaryMediaUrl && !imageError
   const mediaCount = update.media_urls?.length || 0
+
+  // Determine media type from URL extension
+  const getMediaType = (url: string): 'image' | 'video' | 'other' => {
+    if (!url) return 'other'
+    const extension = url.split('.').pop()?.toLowerCase()
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) return 'image'
+    if (['mp4', 'webm', 'ogg', 'mov'].includes(extension || '')) return 'video'
+    return 'other'
+  }
+
+  const primaryMediaType = primaryMediaUrl ? getMediaType(primaryMediaUrl) : 'other'
 
   // Format timestamp
   const formatTime = (dateString: string) => {
@@ -189,10 +200,10 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
           'relative rounded-lg overflow-hidden mb-3 bg-neutral-100',
           compact ? 'h-32' : 'h-48'
         )}>
-          {primaryMedia.type === 'image' ? (
+          {primaryMediaType === 'image' ? (
             <>
               <Image
-                src={primaryMedia.url}
+                src={primaryMediaUrl}
                 alt={update.contentPreview}
                 fill
                 className={cn(
@@ -221,10 +232,10 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
             <div className="absolute inset-0 flex items-center justify-center bg-neutral-200">
               <div className="text-center">
                 <div className="w-8 h-8 mx-auto mb-2 text-neutral-400">
-                  {getTypeIcon(primaryMedia.type)}
+                  {getTypeIcon(primaryMediaType)}
                 </div>
                 <p className="text-xs text-neutral-600">
-                  {primaryMedia.type.toUpperCase()}
+                  {primaryMediaType.toUpperCase()}
                 </p>
               </div>
             </div>

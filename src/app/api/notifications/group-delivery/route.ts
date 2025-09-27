@@ -433,7 +433,7 @@ export async function PATCH(request: NextRequest) {
       case 'process_pending':
         // Process pending notification jobs
         {
-          const processed = await notificationService.processPendingJobs(validatedData.batch_size) as DeliveryResult[]
+          const processed = await notificationService.processPendingJobs(validatedData.batch_size) as unknown as DeliveryResult[]
           results.push(...processed)
         }
         break

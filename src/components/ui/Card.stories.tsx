@@ -36,9 +36,7 @@ const meta = {
       description: 'Make the card interactive (adds cursor pointer and keyboard support)',
     },
   },
-  args: {
-    onClick: fn(),
-  },
+  args: {},
 } satisfies Meta<typeof Card>
 
 export default meta

@@ -29,10 +29,10 @@ export interface PerformanceThresholds {
 }
 
 export interface UsePerformanceMonitoringOptions {
-  enableRealTimeMonitoring: boolean
-  enableAlerts: boolean
-  enableAutoOptimization: boolean
-  thresholds: Partial<PerformanceThresholds>
+  enableRealTimeMonitoring?: boolean
+  enableAlerts?: boolean
+  enableAutoOptimization?: boolean
+  thresholds?: Partial<PerformanceThresholds>
   alertCallback?: (alert: PerformanceAlert) => void
 }
 
@@ -180,7 +180,7 @@ export function usePerformanceMonitoring({
       return [...filtered, alert].slice(-10) // Keep last 10 alerts
     })
 
-    logger.warn('Performance alert created:', alert)
+    logger.warn('Performance alert created:', { alert })
     trackCustomDashboardEvent('performance_alert', {
       metric: alert.metric,
       value: alert.value,
@@ -335,7 +335,7 @@ export function usePerformanceMonitoring({
         entryTypes: ['measure', 'resource', 'navigation']
       })
     } catch (error) {
-      logger.error('Failed to setup PerformanceObserver:', error)
+      logger.error('Failed to setup PerformanceObserver:', { error })
     }
   }, [updateMetric])
 

@@ -317,7 +317,7 @@ class DashboardAnalyticsManager {
       try {
         this.performanceObserver.observe({ entryTypes: ['navigation', 'resource', 'measure', 'paint'] })
       } catch (error) {
-        logger.warn('Performance observer setup failed:', error)
+        logger.warn('Performance observer setup failed:', { error })
       }
     }
 
@@ -430,7 +430,7 @@ class DashboardAnalyticsManager {
         })
       }
     } catch (error) {
-      logger.error('Error loading stored analytics data:', error)
+      logger.error('Error loading stored analytics data:', { error })
     }
   }
 

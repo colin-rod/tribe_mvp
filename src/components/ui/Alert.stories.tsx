@@ -43,9 +43,7 @@ const meta = {
       description: 'Alert content',
     },
   },
-  args: {
-    onDismiss: fn(),
-  },
+  args: {},
   decorators: [
     (StoryComponent: ComponentType) => (
       <div className="w-96">

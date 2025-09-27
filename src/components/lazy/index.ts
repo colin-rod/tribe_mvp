@@ -9,12 +9,12 @@ export const AdminPanel = dynamic(() => import('@/components/admin/TemplateManag
 })
 
 // Profile components - heavy forms with validation
-export const ProfileSettings = dynamic(() => import('@/components/profile/ProfileSection'), {
+export const ProfileSettings = dynamic(() => import('@/components/profile/ProfileSection').then(mod => ({ default: mod.ProfileSection })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
 // Media components - heavy with file handling
-export const MediaGallery = dynamic(() => import('@/components/media/MediaGallery'), {
+export const MediaGallery = dynamic(() => import('@/components/media/MediaGallery').then(mod => ({ default: mod.MediaGallery })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
@@ -24,12 +24,12 @@ export const VirtualizedUpdatesList = dynamic(() => import('@/components/updates
 })
 
 // AI Prompts - complex with real-time features
-export const PromptFeed = dynamic(() => import('@/components/prompts/PromptFeed'), {
+export const PromptFeed = dynamic(() => import('@/components/prompts/PromptFeed').then(mod => ({ default: mod.PromptFeed })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
 // Response components - heavy with conversation handling
-export const ConversationView = dynamic(() => import('@/components/responses/ConversationView'), {
+export const ConversationView = dynamic(() => import('@/components/responses/ConversationView').then(mod => ({ default: mod.ConversationView })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
@@ -39,7 +39,7 @@ export const OnboardingWizard = dynamic(() => import('@/app/onboarding/page').th
 })
 
 // Chart/Analytics components - heavy with visualization libraries
-export const ResponseAnalytics = dynamic(() => import('@/components/responses/ResponseAnalytics'), {
+export const ResponseAnalytics = dynamic(() => import('@/components/responses/ResponseAnalytics').then(mod => ({ default: mod.ResponseAnalytics })), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' }),
   ssr: false // Analytics typically don't need SSR
 })

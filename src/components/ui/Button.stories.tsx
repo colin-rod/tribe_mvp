@@ -56,7 +56,6 @@ const meta = {
     },
   },
   args: {
-    onClick: fn(),
     children: 'Button'
   },
 } satisfies Meta<typeof Button>
