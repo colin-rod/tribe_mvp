@@ -57,6 +57,7 @@ type MembershipActionResult = {
 }
 
 type EffectiveSettingsFunctionReturns = Database['public']['Functions']['get_effective_notification_settings']['Returns']
+type EffectiveSettingsFunctionRow = EffectiveSettingsFunctionReturns extends Array<infer T> ? T : never
 
 // Schema for membership visibility preferences
 const membershipVisibilitySchema = z.object({
@@ -544,12 +545,15 @@ async function getEffectiveSettings(
 ): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
-    const { data, error } = await supabase.rpc('get_effective_notification_settings', {
-      p_recipient_id: recipientId,
-      p_group_id: groupId
-    }) as { data: EffectiveSettingsFunctionReturns | null, error: any }
+    const { data, error } = await supabase.rpc<EffectiveSettingsFunctionReturns>(
+      'get_effective_notification_settings',
+      {
+        p_recipient_id: recipientId,
+        p_group_id: groupId
+      }
+    )
 
-    const effectiveSettings = Array.isArray(data) ? data[0] : null
+    const effectiveSettings: EffectiveSettingsFunctionRow | null = data?.[0] ?? null
 
     if (error || !effectiveSettings) {
       // Fallback to manual resolution
@@ -574,10 +578,10 @@ async function getEffectiveSettings(
     }
 
     return {
-      frequency: (effectiveSettings as any).frequency,
-      channels: (effectiveSettings as any).channels,
-      content_types: (effectiveSettings as any).content_types,
-      source: (effectiveSettings as any).source
+      frequency: effectiveSettings.frequency,
+      channels: effectiveSettings.channels,
+      content_types: effectiveSettings.content_types,
+      source: effectiveSettings.source
     }
   } catch (error) {
     logger.errorWithStack('Error getting effective settings:', error as Error)
