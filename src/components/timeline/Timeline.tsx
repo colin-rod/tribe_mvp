@@ -55,7 +55,7 @@ const TimelineItem = memo<TimelineItemProps>(function TimelineItem({
   items,
   onUpdateClick,
   compact,
-  enableProgressiveImages,
+  enableProgressiveImages: _enableProgressiveImages,
   selectedUpdates,
   onUpdateSelection
 }) {

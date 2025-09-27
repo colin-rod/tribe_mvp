@@ -438,6 +438,12 @@ async function getTargetRecipients(
   return (memberships as TargetRecipient[]) || []
 }
 
+type GroupMembershipUpdatePayload = {
+  notification_frequency?: BulkPreferenceSettings['notification_frequency'] | null
+  preferred_channels?: BulkPreferenceSettings['preferred_channels'] | null
+  content_types?: BulkPreferenceSettings['content_types'] | null
+}
+
 async function executeUpdateOperation(
   supabase: SupabaseServerClient,
   targetRecipients: TargetRecipient[],
@@ -450,11 +456,7 @@ async function executeUpdateOperation(
 
   for (const recipient of targetRecipients) {
     try {
-      const updateData: {
-        notification_frequency?: typeof settings.notification_frequency
-        preferred_channels?: typeof settings.preferred_channels
-        content_types?: typeof settings.content_types
-      } = {}
+      const updateData: GroupMembershipUpdatePayload = {}
 
       // Only update if preserveCustomOverrides is false or recipient doesn't have custom settings
       const hasCustomSettings = recipient.notification_frequency ||
@@ -468,7 +470,7 @@ async function executeUpdateOperation(
       }
 
       if (Object.keys(updateData).length > 0) {
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from('group_memberships')
           .update(updateData)
           .eq('recipient_id', recipient.recipient_id)
@@ -509,7 +511,7 @@ async function executeResetOperation(
 
   for (const recipient of targetRecipients) {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('group_memberships')
         .update({
           notification_frequency: null,
@@ -549,22 +551,28 @@ async function executeCopyOperation(
   targetRecipients: TargetRecipient[],
   preserveCustomOverrides: boolean
 ) {
+  type RecipientGroupDefaults = {
+    default_frequency: BulkPreferenceSettings['notification_frequency'] | null
+    default_channels: BulkPreferenceSettings['preferred_channels'] | null
+    notification_settings: { content_types?: BulkPreferenceSettings['content_types'] } | null
+  }
+
   // Get source group settings
   const { data: sourceGroup } = await supabase
     .from('recipient_groups')
     .select('default_frequency, default_channels, notification_settings')
     .eq('id', sourceGroupId)
     .eq('parent_id', userId)
-    .single()
+    .single<RecipientGroupDefaults>()
 
   if (!sourceGroup) {
     throw new Error('Source group not found or access denied')
   }
 
   const settings: BulkPreferenceSettings = {
-    notification_frequency: (sourceGroup as any)?.default_frequency,
-    preferred_channels: (sourceGroup as any)?.default_channels,
-    content_types: (sourceGroup as any)?.notification_settings?.content_types || ['photos', 'text', 'milestones']
+    notification_frequency: sourceGroup.default_frequency || undefined,
+    preferred_channels: sourceGroup.default_channels || undefined,
+    content_types: sourceGroup.notification_settings?.content_types || ['photos', 'text', 'milestones']
   }
 
   return executeUpdateOperation(supabase, targetRecipients, settings, preserveCustomOverrides)
