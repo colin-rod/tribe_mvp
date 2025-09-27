@@ -276,10 +276,9 @@ export const StaggeredListSkeleton = memo<{
           className="animate-pulse"
           style={{ animationDelay: `${i * 75}ms` }}
         >
-          <Skeleton
-            className="w-full rounded-lg"
-            style={{ height: itemHeight }}
-          />
+          <div style={{ height: itemHeight }}>
+            <Skeleton className="w-full h-full rounded-lg" />
+          </div>
         </div>
       ))}
     </div>

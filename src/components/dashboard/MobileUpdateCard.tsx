@@ -25,7 +25,7 @@ interface Update {
   mediaCount?: number
   responseCount: number
   hasUnreadResponses: boolean
-  distributionStatus: 'draft' | 'sending' | 'sent' | 'failed'
+  distributionStatus: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed'
   isLiked?: boolean
   likeCount?: number
 }

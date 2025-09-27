@@ -310,7 +310,7 @@ export default function EnhancedPreferencesPageClient({
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode('groups')}
-                className={viewMode === 'groups' ? 'bg-yellow-100' : ''}
+                className={(viewMode as ViewMode) === 'groups' ? 'bg-yellow-100' : ''}
               >
                 Groups View
               </Button>

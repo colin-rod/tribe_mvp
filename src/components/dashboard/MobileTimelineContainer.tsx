@@ -261,6 +261,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
           <List
             ref={listRef}
             height={containerHeight}
+            width="100%"
             itemCount={groupedItems.length}
             itemSize={getItemHeight}
             estimatedItemSize={200}

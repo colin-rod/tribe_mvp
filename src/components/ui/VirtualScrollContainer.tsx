@@ -217,7 +217,9 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
       // Limit cache size to prevent memory leaks
       if (itemSizeCache.current.size > 1000) {
         const firstKey = itemSizeCache.current.keys().next().value
-        itemSizeCache.current.delete(firstKey)
+        if (firstKey !== undefined) {
+          itemSizeCache.current.delete(firstKey)
+        }
       }
 
       return size

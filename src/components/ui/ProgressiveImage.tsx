@@ -91,13 +91,13 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   const imgRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const preloadRef = useRef<HTMLImageElement | null>(null)
-  const retryTimeoutRef = useRef<NodeJS.Timeout>()
+  const retryTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const retryLoadRef = useRef<() => void>(() => {})
 
   const cache = getTimelineCache()
 
   // Intersection observer for lazy loading
-  const { isIntersecting } = useIntersectionObserver(containerRef, {
+  const { isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
     rootMargin: '50px',
     enabled: !priority && loading === 'lazy'
@@ -143,7 +143,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
         avif: 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A='
       }
 
-      return testFormats[format] ? canvas.toDataURL('image/' + format).startsWith('data:image/' + format) : false
+      return (testFormats as any)[format] ? canvas.toDataURL('image/' + format).startsWith('data:image/' + format) : false
     } catch {
       return false
     }
@@ -175,7 +175,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
     // Load image
     return new Promise((resolve, reject) => {
-      const img = new Image()
+      const img = new (Image as any)()
 
       img.onload = async () => {
         try {

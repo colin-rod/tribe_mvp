@@ -225,7 +225,7 @@ class DashboardAnalyticsManager {
     this.trackInteraction({
       type: 'click',
       element: elementSelector,
-      elementId,
+      elementId: elementId || undefined,
       metadata: {
         coordinates: { x: event.clientX, y: event.clientY },
         button: event.button,
@@ -456,7 +456,7 @@ class DashboardAnalyticsManager {
         })
       }
     } catch (error) {
-      logger.error('Error flushing analytics data:', error)
+      logger.error('Error flushing analytics data:', error as any)
     }
   }
 

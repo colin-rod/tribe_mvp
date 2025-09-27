@@ -307,7 +307,7 @@ export function GroupPreferenceSettings({
                     name="frequency"
                     type="radio"
                     checked={isSelected}
-                    onChange={() => handleFrequencyChange(option.value)}
+                    onChange={() => handleFrequencyChange(option.value as FrequencyValue)}
                     disabled={useGroupDefaults}
                     className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 disabled:opacity-50"
                   />
