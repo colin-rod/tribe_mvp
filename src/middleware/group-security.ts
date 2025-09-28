@@ -260,7 +260,7 @@ export async function logGroupOperation(
     }
 
     // Log to your preferred audit system
-    logger.info('Group operation audit', auditLog)
+    logger.info('Group operation audit', auditLog as any)
 
     // Could also store in database for compliance
     // await storeAuditLog(auditLog)

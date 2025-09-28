@@ -15,7 +15,7 @@ interface NextData {
   }
 }
 
-interface ExtendedWindow extends Window {
+interface ExtendedWindow extends Omit<Window, '__NEXT_DATA__'> {
   __NEXT_DATA__?: NextData
   __ENV__?: Record<string, string | undefined>
 }

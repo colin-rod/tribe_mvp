@@ -145,8 +145,8 @@ export class GroupNotificationResolver {
         notificationRecipients.push({
           id: recipient.id,
           name: recipient.name,
-          email: recipient.email,
-          phone: recipient.phone,
+          email: recipient.email ?? undefined,
+          phone: recipient.phone ?? undefined,
           effective_frequency: effectiveSettings.frequency,
           effective_channels: effectiveSettings.channels,
           effective_content_types: effectiveSettings.content_types,
@@ -199,7 +199,7 @@ export class GroupNotificationResolver {
     // Apply group defaults
     if (primaryMembership?.recipient_groups) {
       const groupSettings = primaryMembership.recipient_groups
-      effectiveFrequency = groupSettings.default_frequency || effectiveFrequency
+      effectiveFrequency = (groupSettings.default_frequency as NotificationFrequency) || effectiveFrequency
       effectiveChannels = (groupSettings.default_channels as NotificationChannel[] | undefined) || effectiveChannels
 
       // Apply group notification settings

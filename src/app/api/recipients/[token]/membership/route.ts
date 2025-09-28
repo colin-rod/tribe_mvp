@@ -56,8 +56,12 @@ type MembershipActionResult = {
   group_name: string
 }
 
-type EffectiveSettingsFunctionReturns = Database['public']['Functions']['get_effective_notification_settings']['Returns']
-type EffectiveSettingsFunctionRow = EffectiveSettingsFunctionReturns extends Array<infer T> ? T : never
+type EffectiveSettingsFunctionRow = {
+  frequency: string
+  channels: string[]
+  content_types: string[]
+  source: string
+}
 
 // Schema for membership visibility preferences
 const membershipVisibilitySchema = z.object({
@@ -545,17 +549,17 @@ async function getEffectiveSettings(
 ): Promise<EffectiveSettings> {
   try {
     // Use the database function if available
-    const { data, error } = await supabase.rpc<EffectiveSettingsFunctionReturns>(
+    const { data, error } = await supabase.rpc(
       'get_effective_notification_settings',
       {
         p_recipient_id: recipientId,
         p_group_id: groupId
-      }
+      } as any
     )
 
     const effectiveSettings: EffectiveSettingsFunctionRow | null = data?.[0] ?? null
 
-    if (error || !effectiveSettings) {
+    if (error || !effectiveSettings || !data) {
       // Fallback to manual resolution
       type RecipientGroupDefaults = {
         default_frequency: string | null
@@ -577,11 +581,19 @@ async function getEffectiveSettings(
       }
     }
 
+    // At this point, effectiveSettings is guaranteed to be non-null
+    // Type assertion is safe here because we've already checked for null above
+    const settings = effectiveSettings as {
+      frequency: string;
+      channels: string[];
+      content_types: string[];
+      source: string;
+    }
     return {
-      frequency: effectiveSettings.frequency,
-      channels: effectiveSettings.channels,
-      content_types: effectiveSettings.content_types,
-      source: effectiveSettings.source
+      frequency: settings.frequency,
+      channels: settings.channels,
+      content_types: settings.content_types,
+      source: settings.source
     }
   } catch (error) {
     logger.errorWithStack('Error getting effective settings:', error as Error)

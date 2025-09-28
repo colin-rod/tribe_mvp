@@ -45,6 +45,10 @@ const STATUS_CONFIG = {
     text: 'Draft',
     className: 'bg-neutral-100 text-neutral-600 border-neutral-200'
   },
+  scheduled: {
+    text: 'Scheduled',
+    className: 'bg-purple-100 text-purple-600 border-purple-200'
+  },
   sending: {
     text: 'Sending...',
     className: 'bg-blue-100 text-blue-600 border-blue-200'

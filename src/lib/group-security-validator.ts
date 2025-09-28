@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createLogger } from '@/lib/logger'
+import { createLogger, type LogContext } from '@/lib/logger'
 
 const logger = createLogger('GroupSecurityValidator')
 
@@ -331,9 +331,9 @@ export class GroupSecurityAuditor {
 
     // Log security events
     if (!event.success) {
-      logger.warn('Group security event failed', auditEvent)
+      logger.warn('Group security event failed', auditEvent as unknown as LogContext)
     } else {
-      logger.info('Group security event', auditEvent)
+      logger.info('Group security event', auditEvent as unknown as LogContext)
     }
 
     // In production, you'd want to send these to a security monitoring system

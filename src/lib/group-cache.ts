@@ -45,7 +45,7 @@ export class GroupCacheManager {
     } catch (error) {
       // Return stale data if available during error
       if (cached) {
-        logger.warn(`Using stale cache for ${key} due to error:`, error)
+        logger.warn(`Using stale cache for ${key} due to error:`, { error: String(error) })
         return cached.data
       }
       throw error
@@ -319,38 +319,35 @@ export class GroupQueryOptimizer {
     const promises: Promise<unknown>[] = []
 
     if (inserts.length > 0) {
-      promises.push(
-        supabase
-          .from('group_memberships')
-          .upsert(inserts.map(op => ({
-            recipient_id: op.recipient_id,
-            group_id: op.group_id,
-            ...op.settings
-          })))
-      )
+      const insertPromise = supabase
+        .from('group_memberships')
+        .upsert(inserts.map(op => ({
+          recipient_id: op.recipient_id,
+          group_id: op.group_id,
+          ...op.settings
+        })))
+      promises.push(Promise.resolve(insertPromise))
     }
 
     if (updates.length > 0) {
       // Updates need to be done individually due to different settings
       updates.forEach(op => {
-        promises.push(
-          supabase
-            .from('group_memberships')
-            .update(op.settings)
-            .eq('recipient_id', op.recipient_id)
-            .eq('group_id', op.group_id)
-        )
+        const updatePromise = supabase
+          .from('group_memberships')
+          .update(op.settings)
+          .eq('recipient_id', op.recipient_id)
+          .eq('group_id', op.group_id)
+        promises.push(Promise.resolve(updatePromise))
       })
     }
 
     if (deletes.length > 0) {
-      promises.push(
-        supabase
-          .from('group_memberships')
-          .update({ is_active: false })
-          .in('recipient_id', deletes.map(op => op.recipient_id))
-          .in('group_id', deletes.map(op => op.group_id))
-      )
+      const deletePromise = supabase
+        .from('group_memberships')
+        .update({ is_active: false })
+        .in('recipient_id', deletes.map(op => op.recipient_id))
+        .in('group_id', deletes.map(op => op.group_id))
+      promises.push(Promise.resolve(deletePromise))
     }
 
     await Promise.all(promises)

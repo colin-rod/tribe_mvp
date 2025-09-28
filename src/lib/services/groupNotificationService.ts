@@ -225,8 +225,8 @@ export class GroupNotificationService {
 
         if (membership) {
           return {
-            frequency: membership.notification_frequency || membership.recipient_groups.default_frequency || 'every_update',
-            channels: membership.preferred_channels || membership.recipient_groups.default_channels || ['email'],
+            frequency: membership.notification_frequency || (membership.recipient_groups as unknown as { default_frequency: string }).default_frequency || 'every_update',
+            channels: membership.preferred_channels || (membership.recipient_groups as unknown as { default_channels: string[] }).default_channels || ['email'],
             content_types: membership.content_types || ['photos', 'text', 'milestones'],
             source: membership.notification_frequency ? 'member_override' : 'group_default'
           }

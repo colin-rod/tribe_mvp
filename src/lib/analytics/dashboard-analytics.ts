@@ -1,6 +1,6 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
+import { createLogger, type LogContext } from '@/lib/logger'
 
 const logger = createLogger('DashboardAnalytics')
 
@@ -156,7 +156,7 @@ class DashboardAnalyticsManager {
   }
 
   private getCurrentContext() {
-    if (typeof window === 'undefined') return null
+    if (typeof window === 'undefined') return undefined
 
     return {
       page: window.location.pathname,
@@ -456,7 +456,7 @@ class DashboardAnalyticsManager {
         })
       }
     } catch (error) {
-      logger.error('Error flushing analytics data:', error as Error | unknown)
+      logger.errorWithStack('Error flushing analytics data:', error as Error)
     }
   }
 
@@ -503,7 +503,7 @@ class DashboardAnalyticsManager {
     }
 
     if (this.config.enableDebugMode) {
-      logger.info('Interaction tracked:', fullInteraction)
+      logger.info('Interaction tracked:', fullInteraction as LogContext & typeof fullInteraction)
     }
 
     // Auto-flush if batch size reached
@@ -518,7 +518,7 @@ class DashboardAnalyticsManager {
       timestamp: new Date(),
       context: {
         page: this.getCurrentContext()?.page || '',
-        component: metric.metadata?.component || 'unknown',
+        component: String(metric.metadata?.component) || 'unknown',
         device: this.getDeviceType()
       },
       ...metric
@@ -527,7 +527,7 @@ class DashboardAnalyticsManager {
     this.performanceMetrics.push(fullMetric)
 
     if (this.config.enableDebugMode) {
-      logger.info('Performance metric tracked:', fullMetric)
+      logger.info('Performance metric tracked:', fullMetric as LogContext & typeof fullMetric)
     }
   }
 

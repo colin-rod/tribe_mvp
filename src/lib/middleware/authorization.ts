@@ -98,14 +98,14 @@ export async function verifyResourceOwnership(
       return false
     }
 
-    const isOwner = data[userField] === userId
+    const isOwner = (data as any)[userField] === userId
 
     if (!isOwner) {
       logger.warn('Resource ownership violation detected', {
         userId,
         resourceType,
         resourceId,
-        actualOwner: data[userField]
+        actualOwner: (data as any)[userField]
       })
     }
 

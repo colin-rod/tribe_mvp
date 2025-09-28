@@ -173,7 +173,7 @@ export class TimelineCache {
 
       return jsonString
     } catch (error) {
-      logger.warn('Compression failed, storing uncompressed:', error)
+      logger.warn('Compression failed, storing uncompressed:', { error: error as unknown })
       return JSON.stringify(data)
     }
   }
@@ -219,7 +219,7 @@ export class TimelineCache {
       // Fallback to direct parse
       return JSON.parse(compressedData)
     } catch (error) {
-      logger.warn('Decompression failed, trying direct parse:', error)
+      logger.warn('Decompression failed, trying direct parse:', { error: error as unknown })
       return JSON.parse(compressedData)
     }
   }
@@ -260,7 +260,7 @@ export class TimelineCache {
       const blob = new Blob([workerScript], { type: 'application/javascript' })
       this.compressionWorker = new Worker(URL.createObjectURL(blob))
     } catch (error) {
-      logger.warn('Failed to setup compression worker:', error)
+      logger.warn('Failed to setup compression worker:', { error: error as unknown })
     }
   }
 
@@ -362,7 +362,7 @@ export class TimelineCache {
         })
       }
     } catch (error) {
-      logger.error('Failed to load cache from persistence:', error)
+      logger.error('Failed to load cache from persistence:', { error: error as unknown })
     }
   }
 
@@ -384,7 +384,7 @@ export class TimelineCache {
         totalSize: this.stats.totalSize
       })
     } catch (error) {
-      logger.error('Failed to save cache to persistence:', error)
+      logger.error('Failed to save cache to persistence:', { error: error as unknown })
     }
   }
 

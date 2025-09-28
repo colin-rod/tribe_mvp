@@ -281,11 +281,11 @@ export default function CreateUpdateWizard({
                   />
 
                   <MediaUpload
-                    onFilesSelected={processMediaFiles}
-                    onRemoveFile={removeMediaFile}
+                    files={formData.mediaFiles || []}
                     previewUrls={previewUrls}
-                    isLoading={isLoading}
-                    uploadProgress={uploadProgress}
+                    onFilesChange={processMediaFiles}
+                    onFileRemove={removeMediaFile}
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -309,10 +309,10 @@ export default function CreateUpdateWizard({
             {currentStep === 'preview' && (
               <UpdatePreview
                 formData={formData}
-                analysis={aiAnalysis}
-                selectedChild={selectedChild}
+                aiAnalysis={aiAnalysis}
+                child={selectedChild}
+                recipients={recipients}
                 previewUrls={previewUrls}
-                onBack={() => setCurrentStep('create')}
                 onSend={handleSendUpdate}
                 onSchedule={handleScheduleUpdate}
                 isLoading={isLoading}

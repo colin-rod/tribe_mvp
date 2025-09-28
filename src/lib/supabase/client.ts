@@ -134,6 +134,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
     if (!_supabase) {
       _supabase = createClient()
     }
-    return (_supabase as SupabaseClientType)[prop]
+    return (_supabase as SupabaseClientType)[prop as keyof SupabaseClientType]
   }
 })

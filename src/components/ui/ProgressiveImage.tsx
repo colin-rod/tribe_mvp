@@ -99,8 +99,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   // Intersection observer for lazy loading
   const { isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
-    rootMargin: '50px',
-    enabled: !priority && loading === 'lazy'
+    rootMargin: '50px'
   })
 
   // Generate optimized image sources
@@ -196,8 +195,8 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
               // Cache the image blob
               await cache.cacheImage(key, blob, {
                 originalSrc: imageSrc,
-                width: img.naturalWidth,
-                height: img.naturalHeight
+                width: img.naturalWidth.toString(),
+                height: img.naturalHeight.toString()
               })
 
               resolve(URL.createObjectURL(blob))

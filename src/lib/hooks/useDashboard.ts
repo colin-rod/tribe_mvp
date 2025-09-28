@@ -353,7 +353,7 @@ export function useUpdateEngagement(updateId: string | null, parentId: string | 
       await dashboardClient.incrementViewCount(updateId, parentId)
     } catch (err) {
       // Silently fail view count increments to avoid user-facing errors
-      logger.warn('Failed to increment view count', err)
+      logger.warn('Failed to increment view count', { error: String(err) })
     }
   }, [updateId, parentId])
 

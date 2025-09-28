@@ -59,7 +59,7 @@ export function useSearchDebounced({
 
   // Initialize state from URL params if persistence is enabled
   const initializeFromUrl = useCallback(() => {
-    if (!enableUrlPersistence) {
+    if (!enableUrlPersistence || !searchParams) {
       return { query: initialQuery, filters: initialFilters }
     }
 
@@ -110,7 +110,7 @@ export function useSearchDebounced({
 
   // Update URL with search parameters
   const updateUrl = useCallback((searchQuery: string, searchFilters: SearchFilters) => {
-    if (!enableUrlPersistence) return
+    if (!enableUrlPersistence || !searchParams) return
 
     const params = new URLSearchParams(searchParams.toString())
 
@@ -215,7 +215,7 @@ export function useSearchDebounced({
     setIsSearching(false)
 
     // Clear URL parameters if persistence is enabled
-    if (enableUrlPersistence) {
+    if (enableUrlPersistence && searchParams) {
       const params = new URLSearchParams(searchParams.toString())
 
       // Remove search-related parameters

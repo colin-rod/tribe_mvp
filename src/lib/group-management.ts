@@ -285,9 +285,9 @@ export async function addRecipientsToGroup(
   const memberships: Partial<GroupMembership>[] = recipientIds.map(recipientId => ({
     recipient_id: recipientId,
     group_id: groupId,
-    notification_frequency: defaultSettings?.notification_frequency,
-    preferred_channels: defaultSettings?.preferred_channels,
-    content_types: defaultSettings?.content_types,
+    notification_frequency: defaultSettings?.notification_frequency as GroupMembership['notification_frequency'],
+    preferred_channels: defaultSettings?.preferred_channels as GroupMembership['preferred_channels'],
+    content_types: defaultSettings?.content_types as GroupMembership['content_types'],
     role: defaultSettings?.role || 'member'
   }))
 
@@ -401,10 +401,10 @@ export async function updateGroupNotificationSettings(
   if (settings.apply_to_existing_members) {
     const memberUpdates: Partial<Pick<GroupMembership, 'notification_frequency' | 'preferred_channels'>> = {}
     if (settings.default_frequency) {
-      memberUpdates.notification_frequency = settings.default_frequency
+      memberUpdates.notification_frequency = settings.default_frequency as GroupMembership['notification_frequency']
     }
     if (settings.default_channels) {
-      memberUpdates.preferred_channels = settings.default_channels
+      memberUpdates.preferred_channels = settings.default_channels as GroupMembership['preferred_channels']
     }
 
     if (Object.keys(memberUpdates).length > 0) {
@@ -442,24 +442,20 @@ export async function getGroupAnalytics(): Promise<{
   if (!user) throw new Error('Not authenticated')
 
   // Get basic stats
-  const [groupsResult, membershipsResult] = await Promise.all([
-    supabase
-      .from('recipient_groups')
-      .select('id')
-      .eq('parent_id', user.id),
-    supabase
-      .from('group_memberships')
-      .select('group_id, notification_frequency')
-      .eq('is_active', true)
-      .in('group_id',
-        supabase
-          .from('recipient_groups')
-          .select('id')
-          .eq('parent_id', user.id)
-      )
-  ])
+  const groupsResult = await supabase
+    .from('recipient_groups')
+    .select('id')
+    .eq('parent_id', user.id)
 
   const groups = groupsResult.data || []
+  const groupIds = groups.map(g => g.id)
+
+  const membershipsResult = await supabase
+    .from('group_memberships')
+    .select('group_id, notification_frequency')
+    .eq('is_active', true)
+    .in('group_id', groupIds)
+
   const memberships = membershipsResult.data || []
 
   // Calculate group sizes

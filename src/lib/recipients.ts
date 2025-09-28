@@ -220,6 +220,10 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
 
   return recipientsWithGroups.map((recipient) => ({
     ...recipient,
+    relationship: recipient.relationship as Recipient['relationship'],
+    frequency: recipient.frequency as Recipient['frequency'],
+    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
+    content_types: recipient.content_types as Recipient['content_types'],
     group: extractGroupFromRelation(recipient.recipient_groups)
   }))
 }
@@ -454,6 +458,10 @@ export async function bulkUpdateRecipients(
 
   return recipientsWithGroups.map((recipient) => ({
     ...recipient,
+    relationship: recipient.relationship as Recipient['relationship'],
+    frequency: recipient.frequency as Recipient['frequency'],
+    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
+    content_types: recipient.content_types as Recipient['content_types'],
     group: extractGroupFromRelation(recipient.recipient_groups)
   }))
 }
@@ -613,7 +621,7 @@ async function sendPreferenceLink(email: string, name: string, token: string): P
       .eq('token', token)
       .single()
 
-    const senderName = tokenData?.profiles?.name || 'Someone'
+    const senderName = (tokenData?.profiles as unknown as { name: string } | undefined)?.name || 'Someone'
 
     // Send the preference invitation email
     const result = await clientEmailService.sendTemplatedEmail(

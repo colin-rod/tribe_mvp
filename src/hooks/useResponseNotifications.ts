@@ -77,8 +77,11 @@ export function useResponseNotifications() {
                 .single()
 
               if (recipient && recipient.name && recipient.relationship) {
+                // Handle both array and single object cases for children
+                const child = Array.isArray(update.children) ? update.children[0] : update.children
+                const childName = (child as any)?.name || 'Child'
                 showResponseNotification({
-                  childName: update.children.name,
+                  childName,
                   recipientName: recipient.name,
                   relationship: recipient.relationship,
                   content: newResponse.content || 'Sent a photo',

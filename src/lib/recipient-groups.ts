@@ -121,6 +121,8 @@ export async function getUserGroups(): Promise<(RecipientGroup & { recipient_cou
   // Transform the data to include recipient counts
   return groupsWithCounts.map((group) => ({
     ...group,
+    default_frequency: group.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: group.default_channels as RecipientGroup['default_channels'],
     recipient_count: Array.isArray(group.recipients) && group.recipients.length > 0
       ? group.recipients[0]?.count ?? 0
       : 0

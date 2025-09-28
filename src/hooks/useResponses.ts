@@ -109,13 +109,16 @@ export function useResponses(updateId: string) {
 
           // Type guard to ensure payload.new exists and has required properties
           const newResponse = payload.new
-          if (!newResponse || !newResponse.id || !newResponse.update_id) {
+          if (!newResponse || typeof newResponse !== 'object' || !('id' in newResponse) || !('update_id' in newResponse)) {
             loggerRef.current.warn('Invalid response payload received', { payload: newResponse })
             return
           }
 
+          // Now we know newResponse has id and update_id properties
+          const typedResponse = newResponse as { id: string; update_id: string }
+
           // Fetch complete response data with recipient info
-          fetchNewResponse(newResponse.id)
+          fetchNewResponse(typedResponse.id)
           setNewResponseCount(prev => prev + 1)
         }
       )

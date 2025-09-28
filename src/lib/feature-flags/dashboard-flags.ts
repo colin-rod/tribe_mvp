@@ -1,6 +1,6 @@
 'use client'
 
-import { createLogger } from '@/lib/logger'
+import { createLogger, type LogContext } from '@/lib/logger'
 
 const logger = createLogger('DashboardFeatureFlags')
 
@@ -335,7 +335,7 @@ class DashboardFeatureFlags {
         }
       }
     } catch (error) {
-      logger.error('Failed to load feature flags from storage:', error)
+      logger.errorWithStack('Failed to load feature flags from storage:', error as Error)
     }
   }
 
@@ -348,7 +348,7 @@ class DashboardFeatureFlags {
       }
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data))
     } catch (error) {
-      logger.error('Failed to save feature flags to storage:', error)
+      logger.errorWithStack('Failed to save feature flags to storage:', error as Error)
     }
   }
 
@@ -362,7 +362,7 @@ class DashboardFeatureFlags {
     // Clear evaluation cache when context changes
     this.evaluationCache.clear()
 
-    logger.info('User context updated:', this.userContext)
+    logger.info('User context updated:', this.userContext as unknown as LogContext)
   }
 
   public setAnalyticsCallback(callback: (event: string, data: Record<string, unknown>) => void) {
@@ -614,7 +614,7 @@ class DashboardFeatureFlags {
     this.experiments.set(experiment.id, experiment)
     this.saveToStorage()
 
-    logger.info('Experiment created:', experiment)
+    logger.info('Experiment created:', experiment as unknown as LogContext)
     return true
   }
 

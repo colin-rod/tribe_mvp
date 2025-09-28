@@ -252,7 +252,7 @@ export class TemplateAnalyticsTracker {
         return acc
       }, {} as Record<string, number>)
       const mostCommonAction = Object.entries(actionCounts)
-        .sort(([, a], [, b]) => b - a)[0]?.[0] || 'none'
+        .sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'none'
 
       // Age group performance
       const ageGroups = this.groupByAgeRange(analytics)

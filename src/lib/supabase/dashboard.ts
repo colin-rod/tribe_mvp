@@ -14,7 +14,7 @@ import type {
   PaginationParams,
   EngagementUpdatePayload
 } from '../types/database'
-import { createLogger } from '../logger'
+import { createLogger, type LogContext } from '../logger'
 
 const logger = createLogger('dashboard-client')
 
@@ -75,7 +75,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error fetching dashboard updates', error)
+        logger.error('Error fetching dashboard updates', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: [], error: new Error(error.message), hasMore: false }
       }
 
@@ -131,7 +131,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error fetching timeline updates', error)
+        logger.error('Error fetching timeline updates', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: [], error: new Error(error.message) }
       }
 
@@ -165,7 +165,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error fetching dashboard stats', error)
+        logger.error('Error fetching dashboard stats', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: null, error: new Error(error.message) }
       }
 
@@ -199,7 +199,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error toggling update like', error)
+        logger.error('Error toggling update like', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: null, error: new Error(error.message) }
       }
 
@@ -244,7 +244,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error adding update comment', error)
+        logger.error('Error adding update comment', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: null, error: new Error(error.message) }
       }
 
@@ -294,11 +294,11 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error fetching update likes', error)
+        logger.error('Error fetching update likes', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: [], error: new Error(error.message) }
       }
 
-      const likes = (data || []).map(like => ({
+      const likes = (data || []).map((like: any) => ({
         id: like.id,
         parentId: like.parent_id,
         parentName: like.parent_name,
@@ -344,11 +344,11 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error fetching update comments', error)
+        logger.error('Error fetching update comments', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { data: [], error: new Error(error.message) }
       }
 
-      const comments = (data || []).map(comment => ({
+      const comments = (data || []).map((comment: any) => ({
         id: comment.id,
         parentId: comment.parent_id,
         parentName: comment.parent_name,
@@ -382,7 +382,7 @@ export class DashboardClient {
       })
 
       if (error) {
-        logger.error('Error incrementing view count', error)
+        logger.error('Error incrementing view count', { message: error.message, details: error.details, hint: error.hint } as LogContext)
         return { error: new Error(error.message) }
       }
 
@@ -415,7 +415,7 @@ export class DashboardClient {
         (payload: RealtimePostgresChangesPayload<UpdateRow>) => {
           logger.debug('Received engagement update', payload)
 
-          const update = payload.new
+          const update = payload.new as any
           if (update?.id) {
             callback({
               update_id: update.id,
@@ -462,13 +462,13 @@ export class DashboardClient {
             const { data: update } = await this.supabase
               .from('updates')
               .select('parent_id')
-              .eq('id', comment.update_id)
+              .eq('id', (comment as any).update_id)
               .single<{ parent_id: string }>()
 
             if (update?.parent_id === parentId) {
               callback({
-                updateId: comment.update_id,
-                comment
+                updateId: (comment as any).update_id,
+                comment: comment as any
               })
             }
           }

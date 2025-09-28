@@ -207,7 +207,7 @@ export function useTimelineData({
       setLoading(true)
       setError(null)
 
-      const rawUpdates = await getRecentUpdatesWithStats(pageSize, page * pageSize)
+      const rawUpdates = await getRecentUpdatesWithStats(pageSize)
       const transformedUpdates = rawUpdates.map((update) =>
         transformToCardData(update as DashboardUpdate)
       )

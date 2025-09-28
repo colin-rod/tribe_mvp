@@ -60,6 +60,7 @@ const meta = {
   },
   args: {
     update: baseUpdate,
+    onClick: (updateId: string) => console.log('Update clicked:', updateId),
   },
   decorators: [
     (Story) => (
@@ -247,6 +248,9 @@ export const OldUpdate: Story = {
 
 // Card List Example
 export const CardList: Story = {
+  args: {
+    onClick: () => {},
+  },
   render: () => (
     <div className="space-y-4 max-w-md">
       <UpdateCard
@@ -380,6 +384,9 @@ export const AccessibilityExample: Story = {
 
 // Hover and Interactive States
 export const InteractiveStates: Story = {
+  args: {
+    onClick: () => {},
+  },
   render: () => (
     <div className="space-y-8 max-w-md">
       <div>
