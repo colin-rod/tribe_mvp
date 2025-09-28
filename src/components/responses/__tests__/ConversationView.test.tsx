@@ -1,8 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ConversationView } from '../ConversationView'
 import { mockResponses } from '@/test-utils/mockData'
 
-// Mock the useResponses hook
+// Mock the useResponses hook first, before any other imports
 const mockMarkResponsesAsRead = jest.fn()
 const mockUseResponses = {
   responses: mockResponses,
@@ -30,6 +29,21 @@ jest.mock('../ResponseThread', () => {
   }
 })
 
+// Mock ChildImage component to prevent DOM prop warnings
+jest.mock('@/components/ui/ChildImage', () => {
+  return function MockChildImage({ name, alt, className }: { name?: string, alt: string, className?: string }) {
+    return (
+      <div
+        data-testid="child-image"
+        className={className}
+        aria-label={alt}
+      >
+        {name || 'Child'}
+      </div>
+    )
+  }
+})
+
 jest.mock('../ResponseAnalytics', () => {
   return function MockResponseAnalytics({ updateId }: Record<string, unknown>) {
     return (
@@ -45,6 +59,29 @@ jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn(() => '2 hours ago'),
 }))
 
+// Mock heroicons
+jest.mock('@heroicons/react/24/outline', () => ({
+  ChatBubbleLeftIcon: ({ className }: { className?: string }) => <div data-testid="chat-icon" className={className} />,
+  ArrowTrendingUpIcon: ({ className }: { className?: string }) => <div data-testid="trending-icon" className={className} />,
+  UsersIcon: ({ className }: { className?: string }) => <div data-testid="users-icon" className={className} />,
+  CalendarDaysIcon: ({ className }: { className?: string }) => <div data-testid="calendar-icon" className={className} />,
+  PhotoIcon: ({ className }: { className?: string }) => <div data-testid="photo-icon" className={className} />,
+}))
+
+// Mock Next.js Image component
+jest.mock('next/image', () => {
+  return function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onClick={onClick}
+      />
+    )
+  }
+})
+
 // Mock window.open
 Object.defineProperty(window, 'open', {
   writable: true,
@@ -53,6 +90,9 @@ Object.defineProperty(window, 'open', {
 
 const { useResponses } = require('@/hooks/useResponses')
 const { formatDistanceToNow } = require('date-fns')
+
+// Import ConversationView after all mocks are set up
+import { ConversationView } from '../ConversationView'
 
 const mockUpdate = {
   id: 'update-123',

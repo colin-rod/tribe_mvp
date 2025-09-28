@@ -44,7 +44,7 @@ Object.defineProperty(window, 'Notification', {
   writable: true,
 })
 
-// Mock window.location with a getter/setter for href
+// Mock window.location
 const mockLocation = {
   href: 'http://localhost:3000',
   assign: jest.fn(),
@@ -60,9 +60,11 @@ Object.defineProperty(mockLocation, 'href', {
   configurable: true,
 })
 
-// Delete the existing location and create a new one
-delete (window as Window & { location?: Location }).location
-;(window as Window & { location?: Location }).location = mockLocation
+// Mock window.location before any tests run
+beforeAll(() => {
+  delete (window as any).location
+  window.location = mockLocation as any
+})
 
 describe('useResponseNotifications', () => {
   let realtimeCallback: (payload: unknown) => void

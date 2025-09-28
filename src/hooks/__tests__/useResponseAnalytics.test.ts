@@ -1,6 +1,17 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { useResponseAnalytics } from '../useResponseAnalytics'
 
+// Mock logger
+const mockLoggerError = jest.fn()
+jest.mock('@/lib/logger', () => ({
+  createLogger: () => ({
+    error: mockLoggerError,
+    info: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  }),
+}))
+
 // Mock Supabase client
 const mockSelect = jest.fn()
 const mockEq = jest.fn()
@@ -207,10 +218,14 @@ describe('useResponseAnalytics', () => {
     const responsesByHour = result.current.analytics!.responsesByHour
     expect(responsesByHour).toHaveLength(24)
 
-    // Check specific hours based on mock data
-    expect(responsesByHour[9].count).toBe(1) // 09:15 UTC
-    expect(responsesByHour[14].count).toBe(1) // 14:30 UTC
-    expect(responsesByHour[15].count).toBe(1) // 15:45 UTC
+    // Check specific hours based on mock data - times are parsed with getHours() which uses local time
+    const response1Hour = new Date('2024-01-21T09:15:00Z').getHours()
+    const response2Hour = new Date('2024-01-20T14:30:00Z').getHours()
+    const response3Hour = new Date('2024-01-20T15:45:00Z').getHours()
+
+    expect(responsesByHour[response1Hour].count).toBe(1)
+    expect(responsesByHour[response2Hour].count).toBe(1)
+    expect(responsesByHour[response3Hour].count).toBe(1)
 
     // Other hours should have 0
     expect(responsesByHour[0].count).toBe(0)
@@ -330,8 +345,6 @@ describe('useResponseAnalytics', () => {
     jest.clearAllMocks()
     mockGte.mockRejectedValueOnce({ message: 'Database error' })
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-
     const { result } = renderHook(() => useResponseAnalytics('30d'))
 
     await waitFor(() => {
@@ -340,12 +353,10 @@ describe('useResponseAnalytics', () => {
 
     expect(result.current.error).toBe('Failed to load analytics')
     expect(result.current.analytics).toBeNull()
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(mockLoggerError).toHaveBeenCalledWith(
       'Error fetching response analytics:',
-      { message: 'Database error' }
+      { error: { message: 'Database error' } }
     )
-
-    consoleSpy.mockRestore()
   })
 
   it('handles updates query error', async () => {
@@ -357,8 +368,6 @@ describe('useResponseAnalytics', () => {
       })
       .mockRejectedValueOnce({ message: 'Updates query failed' })
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-
     const { result } = renderHook(() => useResponseAnalytics('30d'))
 
     await waitFor(() => {
@@ -367,20 +376,16 @@ describe('useResponseAnalytics', () => {
 
     expect(result.current.error).toBe('Failed to load analytics')
     expect(result.current.analytics).toBeNull()
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(mockLoggerError).toHaveBeenCalledWith(
       'Error fetching response analytics:',
-      { message: 'Updates query failed' }
+      { error: { message: 'Updates query failed' } }
     )
-
-    consoleSpy.mockRestore()
   })
 
   it('handles network errors', async () => {
     jest.clearAllMocks()
     mockGetUser.mockRejectedValue(new Error('Network error'))
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-
     const { result } = renderHook(() => useResponseAnalytics('30d'))
 
     await waitFor(() => {
@@ -389,12 +394,10 @@ describe('useResponseAnalytics', () => {
 
     expect(result.current.error).toBe('Failed to load analytics')
     expect(result.current.analytics).toBeNull()
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(mockLoggerError).toHaveBeenCalledWith(
       'Error fetching response analytics:',
-      expect.any(Error)
+      { error: expect.any(Error) }
     )
-
-    consoleSpy.mockRestore()
   })
 
   it('calculates zero response rate correctly', async () => {
