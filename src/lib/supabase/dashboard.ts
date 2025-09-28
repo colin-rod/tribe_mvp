@@ -417,12 +417,13 @@ export class DashboardClient {
 
           const update = payload.new as Record<string, unknown>
           if (update?.id) {
+            const updateData = update as Record<string, unknown>
             callback({
-              update_id: update.id,
-              parent_id: update.parent_id,
-              like_count: update.like_count ?? 0,
-              response_count: update.response_count ?? 0,
-              view_count: update.view_count ?? 0
+              update_id: String(updateData.id || ''),
+              parent_id: String(updateData.parent_id || ''),
+              like_count: Number(updateData.like_count) || 0,
+              response_count: Number(updateData.response_count) || 0,
+              view_count: Number(updateData.view_count) || 0
             })
           }
         }
@@ -467,7 +468,7 @@ export class DashboardClient {
 
             if (update?.parent_id === parentId) {
               callback({
-                updateId: (comment as Record<string, unknown>).update_id,
+                updateId: String((comment as Record<string, unknown>).update_id || ''),
                 comment: comment as CommentRow
               })
             }

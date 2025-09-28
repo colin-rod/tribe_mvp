@@ -5,7 +5,9 @@ import { JSDOM } from 'jsdom'
 // Create server-side DOMPurify instance
 const createDOMPurify = () => {
   const dom = new JSDOM('')
-  return DOMPurify(dom.window as unknown as Window)
+  // JSDOM provides sufficient DOM API compatibility for DOMPurify
+  // Use type assertion to bypass strict WindowLike interface requirements
+  return DOMPurify(dom.window as Parameters<typeof DOMPurify>[0])
 }
 
 /**

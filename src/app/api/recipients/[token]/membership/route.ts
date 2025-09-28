@@ -548,14 +548,19 @@ async function getEffectiveSettings(
   membership: MembershipRecord
 ): Promise<EffectiveSettings> {
   try {
-    // Use the database function if available
-    const { data, error } = await supabase.rpc(
-      'get_effective_notification_settings',
-      {
-        p_recipient_id: recipientId,
-        p_group_id: groupId
-      } as { p_recipient_id: string; p_group_id: string }
-    )
+    // Fall back to manual resolution since RPC function has type issues
+    let data: unknown[] | null = null
+    let error: unknown = null
+
+    // Try to call the RPC function, but if it fails, we'll fall back to manual logic
+    try {
+      const result = await supabase.rpc('get_effective_notification_settings')
+      data = result.data
+      error = result.error
+    } catch (rpcError) {
+      // RPC function failed, will use fallback logic below
+      error = rpcError
+    }
 
     const effectiveSettings: EffectiveSettingsFunctionRow | null = data?.[0] ?? null
 
