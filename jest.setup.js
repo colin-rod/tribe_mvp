@@ -33,6 +33,11 @@ jest.mock('@heroicons/react/24/outline', () => ({
 // Mock date-fns
 jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn(() => '2 hours ago'),
+  differenceInDays: jest.fn(() => 250),
+  differenceInWeeks: jest.fn(() => 35),
+  differenceInMonths: jest.fn(() => 8),
+  format: jest.fn(() => 'September'),
+  getDay: jest.fn(() => 1),
 }))
 
 // Mock ChildImage component
@@ -49,6 +54,9 @@ jest.mock('@/components/ui/LoadingSpinner', () => {
   }
 })
 
+// Mock Math.random for consistent test results
+Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
+
 // Global test setup
 beforeEach(() => {
   // Clear all mocks before each test
@@ -56,7 +64,9 @@ beforeEach(() => {
 })
 
 // Handle window.open for media gallery tests
-Object.defineProperty(window, 'open', {
-  writable: true,
-  value: jest.fn(),
-})
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'open', {
+    writable: true,
+    value: jest.fn(),
+  })
+}

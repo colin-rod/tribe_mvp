@@ -311,9 +311,8 @@ export function getWeatherActivity(): string {
 export function substituteVariables(templateText: string, context: PromptVariables): string {
   let result = templateText
 
-  // Replace all variables in the format [variable_name]
+  // First, replace all properly formatted variables [variable_name]
   const variableRegex = /\[([^\]]+)\]/g
-
   result = result.replace(variableRegex, (match, variableName) => {
     const value = context[variableName as keyof PromptVariables]
 
@@ -333,6 +332,19 @@ export function substituteVariables(templateText: string, context: PromptVariabl
 
     // For any other type, convert to string
     return String(value)
+  })
+
+  // Handle malformed variables: [variable_name followed by other characters without closing ]
+  const malformedRegex = /\[([a-zA-Z_][a-zA-Z0-9_]*)[^a-zA-Z0-9_\]]/g
+  result = result.replace(malformedRegex, (match, variableName) => {
+    const value = context[variableName as keyof PromptVariables]
+
+    if (value !== undefined && value !== null) {
+      // Replace just the variable part, keep the rest
+      return match.replace(`[${variableName}`, String(value))
+    }
+
+    return match // Keep original if variable not found
   })
 
   return result
