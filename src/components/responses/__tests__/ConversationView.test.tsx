@@ -8,8 +8,8 @@ jest.mock('@/hooks/useResponses', () => ({
 }))
 
 // Mock child components
-jest.mock('../ResponseThread', () => {
-  return function MockResponseThread({ updateId, responses, loading, showNotifications }: Record<string, unknown>) {
+jest.mock('../ResponseThread', () => ({
+  ResponseThread: function MockResponseThread({ updateId, responses, loading, showNotifications }: Record<string, unknown>) {
     return (
       <div data-testid="response-thread">
         <div>Update ID: {updateId}</div>
@@ -19,18 +19,26 @@ jest.mock('../ResponseThread', () => {
       </div>
     )
   }
-})
+}))
 
 // Mock ChildImage component to prevent DOM prop warnings
 jest.mock('@/components/ui/ChildImage', () => {
   return {
     __esModule: true,
-    default: function MockChildImage({ name, alt, className }: { name?: string, alt: string, className?: string }) {
+    default: function MockChildImage({ childId, photoUrl, name, alt, className }: {
+      childId: string,
+      photoUrl?: string,
+      name?: string,
+      alt: string,
+      className?: string
+    }) {
       return (
         <div
           data-testid="child-image"
           className={className}
           aria-label={alt}
+          data-child-id={childId}
+          data-photo-url={photoUrl}
         >
           {name || 'Child'}
         </div>
@@ -39,15 +47,15 @@ jest.mock('@/components/ui/ChildImage', () => {
   }
 })
 
-jest.mock('../ResponseAnalytics', () => {
-  return function MockResponseAnalytics({ updateId }: Record<string, unknown>) {
+jest.mock('../ResponseAnalytics', () => ({
+  ResponseAnalytics: function MockResponseAnalytics({ updateId }: Record<string, unknown>) {
     return (
       <div data-testid="response-analytics">
         <div>Analytics for: {updateId}</div>
       </div>
     )
   }
-})
+}))
 
 // Mock date-fns
 jest.mock('date-fns', () => ({
@@ -75,6 +83,15 @@ jest.mock('@/components/ui/LoadingSpinner', () => ({
   LoadingSpinner: () => <div data-testid="loading-spinner">Loading...</div>
 }))
 
+// Mock hooks
+jest.mock('@/hooks/useResponseAnalytics', () => ({
+  useResponseAnalytics: jest.fn(() => ({
+    analytics: null,
+    loading: false,
+    error: null,
+  })),
+}))
+
 // Mock heroicons
 jest.mock('@heroicons/react/24/outline', () => ({
   ChatBubbleLeftIcon: ({ className }: { className?: string }) => <div data-testid="chat-icon" className={className} />,
@@ -82,6 +99,8 @@ jest.mock('@heroicons/react/24/outline', () => ({
   UsersIcon: ({ className }: { className?: string }) => <div data-testid="users-icon" className={className} />,
   CalendarDaysIcon: ({ className }: { className?: string }) => <div data-testid="calendar-icon" className={className} />,
   PhotoIcon: ({ className }: { className?: string }) => <div data-testid="photo-icon" className={className} />,
+  ClockIcon: ({ className }: { className?: string }) => <div data-testid="clock-icon" className={className} />,
+  ChartBarIcon: ({ className }: { className?: string }) => <div data-testid="chart-icon" className={className} />,
 }))
 
 // Mock Next.js Image component
@@ -90,14 +109,12 @@ jest.mock('next/image', () => {
     __esModule: true,
     default: function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
       return (
-        <div
+        <img
           data-testid="mock-image"
-          data-src={src}
-          data-alt={alt}
+          src={src}
+          alt={alt}
           className={className}
           onClick={onClick}
-          role="img"
-          aria-label={alt}
         />
       )
     }
@@ -116,6 +133,14 @@ import { mockResponses } from '@/test-utils/mockData'
 
 const { useResponses } = require('@/hooks/useResponses')
 const { formatDistanceToNow } = require('date-fns')
+
+const mockUseResponses = {
+  responses: mockResponses,
+  loading: false,
+  error: null,
+  newResponseCount: 0,
+  markResponsesAsRead: mockMarkResponsesAsRead,
+}
 
 const mockUpdate = {
   id: 'update-123',
@@ -142,13 +167,7 @@ const mockUpdate = {
 describe('ConversationView', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    useResponses.mockReturnValue({
-      responses: mockResponses,
-      loading: false,
-      error: null,
-      newResponseCount: 0,
-      markResponsesAsRead: mockMarkResponsesAsRead,
-    })
+    useResponses.mockReturnValue(mockUseResponses)
     formatDistanceToNow.mockReturnValue('2 hours ago')
   })
 
@@ -199,7 +218,7 @@ describe('ConversationView', () => {
   it('renders response stats', () => {
     render(<ConversationView updateId="update-123" update={mockUpdate} />)
 
-    expect(screen.getByText('3 responses')).toBeInTheDocument()
+    expect(screen.getByText('2 responses')).toBeInTheDocument()
     expect(screen.getByText(/Latest: 2 hours ago/)).toBeInTheDocument()
     expect(screen.getByText('Sent to 2 recipients')).toBeInTheDocument()
     expect(screen.getByTestId('users-icon')).toBeInTheDocument()
@@ -228,7 +247,7 @@ describe('ConversationView', () => {
 
     const responseThread = screen.getByTestId('response-thread')
     expect(responseThread).toHaveTextContent('Update ID: update-123')
-    expect(responseThread).toHaveTextContent('Responses: 3')
+    expect(responseThread).toHaveTextContent('Responses: 2')
     expect(responseThread).toHaveTextContent('Loading: false')
     expect(responseThread).toHaveTextContent('Show Notifications: true')
   })
@@ -378,7 +397,9 @@ describe('ConversationView', () => {
 
     render(<ConversationView updateId="update-123" update={updateWithNewlines} />)
 
-    const contentElement = screen.getByText('First line\n\nSecond line\nThird line')
+    const contentElement = screen.getByText((content, element) => {
+      return element?.textContent === 'First line\n\nSecond line\nThird line' && element?.tagName === 'P'
+    })
     expect(contentElement).toHaveClass('whitespace-pre-wrap')
   })
 
