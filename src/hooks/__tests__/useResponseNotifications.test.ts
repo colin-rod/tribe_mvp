@@ -44,26 +44,16 @@ Object.defineProperty(window, 'Notification', {
   writable: true,
 })
 
-// Mock window.location
-const mockLocation = {
-  href: 'http://localhost:3000',
-  assign: jest.fn(),
-  replace: jest.fn(),
-  reload: jest.fn(),
-}
-
-// Create a spy for href changes
-let currentHref = 'http://localhost:3000'
-Object.defineProperty(mockLocation, 'href', {
-  get: () => currentHref,
-  set: (value) => { currentHref = value },
-  configurable: true,
+// Mock window.open for photo clicks instead of location mocking
+Object.defineProperty(window, 'open', {
+  value: jest.fn(),
+  writable: true,
 })
 
-// Mock window.location before any tests run
-beforeAll(() => {
-  delete (window as Window & { location?: Location }).location
-  window.location = mockLocation as Location
+// Mock window.focus for notification clicks
+Object.defineProperty(window, 'focus', {
+  value: jest.fn(),
+  writable: true,
 })
 
 describe('useResponseNotifications', () => {
@@ -72,7 +62,6 @@ describe('useResponseNotifications', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockErrorWithStack.mockClear()
-    currentHref = 'http://localhost:3000'
 
     // Reset Notification permission
     Object.defineProperty(Notification, 'permission', {

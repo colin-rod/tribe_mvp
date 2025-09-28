@@ -1,18 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { mockResponses } from '@/test-utils/mockData'
 
-// Mock the useResponses hook first, before any other imports
+// Mock all dependencies first before any component imports
 const mockMarkResponsesAsRead = jest.fn()
-const mockUseResponses = {
-  responses: mockResponses,
-  loading: false,
-  error: null,
-  newResponseCount: 0,
-  markResponsesAsRead: mockMarkResponsesAsRead,
-}
 
 jest.mock('@/hooks/useResponses', () => ({
-  useResponses: jest.fn(() => mockUseResponses),
+  useResponses: jest.fn(),
 }))
 
 // Mock child components
@@ -31,16 +23,19 @@ jest.mock('../ResponseThread', () => {
 
 // Mock ChildImage component to prevent DOM prop warnings
 jest.mock('@/components/ui/ChildImage', () => {
-  return function MockChildImage({ name, alt, className }: { name?: string, alt: string, className?: string }) {
-    return (
-      <div
-        data-testid="child-image"
-        className={className}
-        aria-label={alt}
-      >
-        {name || 'Child'}
-      </div>
-    )
+  return {
+    __esModule: true,
+    default: function MockChildImage({ name, alt, className }: { name?: string, alt: string, className?: string }) {
+      return (
+        <div
+          data-testid="child-image"
+          className={className}
+          aria-label={alt}
+        >
+          {name || 'Child'}
+        </div>
+      )
+    }
   }
 })
 
@@ -59,6 +54,27 @@ jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn(() => '2 hours ago'),
 }))
 
+// Mock photo upload utility
+jest.mock('@/lib/photo-upload', () => ({
+  getChildPhotoUrl: jest.fn(() => Promise.resolve('/placeholder.png')),
+  refreshChildPhotoUrl: jest.fn(() => Promise.resolve('/placeholder.png')),
+}))
+
+// Mock logger
+jest.mock('@/lib/logger', () => ({
+  createLogger: jest.fn(() => ({
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  })),
+}))
+
+// Mock LoadingSpinner component
+jest.mock('@/components/ui/LoadingSpinner', () => ({
+  LoadingSpinner: () => <div data-testid="loading-spinner">Loading...</div>
+}))
+
 // Mock heroicons
 jest.mock('@heroicons/react/24/outline', () => ({
   ChatBubbleLeftIcon: ({ className }: { className?: string }) => <div data-testid="chat-icon" className={className} />,
@@ -70,18 +86,21 @@ jest.mock('@heroicons/react/24/outline', () => ({
 
 // Mock Next.js Image component
 jest.mock('next/image', () => {
-  return function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
-    return (
-      <div
-        data-testid="mock-image"
-        data-src={src}
-        data-alt={alt}
-        className={className}
-        onClick={onClick}
-        role="img"
-        aria-label={alt}
-      />
-    )
+  return {
+    __esModule: true,
+    default: function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
+      return (
+        <div
+          data-testid="mock-image"
+          data-src={src}
+          data-alt={alt}
+          className={className}
+          onClick={onClick}
+          role="img"
+          aria-label={alt}
+        />
+      )
+    }
   }
 })
 
@@ -91,11 +110,12 @@ Object.defineProperty(window, 'open', {
   value: jest.fn(),
 })
 
-const { useResponses } = require('@/hooks/useResponses')
-const { formatDistanceToNow } = require('date-fns')
-
 // Import ConversationView after all mocks are set up
 import { ConversationView } from '../ConversationView'
+import { mockResponses } from '@/test-utils/mockData'
+
+const { useResponses } = require('@/hooks/useResponses')
+const { formatDistanceToNow } = require('date-fns')
 
 const mockUpdate = {
   id: 'update-123',
