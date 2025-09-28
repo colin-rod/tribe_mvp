@@ -72,11 +72,14 @@ jest.mock('@heroicons/react/24/outline', () => ({
 jest.mock('next/image', () => {
   return function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
     return (
-      <img
-        src={src}
-        alt={alt}
+      <div
+        data-testid="mock-image"
+        data-src={src}
+        data-alt={alt}
         className={className}
         onClick={onClick}
+        role="img"
+        aria-label={alt}
       />
     )
   }

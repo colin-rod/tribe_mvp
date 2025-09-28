@@ -62,8 +62,8 @@ Object.defineProperty(mockLocation, 'href', {
 
 // Mock window.location before any tests run
 beforeAll(() => {
-  delete (window as any).location
-  window.location = mockLocation as any
+  delete (window as Window & { location?: Location }).location
+  window.location = mockLocation as Location
 })
 
 describe('useResponseNotifications', () => {
