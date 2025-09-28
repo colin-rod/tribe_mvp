@@ -23,6 +23,7 @@ interface LogEntry {
 
 class SecureLogger {
   private isDevelopment = process.env.NODE_ENV === 'development'
+  private isTest = process.env.NODE_ENV === 'test'
   private logLevel: LogLevel = (process.env.LOG_LEVEL as LogLevel) || (this.isDevelopment ? 'debug' : 'warn')
 
   // Sensitive field patterns to sanitize
@@ -94,6 +95,11 @@ class SecureLogger {
    * Output log entry (console in development, structured in production)
    */
   private output(logEntry: LogEntry): void {
+    // Suppress all output during tests unless explicitly enabled
+    if (this.isTest && !process.env.ENABLE_TEST_LOGS) {
+      return
+    }
+
     if (this.isDevelopment) {
       // Development: human-readable console output
       const timestamp = new Date(logEntry.timestamp).toLocaleTimeString()

@@ -57,6 +57,28 @@ jest.mock('@/components/ui/LoadingSpinner', () => {
 // Mock Math.random for consistent test results
 Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
 
+// Mock Supabase client
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(() => Promise.resolve({ data: null, error: null })),
+          gte: jest.fn(() => Promise.resolve({ data: [], error: null }))
+        })),
+        gte: jest.fn(() => Promise.resolve({ data: [], error: null }))
+      })),
+      insert: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      update: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ data: null, error: null }))
+      })),
+      delete: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ data: null, error: null }))
+      }))
+    }))
+  }))
+}))
+
 // Global test setup
 beforeEach(() => {
   // Clear all mocks before each test
