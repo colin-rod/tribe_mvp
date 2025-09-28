@@ -24,9 +24,13 @@ export function ResponseNotifications() {
     // Listen for browser notifications and convert them to in-app notifications
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'tribe-notifications') {
-        const newNotification = JSON.parse(e.newValue || '{}')
-        if (newNotification.id) {
-          setNotifications(prev => [newNotification, ...prev.slice(0, 4)]) // Keep max 5
+        try {
+          const newNotification = JSON.parse(e.newValue || '{}')
+          if (newNotification.id) {
+            setNotifications(prev => [newNotification, ...prev.slice(0, 4)]) // Keep max 5
+          }
+        } catch {
+          // Ignore invalid JSON
         }
       }
     }
