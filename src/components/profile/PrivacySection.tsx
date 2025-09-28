@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
 import { FormMessage } from '@/components/ui/FormMessage'
@@ -8,6 +8,16 @@ import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { PrivacyFormData, FormState } from '@/lib/types/profile'
+import {
+  getPrivacySettings,
+  updatePrivacySettings,
+  updateUserMetadataPrivacySettings,
+  requestDataExport,
+  requestDataDeletion,
+  downloadBlob,
+  convertPrivacySettingsToForm,
+  PrivacyAPIError
+} from '@/lib/api/privacy'
 import {
   LockClosedIcon,
   EyeIcon,
@@ -45,11 +55,13 @@ const VISIBILITY_OPTIONS = [
 
 export function PrivacySection({ user }: PrivacySectionProps) {
   const [formData, setFormData] = useState<PrivacyFormData>({
-    profileVisibility: user.user_metadata?.profileVisibility || 'friends',
-    dataSharing: user.user_metadata?.dataSharing ?? false,
-    analyticsOptOut: user.user_metadata?.analyticsOptOut ?? false,
-    deleteAfterInactivity: user.user_metadata?.deleteAfterInactivity ?? false
+    profileVisibility: 'friends',
+    dataSharing: false,
+    analyticsOptOut: false,
+    deleteAfterInactivity: false
   })
+
+  const [initialLoading, setInitialLoading] = useState(true)
 
   const [formState, setFormState] = useState<FormState>({
     loading: false,
@@ -61,6 +73,39 @@ export function PrivacySection({ user }: PrivacySectionProps) {
   const [showDataDeleteDialog, setShowDataDeleteDialog] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  // Load privacy settings on component mount
+  useEffect(() => {
+    loadPrivacySettings()
+  }, [])
+
+  const loadPrivacySettings = async () => {
+    try {
+      setInitialLoading(true)
+      const settings = await getPrivacySettings()
+
+      if (settings) {
+        setFormData(convertPrivacySettingsToForm(settings))
+      } else {
+        // Use user metadata as fallback
+        setFormData({
+          profileVisibility: user.user_metadata?.profileVisibility || 'friends',
+          dataSharing: user.user_metadata?.dataSharing ?? false,
+          analyticsOptOut: user.user_metadata?.analyticsOptOut ?? false,
+          deleteAfterInactivity: user.user_metadata?.deleteAfterInactivity ?? false
+        })
+      }
+    } catch (error) {
+      console.error('Error loading privacy settings:', error)
+      setFormState({
+        loading: false,
+        success: false,
+        error: error instanceof PrivacyAPIError ? error.message : 'Failed to load privacy settings'
+      })
+    } finally {
+      setInitialLoading(false)
+    }
+  }
 
   const handleInputChange = (field: keyof PrivacyFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -76,8 +121,11 @@ export function PrivacySection({ user }: PrivacySectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement actual API call to update privacy settings
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      // Update privacy settings in database
+      await updatePrivacySettings(formData)
+
+      // Also update user metadata for backward compatibility
+      await updateUserMetadataPrivacySettings(formData)
 
       setFormState({
         loading: false,
@@ -91,10 +139,11 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
     } catch (error) {
+      console.error('Error updating privacy settings:', error)
       setFormState({
         loading: false,
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update privacy settings'
+        error: error instanceof PrivacyAPIError ? error.message : 'Failed to update privacy settings'
       })
     }
   }
@@ -103,10 +152,16 @@ export function PrivacySection({ user }: PrivacySectionProps) {
     setExportLoading(true)
 
     try {
-      // TODO: Implement actual data export
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+      // Request full data export
+      const exportBlob = await requestDataExport('full')
 
-      // This would typically trigger a download or send an email with the data
+      // Generate filename with current date
+      const today = new Date().toISOString().split('T')[0]
+      const filename = `tribe_data_export_${today}.zip`
+
+      // Trigger download
+      downloadBlob(exportBlob, filename)
+
       setFormState({
         loading: false,
         success: true,
@@ -116,11 +171,12 @@ export function PrivacySection({ user }: PrivacySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch {
+    } catch (error) {
+      console.error('Error exporting data:', error)
       setFormState({
         loading: false,
         success: false,
-        error: 'Failed to export data. Please try again or contact support.'
+        error: error instanceof PrivacyAPIError ? error.message : 'Failed to export data. Please try again or contact support.'
       })
     } finally {
       setExportLoading(false)
@@ -132,8 +188,8 @@ export function PrivacySection({ user }: PrivacySectionProps) {
     setDeleteLoading(true)
 
     try {
-      // TODO: Implement actual data deletion
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+      // Request data deletion with confirmation
+      await requestDataDeletion('user_requested', true)
 
       setFormState({
         loading: false,
@@ -144,11 +200,12 @@ export function PrivacySection({ user }: PrivacySectionProps) {
       setTimeout(() => {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
-    } catch {
+    } catch (error) {
+      console.error('Error deleting data:', error)
       setFormState({
         loading: false,
         success: false,
-        error: 'Failed to delete data. Please try again or contact support.'
+        error: error instanceof PrivacyAPIError ? error.message : 'Failed to delete data. Please try again or contact support.'
       })
     } finally {
       setDeleteLoading(false)
@@ -185,6 +242,16 @@ export function PrivacySection({ user }: PrivacySectionProps) {
       />
     </button>
   )
+
+  // Show loading state while initial data is being fetched
+  if (initialLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+        <span className="ml-3 text-gray-600">Loading privacy settings...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6">
@@ -418,7 +485,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         onClose={() => setShowDataExportDialog(false)}
         onConfirm={handleDataExport}
         title="Export Your Data"
-        description="We&apos;ll create a downloadable file containing all your personal data, including profiles, updates, photos, and settings. This may take a few minutes."
+        description="We&apos;ll create a downloadable ZIP file containing all your personal data, including profiles, updates, photos, and settings. The download will start immediately."
         confirmText="Export Data"
         cancelText="Cancel"
         variant="info"
@@ -436,7 +503,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
             <li>All sent updates and responses</li>
           </ul>
           <p className="mt-2 text-sm text-blue-700">
-            You&apos;ll receive an email with a download link when your export is ready.
+            The download will start automatically when ready.
           </p>
         </div>
       </ConfirmationDialog>
@@ -447,7 +514,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         onClose={() => setShowDataDeleteDialog(false)}
         onConfirm={handleDataDeletion}
         title="Delete All Personal Data"
-        description="This will permanently delete all your personal data while keeping your account active. You can continue using Tribe, but all your updates, photos, and settings will be removed."
+        description="This will permanently delete all your personal data while keeping your account active. You can continue using Tribe, but all your updates, photos, and settings will be removed. This action cannot be undone."
         confirmText="Delete All Data"
         cancelText="Keep Data"
         variant="destructive"

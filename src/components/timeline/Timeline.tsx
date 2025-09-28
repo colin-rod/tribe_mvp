@@ -244,8 +244,8 @@ const Timeline = memo<TimelineProps>(function Timeline({
         responseCount: update.responseCount || 0,
         hasUnreadResponses: update.hasUnreadResponses || false,
         distributionStatus: update.distributionStatus,
-        isLiked: false, // TODO: implement likes
-        likeCount: 0 // TODO: implement like count
+        isLiked: update.isLiked || false,
+        likeCount: update.like_count || 0
       }))
     )
   }, [filteredGroups, isMobile])

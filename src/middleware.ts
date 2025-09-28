@@ -5,6 +5,72 @@ import { createLogger } from './lib/logger'
 
 const logger = createLogger('middleware')
 
+/**
+ * Startup validation to ensure critical environment variables are configured
+ * This runs on every request to catch configuration issues early
+ */
+function validateStartupConfiguration() {
+  try {
+    const env = getEnv() // This will throw if environment is invalid
+    const features = getFeatureFlags()
+
+    // Critical validation: Supabase must be enabled for the app to function
+    if (!features.supabaseEnabled) {
+      const error = new Error(
+        'Application startup failed: Supabase is not properly configured. ' +
+        'This application requires valid NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY ' +
+        'environment variables to function. Please check your environment configuration.'
+      )
+      logger.error('Startup validation failed - Supabase not enabled', {
+        hasUrl: !!env.NEXT_PUBLIC_SUPABASE_URL,
+        hasKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        context: 'middleware-startup-validation'
+      })
+      throw error
+    }
+
+    // Validate critical environment variables are not fallback values
+    if (env.NEXT_PUBLIC_SUPABASE_URL === 'http://localhost:54321' && process.env.NODE_ENV === 'production') {
+      const error = new Error(
+        'Production environment detected but Supabase URL is set to localhost. ' +
+        'Please configure a production Supabase URL.'
+      )
+      logger.error('Production environment with localhost Supabase URL', {
+        url: env.NEXT_PUBLIC_SUPABASE_URL,
+        nodeEnv: process.env.NODE_ENV,
+        context: 'middleware-startup-validation'
+      })
+      throw error
+    }
+
+    if (env.NEXT_PUBLIC_SUPABASE_ANON_KEY === 'development-fallback-key') {
+      const error = new Error(
+        'Supabase anonymous key is set to a development fallback value. ' +
+        'Please configure a valid Supabase anonymous key.'
+      )
+      logger.error('Development fallback key detected', {
+        nodeEnv: process.env.NODE_ENV,
+        context: 'middleware-startup-validation'
+      })
+      throw error
+    }
+
+    logger.debug('Startup validation successful', {
+      supabaseEnabled: features.supabaseEnabled,
+      emailEnabled: features.emailEnabled,
+      urlDomain: new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname,
+      nodeEnv: process.env.NODE_ENV,
+      context: 'middleware-startup-validation'
+    })
+
+    return { env, features }
+  } catch (error) {
+    logger.errorWithStack('Startup validation failed - application cannot continue', error as Error)
+    throw error
+  }
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -13,13 +79,8 @@ export async function middleware(request: NextRequest) {
   })
 
   try {
-    const env = getEnv()
-    const features = getFeatureFlags()
-
-    if (!features.supabaseEnabled) {
-      logger.warn('Supabase not configured - skipping auth middleware')
-      return response
-    }
+    // Perform startup validation on every request to catch configuration issues early
+    const { env, features } = validateStartupConfiguration()
 
     const supabase = createServerClient(
       env.NEXT_PUBLIC_SUPABASE_URL,
@@ -101,14 +162,52 @@ export async function middleware(request: NextRequest) {
 
     return response
   } catch (error) {
-    logger.errorWithStack('Middleware error', error as Error, {
+    logger.errorWithStack('Middleware error - application cannot continue', error as Error, {
       path: request.nextUrl.pathname,
-      userAgent: request.headers.get('user-agent')
+      userAgent: request.headers.get('user-agent'),
+      nodeEnv: process.env.NODE_ENV,
+      context: 'middleware-error-handler'
     })
 
-    // In case of environment or other errors, allow request to continue
-    // This prevents the app from being completely broken by config issues
-    return response
+    // For startup validation errors, return a 500 error instead of allowing continuation
+    // This ensures configuration issues are immediately visible
+    if ((error as Error).message.includes('startup') || (error as Error).message.includes('Supabase')) {
+      logger.error('Configuration error detected - returning 500 status', {
+        error: (error as Error).message,
+        path: request.nextUrl.pathname,
+        context: 'middleware-configuration-error'
+      })
+
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Application Configuration Error',
+          message: 'The application is not properly configured. Please check environment variables.',
+          details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+          timestamp: new Date().toISOString()
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    }
+
+    // For other errors, still return 500 to avoid masking issues
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred',
+        timestamp: new Date().toISOString()
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
   }
 }
 

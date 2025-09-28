@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/client'
 import { EnvelopeIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -94,8 +95,14 @@ export function AccountSection({ user }: AccountSectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement actual API call to update account settings
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      // Update user email in Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        email: formData.email
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
 
       setFormState({
         loading: false,
@@ -121,11 +128,20 @@ export function AccountSection({ user }: AccountSectionProps) {
     setDeleteLoading(true)
 
     try {
-      // TODO: Implement actual account deletion
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+      // Delete user account using Supabase Admin API
+      // Note: This requires a server-side endpoint as user deletion requires admin privileges
+      const { error } = await supabase.functions.invoke('delete-user-account', {
+        body: { userId: user.id }
+      })
 
-      // This would typically redirect to a goodbye page or sign out
-      logger.info('Account deletion would be processed here')
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      // Sign out the user after successful deletion
+      await supabase.auth.signOut()
+
+      logger.info('Account deletion completed successfully')
     } catch (error) {
       logger.error('Account deletion failed', { error })
       setFormState({

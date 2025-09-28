@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
@@ -119,8 +120,19 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement actual API call to update profile
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      // Update user profile in Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          bio: formData.bio,
+          timezone: formData.timezone
+        }
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
 
       setFormState({
         loading: false,

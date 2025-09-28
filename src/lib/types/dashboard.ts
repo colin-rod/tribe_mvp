@@ -13,6 +13,10 @@ export interface DashboardUpdate extends BaseUpdate {
   response_count?: number
   last_response_at?: string
   has_unread_responses?: boolean
+  // Engagement fields
+  like_count?: number
+  comment_count?: number
+  isLiked?: boolean // Computed based on current user
 }
 
 /**
@@ -48,6 +52,10 @@ export interface UpdateCardData {
   confirmed_recipients: string[]
   scheduled_for?: string
   sent_at?: string
+  // Likes and engagement
+  like_count: number
+  comment_count: number
+  isLiked?: boolean // Computed based on current user
 }
 
 /**

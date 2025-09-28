@@ -35,6 +35,10 @@ export type UpdateWithStats = Update & {
   response_count: number
   last_response_at: string | null
   has_unread_responses: boolean
+  // Engagement fields
+  like_count: number
+  comment_count: number
+  isLiked: boolean
 }
 
 /**
@@ -424,7 +428,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  // Get basic update data with child information
+  // Get basic update data with child information and engagement counts
   const { data: updates, error } = await supabase
     .from('updates')
     .select(`
@@ -447,9 +451,21 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     return []
   }
 
-  // Get response counts for each update
+  // Get the update IDs for batch queries
+  const updateIds = updates.map(update => update.id)
+
+  // Get user's likes for these updates in a single query
+  const { data: userLikes } = await supabase
+    .from('likes')
+    .select('update_id')
+    .eq('parent_id', user.id)
+    .in('update_id', updateIds)
+
+  const likedUpdateIds = new Set(userLikes?.map(like => like.update_id) || [])
+
+  // Get response counts and engagement data for each update
   const updatesWithStats = await Promise.all(
-    (updates as Update[]).map(async (update) => {
+    (updates as any[]).map(async (update) => {
       const { count } = await supabase
         .from('responses')
         .select('*', { count: 'exact', head: true })
@@ -467,7 +483,11 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
         ...update,
         response_count: count || 0,
         last_response_at: lastResponse?.received_at || null,
-        has_unread_responses: false // For now, we'll implement this later
+        has_unread_responses: false, // For now, we'll implement this later
+        // Engagement fields
+        like_count: update.like_count || 0,
+        comment_count: update.comment_count || 0,
+        isLiked: likedUpdateIds.has(update.id)
       }
     })
   )

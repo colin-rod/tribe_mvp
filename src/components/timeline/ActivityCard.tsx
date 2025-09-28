@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import type { UpdateCardData } from '@/lib/types/dashboard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import LikeButton from '@/components/ui/LikeButton'
 
 interface ActivityCardProps {
   update: UpdateCardData
@@ -269,9 +270,23 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
       )}
 
       {/* Footer with engagement stats */}
-      {showMetadata && update.responseCount > 0 && (
+      {showMetadata && (update.responseCount > 0 || update.like_count > 0) && (
         <footer className="flex items-center justify-between pt-3 border-t border-neutral-100">
           <div className="flex items-center space-x-4 text-xs text-neutral-500">
+            {/* Like button */}
+            <LikeButton
+              updateId={update.id}
+              initialLiked={update.isLiked}
+              initialCount={update.like_count}
+              size="sm"
+              showCount={true}
+              className="hover:bg-neutral-50 p-1 rounded-md -m-1"
+              onLikeChange={(isLiked, count) => {
+                // Optional: Update parent component state if needed
+                console.log(`Update ${update.id} like changed:`, { isLiked, count })
+              }}
+            />
+
             {update.responseCount > 0 && (
               <span className="flex items-center space-x-1">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

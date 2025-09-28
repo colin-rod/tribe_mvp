@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
+import { serverEmailService } from './serverEmailService'
+import { smsService } from './smsService'
+import { notificationTemplateService } from './notificationTemplateService'
+import { getEnv } from '@/lib/env'
 const logger = createLogger('GroupNotificationService')
 
 export interface NotificationPreferences {
@@ -472,34 +476,325 @@ export class GroupNotificationService {
    * Deliver a single notification
    */
   private async deliverNotification(job: NotificationJob): Promise<DeliveryResult> {
-    // This would integrate with your existing email/SMS services
-    // For now, this is a placeholder implementation
-
-    logger.info(`Delivering ${job.delivery_method} notification to ${job.recipient_id} for update ${job.update_id}`)
+    logger.info(`Delivering ${job.delivery_method} notification to ${job.recipient_id} for update ${job.update_id}`, {
+      jobId: job.id,
+      notificationType: job.notification_type,
+      urgencyLevel: job.urgency_level
+    })
 
     try {
-      // Simulate delivery (replace with actual delivery logic)
-      const mockSuccess = Math.random() > 0.1 // 90% success rate
+      // Get recipient details for delivery
+      const { data: recipient, error: recipientError } = await this.supabase
+        .from('recipients')
+        .select('email, phone, name')
+        .eq('id', job.recipient_id)
+        .single()
 
-      if (mockSuccess) {
-        return {
-          recipient_id: job.recipient_id,
-          group_id: job.group_id,
-          delivery_method: job.delivery_method,
-          status: 'delivered',
-          message_id: `msg_${Date.now()}_${job.recipient_id}`
-        }
-      } else {
+      if (recipientError || !recipient) {
+        logger.error('Failed to fetch recipient details', {
+          recipientId: job.recipient_id,
+          error: recipientError
+        })
         return {
           recipient_id: job.recipient_id,
           group_id: job.group_id,
           delivery_method: job.delivery_method,
           status: 'failed',
-          reason: 'Simulated delivery failure'
+          reason: 'Recipient not found'
         }
       }
 
+      // Prepare template data
+      const templateData = {
+        ...job.content,
+        recipient_name: recipient.name,
+        app_domain: getEnv().APP_DOMAIN || 'localhost:3000'
+      }
+
+      switch (job.delivery_method) {
+        case 'email':
+          return await this.deliverEmail(job, recipient.email, templateData)
+        case 'sms':
+          return await this.deliverSMS(job, recipient.phone, templateData)
+        case 'whatsapp':
+          return await this.deliverWhatsApp(job, recipient.phone, templateData)
+        default:
+          logger.error('Unsupported delivery method', {
+            deliveryMethod: job.delivery_method,
+            jobId: job.id
+          })
+          return {
+            recipient_id: job.recipient_id,
+            group_id: job.group_id,
+            delivery_method: job.delivery_method,
+            status: 'failed',
+            reason: `Unsupported delivery method: ${job.delivery_method}`
+          }
+      }
     } catch (error) {
+      logger.errorWithStack('Notification delivery error', error as Error, {
+        jobId: job.id,
+        recipientId: job.recipient_id,
+        deliveryMethod: job.delivery_method
+      })
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: (error as Error).message
+      }
+    }
+  }
+
+  /**
+   * Deliver notification via email
+   */
+  private async deliverEmail(
+    job: NotificationJob,
+    email: string,
+    templateData: Record<string, unknown>
+  ): Promise<DeliveryResult> {
+    if (!email) {
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'No email address available'
+      }
+    }
+
+    if (!serverEmailService.isConfigured()) {
+      logger.error('Email service not configured')
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'Email service not configured'
+      }
+    }
+
+    try {
+      const template = notificationTemplateService.generateEmailTemplate(
+        job.notification_type,
+        templateData
+      )
+
+      const result = await serverEmailService.sendEmail({
+        to: email,
+        subject: template.subject || 'New update from Tribe',
+        html: template.html || template.message,
+        text: template.message,
+        categories: [`tribe-${job.notification_type}`, 'tribe-group-notification'],
+        customArgs: {
+          jobId: job.id,
+          recipientId: job.recipient_id,
+          groupId: job.group_id,
+          updateId: job.update_id,
+          notificationType: job.notification_type,
+          urgencyLevel: job.urgency_level
+        }
+      })
+
+      if (result.success) {
+        logger.info('Email delivered successfully', {
+          jobId: job.id,
+          messageId: result.messageId,
+          to: email.substring(0, 3) + '***' + email.substring(email.length - 3)
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'delivered',
+          message_id: result.messageId
+        }
+      } else {
+        logger.error('Email delivery failed', {
+          jobId: job.id,
+          error: result.error,
+          statusCode: result.statusCode
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'failed',
+          reason: result.error || 'Email delivery failed'
+        }
+      }
+    } catch (error) {
+      logger.errorWithStack('Email delivery error', error as Error, {
+        jobId: job.id,
+        recipientId: job.recipient_id
+      })
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: (error as Error).message
+      }
+    }
+  }
+
+  /**
+   * Deliver notification via SMS
+   */
+  private async deliverSMS(
+    job: NotificationJob,
+    phone: string,
+    templateData: Record<string, unknown>
+  ): Promise<DeliveryResult> {
+    if (!phone) {
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'No phone number available'
+      }
+    }
+
+    if (!smsService.isConfigured()) {
+      logger.error('SMS service not configured')
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'SMS service not configured'
+      }
+    }
+
+    try {
+      const template = notificationTemplateService.generateSMSTemplate(
+        job.notification_type,
+        templateData
+      )
+
+      const result = await smsService.sendSMS({
+        to: phone,
+        message: template.message
+      })
+
+      if (result.success) {
+        logger.info('SMS delivered successfully', {
+          jobId: job.id,
+          messageId: result.messageId,
+          deliveryStatus: result.deliveryStatus
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'delivered',
+          message_id: result.messageId
+        }
+      } else {
+        logger.error('SMS delivery failed', {
+          jobId: job.id,
+          error: result.error,
+          statusCode: result.statusCode
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'failed',
+          reason: result.error || 'SMS delivery failed'
+        }
+      }
+    } catch (error) {
+      logger.errorWithStack('SMS delivery error', error as Error, {
+        jobId: job.id,
+        recipientId: job.recipient_id
+      })
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: (error as Error).message
+      }
+    }
+  }
+
+  /**
+   * Deliver notification via WhatsApp
+   */
+  private async deliverWhatsApp(
+    job: NotificationJob,
+    phone: string,
+    templateData: Record<string, unknown>
+  ): Promise<DeliveryResult> {
+    if (!phone) {
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'No phone number available'
+      }
+    }
+
+    if (!smsService.isConfigured()) {
+      logger.error('WhatsApp service not configured')
+      return {
+        recipient_id: job.recipient_id,
+        group_id: job.group_id,
+        delivery_method: job.delivery_method,
+        status: 'failed',
+        reason: 'WhatsApp service not configured'
+      }
+    }
+
+    try {
+      const template = notificationTemplateService.generateWhatsAppTemplate(
+        job.notification_type,
+        templateData
+      )
+
+      const result = await smsService.sendWhatsApp({
+        to: phone,
+        message: template.message
+      })
+
+      if (result.success) {
+        logger.info('WhatsApp message delivered successfully', {
+          jobId: job.id,
+          messageId: result.messageId,
+          deliveryStatus: result.deliveryStatus,
+          whatsappStatus: result.whatsappStatus
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'delivered',
+          message_id: result.messageId
+        }
+      } else {
+        logger.error('WhatsApp delivery failed', {
+          jobId: job.id,
+          error: result.error,
+          statusCode: result.statusCode
+        })
+        return {
+          recipient_id: job.recipient_id,
+          group_id: job.group_id,
+          delivery_method: job.delivery_method,
+          status: 'failed',
+          reason: result.error || 'WhatsApp delivery failed'
+        }
+      }
+    } catch (error) {
+      logger.errorWithStack('WhatsApp delivery error', error as Error, {
+        jobId: job.id,
+        recipientId: job.recipient_id
+      })
       return {
         recipient_id: job.recipient_id,
         group_id: job.group_id,

@@ -30,7 +30,11 @@ const baseUpdate: UpdateCardData = {
   suggested_recipients: ['grandma@example.com', 'grandpa@example.com'],
   confirmed_recipients: ['grandma@example.com', 'grandpa@example.com'],
   scheduled_for: undefined,
-  sent_at: '2024-12-25T14:30:00Z'
+  sent_at: '2024-12-25T14:30:00Z',
+  // Engagement fields
+  like_count: 8,
+  comment_count: 3,
+  isLiked: true
 }
 
 const meta = {

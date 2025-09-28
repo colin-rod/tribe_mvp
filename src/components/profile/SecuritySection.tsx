@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
@@ -149,8 +150,14 @@ export function SecuritySection({ user }: SecuritySectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement actual password change API call
-      await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API call
+      // Update password using Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        password: formData.newPassword
+      })
+
+      if (error) {
+        throw new Error(error.message)
+      }
 
       setFormState({
         loading: false,
@@ -195,10 +202,25 @@ export function SecuritySection({ user }: SecuritySectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement 2FA setup
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Enable MFA using Supabase Auth
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp'
+      })
 
-      setFormData(prev => ({ ...prev, twoFactorEnabled: true }))
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      // Store the QR code URL and secret for user setup
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          twoFactorEnabled: true,
+          qrCode: data.totp?.qr_code,
+          secret: data.totp?.secret
+        }))
+      }
+
       setFormState({
         loading: false,
         success: true,
@@ -221,10 +243,31 @@ export function SecuritySection({ user }: SecuritySectionProps) {
     setFormState({ loading: true, success: false, error: null })
 
     try {
-      // TODO: Implement 2FA disable
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Get the user's enrolled factors
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
 
-      setFormData(prev => ({ ...prev, twoFactorEnabled: false }))
+      if (factorsError) {
+        throw new Error(factorsError.message)
+      }
+
+      // Unenroll all TOTP factors
+      if (factors?.totp && factors.totp.length > 0) {
+        for (const factor of factors.totp) {
+          const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+            factorId: factor.id
+          })
+          if (unenrollError) {
+            throw new Error(unenrollError.message)
+          }
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        twoFactorEnabled: false,
+        qrCode: undefined,
+        secret: undefined
+      }))
       setFormState({
         loading: false,
         success: true,

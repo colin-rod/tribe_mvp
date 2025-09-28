@@ -77,6 +77,15 @@ const envSchema = z.object({
   }).optional().default('updates@colinrodrigues.com'),
   SENDGRID_FROM_NAME: z.string().optional().default('Tribe'),
 
+  // Twilio - Optional for SMS/WhatsApp functionality
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_PHONE_NUMBER: z.string().optional(),
+  TWILIO_WHATSAPP_NUMBER: z.string().optional(),
+
+  // App Domain - Used for generating links in notifications
+  APP_DOMAIN: z.string().optional().default('localhost:3000'),
+
   // Linear API (Optional)
   LINEAR_API_KEY: z.string().optional(),
   LINEAR_PROJECT_ID: z.string().uuid({
@@ -453,32 +462,8 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
     }
   })
 
-  // In development, if variables are missing but we're in SSR context, use safe defaults
-  const isDevelopment = clientEnv.NODE_ENV === 'development'
-  const isSSR = typeof window === 'undefined'
-
-  if (isDevelopment && isSSR && !clientEnv.NEXT_PUBLIC_SUPABASE_URL) {
-    logger.info('Using development fallback values during SSR', {
-      reason: 'Missing NEXT_PUBLIC_SUPABASE_URL in development SSR context',
-      context: {
-        isDevelopment,
-        isSSR,
-        hasSupabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-        hasSupabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      },
-      fallbackValues: {
-        supabaseUrl: 'http://localhost:54321',
-        supabaseKey: 'development-fallback-key',
-        appUrl: 'http://localhost:3000'
-      }
-    })
-    return {
-      NODE_ENV: 'development' as const,
-      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'development-fallback-key',
-      NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
-    }
-  }
+  // Removed development fallbacks - all environments must have proper configuration
+  // This ensures configuration issues are caught early rather than masked
 
   // Validate the client environment
   const clientSchema = z.object({
@@ -548,61 +533,8 @@ export function getClientEnv(): Pick<Env, 'NEXT_PUBLIC_SUPABASE_URL' | 'NEXT_PUB
         }
       })
 
-      // In production client-side, try to continue with partial configuration
-      if (typeof window !== 'undefined' && clientEnv.NODE_ENV === 'production') {
-        logger.warn('Environment validation failed in production, attempting graceful degradation', {
-          strategy: 'production-partial-config',
-          availableVars: {
-            supabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-            supabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-            appUrl: !!clientEnv.NEXT_PUBLIC_APP_URL
-          },
-          partialConfigAttempt: true
-        })
-
-        // Return partial configuration for production resilience
-        const partialEnv = {
-          NODE_ENV: clientEnv.NODE_ENV as 'production',
-          NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL || '',
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        }
-
-        logger.warn('Returning partial environment configuration for production resilience', partialEnv)
-        return partialEnv
-      }
-
-      // In development client-side, also try graceful degradation
-      if (typeof window !== 'undefined' && isDevelopment) {
-        logger.warn('Environment validation failed in development, using fallback configuration', {
-          strategy: 'development-fallback-config',
-          originalValues: {
-            supabaseUrl: clientEnv.NEXT_PUBLIC_SUPABASE_URL || 'undefined',
-            supabaseKey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'present' : 'undefined',
-            appUrl: clientEnv.NEXT_PUBLIC_APP_URL || 'undefined'
-          },
-          fallbackValues: {
-            supabaseUrl: 'http://localhost:54321',
-            supabaseKey: 'development-fallback-key',
-            appUrl: 'http://localhost:3000'
-          }
-        })
-
-        // Return development fallback configuration
-        const fallbackEnv = {
-          NODE_ENV: 'development' as const,
-          NEXT_PUBLIC_SUPABASE_URL: clientEnv.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321',
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'development-fallback-key',
-          NEXT_PUBLIC_APP_URL: clientEnv.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        }
-
-        logger.info('Using development fallback configuration', {
-          hasSupabaseUrl: !!clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-          hasSupabaseKey: !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          fallbackUrl: fallbackEnv.NEXT_PUBLIC_SUPABASE_URL
-        })
-        return fallbackEnv
-      }
+      // Removed all fallback configurations - fail fast in all environments
+      // This ensures proper environment configuration is required everywhere
 
       const errorMessage = [
         '🚨 Client Environment Configuration Error 🚨',
@@ -764,14 +696,19 @@ export function initializeEnvironment(): void {
   } catch (error) {
     logger.errorWithStack('Failed to initialize environment', error as Error)
 
-    // In production, exit the process for critical errors (Node.js only)
-    if (process.env.NODE_ENV === 'production' && typeof process !== 'undefined' && process.exit) {
-      logger.error('Application failed to start due to environment configuration errors')
+    // Exit the process for critical errors in all environments (Node.js only)
+    // This ensures configuration issues are caught immediately
+    if (typeof process !== 'undefined' && process.exit) {
+      logger.error('Application failed to start due to environment configuration errors', {
+        nodeEnv: process.env.NODE_ENV,
+        error: (error as Error).message,
+        context: 'environment-initialization-failure'
+      })
       // eslint-disable-next-line no-restricted-syntax
       process.exit(1)
     }
 
-    // In development, log error but don't exit to allow for hot reloading
+    // Re-throw the error to prevent application startup
     throw error
   }
 }
@@ -782,25 +719,32 @@ export function initializeEnvironment(): void {
 export function getFeatureFlags(): {
   supabaseEnabled: boolean
   emailEnabled: boolean
+  smsEnabled: boolean
+  whatsappEnabled: boolean
   linearEnabled: boolean
   directDbEnabled: boolean
 } {
-  try {
-    const env = getEnv()
+  // Remove try-catch fallback - if environment validation fails,
+  // the application should fail rather than return false flags
+  const env = getEnv()
 
-    return {
-      supabaseEnabled: !!(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      emailEnabled: !!env.SENDGRID_API_KEY,
-      linearEnabled: !!(env.LINEAR_API_KEY && env.LINEAR_PROJECT_ID),
-      directDbEnabled: !!env.DATABASE_URL
-    }
-  } catch {
-    return {
-      supabaseEnabled: false,
-      emailEnabled: false,
-      linearEnabled: false,
-      directDbEnabled: false
-    }
+  // Validate Supabase configuration more strictly
+  const hasValidSupabase =
+    env.NEXT_PUBLIC_SUPABASE_URL &&
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http') &&
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 50 &&
+    // Reject development fallback values
+    env.NEXT_PUBLIC_SUPABASE_URL !== 'http://localhost:54321' &&
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'development-fallback-key'
+
+  return {
+    supabaseEnabled: hasValidSupabase,
+    emailEnabled: !!env.SENDGRID_API_KEY,
+    smsEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER),
+    whatsappEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER)),
+    linearEnabled: !!(env.LINEAR_API_KEY && env.LINEAR_PROJECT_ID),
+    directDbEnabled: !!env.DATABASE_URL
   }
 }
 

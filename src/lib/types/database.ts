@@ -13,6 +13,10 @@ export interface Database {
           onboarding_completed: boolean
           onboarding_step: number
           onboarding_skipped: boolean
+          privacy_settings_id: string | null
+          data_retention_policy: string
+          account_deletion_scheduled: boolean
+          last_activity_at: string
           created_at: string
           updated_at: string
         }
@@ -24,6 +28,10 @@ export interface Database {
           onboarding_completed?: boolean
           onboarding_step?: number
           onboarding_skipped?: boolean
+          privacy_settings_id?: string | null
+          data_retention_policy?: string
+          account_deletion_scheduled?: boolean
+          last_activity_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -35,6 +43,10 @@ export interface Database {
           onboarding_completed?: boolean
           onboarding_step?: number
           onboarding_skipped?: boolean
+          privacy_settings_id?: string | null
+          data_retention_policy?: string
+          account_deletion_scheduled?: boolean
+          last_activity_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -373,6 +385,150 @@ export interface Database {
           updated_at?: string
         }
       }
+      privacy_settings: {
+        Row: {
+          id: string
+          user_id: string
+          profile_visibility: 'public' | 'private' | 'friends'
+          data_sharing: boolean
+          analytics_opt_out: boolean
+          delete_after_inactivity: boolean
+          last_export_requested_at: string | null
+          last_export_completed_at: string | null
+          last_export_download_url: string | null
+          last_export_expires_at: string | null
+          deletion_requested_at: string | null
+          deletion_scheduled_for: string | null
+          deletion_completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          profile_visibility?: 'public' | 'private' | 'friends'
+          data_sharing?: boolean
+          analytics_opt_out?: boolean
+          delete_after_inactivity?: boolean
+          last_export_requested_at?: string | null
+          last_export_completed_at?: string | null
+          last_export_download_url?: string | null
+          last_export_expires_at?: string | null
+          deletion_requested_at?: string | null
+          deletion_scheduled_for?: string | null
+          deletion_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          profile_visibility?: 'public' | 'private' | 'friends'
+          data_sharing?: boolean
+          analytics_opt_out?: boolean
+          delete_after_inactivity?: boolean
+          last_export_requested_at?: string | null
+          last_export_completed_at?: string | null
+          last_export_download_url?: string | null
+          last_export_expires_at?: string | null
+          deletion_requested_at?: string | null
+          deletion_scheduled_for?: string | null
+          deletion_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      data_export_jobs: {
+        Row: {
+          id: string
+          user_id: string
+          export_type: 'full' | 'minimal' | 'media_only'
+          status: 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
+          file_size_bytes: number | null
+          download_url: string | null
+          expires_at: string | null
+          started_at: string | null
+          completed_at: string | null
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          export_type?: 'full' | 'minimal' | 'media_only'
+          status?: 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
+          file_size_bytes?: number | null
+          download_url?: string | null
+          expires_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          export_type?: 'full' | 'minimal' | 'media_only'
+          status?: 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
+          file_size_bytes?: number | null
+          download_url?: string | null
+          expires_at?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+      }
+      data_deletion_audit: {
+        Row: {
+          id: string
+          user_id: string
+          deletion_type: 'user_requested' | 'inactivity_cleanup' | 'gdpr_compliance' | 'account_closure'
+          deleted_tables: string[]
+          deleted_records_count: number
+          deleted_files_count: number
+          deleted_storage_bytes: number
+          retained_data: string[] | null
+          retention_period: string | null
+          requested_by: string | null
+          approved_by: string | null
+          executed_at: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          deletion_type: 'user_requested' | 'inactivity_cleanup' | 'gdpr_compliance' | 'account_closure'
+          deleted_tables?: string[]
+          deleted_records_count?: number
+          deleted_files_count?: number
+          deleted_storage_bytes?: number
+          retained_data?: string[] | null
+          retention_period?: string | null
+          requested_by?: string | null
+          approved_by?: string | null
+          executed_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          deletion_type?: 'user_requested' | 'inactivity_cleanup' | 'gdpr_compliance' | 'account_closure'
+          deleted_tables?: string[]
+          deleted_records_count?: number
+          deleted_files_count?: number
+          deleted_storage_bytes?: number
+          retained_data?: string[] | null
+          retention_period?: string | null
+          requested_by?: string | null
+          approved_by?: string | null
+          executed_at?: string
+          notes?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -548,6 +704,51 @@ export interface Database {
           value: string
         }
         Returns: undefined
+      }
+      create_default_privacy_settings: {
+        Args: {
+          user_id: string
+        }
+        Returns: string
+      }
+      update_privacy_settings: {
+        Args: {
+          user_id: string
+          profile_visibility_new?: 'public' | 'private' | 'friends'
+          data_sharing_new?: boolean
+          analytics_opt_out_new?: boolean
+          delete_after_inactivity_new?: boolean
+        }
+        Returns: boolean
+      }
+      get_user_export_data: {
+        Args: {
+          user_id: string
+        }
+        Returns: Record<string, unknown>
+      }
+      delete_user_data: {
+        Args: {
+          user_id: string
+          deletion_type?: 'user_requested' | 'inactivity_cleanup' | 'gdpr_compliance' | 'account_closure'
+          keep_audit_trail?: boolean
+        }
+        Returns: Record<string, unknown>
+      }
+      cleanup_expired_exports: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_inactive_users: {
+        Args: {
+          inactive_months?: number
+        }
+        Returns: Array<{
+          user_id: string
+          email: string
+          last_activity_at: string
+          months_inactive: number
+        }>
       }
     }
     Enums: {

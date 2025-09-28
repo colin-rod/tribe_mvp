@@ -9,122 +9,153 @@ const logger = createLogger('supabase-client')
 
 type SupabaseClientType = SupabaseClient<Database>
 
-export function createClient() {
-  try {
-    // Use direct process.env access for NEXT_PUBLIC_ variables
-    // These get replaced at build time by Next.js
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+/**
+ * Validates that required Supabase environment variables are present and valid
+ */
+function validateSupabaseEnvironment(): { url: string; key: string } {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    // Check if we're in a valid state to create a real client
-    const hasValidConfig = supabaseUrl &&
-                          supabaseAnonKey &&
-                          supabaseUrl !== 'development-fallback-key' &&
-                          supabaseUrl !== ''
-
-    if (!hasValidConfig) {
-      // During build time or SSR, always use mock client
-      if (typeof window === 'undefined') {
-        logger.info('Using mock Supabase client during SSR/build')
-        return createMockClient()
-      }
-
-      // Client-side: use mock client but log the reason
-      logger.warn('Using mock Supabase client due to missing environment variables', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseAnonKey,
-        urlValue: supabaseUrl,
-        isClient: typeof window !== 'undefined'
-      })
-      return createMockClient()
-    }
-
-    logger.debug('Creating Supabase browser client', {
-      hasUrl: !!supabaseUrl,
+  // Check for missing environment variables
+  if (!supabaseUrl) {
+    const error = new Error(
+      'NEXT_PUBLIC_SUPABASE_URL is required but not configured. ' +
+      'Please set this environment variable in your .env.local file. ' +
+      'Get this value from your Supabase project settings.'
+    )
+    logger.error('Missing required Supabase URL', {
+      hasUrl: false,
       hasKey: !!supabaseAnonKey,
       nodeEnv: process.env.NODE_ENV,
-      url: supabaseUrl.substring(0, 20) + '...'
+      context: 'supabase-client-validation'
+    })
+    throw error
+  }
+
+  if (!supabaseAnonKey) {
+    const error = new Error(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY is required but not configured. ' +
+      'Please set this environment variable in your .env.local file. ' +
+      'Get this value from your Supabase project settings.'
+    )
+    logger.error('Missing required Supabase anonymous key', {
+      hasUrl: !!supabaseUrl,
+      hasKey: false,
+      nodeEnv: process.env.NODE_ENV,
+      context: 'supabase-client-validation'
+    })
+    throw error
+  }
+
+  // Validate URL format
+  try {
+    new URL(supabaseUrl)
+  } catch {
+    const error = new Error(
+      `NEXT_PUBLIC_SUPABASE_URL is not a valid URL: "${supabaseUrl}". ` +
+      'Expected format: https://your-project.supabase.co'
+    )
+    logger.error('Invalid Supabase URL format', {
+      url: supabaseUrl.substring(0, 50) + '...',
+      nodeEnv: process.env.NODE_ENV,
+      context: 'supabase-client-validation'
+    })
+    throw error
+  }
+
+  // Validate key format (should be a JWT-like string)
+  if (supabaseAnonKey.length < 100 || !supabaseAnonKey.includes('.')) {
+    const error = new Error(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be invalid. ' +
+      'Expected a JWT-like token from your Supabase project settings.'
+    )
+    logger.error('Invalid Supabase anonymous key format', {
+      keyLength: supabaseAnonKey.length,
+      hasDotsInKey: supabaseAnonKey.includes('.'),
+      nodeEnv: process.env.NODE_ENV,
+      context: 'supabase-client-validation'
+    })
+    throw error
+  }
+
+  // Check for development fallback values that should not be used in production
+  if (process.env.NODE_ENV === 'production') {
+    if (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
+      const error = new Error(
+        'Production build detected but NEXT_PUBLIC_SUPABASE_URL points to localhost. ' +
+        'Please configure a production Supabase URL.'
+      )
+      logger.error('Localhost Supabase URL in production', {
+        url: supabaseUrl.substring(0, 50) + '...',
+        nodeEnv: process.env.NODE_ENV,
+        context: 'supabase-client-validation'
+      })
+      throw error
+    }
+
+    if (supabaseAnonKey === 'development-fallback-key' || supabaseAnonKey.startsWith('dev-')) {
+      const error = new Error(
+        'Production build detected but NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be a development fallback value. ' +
+        'Please configure a production Supabase anonymous key.'
+      )
+      logger.error('Development fallback key in production', {
+        keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
+        nodeEnv: process.env.NODE_ENV,
+        context: 'supabase-client-validation'
+      })
+      throw error
+    }
+  }
+
+  logger.debug('Supabase environment validation successful', {
+    hasUrl: true,
+    hasKey: true,
+    urlDomain: new URL(supabaseUrl).hostname,
+    keyLength: supabaseAnonKey.length,
+    nodeEnv: process.env.NODE_ENV,
+    isProduction: process.env.NODE_ENV === 'production'
+  })
+
+  return { url: supabaseUrl, key: supabaseAnonKey }
+}
+
+export function createClient() {
+  try {
+    // Validate environment before creating client
+    const { url, key } = validateSupabaseEnvironment()
+
+    logger.debug('Creating Supabase browser client', {
+      urlDomain: new URL(url).hostname,
+      keyLength: key.length,
+      nodeEnv: process.env.NODE_ENV,
+      context: 'supabase-client-creation'
     })
 
-    return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+    return createBrowserClient<Database>(url, key)
   } catch (error) {
-    logger.errorWithStack('Failed to create Supabase client', error as Error)
+    logger.errorWithStack('Failed to create Supabase client - application cannot continue', error as Error)
 
-    // Always return mock client on error to prevent app crash
-    logger.warn('Using mock Supabase client due to initialization error')
-    return createMockClient()
+    // In production, fail fast - don't provide fallbacks that mask real issues
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('Production Supabase client creation failed - terminating', {
+        nodeEnv: process.env.NODE_ENV,
+        error: (error as Error).message
+      })
+      throw error
+    }
+
+    // In development, also fail fast to encourage proper configuration
+    logger.error('Development Supabase client creation failed - check your environment configuration', {
+      nodeEnv: process.env.NODE_ENV,
+      error: (error as Error).message,
+      help: 'Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in .env.local'
+    })
+    throw error
   }
 }
 
-function createMockClient(): SupabaseClientType {
-  const mockQueryBuilder = {
-    select: () => mockQueryBuilder,
-    insert: () => mockQueryBuilder,
-    update: () => mockQueryBuilder,
-    delete: () => mockQueryBuilder,
-    eq: () => mockQueryBuilder,
-    neq: () => mockQueryBuilder,
-    gt: () => mockQueryBuilder,
-    gte: () => mockQueryBuilder,
-    lt: () => mockQueryBuilder,
-    lte: () => mockQueryBuilder,
-    like: () => mockQueryBuilder,
-    ilike: () => mockQueryBuilder,
-    is: () => mockQueryBuilder,
-    in: () => mockQueryBuilder,
-    contains: () => mockQueryBuilder,
-    containedBy: () => mockQueryBuilder,
-    rangeGt: () => mockQueryBuilder,
-    rangeGte: () => mockQueryBuilder,
-    rangeLt: () => mockQueryBuilder,
-    rangeLte: () => mockQueryBuilder,
-    rangeAdjacent: () => mockQueryBuilder,
-    overlaps: () => mockQueryBuilder,
-    textSearch: () => mockQueryBuilder,
-    match: () => mockQueryBuilder,
-    not: () => mockQueryBuilder,
-    or: () => mockQueryBuilder,
-    filter: () => mockQueryBuilder,
-    order: () => mockQueryBuilder,
-    limit: () => mockQueryBuilder,
-    range: () => mockQueryBuilder,
-    abortSignal: () => mockQueryBuilder,
-    single: () => Promise.resolve({ data: null, error: null }),
-    maybeSingle: () => Promise.resolve({ data: null, error: null }),
-    csv: () => Promise.resolve({ data: '', error: null }),
-    geojson: () => Promise.resolve({ data: null, error: null }),
-    explain: () => Promise.resolve({ data: '', error: null }),
-    rollback: () => mockQueryBuilder,
-    returns: () => mockQueryBuilder,
-    then: (resolve: (value: { data: unknown[]; error: null }) => unknown) =>
-      Promise.resolve({ data: [], error: null }).then(resolve),
-    catch: (reject: (reason: unknown) => unknown) =>
-      Promise.resolve({ data: [], error: null }).catch(reject),
-  }
-
-  return {
-    from: () => mockQueryBuilder,
-    rpc: () => Promise.resolve({ data: [], error: null }),
-    auth: {
-      getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: {} }, error: null }),
-      signOut: () => Promise.resolve({ error: null }),
-      signUp: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
-      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: null }),
-      admin: {
-        createUser: () => Promise.resolve({ data: { user: null }, error: null }),
-        deleteUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      },
-    },
-    channel: () => ({
-      on: () => ({ subscribe: () => {} }),
-      unsubscribe: () => Promise.resolve('ok'),
-    }),
-    removeChannel: () => {},
-    removeAllChannels: () => Promise.resolve([]),
-  } as unknown as SupabaseClientType
-}
+// Mock client removed - application will fail fast if Supabase is not properly configured
+// This ensures production issues are caught early rather than masked by fallbacks
 
 // Export a lazy-loaded singleton instance for use in client components
 let _supabase: ReturnType<typeof createClient> | null = null
