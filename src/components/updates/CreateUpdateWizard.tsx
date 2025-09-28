@@ -44,7 +44,7 @@ export default function CreateUpdateWizard({
     isLoading,
     isAnalyzing,
     error,
-    uploadProgress,
+    // uploadProgress, // Removed: unused variable
     previewUrls,
     hasRequestedAnalysis,
     setFormData,

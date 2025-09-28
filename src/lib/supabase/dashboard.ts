@@ -298,7 +298,7 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message) }
       }
 
-      const likes = (data || []).map((like: any) => ({
+      const likes = (data || []).map((like: Record<string, unknown>) => ({
         id: like.id,
         parentId: like.parent_id,
         parentName: like.parent_name,
@@ -348,7 +348,7 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message) }
       }
 
-      const comments = (data || []).map((comment: any) => ({
+      const comments = (data || []).map((comment: Record<string, unknown>) => ({
         id: comment.id,
         parentId: comment.parent_id,
         parentName: comment.parent_name,
@@ -415,7 +415,7 @@ export class DashboardClient {
         (payload: RealtimePostgresChangesPayload<UpdateRow>) => {
           logger.debug('Received engagement update', payload)
 
-          const update = payload.new as any
+          const update = payload.new as Record<string, unknown>
           if (update?.id) {
             callback({
               update_id: update.id,
@@ -462,13 +462,13 @@ export class DashboardClient {
             const { data: update } = await this.supabase
               .from('updates')
               .select('parent_id')
-              .eq('id', (comment as any).update_id)
+              .eq('id', (comment as Record<string, unknown>).update_id)
               .single<{ parent_id: string }>()
 
             if (update?.parent_id === parentId) {
               callback({
-                updateId: (comment as any).update_id,
-                comment: comment as any
+                updateId: (comment as Record<string, unknown>).update_id,
+                comment: comment as CommentRow
               })
             }
           }

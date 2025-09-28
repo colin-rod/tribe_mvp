@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom'
 // Create server-side DOMPurify instance
 const createDOMPurify = () => {
   const dom = new JSDOM('')
-  return DOMPurify(dom.window as any)
+  return DOMPurify(dom.window as unknown as Window)
 }
 
 /**

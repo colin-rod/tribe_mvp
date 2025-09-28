@@ -79,7 +79,7 @@ export function useResponseNotifications() {
               if (recipient && recipient.name && recipient.relationship) {
                 // Handle both array and single object cases for children
                 const child = Array.isArray(update.children) ? update.children[0] : update.children
-                const childName = (child as any)?.name || 'Child'
+                const childName = (child as { name?: string })?.name || 'Child'
                 showResponseNotification({
                   childName,
                   recipientName: recipient.name,

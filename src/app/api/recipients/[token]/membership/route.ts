@@ -554,7 +554,7 @@ async function getEffectiveSettings(
       {
         p_recipient_id: recipientId,
         p_group_id: groupId
-      } as any
+      } as { p_recipient_id: string; p_group_id: string }
     )
 
     const effectiveSettings: EffectiveSettingsFunctionRow | null = data?.[0] ?? null

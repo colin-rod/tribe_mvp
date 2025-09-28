@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
-import { createLogger } from '@/lib/logger'
+import { createLogger, type LogContext } from '@/lib/logger'
 
 const logger = createLogger('GroupSecurity')
 
@@ -260,7 +260,7 @@ export async function logGroupOperation(
     }
 
     // Log to your preferred audit system
-    logger.info('Group operation audit', auditLog as any)
+    logger.info('Group operation audit', auditLog as LogContext & GroupAuditLog)
 
     // Could also store in database for compliance
     // await storeAuditLog(auditLog)

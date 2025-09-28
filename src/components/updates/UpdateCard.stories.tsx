@@ -60,7 +60,7 @@ const meta = {
   },
   args: {
     update: baseUpdate,
-    onClick: (updateId: string) => console.log('Update clicked:', updateId),
+    onClick: (_updateId: string) => { /* Story action */ },
   },
   decorators: [
     (Story) => (
