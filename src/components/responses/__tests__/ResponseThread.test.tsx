@@ -1,8 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ResponseThread } from '../ResponseThread'
 import { mockResponses } from '@/test-utils/mockData'
 
-// Mock the useResponses hook
+// Mock all dependencies first
 const mockMarkResponsesAsRead = jest.fn()
 const mockUseResponses = {
   responses: mockResponses,
@@ -16,18 +15,28 @@ jest.mock('@/hooks/useResponses', () => ({
   useResponses: jest.fn(() => mockUseResponses),
 }))
 
-// Mock ResponseCard component
-jest.mock('../ResponseCard', () => {
-  return function MockResponseCard({ response, showChannel }: Record<string, unknown>) {
-    return (
-      <div data-testid="response-card" data-response-id={response.id}>
-        <div>Response from {response.recipients.name}</div>
-        <div>Content: {response.content}</div>
-        <div>Channel: {showChannel ? response.channel : 'hidden'}</div>
-      </div>
-    )
+jest.mock('@/components/ui/LoadingSpinner', () => {
+  return function MockLoadingSpinner({ className, ...props }: any) {
+    return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
   }
 })
+
+jest.mock('@/components/responses/ResponseCard', () => {
+  return {
+    ResponseCard: function MockResponseCard({ response, showChannel }: Record<string, unknown>) {
+      return (
+        <div data-testid="response-card" data-response-id={response.id}>
+          <div>Response from {response.recipients.name}</div>
+          <div>Content: {response.content}</div>
+          <div>Channel: {showChannel ? response.channel : 'hidden'}</div>
+        </div>
+      )
+    }
+  }
+})
+
+// Import the component after mocking its dependencies
+import { ResponseThread } from '@/components/responses/ResponseThread'
 
 const { useResponses } = require('@/hooks/useResponses')
 
@@ -88,8 +97,8 @@ describe('ResponseThread', () => {
     render(<ResponseThread updateId="test-update" />)
 
     expect(screen.getByText('Family Responses')).toBeInTheDocument()
-    expect(screen.getByText('3 responses')).toBeInTheDocument() // mockResponses has 3 items
-    expect(screen.getAllByTestId('response-card')).toHaveLength(3)
+    expect(screen.getByText('2 responses')).toBeInTheDocument() // mockResponses has 2 items
+    expect(screen.getAllByTestId('response-card')).toHaveLength(2)
   })
 
   it('shows singular response count', () => {
@@ -273,7 +282,6 @@ describe('ResponseThread', () => {
     // Verify responses are rendered in the same order as mockResponses
     expect(responseCards[0]).toHaveAttribute('data-response-id', mockResponses[0].id)
     expect(responseCards[1]).toHaveAttribute('data-response-id', mockResponses[1].id)
-    expect(responseCards[2]).toHaveAttribute('data-response-id', mockResponses[2].id)
   })
 
   it('handles overflow-y-auto class for scrolling', () => {

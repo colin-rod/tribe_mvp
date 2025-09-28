@@ -105,16 +105,17 @@ describe('ResponseAnalytics', () => {
   it('renders key metrics cards', () => {
     render(<ResponseAnalytics />)
 
-    expect(screen.getByText('42')).toBeInTheDocument()
+    // Use more specific selectors to avoid ambiguity
+    expect(screen.getByText('Total Responses').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('42')
     expect(screen.getByText('Total Responses')).toBeInTheDocument()
 
-    expect(screen.getByText('85%')).toBeInTheDocument()
+    expect(screen.getByText('Response Rate').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('85%')
     expect(screen.getByText('Response Rate')).toBeInTheDocument()
 
-    expect(screen.getByText('2.5h')).toBeInTheDocument()
+    expect(screen.getByText('Avg Response Time').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('2.5h')
     expect(screen.getByText('Avg Response Time')).toBeInTheDocument()
 
-    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('Active Responders').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('3')
     expect(screen.getByText('Active Responders')).toBeInTheDocument()
   })
 
@@ -350,9 +351,10 @@ describe('ResponseAnalytics', () => {
 
     render(<ResponseAnalytics />)
 
-    expect(screen.getByText('0')).toBeInTheDocument() // Total responses
-    expect(screen.getByText('0%')).toBeInTheDocument() // Response rate
-    expect(screen.getByText('0h')).toBeInTheDocument() // Avg response time
+    // Use more specific selectors to find the metrics
+    expect(screen.getByText('Total Responses').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('0')
+    expect(screen.getByText('Response Rate').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('0%')
+    expect(screen.getByText('Avg Response Time').closest('div')?.querySelector('.text-2xl')).toHaveTextContent('0h')
     expect(screen.getAllByText('No responses yet')).toHaveLength(2) // Both empty sections
   })
 })

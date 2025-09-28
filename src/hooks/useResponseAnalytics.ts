@@ -150,9 +150,10 @@ function calculateAnalytics(responses: ResponseRow[], updates: UpdateRow[]): Res
   }))
 
   // Engagement trend (last 7 days)
+  const today = new Date()
   const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - i))
+    const date = new Date(today)
+    date.setDate(today.getDate() - (6 - i))
     return date.toISOString().split('T')[0]
   })
 

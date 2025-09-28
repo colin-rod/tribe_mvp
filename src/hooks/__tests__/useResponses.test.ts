@@ -127,11 +127,9 @@ describe('useResponses', () => {
 
     expect(result.current.newResponseCount).toBe(0)
 
-    // Simulate real-time response
-    await act(async () => {
-      realtimeCallback({ new: { id: 'new-response-1' } })
-      // Give time for the fetchNewResponse to complete
-      await new Promise(resolve => setTimeout(resolve, 100))
+    // Simulate real-time response with proper act wrapping
+    act(() => {
+      realtimeCallback({ new: { id: 'new-response-1', update_id: 'test-update-1' } })
     })
 
     await waitFor(() => {
@@ -147,9 +145,8 @@ describe('useResponses', () => {
     })
 
     // Simulate new responses
-    await act(async () => {
-      realtimeCallback({ new: { id: 'new-response-1' } })
-      await new Promise(resolve => setTimeout(resolve, 100))
+    act(() => {
+      realtimeCallback({ new: { id: 'new-response-1', update_id: 'test-update-1' } })
     })
 
     await waitFor(() => {

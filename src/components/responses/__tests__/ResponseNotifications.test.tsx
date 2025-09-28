@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { ResponseNotifications } from '../ResponseNotifications'
 
 // Mock the useResponseNotifications hook
@@ -24,6 +24,14 @@ jest.mock('../ResponseNotifications', () => {
       const [notifications, setNotifications] = useState([])
 
       useEffect(() => {
+        // Inject styles like the real component
+        if (!document.getElementById('response-notifications-styles')) {
+          const styleElement = document.createElement('style')
+          styleElement.id = 'response-notifications-styles'
+          styleElement.textContent = '.animate-slide-in-right { animation: slideInRight 0.3s ease-out; }'
+          document.head.appendChild(styleElement)
+        }
+
         const handleStorageChange = (e) => {
           if (e.key === 'tribe-notifications') {
             try {
@@ -135,6 +143,10 @@ describe('ResponseNotifications', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
+    // Clean up any existing style elements from previous tests
+    const existingStyles = document.querySelectorAll('#response-notifications-styles')
+    existingStyles.forEach(style => style.remove())
+
     // Mock addEventListener to capture the storage event handler
     const originalAddEventListener = window.addEventListener
     window.addEventListener = jest.fn((event, handler) => {
@@ -173,7 +185,13 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify(mockNotification),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      act(() => {
+        act(() => {
+      mockStorageEvent(storageEvent)
+    })
+      })
+    })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
@@ -200,7 +218,13 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify(mockNotification),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      act(() => {
+        act(() => {
+      mockStorageEvent(storageEvent)
+    })
+      })
+    })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
@@ -237,7 +261,13 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify(mockNotification),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      act(() => {
+        act(() => {
+      mockStorageEvent(storageEvent)
+    })
+      })
+    })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
@@ -269,7 +299,11 @@ describe('ResponseNotifications', () => {
         newValue: JSON.stringify(mockNotification),
       })
 
+      act(() => {
+        act(() => {
       mockStorageEvent(storageEvent)
+    })
+      })
     }
 
     await waitFor(() => {
@@ -293,7 +327,9 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify({ id: 'test' }),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      mockStorageEvent(storageEvent)
+    })
 
     // Should not render any notifications
     expect(screen.queryByText('New Response')).not.toBeInTheDocument()
@@ -323,7 +359,9 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify({}),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      mockStorageEvent(storageEvent)
+    })
 
     // Should not render any notifications since id is missing
     expect(screen.queryByText('New Response')).not.toBeInTheDocument()
@@ -346,7 +384,9 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify(mockNotification),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      mockStorageEvent(storageEvent)
+    })
 
     await waitFor(() => {
       expect(screen.getByTestId('chat-icon')).toBeInTheDocument()
@@ -370,10 +410,13 @@ describe('ResponseNotifications', () => {
       newValue: JSON.stringify(mockNotification),
     })
 
-    mockStorageEvent(storageEvent)
+    act(() => {
+      mockStorageEvent(storageEvent)
+    })
 
     await waitFor(() => {
-      const notificationElement = screen.getByText('New Response').closest('div')
+      // Find the notification container by looking for the element with the animation class
+      const notificationElement = screen.getByText('New Response').closest('.bg-white')
       expect(notificationElement).toHaveClass('animate-slide-in-right')
       expect(notificationElement).toHaveClass('bg-white')
       expect(notificationElement).toHaveClass('border')
@@ -394,11 +437,19 @@ describe('ResponseNotifications', () => {
     // Pre-create the style element
     const existingStyle = document.createElement('style')
     existingStyle.id = 'response-notifications-styles'
+    existingStyle.textContent = 'existing styles'
     document.head.appendChild(existingStyle)
+
+    // Clear any existing styles from previous tests first
+    const existingStyles = document.querySelectorAll('#response-notifications-styles')
+    existingStyles.forEach((style, index) => {
+      if (index > 0) style.remove() // Keep only the first one
+    })
 
     render(<ResponseNotifications />)
 
     const styleElements = document.querySelectorAll('#response-notifications-styles')
     expect(styleElements).toHaveLength(1) // Should not create duplicate
+    expect(styleElements[0].textContent).toBe('existing styles') // Should keep the original
   })
 })

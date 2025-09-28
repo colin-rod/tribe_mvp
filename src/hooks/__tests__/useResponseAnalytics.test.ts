@@ -172,9 +172,25 @@ describe('useResponseAnalytics', () => {
   })
 
   it('calculates responses by hour correctly', async () => {
+    // Use recent dates that would be included in 30-day timeframe
+    const recentResponsesData = [
+      {
+        ...mockResponsesData[0],
+        received_at: '2024-09-20T14:30:00Z', // hour 14
+      },
+      {
+        ...mockResponsesData[1],
+        received_at: '2024-09-20T15:45:00Z', // hour 15
+      },
+      {
+        ...mockResponsesData[2],
+        received_at: '2024-09-21T09:15:00Z', // hour 9
+      },
+    ]
+
     mockGte
       .mockResolvedValueOnce({
-        data: mockResponsesData,
+        data: recentResponsesData,
         error: null,
       })
       .mockResolvedValueOnce({
@@ -205,25 +221,20 @@ describe('useResponseAnalytics', () => {
     // Mock Date to have consistent 7-day calculation
     const mockDate = new Date('2024-01-22T12:00:00Z')
 
-    // Clear any existing date-fns mocks for this test
-    jest.clearAllMocks()
-
     // Mock Date.now specifically
     const originalDateNow = Date.now
-    Date.now = jest.fn(() => mockDate.getTime())
-
-    // Mock Date constructor
     const originalDate = global.Date
+
     global.Date = jest.fn(((...args: any[]) => {
       if (args.length === 0) {
-        return mockDate
+        return new originalDate(mockDate)
       }
       return new originalDate(...args)
     }) as any)
 
     // Copy static methods
     Object.setPrototypeOf(global.Date, originalDate)
-    global.Date.now = Date.now
+    global.Date.now = jest.fn(() => mockDate.getTime())
 
     mockGte
       .mockResolvedValueOnce({

@@ -137,7 +137,7 @@ describe('Security Validation', () => {
       const schema = createSecureStringSchema(5, 20, false)
 
       expect(() => schema.parse('Valid text')).not.toThrow()
-      expect(() => schema.parse('Short')).toThrow() // Too short
+      expect(() => schema.parse('Hi')).toThrow() // Too short (2 chars < 5)
       expect(() => schema.parse('This text is way too long for the limit')).toThrow() // Too long
     })
 
