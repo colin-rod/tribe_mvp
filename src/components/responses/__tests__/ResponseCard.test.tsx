@@ -108,7 +108,7 @@ describe('ResponseCard', () => {
   })
 
   it('handles unknown channel types with default styling', () => {
-    const unknownChannelResponse = { ...mockResponse, channel: 'unknown' as any }
+    const unknownChannelResponse = { ...mockResponse, channel: 'unknown' as 'email' | 'sms' | 'whatsapp' }
     render(<ResponseCard response={unknownChannelResponse} showChannel={true} />)
 
     expect(screen.getByText('unknown')).toBeInTheDocument()
