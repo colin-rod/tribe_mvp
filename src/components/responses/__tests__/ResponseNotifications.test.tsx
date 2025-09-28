@@ -13,7 +13,7 @@ jest.mock('date-fns', () => ({
 
 // Mock HeroIcons components with proper SVG structure
 jest.mock('@heroicons/react/24/outline', () => ({
-  XMarkIcon: function MockXMarkIcon({ className, ...props }: any) {
+  XMarkIcon: function MockXMarkIcon({ className, ...props }: { className?: string; [key: string]: unknown }) {
     return (
       <svg
         className={className}
@@ -24,7 +24,7 @@ jest.mock('@heroicons/react/24/outline', () => ({
       </svg>
     )
   },
-  ChatBubbleLeftIcon: function MockChatBubbleLeftIcon({ className, ...props }: any) {
+  ChatBubbleLeftIcon: function MockChatBubbleLeftIcon({ className, ...props }: { className?: string; [key: string]: unknown }) {
     return (
       <svg
         className={className}
@@ -55,13 +55,13 @@ describe('ResponseNotifications', () => {
     storageEventListeners = []
 
     // Mock addEventListener to capture the storage event handlers
-    window.addEventListener = jest.fn((event: string, handler: any) => {
+    window.addEventListener = jest.fn((event: string, handler: (e: StorageEvent) => void) => {
       if (event === 'storage') {
         storageEventListeners.push(handler)
       }
     })
 
-    window.removeEventListener = jest.fn((event: string, handler: any) => {
+    window.removeEventListener = jest.fn((event: string, handler: (e: StorageEvent) => void) => {
       if (event === 'storage') {
         const index = storageEventListeners.indexOf(handler)
         if (index > -1) {
