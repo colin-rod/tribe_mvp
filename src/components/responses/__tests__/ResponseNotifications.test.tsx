@@ -11,121 +11,31 @@ jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn(() => '2 minutes ago'),
 }))
 
-// Mock navigation
-const mockNavigateToUpdate = jest.fn()
-
-// Mock the component to avoid window.location issues
-jest.mock('../ResponseNotifications', () => {
-  const React = require('react')
-  const { useState, useEffect } = React
-
-  return {
-    ResponseNotifications: function TestResponseNotifications() {
-      const [notifications, setNotifications] = useState([])
-
-      useEffect(() => {
-        // Inject styles like the real component
-        if (!document.getElementById('response-notifications-styles')) {
-          const styleElement = document.createElement('style')
-          styleElement.id = 'response-notifications-styles'
-          styleElement.textContent = '.animate-slide-in-right { animation: slideInRight 0.3s ease-out; }'
-          document.head.appendChild(styleElement)
-        }
-
-        const handleStorageChange = (e) => {
-          if (e.key === 'tribe-notifications') {
-            try {
-              const newNotification = JSON.parse(e.newValue || '{}')
-              if (newNotification.id) {
-                setNotifications(prev => [newNotification, ...prev.slice(0, 4)])
-              }
-            } catch (err) {
-              // Ignore invalid JSON
-            }
-          }
-        }
-
-        window.addEventListener('storage', handleStorageChange)
-        return () => window.removeEventListener('storage', handleStorageChange)
-      }, [])
-
-      const dismissNotification = (id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id))
-      }
-
-      const navigateToUpdate = (updateId) => {
-        mockNavigateToUpdate(updateId)
-      }
-
-      if (notifications.length === 0) {
-        return null
-      }
-
-      return React.createElement('div', {
-        className: 'fixed top-4 right-4 z-50 space-y-2 max-w-sm'
-      },
-        notifications.map((notification) =>
-          React.createElement('div', {
-            key: notification.id,
-            className: 'bg-white border border-gray-200 rounded-lg shadow-lg p-4 transform animate-slide-in-right'
-          }, [
-            React.createElement('div', {
-              key: 'content',
-              className: 'flex items-start gap-3'
-            }, [
-              React.createElement('div', {
-                key: 'icon',
-                className: 'flex-shrink-0'
-              },
-                React.createElement('div', {
-                  className: 'w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'
-                },
-                  React.createElement('div', {
-                    'data-testid': 'chat-icon',
-                    className: 'h-4 w-4 text-blue-600'
-                  })
-                )
-              ),
-              React.createElement('div', {
-                key: 'text',
-                className: 'flex-1 min-w-0'
-              }, [
-                React.createElement('div', {
-                  key: 'clickable',
-                  className: 'cursor-pointer',
-                  onClick: () => navigateToUpdate(notification.updateId)
-                }, [
-                  React.createElement('p', {
-                    key: 'title',
-                    className: 'text-sm font-medium text-gray-900 hover:text-blue-600'
-                  }, 'New Response'),
-                  React.createElement('p', {
-                    key: 'content',
-                    className: 'text-sm text-gray-600 line-clamp-2'
-                  }, `${notification.recipientName} replied to ${notification.childName}'s update`),
-                  React.createElement('p', {
-                    key: 'time',
-                    className: 'text-xs text-gray-500 mt-1'
-                  }, '2 minutes ago')
-                ])
-              ]),
-              React.createElement('button', {
-                key: 'close',
-                onClick: () => dismissNotification(notification.id),
-                className: 'flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors'
-              },
-                React.createElement('div', {
-                  'data-testid': 'x-icon',
-                  className: 'h-4 w-4'
-                })
-              )
-            ])
-          ])
-        )
-      )
-    }
-  }
-})
+// Mock HeroIcons components with proper SVG structure
+jest.mock('@heroicons/react/24/outline', () => ({
+  XMarkIcon: function MockXMarkIcon({ className, ...props }: any) {
+    return (
+      <svg
+        className={className}
+        data-testid="x-mark-icon"
+        {...props}
+      >
+        <path d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    )
+  },
+  ChatBubbleLeftIcon: function MockChatBubbleLeftIcon({ className, ...props }: any) {
+    return (
+      <svg
+        className={className}
+        data-testid="chat-bubble-left-icon"
+        {...props}
+      >
+        <path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.608-.067 2.19.14 2.83A3.333 3.333 0 003.75 18.75H12a3 3 0 003-3V8.25a3 3 0 00-3-3H3.75a3 3 0 00-3 3v7.51z" />
+      </svg>
+    )
+  },
+}))
 
 // Mock localStorage for storage events
 const mockLocalStorage = {
@@ -138,33 +48,49 @@ Object.defineProperty(window, 'localStorage', {
 })
 
 describe('ResponseNotifications', () => {
-  let mockStorageEvent: (e: StorageEvent) => void
+  let storageEventListeners: ((e: StorageEvent) => void)[] = []
 
   beforeEach(() => {
     jest.clearAllMocks()
+    storageEventListeners = []
+
+    // Mock addEventListener to capture the storage event handlers
+    window.addEventListener = jest.fn((event: string, handler: any) => {
+      if (event === 'storage') {
+        storageEventListeners.push(handler)
+      }
+    })
+
+    window.removeEventListener = jest.fn((event: string, handler: any) => {
+      if (event === 'storage') {
+        const index = storageEventListeners.indexOf(handler)
+        if (index > -1) {
+          storageEventListeners.splice(index, 1)
+        }
+      }
+    })
 
     // Clean up any existing style elements from previous tests
     const existingStyles = document.querySelectorAll('#response-notifications-styles')
     existingStyles.forEach(style => style.remove())
-
-    // Mock addEventListener to capture the storage event handler
-    const originalAddEventListener = window.addEventListener
-    window.addEventListener = jest.fn((event, handler) => {
-      if (event === 'storage') {
-        mockStorageEvent = handler as (e: StorageEvent) => void
-      }
-      return originalAddEventListener.call(window, event, handler)
-    })
   })
 
   afterEach(() => {
-    // Clean up event listeners
-    window.removeEventListener = jest.fn()
+    storageEventListeners = []
   })
+
+  // Helper function to simulate storage events
+  const simulateStorageEvent = (key: string, newValue: string | null) => {
+    const event = new StorageEvent('storage', { key, newValue })
+    storageEventListeners.forEach(listener => listener(event))
+  }
 
   it('renders nothing when no notifications', () => {
     const { container } = render(<ResponseNotifications />)
     expect(container.firstChild).toBeNull()
+
+    // Should set up event listener
+    expect(window.addEventListener).toHaveBeenCalledWith('storage', expect.any(Function))
   })
 
   it('displays notifications when added via storage event', async () => {
@@ -180,24 +106,21 @@ describe('ResponseNotifications', () => {
       updateId: 'update-123',
     }
 
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify(mockNotification),
-    })
-
     act(() => {
-      act(() => {
-        act(() => {
-      mockStorageEvent(storageEvent)
-    })
-      })
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
     })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
-      expect(screen.getByText('Grandma replied to Emma\'s update')).toBeInTheDocument()
+      expect(screen.getByText((content, element) => {
+        return element?.textContent === "Grandma replied to Emma's update"
+      })).toBeInTheDocument()
       expect(screen.getByText('2 minutes ago')).toBeInTheDocument()
     })
+
+    // Should display HeroIcons
+    expect(screen.getByTestId('chat-bubble-left-icon')).toBeInTheDocument()
+    expect(screen.getByTestId('x-mark-icon')).toBeInTheDocument()
   })
 
   it('handles dismissing notifications', async () => {
@@ -213,25 +136,16 @@ describe('ResponseNotifications', () => {
       updateId: 'update-123',
     }
 
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify(mockNotification),
-    })
-
     act(() => {
-      act(() => {
-        act(() => {
-      mockStorageEvent(storageEvent)
-    })
-      })
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
     })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
     })
 
-    // Click dismiss button
-    const dismissButton = screen.getByTestId('x-icon').closest('button')
+    // Click dismiss button using the X mark icon
+    const dismissButton = screen.getByTestId('x-mark-icon').closest('button')
     expect(dismissButton).toBeInTheDocument()
 
     if (dismissButton) {
@@ -256,28 +170,26 @@ describe('ResponseNotifications', () => {
       updateId: 'update-123',
     }
 
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify(mockNotification),
-    })
-
     act(() => {
-      act(() => {
-        act(() => {
-      mockStorageEvent(storageEvent)
-    })
-      })
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
     })
 
     await waitFor(() => {
       expect(screen.getByText('New Response')).toBeInTheDocument()
     })
 
+    // Store original href before the test
+    const originalHref = window.location.href
+
     // Click on the notification content
     const notificationContent = screen.getByText('New Response')
     fireEvent.click(notificationContent)
 
-    expect(mockNavigateToUpdate).toHaveBeenCalledWith('update-123')
+    // Should navigate using window.location.href (just verify the function was called)
+    // Since JSDOM doesn't support navigation, we verify the attempt was made by checking the href changed
+    await waitFor(() => {
+      expect(window.location.href).toContain('/dashboard/updates/update-123')
+    })
   })
 
   it('limits notifications to maximum of 5', async () => {
@@ -294,15 +206,8 @@ describe('ResponseNotifications', () => {
         updateId: `update-${i}`,
       }
 
-      const storageEvent = new StorageEvent('storage', {
-        key: 'tribe-notifications',
-        newValue: JSON.stringify(mockNotification),
-      })
-
       act(() => {
-        act(() => {
-      mockStorageEvent(storageEvent)
-    })
+        simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
       })
     }
 
@@ -312,59 +217,56 @@ describe('ResponseNotifications', () => {
     })
 
     // Check that the latest notification is shown (Person 6)
-    expect(screen.getByText('Person 6 replied to Emma\'s update')).toBeInTheDocument()
+    expect(screen.getByText((content, element) => {
+      return element?.textContent === "Person 6 replied to Emma's update"
+    })).toBeInTheDocument()
 
     // Check that the oldest notification is not shown (Person 1)
-    expect(screen.queryByText('Person 1 replied to Emma\'s update')).not.toBeInTheDocument()
+    expect(screen.queryByText((content, element) => {
+      return element?.textContent === "Person 1 replied to Emma's update"
+    })).not.toBeInTheDocument()
   })
 
   it('ignores storage events with wrong key', async () => {
     render(<ResponseNotifications />)
 
     // Simulate storage event with wrong key
-    const storageEvent = new StorageEvent('storage', {
-      key: 'other-key',
-      newValue: JSON.stringify({ id: 'test' }),
-    })
-
     act(() => {
-      mockStorageEvent(storageEvent)
+      simulateStorageEvent('other-key', JSON.stringify({ id: 'test' }))
     })
 
     // Should not render any notifications
-    expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    })
   })
 
   it('handles invalid JSON in storage event', async () => {
     render(<ResponseNotifications />)
 
     // Simulate storage event with invalid JSON
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: 'invalid-json',
+    act(() => {
+      simulateStorageEvent('tribe-notifications', 'invalid-json')
     })
 
-    expect(() => mockStorageEvent(storageEvent)).not.toThrow()
-
-    // Should not render any notifications
-    expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    // Should not render any notifications and not throw
+    await waitFor(() => {
+      expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    })
   })
 
   it('handles storage event with empty notification object', async () => {
     render(<ResponseNotifications />)
 
     // Simulate storage event with empty object
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify({}),
-    })
-
     act(() => {
-      mockStorageEvent(storageEvent)
+      simulateStorageEvent('tribe-notifications', JSON.stringify({}))
     })
 
     // Should not render any notifications since id is missing
-    expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    })
   })
 
   it('displays notification with chat bubble icon', async () => {
@@ -379,17 +281,12 @@ describe('ResponseNotifications', () => {
       updateId: 'update-123',
     }
 
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify(mockNotification),
-    })
-
     act(() => {
-      mockStorageEvent(storageEvent)
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId('chat-icon')).toBeInTheDocument()
+      expect(screen.getByTestId('chat-bubble-left-icon')).toBeInTheDocument()
     })
   })
 
@@ -405,18 +302,13 @@ describe('ResponseNotifications', () => {
       updateId: 'update-123',
     }
 
-    const storageEvent = new StorageEvent('storage', {
-      key: 'tribe-notifications',
-      newValue: JSON.stringify(mockNotification),
-    })
-
     act(() => {
-      mockStorageEvent(storageEvent)
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
     })
 
     await waitFor(() => {
       // Find the notification container by looking for the element with the animation class
-      const notificationElement = screen.getByText('New Response').closest('.bg-white')
+      const notificationElement = screen.getByText('New Response').closest('div')
       expect(notificationElement).toHaveClass('animate-slide-in-right')
       expect(notificationElement).toHaveClass('bg-white')
       expect(notificationElement).toHaveClass('border')
@@ -425,31 +317,88 @@ describe('ResponseNotifications', () => {
     })
   })
 
-  it('injects CSS styles into document head', () => {
+  it('handles null storage event value', async () => {
     render(<ResponseNotifications />)
 
-    const styleElement = document.getElementById('response-notifications-styles')
-    expect(styleElement).toBeInTheDocument()
-    expect(styleElement?.tagName).toBe('STYLE')
+    // Simulate storage event with null value
+    act(() => {
+      simulateStorageEvent('tribe-notifications', null)
+    })
+
+    // Should not render any notifications
+    await waitFor(() => {
+      expect(screen.queryByText('New Response')).not.toBeInTheDocument()
+    })
   })
 
-  it('does not inject CSS styles if they already exist', () => {
-    // Pre-create the style element
+  it('cleans up event listener on unmount', () => {
+    const { unmount } = render(<ResponseNotifications />)
+
+    // Should add event listener on mount
+    expect(window.addEventListener).toHaveBeenCalledWith('storage', expect.any(Function))
+
+    unmount()
+
+    // Should remove event listener on unmount
+    expect(window.removeEventListener).toHaveBeenCalledWith('storage', expect.any(Function))
+  })
+
+  it('handles notification with special characters in names', async () => {
+    render(<ResponseNotifications />)
+
+    const mockNotification = {
+      id: 'notif-1',
+      recipientName: "O'Brien",
+      childName: "José",
+      content: 'Such a cute photo!',
+      timestamp: new Date(),
+      updateId: 'update-123',
+    }
+
+    act(() => {
+      simulateStorageEvent('tribe-notifications', JSON.stringify(mockNotification))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText((content, element) => {
+        return element?.textContent === "O'Brien replied to José's update"
+      })).toBeInTheDocument()
+    })
+  })
+
+  it('injects CSS styles into document head on component mount', async () => {
+    // Check that no styles exist before mounting
+    expect(document.getElementById('response-notifications-styles')).toBeNull()
+
+    render(<ResponseNotifications />)
+
+    // Wait a bit for the component to mount and inject styles
+    await waitFor(() => {
+      const styleElement = document.getElementById('response-notifications-styles')
+      expect(styleElement).toBeInTheDocument()
+      expect(styleElement?.tagName).toBe('STYLE')
+
+      // Should contain animation styles
+      expect(styleElement?.textContent).toContain('.animate-slide-in-right')
+      expect(styleElement?.textContent).toContain('slideInRight')
+    })
+  })
+
+  it('does not inject duplicate CSS styles if they already exist', () => {
+    // Pre-inject styles
     const existingStyle = document.createElement('style')
     existingStyle.id = 'response-notifications-styles'
     existingStyle.textContent = 'existing styles'
     document.head.appendChild(existingStyle)
 
-    // Clear any existing styles from previous tests first
-    const existingStyles = document.querySelectorAll('#response-notifications-styles')
-    existingStyles.forEach((style, index) => {
-      if (index > 0) style.remove() // Keep only the first one
-    })
-
     render(<ResponseNotifications />)
 
+    // Should not create duplicate styles
     const styleElements = document.querySelectorAll('#response-notifications-styles')
-    expect(styleElements).toHaveLength(1) // Should not create duplicate
-    expect(styleElements[0].textContent).toBe('existing styles') // Should keep the original
+    expect(styleElements).toHaveLength(1)
+    expect(styleElements[0].textContent).toBe('existing styles')
+
+    // Clean up
+    existingStyle.remove()
   })
 })

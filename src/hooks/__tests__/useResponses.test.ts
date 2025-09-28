@@ -12,6 +12,18 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+// Mock the logger
+const mockLogger = {
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+}
+
+jest.mock('@/lib/logger', () => ({
+  createLogger: jest.fn(() => mockLogger),
+}))
+
 // Mock the Supabase client
 const mockSelect = jest.fn()
 const mockEq = jest.fn()
@@ -102,11 +114,11 @@ describe('useResponses', () => {
     const { result } = renderHook(() => useResponses('test-update-1'))
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Failed to load responses')
+      expect(result.current.error).toBe('An unexpected error occurred')
     })
 
-    // Note: loading stays true when there's a fetch error - hook doesn't set it to false
-    expect(result.current.loading).toBe(true)
+    // Note: loading should be false after error occurs
+    expect(result.current.loading).toBe(false)
     expect(result.current.responses).toEqual([])
   })
 
@@ -233,5 +245,97 @@ describe('useResponses', () => {
 
     expect(result.current.responses).toEqual([])
     expect(result.current.error).toBeNull()
+  })
+
+  it('handles invalid real-time payload without id', async () => {
+    const { result } = renderHook(() => useResponses('test-update-1'))
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    // Clear any previous logger calls
+    mockLogger.warn.mockClear()
+
+    // Simulate real-time response with invalid payload (missing id)
+    act(() => {
+      realtimeCallback({ new: { update_id: 'test-update-1' } }) // missing id field
+    })
+
+    // Should log warning and not increment newResponseCount
+    expect(mockLogger.warn).toHaveBeenCalledWith('Invalid response payload received', {
+      payload: { update_id: 'test-update-1' }
+    })
+    expect(result.current.newResponseCount).toBe(0)
+  })
+
+  it('handles invalid real-time payload without update_id', async () => {
+    const { result } = renderHook(() => useResponses('test-update-1'))
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    // Clear any previous logger calls
+    mockLogger.warn.mockClear()
+
+    // Simulate real-time response with invalid payload (missing update_id)
+    act(() => {
+      realtimeCallback({ new: { id: 'response-123' } }) // missing update_id field
+    })
+
+    // Should log warning and not increment newResponseCount
+    expect(mockLogger.warn).toHaveBeenCalledWith('Invalid response payload received', {
+      payload: { id: 'response-123' }
+    })
+    expect(result.current.newResponseCount).toBe(0)
+  })
+
+  it('handles real-time payload with null value', async () => {
+    const { result } = renderHook(() => useResponses('test-update-1'))
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    // Clear any previous logger calls
+    mockLogger.warn.mockClear()
+
+    // Simulate real-time response with null payload
+    act(() => {
+      realtimeCallback({ new: null })
+    })
+
+    // Should log warning and not increment newResponseCount
+    expect(mockLogger.warn).toHaveBeenCalledWith('Invalid response payload received', {
+      payload: null
+    })
+    expect(result.current.newResponseCount).toBe(0)
+  })
+
+  it('handles real-time payload with non-object value', async () => {
+    const { result } = renderHook(() => useResponses('test-update-1'))
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    // Clear any previous logger calls
+    mockLogger.warn.mockClear()
+
+    // Simulate real-time response with string payload
+    act(() => {
+      realtimeCallback({ new: 'invalid-payload' })
+    })
+
+    // Should log warning and not increment newResponseCount
+    expect(mockLogger.warn).toHaveBeenCalledWith('Invalid response payload received', {
+      payload: 'invalid-payload'
+    })
+    expect(result.current.newResponseCount).toBe(0)
   })
 })
