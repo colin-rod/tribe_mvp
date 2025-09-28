@@ -61,7 +61,12 @@ Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
 if (typeof global.Request === 'undefined') {
   global.Request = class MockRequest {
     constructor(input, init) {
-      this.url = typeof input === 'string' ? input : input.url
+      // Use Object.defineProperty to define url as a getter instead of a regular property
+      Object.defineProperty(this, 'url', {
+        value: typeof input === 'string' ? input : input.url,
+        writable: false,
+        configurable: true
+      })
       this.method = init?.method || 'GET'
       this.headers = new Map(Object.entries(init?.headers || {}))
       this._body = init?.body

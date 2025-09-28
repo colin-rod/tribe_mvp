@@ -80,6 +80,7 @@ export function ResponseThread({
       </div>
 
       <div
+        data-testid="responses-container"
         className="space-y-3 overflow-y-auto"
         style={maxHeight ? { maxHeight } : undefined}
         onClick={() => {

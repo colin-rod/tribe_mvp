@@ -16,8 +16,10 @@ jest.mock('@/hooks/useResponses', () => ({
 }))
 
 jest.mock('@/components/ui/LoadingSpinner', () => {
-  return function MockLoadingSpinner({ className, ...props }: { className?: string; [key: string]: unknown }) {
-    return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
+  return {
+    LoadingSpinner: function MockLoadingSpinner({ className, ...props }: { className?: string; [key: string]: unknown }) {
+      return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
+    }
   }
 })
 
@@ -35,10 +37,20 @@ jest.mock('@/components/responses/ResponseCard', () => {
   }
 })
 
+// Mock Heroicons
+jest.mock('@heroicons/react/24/outline', () => ({
+  ChatBubbleLeftIcon: ({ className, ...props }: { className?: string; [key: string]: unknown }) => (
+    <div data-testid="chat-icon" className={className} {...props} />
+  ),
+}))
+
+const { useResponses } = require('@/hooks/useResponses')
+
 // Import the component after mocking its dependencies
 import { ResponseThread } from '@/components/responses/ResponseThread'
 
-const { useResponses } = require('@/hooks/useResponses')
+// Ensure React is available
+import React from 'react'
 
 describe('ResponseThread', () => {
   beforeEach(() => {
@@ -190,12 +202,10 @@ describe('ResponseThread', () => {
 
     render(<ResponseThread updateId="test-update" showNotifications={true} />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).toBeInTheDocument()
 
-    if (responsesContainer) {
-      fireEvent.click(responsesContainer)
-    }
+    fireEvent.click(responsesContainer)
 
     expect(mockMarkResponsesAsRead).toHaveBeenCalled()
   })
@@ -208,12 +218,10 @@ describe('ResponseThread', () => {
 
     render(<ResponseThread updateId="test-update" showNotifications={false} />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).toBeInTheDocument()
 
-    if (responsesContainer) {
-      fireEvent.click(responsesContainer)
-    }
+    fireEvent.click(responsesContainer)
 
     expect(mockMarkResponsesAsRead).not.toHaveBeenCalled()
   })
@@ -226,12 +234,10 @@ describe('ResponseThread', () => {
 
     render(<ResponseThread updateId="test-update" showNotifications={true} />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).toBeInTheDocument()
 
-    if (responsesContainer) {
-      fireEvent.click(responsesContainer)
-    }
+    fireEvent.click(responsesContainer)
 
     expect(mockMarkResponsesAsRead).not.toHaveBeenCalled()
   })
@@ -239,14 +245,14 @@ describe('ResponseThread', () => {
   it('applies maxHeight style when provided', () => {
     render(<ResponseThread updateId="test-update" maxHeight="400px" />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).toHaveStyle('max-height: 400px')
   })
 
   it('does not apply maxHeight style when not provided', () => {
     render(<ResponseThread updateId="test-update" />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).not.toHaveStyle('max-height: 400px')
   })
 
@@ -287,7 +293,7 @@ describe('ResponseThread', () => {
   it('handles overflow-y-auto class for scrolling', () => {
     render(<ResponseThread updateId="test-update" />)
 
-    const responsesContainer = screen.getByText('Family Responses').closest('div')?.querySelector('.space-y-3')
+    const responsesContainer = screen.getByTestId('responses-container')
     expect(responsesContainer).toHaveClass('overflow-y-auto')
   })
 
