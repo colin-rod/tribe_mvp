@@ -16,7 +16,7 @@ jest.mock('@/hooks/useResponses', () => ({
 }))
 
 jest.mock('@/components/ui/LoadingSpinner', () => {
-  return function MockLoadingSpinner({ className, ...props }: any) {
+  return function MockLoadingSpinner({ className, ...props }: { className?: string; [key: string]: unknown }) {
     return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
   }
 })

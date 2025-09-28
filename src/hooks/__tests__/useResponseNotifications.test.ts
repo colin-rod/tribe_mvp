@@ -61,8 +61,8 @@ Object.defineProperty(mockLocation, 'href', {
 })
 
 // Delete the existing location and create a new one
-delete (window as any).location
-;(window as any).location = mockLocation
+delete (window as Window & { location?: Location }).location
+;(window as Window & { location?: Location }).location = mockLocation
 
 describe('useResponseNotifications', () => {
   let realtimeCallback: (payload: unknown) => void

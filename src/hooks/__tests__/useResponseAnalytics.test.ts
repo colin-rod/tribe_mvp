@@ -225,12 +225,12 @@ describe('useResponseAnalytics', () => {
     const originalDateNow = Date.now
     const originalDate = global.Date
 
-    global.Date = jest.fn(((...args: any[]) => {
+    global.Date = jest.fn(((...args: ConstructorParameters<typeof Date>) => {
       if (args.length === 0) {
         return new originalDate(mockDate)
       }
       return new originalDate(...args)
-    }) as any)
+    }) as typeof Date)
 
     // Copy static methods
     Object.setPrototypeOf(global.Date, originalDate)
