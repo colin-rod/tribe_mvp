@@ -109,12 +109,14 @@ jest.mock('next/image', () => {
     __esModule: true,
     default: function MockImage({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
       return (
-        <img
+        <div
           data-testid="mock-image"
-          src={src}
-          alt={alt}
+          data-src={src}
+          data-alt={alt}
           className={className}
           onClick={onClick}
+          role="img"
+          aria-label={alt}
         />
       )
     }
@@ -192,10 +194,10 @@ describe('ConversationView', () => {
     expect(screen.getByText('Photos (2)')).toBeInTheDocument()
     expect(screen.getByTestId('photo-icon')).toBeInTheDocument()
 
-    const photos = screen.getAllByAltText(/Update photo \d+/)
+    const photos = screen.getAllByLabelText(/Update photo \d+/)
     expect(photos).toHaveLength(2)
-    expect(photos[0]).toHaveAttribute('src', 'https://example.com/photo1.jpg')
-    expect(photos[1]).toHaveAttribute('src', 'https://example.com/photo2.jpg')
+    expect(photos[0]).toHaveAttribute('data-src', 'https://example.com/photo1.jpg')
+    expect(photos[1]).toHaveAttribute('data-src', 'https://example.com/photo2.jpg')
   })
 
   it('does not render photos section when no media', () => {
@@ -209,7 +211,7 @@ describe('ConversationView', () => {
   it('opens photo in new tab when clicked', () => {
     render(<ConversationView updateId="update-123" update={mockUpdate} />)
 
-    const firstPhoto = screen.getByAltText('Update photo 1')
+    const firstPhoto = screen.getByLabelText('Update photo 1')
     fireEvent.click(firstPhoto)
 
     expect(window.open).toHaveBeenCalledWith('https://example.com/photo1.jpg', '_blank')
