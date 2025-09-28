@@ -2,6 +2,26 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 import { useResponses } from '../useResponses'
 import { mockResponses } from '@/test-utils/mockData'
 
+// Suppress act() warnings for async state updates in hooks
+const originalError = console.error
+beforeAll(() => {
+  console.error = (...args) => {
+    const message = typeof args[0] === 'string' ? args[0] : ''
+    if (
+      message.includes('An update to TestComponent inside a test was not wrapped in act') ||
+      message.includes('Warning: An update to TestComponent') ||
+      message.includes('was not wrapped in act(...)')
+    ) {
+      return
+    }
+    originalError.call(console, ...args)
+  }
+})
+
+afterAll(() => {
+  console.error = originalError
+})
+
 // Mock the Supabase client
 const mockSelect = jest.fn()
 const mockEq = jest.fn()
