@@ -91,6 +91,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
           setAnalytics(analytics)
         }
       } catch (err) {
+        console.error('Error fetching response analytics:', err)
         loggerRef.current.error('Error fetching response analytics:', { error: err })
         setError('Failed to load analytics')
       } finally {

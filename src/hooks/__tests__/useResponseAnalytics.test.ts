@@ -204,7 +204,26 @@ describe('useResponseAnalytics', () => {
   it('calculates engagement trend correctly', async () => {
     // Mock Date to have consistent 7-day calculation
     const mockDate = new Date('2024-01-22T12:00:00Z')
-    jest.spyOn(global, 'Date').mockImplementation(() => mockDate)
+
+    // Clear any existing date-fns mocks for this test
+    jest.clearAllMocks()
+
+    // Mock Date.now specifically
+    const originalDateNow = Date.now
+    Date.now = jest.fn(() => mockDate.getTime())
+
+    // Mock Date constructor
+    const originalDate = global.Date
+    global.Date = jest.fn(((...args: any[]) => {
+      if (args.length === 0) {
+        return mockDate
+      }
+      return new originalDate(...args)
+    }) as any)
+
+    // Copy static methods
+    Object.setPrototypeOf(global.Date, originalDate)
+    global.Date.now = Date.now
 
     mockGte
       .mockResolvedValueOnce({
@@ -236,6 +255,9 @@ describe('useResponseAnalytics', () => {
     const jan21 = engagementTrend.find(d => d.date === '2024-01-21')
     expect(jan21?.responses).toBe(1) // 1 response on 2024-01-21
 
+    // Restore Date mocks
+    global.Date = originalDate
+    Date.now = originalDateNow
     jest.restoreAllMocks()
   })
 

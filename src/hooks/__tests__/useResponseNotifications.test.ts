@@ -37,29 +37,35 @@ const mockLocationHref = jest.fn()
 const originalLocation = window.location
 
 beforeAll(() => {
+  // Delete the existing property and create a new one
+  delete (window as any).location
+
   const mutableLocation: Location = {
     ...originalLocation,
-    href: '',
     assign: jest.fn(),
     replace: jest.fn(),
     reload: jest.fn(),
   }
 
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: mutableLocation,
-  })
-
-  Object.defineProperty(window.location, 'href', {
+  // Add getter/setter for href
+  Object.defineProperty(mutableLocation, 'href', {
     configurable: true,
     get: () => '',
     set: mockLocationHref,
   })
+
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    writable: true,
+    value: mutableLocation,
+  })
 })
 
 afterAll(() => {
+  delete (window as any).location
   Object.defineProperty(window, 'location', {
     configurable: true,
+    writable: true,
     value: originalLocation,
   })
 })

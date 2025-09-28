@@ -16,7 +16,8 @@ const mockNavigateToUpdate = jest.fn()
 
 // Mock the component to avoid window.location issues
 jest.mock('../ResponseNotifications', () => {
-  const { useState, useEffect } = require('react')
+  const React = require('react')
+  const { useState, useEffect } = React
 
   return {
     ResponseNotifications: function TestResponseNotifications() {
@@ -133,7 +134,6 @@ describe('ResponseNotifications', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockLocationHref.mockClear()
 
     // Mock addEventListener to capture the storage event handler
     const originalAddEventListener = window.addEventListener

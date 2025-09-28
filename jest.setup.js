@@ -57,6 +57,56 @@ jest.mock('@/components/ui/LoadingSpinner', () => {
 // Mock Math.random for consistent test results
 Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
 
+// Mock Web APIs for server-side tests only if they don't exist
+if (typeof global.Request === 'undefined') {
+  global.Request = class MockRequest {
+    constructor(input, init) {
+      this.url = typeof input === 'string' ? input : input.url
+      this.method = init?.method || 'GET'
+      this.headers = new Map(Object.entries(init?.headers || {}))
+      this._body = init?.body
+    }
+
+    async json() {
+      return JSON.parse(this._body || '{}')
+    }
+
+    async text() {
+      return this._body || ''
+    }
+  }
+}
+
+global.Response = class MockResponse {
+  constructor(body, init) {
+    this.body = body
+    this.status = init?.status || 200
+    this.statusText = init?.statusText || 'OK'
+    this.headers = new Map(Object.entries(init?.headers || {}))
+  }
+
+  static json(data, init) {
+    return new MockResponse(JSON.stringify(data), {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...init?.headers }
+    })
+  }
+}
+
+global.Headers = class MockHeaders extends Map {
+  constructor(init) {
+    super(Object.entries(init || {}))
+  }
+
+  get(name) {
+    return super.get(name.toLowerCase())
+  }
+
+  set(name, value) {
+    return super.set(name.toLowerCase(), value)
+  }
+}
+
 // Mock Supabase client
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
