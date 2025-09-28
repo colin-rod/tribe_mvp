@@ -106,4 +106,14 @@ describe('ResponseCard', () => {
 
     expect(screen.getByText('great-grandmother')).toBeInTheDocument()
   })
+
+  it('handles unknown channel types with default styling', () => {
+    const unknownChannelResponse = { ...mockResponse, channel: 'unknown' as any }
+    render(<ResponseCard response={unknownChannelResponse} showChannel={true} />)
+
+    expect(screen.getByText('unknown')).toBeInTheDocument()
+    // The channel badge is the parent span that contains the color classes
+    const channelBadge = screen.getByText('unknown').closest('span')?.parentElement
+    expect(channelBadge).toHaveClass('bg-gray-100', 'text-gray-800')
+  })
 })

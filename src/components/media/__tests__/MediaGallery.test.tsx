@@ -144,16 +144,87 @@ describe('MediaGallery', () => {
   })
 
   it('handles download functionality', () => {
+    render(<MediaGallery mediaUrls={['https://example.com/test.jpg']} />)
+
+    const firstImage = screen.getAllByRole('img')[0]
+    fireEvent.click(firstImage)
+
+    // Click download button
+    const downloadButton = screen.getByTestId('download-icon').closest('button')
+    expect(downloadButton).toBeInTheDocument()
+
+    // Mock after rendering and finding the button
+    const mockCreateElement = jest.spyOn(document, 'createElement')
+    const mockAppendChild = jest.spyOn(document.body, 'appendChild')
+    const mockRemoveChild = jest.spyOn(document.body, 'removeChild')
+    const mockClick = jest.fn()
+
+    const mockAnchor = {
+      href: '',
+      download: '',
+      target: '',
+      click: mockClick,
+    } as unknown as HTMLAnchorElement
+
+    mockCreateElement.mockImplementation((tagName) => {
+      if (tagName === 'a') {
+        return mockAnchor
+      }
+      return document.createElement(tagName)
+    })
+    mockAppendChild.mockImplementation(() => mockAnchor)
+    mockRemoveChild.mockImplementation(() => mockAnchor)
+
+    if (downloadButton) {
+      fireEvent.click(downloadButton)
+
+      expect(mockCreateElement).toHaveBeenCalledWith('a')
+      expect(mockAnchor.href).toBe('https://example.com/test.jpg')
+      expect(mockAnchor.download).toBe('test.jpg')
+      expect(mockAnchor.target).toBe('_blank')
+      expect(mockAppendChild).toHaveBeenCalledWith(mockAnchor)
+      expect(mockClick).toHaveBeenCalled()
+      expect(mockRemoveChild).toHaveBeenCalledWith(mockAnchor)
+    }
+
+    // Cleanup mocks
+    mockCreateElement.mockRestore()
+    mockAppendChild.mockRestore()
+    mockRemoveChild.mockRestore()
+  })
+
+  it('closes lightbox when clicking outside', () => {
     render(<MediaGallery mediaUrls={mockMediaUrls.slice(0, 2)} />)
 
     const firstImage = screen.getAllByRole('img')[0]
     fireEvent.click(firstImage)
 
-    // Check that lightbox opened (with multiple items to show counter)
     expect(screen.getByText('1 of 2')).toBeInTheDocument()
 
-    // Check that download button exists
-    const downloadButton = screen.getByTestId('download-icon').closest('button')
-    expect(downloadButton).toBeInTheDocument()
+    // Click outside the lightbox content
+    const backdrop = screen.getByText('1 of 2').closest('.fixed')?.querySelector('.absolute.inset-0.-z-10')
+    if (backdrop) {
+      fireEvent.click(backdrop)
+      expect(screen.queryByText('1 of 2')).not.toBeInTheDocument()
+    }
+  })
+
+  it('displays video in lightbox correctly', () => {
+    const videoUrls = ['https://example.com/video.mp4']
+    render(<MediaGallery mediaUrls={videoUrls} />)
+
+    // Click on video thumbnail to open lightbox
+    const video = getByTagName('video')
+    fireEvent.click(video)
+
+    // Should show video in lightbox (no counter for single item)
+    const lightboxVideos = getAllByTagName('video')
+    expect(lightboxVideos.length).toBeGreaterThan(1) // Original + lightbox video
+
+    // Check for video attributes in lightbox
+    const lightboxVideo = lightboxVideos.find(v => v.hasAttribute('autoPlay'))
+    expect(lightboxVideo).toBeInTheDocument()
+    expect(lightboxVideo).toHaveAttribute('controls')
+    expect(lightboxVideo).toHaveAttribute('src', 'https://example.com/video.mp4')
   })
 })
