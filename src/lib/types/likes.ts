@@ -17,6 +17,7 @@ export interface Like {
  */
 export interface LikeWithParent extends Like {
   parent_name: string
+  like_count: number
 }
 
 /**

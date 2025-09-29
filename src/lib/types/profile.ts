@@ -6,7 +6,8 @@ export interface ProfileTab {
 }
 
 export interface ProfileFormData {
-  name: string
+  firstName: string
+  lastName: string
   bio?: string
   timezone: string
   language: string

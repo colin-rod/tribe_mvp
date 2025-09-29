@@ -151,7 +151,7 @@ export class LikesService {
           table: 'likes',
           filter: `update_id=eq.${updateId}`
         },
-        async (_payload: { eventType: string; new?: LikeWithParent; old?: LikeWithParent }) => {
+        async (_payload: any) => {
           // When likes change, fetch the current status
           try {
             const status = await this.getLikeStatus(updateId)
@@ -185,10 +185,10 @@ export class LikesService {
           table: 'updates',
           filter: `parent_id=eq.${parentId}`
         },
-        (payload) => {
+        (payload: any) => {
           if (payload.new && payload.old) {
-            const newData = payload.new as LikeWithParent
-            const oldData = payload.old as LikeWithParent
+            const newData = payload.new as { id: string; like_count: number }
+            const oldData = payload.old as { id: string; like_count: number }
 
             // Only notify if like_count changed
             if (newData.like_count !== oldData.like_count) {
@@ -247,7 +247,7 @@ export class LikesService {
       const result: Record<string, { isLiked: boolean; likeCount: number }> = {}
       const likedUpdates = new Set(likesData?.map((like: { update_id: string }) => like.update_id) || [])
 
-      updatesData?.forEach((update: { update_id: string; like_count: number }) => {
+      updatesData?.forEach((update: { id: string; like_count: number }) => {
         result[update.id] = {
           isLiked: likedUpdates.has(update.id),
           likeCount: update.like_count || 0
@@ -278,7 +278,7 @@ export const likesService = new LikesService()
 
 // Export utility functions
 export const isLikeError = (error: unknown): error is LikeError => {
-  return error && typeof error === 'object' && 'type' in error && 'updateId' in error
+  return !!(error && typeof error === 'object' && 'type' in error && 'updateId' in error)
 }
 
 export const getLikeErrorMessage = (error: LikeError): string => {

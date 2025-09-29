@@ -57,7 +57,8 @@ const DATE_FORMAT_OPTIONS = [
 
 export function ProfileSection({ user }: ProfileSectionProps) {
   const [formData, setFormData] = useState<ProfileFormData>({
-    name: user.user_metadata?.name || '',
+    firstName: user.user_metadata?.firstName || '',
+    lastName: user.user_metadata?.lastName || '',
     bio: user.user_metadata?.bio || '',
     timezone: user.user_metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     language: user.user_metadata?.language || 'en',
@@ -80,12 +81,20 @@ export function ProfileSection({ user }: ProfileSectionProps) {
   useEffect(() => {
     const errors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required'
-    } else if (formData.name.trim().length < 2) {
-      errors.name = 'Name must be at least 2 characters'
-    } else if (formData.name.trim().length > 50) {
-      errors.name = 'Name must be less than 50 characters'
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required'
+    } else if (formData.firstName.trim().length < 2) {
+      errors.firstName = 'First name must be at least 2 characters'
+    } else if (formData.firstName.trim().length > 50) {
+      errors.firstName = 'First name must be less than 50 characters'
+    }
+
+    if (!formData.lastName.trim()) {
+      errors.lastName = 'Last name is required'
+    } else if (formData.lastName.trim().length < 2) {
+      errors.lastName = 'Last name must be at least 2 characters'
+    } else if (formData.lastName.trim().length > 50) {
+      errors.lastName = 'Last name must be less than 50 characters'
     }
 
     if (formData.bio && formData.bio.length > 300) {
@@ -159,7 +168,8 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     logger.info('Avatar upload clicked')
   }
 
-  const avatarSrc = formData.avatar || getDefaultAvatarUrl({ name: formData.name || user.user_metadata?.name })
+  const fullName = `${formData.firstName} ${formData.lastName}`.trim() || user.user_metadata?.name
+  const avatarSrc = formData.avatar || getDefaultAvatarUrl({ name: fullName })
   const avatarAlt = formData.avatar ? 'Profile picture' : 'Default profile avatar'
 
   return (
@@ -198,22 +208,41 @@ export function ProfileSection({ user }: ProfileSectionProps) {
           </div>
         </div>
 
-        {/* Name Field */}
+        {/* First Name Field */}
         <FormField
-          label="Full Name"
+          label="First Name"
           required
-          error={validation.errors.name}
-          description="Your display name as it appears to other users"
+          error={validation.errors.firstName}
+          description="Your first name"
         >
           <Input
-            id="name"
+            id="firstName"
             type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            placeholder="Enter your full name"
-            className={cn(validation.errors.name && 'border-red-500 focus-visible:ring-red-500')}
-            aria-describedby={validation.errors.name ? 'name-error' : 'name-description'}
-            aria-invalid={!!validation.errors.name}
+            value={formData.firstName}
+            onChange={(e) => handleInputChange('firstName', e.target.value)}
+            placeholder="Enter your first name"
+            className={cn(validation.errors.firstName && 'border-red-500 focus-visible:ring-red-500')}
+            aria-describedby={validation.errors.firstName ? 'firstName-error' : 'firstName-description'}
+            aria-invalid={!!validation.errors.firstName}
+          />
+        </FormField>
+
+        {/* Last Name Field */}
+        <FormField
+          label="Last Name"
+          required
+          error={validation.errors.lastName}
+          description="Your last name"
+        >
+          <Input
+            id="lastName"
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => handleInputChange('lastName', e.target.value)}
+            placeholder="Enter your last name"
+            className={cn(validation.errors.lastName && 'border-red-500 focus-visible:ring-red-500')}
+            aria-describedby={validation.errors.lastName ? 'lastName-error' : 'lastName-description'}
+            aria-invalid={!!validation.errors.lastName}
           />
         </FormField>
 

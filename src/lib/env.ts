@@ -739,7 +739,7 @@ export function getFeatureFlags(): {
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'development-fallback-key'
 
   return {
-    supabaseEnabled: hasValidSupabase,
+    supabaseEnabled: !!hasValidSupabase,
     emailEnabled: !!env.SENDGRID_API_KEY,
     smsEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER),
     whatsappEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER)),
