@@ -224,10 +224,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
             {getGreeting()}, {userName}!
           </h1>
           <p className="text-sm text-neutral-600 leading-relaxed">
-            {updateCount === 0
-              ? "Ready to start sharing precious moments?"
-              : `You've shared ${updateCount} ${updateCount === 1 ? 'moment' : 'moments'} so far.`
-            }
+            Ready to start sharing precious moments?
           </p>
         </div>
 
