@@ -76,7 +76,15 @@ export interface UpdatesListProps {
   className?: string
   onCreateUpdate?: (type?: 'photo' | 'text' | 'video' | 'milestone') => void
   searchQuery?: string
-  searchFilters?: Record<string, any>
+  searchFilters?: {
+    contentType?: 'all' | 'photo' | 'text' | 'video' | 'milestone'
+    dateRange?: {
+      start?: Date
+      end?: Date
+    }
+    childId?: string
+    tags?: string[]
+  }
 }
 
 /**

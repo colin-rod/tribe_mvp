@@ -305,6 +305,8 @@ class DashboardFeatureFlags {
   }
 
   private loadFromStorage() {
+    if (typeof window === 'undefined') return
+
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (stored) {
@@ -340,6 +342,8 @@ class DashboardFeatureFlags {
   }
 
   private saveToStorage() {
+    if (typeof window === 'undefined') return
+
     try {
       const data = {
         flags: Object.fromEntries(this.flags),

@@ -54,8 +54,8 @@ interface PersonalizationInsights {
 export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
   userName = 'there',
   lastUpdateAt,
-  updateCount,
-  daysSinceStart,
+  updateCount: _updateCount,
+  daysSinceStart: _daysSinceStart,
   onCreateUpdate,
   onDismissReminder,
   className

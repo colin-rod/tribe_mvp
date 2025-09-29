@@ -70,7 +70,8 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
 
         // Date range filter
         if (searchFilters.dateRange) {
-          const { start, end } = searchFilters.dateRange
+          const dateRange = searchFilters.dateRange as { start?: Date; end?: Date }
+          const { start, end } = dateRange
           transformedUpdates = transformedUpdates.filter(update => {
             const updateDate = new Date(update.createdAt)
             if (start && updateDate < start) return false
