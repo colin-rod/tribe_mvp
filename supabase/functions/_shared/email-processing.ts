@@ -214,45 +214,95 @@ export async function uploadAttachmentToStorage(
   parentId: string,
   supabase: any
 ): Promise<string | null> {
+  console.log(`=== UPLOAD DEBUG: Starting upload for "${attachment.filename}" ===`)
+  console.log('Attachment details:', {
+    filename: attachment.filename,
+    name: attachment.name,
+    type: attachment.type,
+    size: attachment.size,
+    contentId: attachment['content-id'],
+    hasContent: !!attachment.content,
+    contentLength: attachment.content?.length
+  })
+
   try {
     // Validate attachment
+    console.log('Step 1: Validating attachment...')
     const validation = validateAttachment(attachment.filename, attachment.size)
+    console.log('Validation result:', validation)
+
     if (!validation.valid) {
       console.warn(`Invalid attachment ${attachment.filename}: ${validation.reason}`)
       return null
     }
 
+    // Check if content exists
+    if (!attachment.content) {
+      console.error(`No content found for attachment: ${attachment.filename}`)
+      return null
+    }
+
     // Decode base64 content
-    const binaryContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
+    console.log('Step 2: Decoding base64 content...')
+    let binaryContent: Uint8Array
+    try {
+      binaryContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
+      console.log(`✓ Successfully decoded ${binaryContent.length} bytes`)
+    } catch (decodeError) {
+      console.error('Failed to decode base64 content:', decodeError)
+      return null
+    }
 
     // Generate unique filename
+    console.log('Step 3: Generating file path...')
     const timestamp = Date.now()
     const extension = attachment.filename.split('.').pop()
     const uniqueFilename = `${timestamp}-${crypto.randomUUID()}.${extension}`
     const filePath = `${parentId}/email-attachments/${uniqueFilename}`
+    const mimeType = getMimeType(attachment.filename)
+
+    console.log('File upload details:', {
+      originalFilename: attachment.filename,
+      uniqueFilename,
+      filePath,
+      mimeType,
+      parentId
+    })
 
     // Upload to Supabase Storage
+    console.log('Step 4: Uploading to Supabase Storage...')
     const { data, error } = await supabase.storage
       .from('media')
       .upload(filePath, binaryContent, {
-        contentType: getMimeType(attachment.filename),
+        contentType: mimeType,
         upsert: false
       })
 
+    console.log('Upload response:', { data, error })
+
     if (error) {
       console.error('Failed to upload attachment to storage:', error)
+      console.error('Upload error details:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        error: error.error
+      })
       return null
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    console.log('Step 5: Getting public URL...')
+    const { data: urlData } = supabase.storage
       .from('media')
       .getPublicUrl(filePath)
 
-    console.log(`Uploaded attachment ${attachment.filename} to ${publicUrl}`)
+    const publicUrl = urlData.publicUrl
+    console.log(`✅ Successfully uploaded "${attachment.filename}" to: ${publicUrl}`)
+
     return publicUrl
   } catch (error) {
-    console.error('Failed to upload attachment:', error)
+    console.error(`❌ Failed to upload attachment "${attachment.filename}":`, error)
+    console.error('Error stack:', error.stack)
     return null
   }
 }
@@ -265,25 +315,55 @@ export async function processEmailAttachments(
   parentId: string,
   supabase: any
 ): Promise<string[]> {
-  if (emailData.attachments === 0) return []
+  console.log('=== ATTACHMENT PROCESSING DEBUG: Starting ===')
+  console.log('Attachment count:', emailData.attachments)
+  console.log('Attachment info keys:', Object.keys(emailData.attachment_info || {}))
+  console.log('Parent ID:', parentId)
+
+  if (emailData.attachments === 0) {
+    console.log('No attachments to process (count = 0)')
+    return []
+  }
+
+  if (!emailData.attachment_info || Object.keys(emailData.attachment_info).length === 0) {
+    console.log('No attachment_info data available')
+    return []
+  }
 
   const mediaUrls: string[] = []
 
   try {
+    console.log('=== ATTACHMENT PROCESSING DEBUG: Processing each attachment ===')
     for (const [filename, attachment] of Object.entries(emailData.attachment_info)) {
+      console.log(`Processing attachment: "${filename}"`, {
+        type: attachment.type,
+        size: attachment.size,
+        hasContent: !!attachment.content,
+        contentLength: attachment.content?.length,
+        contentId: attachment['content-id']
+      })
+
       // Only process image and video files
       if (isImageFile(filename) || isVideoFile(filename)) {
+        console.log(`✓ "${filename}" is a media file, attempting upload...`)
         const publicUrl = await uploadAttachmentToStorage(attachment, parentId, supabase)
+        console.log(`Upload result for "${filename}":`, publicUrl ? `SUCCESS: ${publicUrl}` : 'FAILED')
+
         if (publicUrl) {
           mediaUrls.push(publicUrl)
         }
       } else {
-        console.log(`Skipping non-media attachment: ${filename}`)
+        console.log(`✗ Skipping non-media attachment: ${filename} (type: ${attachment.type})`)
       }
     }
   } catch (error) {
     console.error('Failed to process email attachments:', error)
+    console.error('Error stack:', error.stack)
   }
+
+  console.log('=== ATTACHMENT PROCESSING DEBUG: Completed ===')
+  console.log('Final media URLs:', mediaUrls)
+  console.log('Total URLs generated:', mediaUrls.length)
 
   return mediaUrls
 }
@@ -373,4 +453,202 @@ export function validateSenderAuthentication(emailData: InboundEmail): boolean {
   // In production, you might want to be more strict about DKIM
   // For now, we'll accept emails as long as SPF passes or is neutral
   return true
+}
+
+/**
+ * Processes inline images from email HTML content
+ * Extracts cid: references, uploads images to storage, and updates HTML with public URLs
+ */
+export async function processInlineImages(
+  emailData: InboundEmail,
+  parentId: string,
+  supabase: any
+): Promise<{ updatedHtml: string; mediaUrls: string[] }> {
+  console.log('=== INLINE IMAGE PROCESSING DEBUG: Starting ===')
+
+  let updatedHtml = emailData.html || ''
+  const mediaUrls: string[] = []
+
+  if (!updatedHtml || !updatedHtml.includes('cid:')) {
+    console.log('No inline images found in HTML content')
+    return { updatedHtml, mediaUrls }
+  }
+
+  console.log('HTML contains cid: references, processing...')
+
+  // Find all cid: references in the HTML
+  const cidMatches = updatedHtml.match(/src="cid:([^"]+)"/g)
+  if (!cidMatches) {
+    console.log('No cid: matches found in regex')
+    return { updatedHtml, mediaUrls }
+  }
+
+  console.log('Found CID references:', cidMatches)
+
+  // Process each cid: reference
+  for (const cidMatch of cidMatches) {
+    const cidValue = cidMatch.match(/cid:([^"]+)/)?.[1]
+    if (!cidValue) continue
+
+    console.log(`Processing CID: ${cidValue}`)
+
+    // Find the corresponding attachment by content-id
+    let matchingAttachment: AttachmentInfo | null = null
+    let attachmentFilename = ''
+
+    for (const [filename, attachment] of Object.entries(emailData.attachment_info || {})) {
+      console.log(`Checking attachment "${filename}":`, {
+        contentId: attachment['content-id'],
+        targetCid: cidValue
+      })
+
+      if (attachment['content-id'] === cidValue) {
+        matchingAttachment = attachment
+        attachmentFilename = filename
+        break
+      }
+    }
+
+    if (!matchingAttachment) {
+      console.log(`❌ No attachment found for CID: ${cidValue}`)
+      continue
+    }
+
+    console.log(`✓ Found matching attachment: ${attachmentFilename}`)
+
+    // Upload the inline image
+    const publicUrl = await uploadAttachmentToStorage(matchingAttachment, parentId, supabase)
+
+    if (publicUrl) {
+      console.log(`✅ Uploaded inline image: ${publicUrl}`)
+
+      // Replace the cid: reference with the public URL
+      updatedHtml = updatedHtml.replace(cidMatch, `src="${publicUrl}"`)
+      mediaUrls.push(publicUrl)
+
+      console.log(`Updated HTML: replaced ${cidMatch} with src="${publicUrl}"`)
+    } else {
+      console.log(`❌ Failed to upload inline image for CID: ${cidValue}`)
+    }
+  }
+
+  console.log('=== INLINE IMAGE PROCESSING DEBUG: Completed ===')
+  console.log(`Processed ${mediaUrls.length} inline images`)
+  console.log('Final media URLs:', mediaUrls)
+
+  return { updatedHtml, mediaUrls }
+}
+
+/**
+ * Enhanced attachment processor that handles both regular attachments and inline images
+ */
+export async function processAllEmailMedia(
+  emailData: InboundEmail,
+  parentId: string,
+  supabase: any
+): Promise<{ mediaUrls: string[]; updatedHtml: string }> {
+  console.log('=== ENHANCED MEDIA PROCESSING: Starting ===')
+
+  const allMediaUrls: string[] = []
+  let updatedHtml = emailData.html || ''
+
+  // 1. First, process inline images from HTML (cid: references)
+  const inlineResult = await processInlineImages(emailData, parentId, supabase)
+  allMediaUrls.push(...inlineResult.mediaUrls)
+  updatedHtml = inlineResult.updatedHtml
+
+  console.log(`Inline images processed: ${inlineResult.mediaUrls.length}`)
+
+  // 2. Then process regular email attachments (non-inline files)
+  const regularAttachments = await processRegularAttachments(emailData, parentId, supabase, inlineResult.mediaUrls)
+  allMediaUrls.push(...regularAttachments)
+
+  console.log(`Regular attachments processed: ${regularAttachments.length}`)
+
+  console.log('=== ENHANCED MEDIA PROCESSING: Completed ===')
+  console.log(`Total media URLs: ${allMediaUrls.length}`)
+
+  return {
+    mediaUrls: allMediaUrls,
+    updatedHtml: updatedHtml
+  }
+}
+
+/**
+ * Processes regular email attachments (excludes ones already processed as inline images)
+ */
+async function processRegularAttachments(
+  emailData: InboundEmail,
+  parentId: string,
+  supabase: any,
+  alreadyProcessedUrls: string[]
+): Promise<string[]> {
+  console.log('=== REGULAR ATTACHMENT PROCESSING DEBUG: Starting ===')
+  console.log('Attachment count:', emailData.attachments)
+  console.log('Already processed inline images:', alreadyProcessedUrls.length)
+
+  if (emailData.attachments === 0) {
+    console.log('No attachments to process (count = 0)')
+    return []
+  }
+
+  if (!emailData.attachment_info || Object.keys(emailData.attachment_info).length === 0) {
+    console.log('No attachment_info data available')
+    return []
+  }
+
+  const mediaUrls: string[] = []
+  const processedContentIds = new Set<string>()
+
+  // Track which content-ids were already processed as inline images
+  // This prevents double-processing the same image
+  for (const [filename, attachment] of Object.entries(emailData.attachment_info)) {
+    if (attachment['content-id']) {
+      // Check if this attachment was already processed as an inline image
+      const wasProcessedInline = alreadyProcessedUrls.some(url => url.includes(filename.split('.')[0]))
+      if (wasProcessedInline) {
+        processedContentIds.add(attachment['content-id'])
+        console.log(`Skipping "${filename}" - already processed as inline image`)
+      }
+    }
+  }
+
+  try {
+    console.log('=== REGULAR ATTACHMENT PROCESSING: Processing remaining attachments ===')
+    for (const [filename, attachment] of Object.entries(emailData.attachment_info)) {
+      // Skip if this was already processed as an inline image
+      if (attachment['content-id'] && processedContentIds.has(attachment['content-id'])) {
+        continue
+      }
+
+      console.log(`Processing regular attachment: "${filename}"`, {
+        type: attachment.type,
+        size: attachment.size,
+        hasContent: !!attachment.content,
+        contentLength: attachment.content?.length,
+        contentId: attachment['content-id']
+      })
+
+      // Only process image and video files
+      if (isImageFile(filename) || isVideoFile(filename)) {
+        console.log(`✓ "${filename}" is a media file, attempting upload...`)
+        const publicUrl = await uploadAttachmentToStorage(attachment, parentId, supabase)
+        console.log(`Upload result for "${filename}":`, publicUrl ? `SUCCESS: ${publicUrl}` : 'FAILED')
+
+        if (publicUrl) {
+          mediaUrls.push(publicUrl)
+        }
+      } else {
+        console.log(`✗ Skipping non-media attachment: ${filename} (type: ${attachment.type})`)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to process regular attachments:', error)
+    console.error('Error stack:', error.stack)
+  }
+
+  console.log('=== REGULAR ATTACHMENT PROCESSING: Completed ===')
+  console.log('Regular attachment URLs:', mediaUrls)
+
+  return mediaUrls
 }

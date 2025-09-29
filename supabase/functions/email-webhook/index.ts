@@ -11,6 +11,7 @@ import {
   cleanEmailContent,
   extractMessageId,
   processEmailAttachments,
+  processAllEmailMedia,
   parseChildFromSubject,
   validateSenderAuthentication,
   validateEmailSubject,
@@ -145,8 +146,22 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
     return { success: false, type: 'memory', error: 'No child found' }
   }
 
-  // Process attachments
-  const mediaUrls = await processEmailAttachments(emailData, profile.id, supabase)
+  // Process all media (inline images + regular attachments)
+  console.log('=== ENHANCED MEDIA DEBUG: About to process all media ===')
+  console.log('Email data for media processing:', {
+    attachments_count: emailData.attachments,
+    attachment_info_keys: Object.keys(emailData.attachment_info || {}),
+    has_html: !!emailData.html,
+    html_has_cid: emailData.html ? emailData.html.includes('cid:') : false,
+    parent_id: profile.id
+  })
+
+  const { mediaUrls, updatedHtml } = await processAllEmailMedia(emailData, profile.id, supabase)
+
+  console.log('=== ENHANCED MEDIA DEBUG: Media processing result ===')
+  console.log('Media URLs returned:', mediaUrls)
+  console.log('Media URLs count:', mediaUrls.length)
+  console.log('HTML updated:', updatedHtml !== emailData.html)
 
   // Clean and prepare content (no longer concatenate subject with body)
   const emailContent = cleanEmailContent(emailData.text || emailData.html)
@@ -159,12 +174,12 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
     return { success: false, type: 'memory', error: `Invalid content: ${contentValidation.reason}` }
   }
 
-  // Prepare rich content if HTML is available
+  // Prepare rich content if HTML is available (use updated HTML with real image URLs)
   let richContent = null
-  if (emailData.html && emailData.html.trim() !== '') {
+  if (updatedHtml && updatedHtml.trim() !== '') {
     try {
       richContent = {
-        html: emailData.html,
+        html: updatedHtml, // Use the updated HTML with real image URLs
         text: emailData.text || '',
         created_at: new Date().toISOString()
       }
@@ -434,16 +449,55 @@ Deno.serve(async (req) => {
 
     // Parse form data from SendGrid Inbound Parse
     const formData = await req.formData()
+
+    // DEBUG: Log all form data keys to see what SendGrid actually sends
+    console.log('=== ATTACHMENT DEBUG: Form Data Keys ===')
+    const formDataEntries = Array.from(formData.entries())
+    formDataEntries.forEach(([key, value]) => {
+      if (key.includes('attachment') || key.includes('content-id')) {
+        console.log(`FormData[${key}]:`, typeof value === 'string' ? value.substring(0, 100) + '...' : value)
+      } else {
+        console.log(`FormData[${key}]:`, typeof value === 'string' ? `"${value}"` : value)
+      }
+    })
+
     const emailData = parseInboundEmail(formData)
 
+    // DEBUG: Enhanced logging for attachment debugging
+    console.log('=== ATTACHMENT DEBUG: Parsed Email Data ===')
     console.log('Received email:', {
       to: emailData.to,
       from: emailData.from,
       subject: emailData.subject,
       attachments: emailData.attachments,
       textLength: emailData.text?.length || 0,
-      htmlLength: emailData.html?.length || 0
+      htmlLength: emailData.html?.length || 0,
+      attachment_info_keys: Object.keys(emailData.attachment_info || {}),
+      attachment_info_structure: emailData.attachment_info
     })
+
+    // DEBUG: Log specific attachment details
+    if (emailData.attachments > 0) {
+      console.log('=== ATTACHMENT DEBUG: Individual Attachments ===')
+      Object.entries(emailData.attachment_info || {}).forEach(([filename, attachment]) => {
+        console.log(`Attachment "${filename}":`, {
+          filename: attachment.filename,
+          name: attachment.name,
+          type: attachment.type,
+          contentId: attachment['content-id'],
+          size: attachment.size,
+          contentLength: attachment.content?.length || 0,
+          contentPreview: attachment.content?.substring(0, 50) + '...'
+        })
+      })
+    }
+
+    // DEBUG: Check HTML for inline images
+    if (emailData.html && emailData.html.includes('cid:')) {
+      console.log('=== ATTACHMENT DEBUG: Inline Images Found ===')
+      const cidMatches = emailData.html.match(/src="cid:([^"]+)"/g)
+      console.log('CID references in HTML:', cidMatches)
+    }
 
     // Test database connection first
     if (emailData.to === 'test@example.com') {
