@@ -40,6 +40,11 @@ interface SmartReminder {
 
 interface PersonalizationInsights {
   favoriteUpdateType: UpdateType
+  nextMilestone?: {
+    type: string
+    remaining: number
+  }
+  totalEngagement: number
 }
 
 /**
@@ -75,7 +80,8 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
     const favoriteUpdateType: UpdateType = 'photo' // Most used type
 
     return {
-      favoriteUpdateType
+      favoriteUpdateType,
+      totalEngagement: 0 // Mock data
     }
   }, [])
 
