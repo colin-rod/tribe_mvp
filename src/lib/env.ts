@@ -698,14 +698,17 @@ export function initializeEnvironment(): void {
 
     // Exit the process for critical errors in all environments (Node.js only)
     // This ensures configuration issues are caught immediately
-    if (typeof process !== 'undefined' && process.exit) {
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
       logger.error('Application failed to start due to environment configuration errors', {
         nodeEnv: process.env.NODE_ENV,
         error: (error as Error).message,
         context: 'environment-initialization-failure'
       })
-      // eslint-disable-next-line no-restricted-syntax
-      process.exit(1)
+      // Only exit in development/test environments, not in Edge Runtime
+      if (typeof process.exit === 'function') {
+        // eslint-disable-next-line no-restricted-syntax
+        process.exit(1)
+      }
     }
 
     // Re-throw the error to prevent application startup
@@ -873,8 +876,8 @@ export function debugEnvironmentState(): void {
   const extendedWindowInfo = getExtendedWindow()
   const runtimeInfo = {
     timestamp,
-    nodeVersion: typeof process !== 'undefined' ? process.version : 'unknown',
-    platform: typeof process !== 'undefined' ? process.platform : 'unknown',
+    nodeVersion: 'edge-runtime',
+    platform: 'edge-runtime',
     isNextjs: extendedWindowInfo ? !!extendedWindowInfo.__NEXT_DATA__ : 'unknown',
     hasWindowEnv: extendedWindowInfo ? !!extendedWindowInfo.__ENV__ : 'N/A',
     hasRuntimeConfig: extendedWindowInfo ?

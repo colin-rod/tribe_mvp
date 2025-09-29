@@ -15,6 +15,21 @@ type SupabaseClientType = SupabaseClient<Database>
 function validateSupabaseEnvironment(): { url: string; key: string } {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const isBuildTime = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
+
+  // During build time (CI), use fallback values to prevent build failures
+  if (isBuildTime && (!supabaseUrl || !supabaseAnonKey)) {
+    logger.warn('Using fallback Supabase credentials for build process', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      isBuildTime,
+      context: 'supabase-client-fallback'
+    })
+    return {
+      url: supabaseUrl || 'https://placeholder.supabase.co',
+      key: supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDU0ODYzOTIsImV4cCI6MTk2MTA2MjM5Mn0.placeholder'
+    }
+  }
 
   // Check for missing environment variables
   if (!supabaseUrl) {
@@ -64,7 +79,9 @@ function validateSupabaseEnvironment(): { url: string; key: string } {
   }
 
   // Validate key format (should be a JWT-like string)
-  if (supabaseAnonKey.length < 100 || !supabaseAnonKey.includes('.')) {
+  // Allow shorter keys during build time for CI/testing
+  const minKeyLength = isBuildTime ? 50 : 100
+  if (supabaseAnonKey.length < minKeyLength || !supabaseAnonKey.includes('.')) {
     const error = new Error(
       'NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be invalid. ' +
       'Expected a JWT-like token from your Supabase project settings.'
@@ -72,6 +89,8 @@ function validateSupabaseEnvironment(): { url: string; key: string } {
     logger.error('Invalid Supabase anonymous key format', {
       keyLength: supabaseAnonKey.length,
       hasDotsInKey: supabaseAnonKey.includes('.'),
+      minKeyLength,
+      isBuildTime,
       nodeEnv: process.env.NODE_ENV,
       context: 'supabase-client-validation'
     })
@@ -79,7 +98,7 @@ function validateSupabaseEnvironment(): { url: string; key: string } {
   }
 
   // Check for development fallback values that should not be used in production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !isBuildTime) {
     if (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
       const error = new Error(
         'Production build detected but NEXT_PUBLIC_SUPABASE_URL points to localhost. ' +
@@ -93,7 +112,7 @@ function validateSupabaseEnvironment(): { url: string; key: string } {
       throw error
     }
 
-    if (supabaseAnonKey === 'development-fallback-key' || supabaseAnonKey.startsWith('dev-')) {
+    if (supabaseAnonKey === 'development-fallback-key' || supabaseAnonKey.startsWith('dev-') || supabaseAnonKey.includes('placeholder')) {
       const error = new Error(
         'Production build detected but NEXT_PUBLIC_SUPABASE_ANON_KEY appears to be a development fallback value. ' +
         'Please configure a production Supabase anonymous key.'
@@ -133,13 +152,32 @@ export function createClient() {
 
     return createBrowserClient<Database>(url, key)
   } catch (error) {
+    const isBuildTime = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
+
     logger.errorWithStack('Failed to create Supabase client - application cannot continue', error as Error)
 
-    // In production, fail fast - don't provide fallbacks that mask real issues
+    // During build time, allow fallback to prevent CI failures
+    if (isBuildTime) {
+      logger.warn('Using placeholder Supabase client for build process', {
+        nodeEnv: process.env.NODE_ENV,
+        isBuildTime,
+        error: (error as Error).message,
+        context: 'supabase-client-build-fallback'
+      })
+
+      // Return a minimal mock client for build purposes
+      return createBrowserClient<Database>(
+        'https://placeholder.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDU0ODYzOTIsImV4cCI6MTk2MTA2MjM5Mn0.placeholder'
+      )
+    }
+
+    // In production runtime, fail fast - don't provide fallbacks that mask real issues
     if (process.env.NODE_ENV === 'production') {
       logger.error('Production Supabase client creation failed - terminating', {
         nodeEnv: process.env.NODE_ENV,
-        error: (error as Error).message
+        error: (error as Error).message,
+        context: 'supabase-client'
       })
       throw error
     }

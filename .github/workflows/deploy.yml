@@ -19,10 +19,10 @@ concurrency:
 env:
   CI: true
   TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
-  NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake-ci-key
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDU0ODYzOTIsImV4cCI6MTk2MTA2MjM5Mn0.placeholder-test-key-for-ci-builds-only
   NEXT_PUBLIC_APP_URL: http://localhost:3000
-  SENDGRID_API_KEY: SG.fake-sendgrid-ci-key
+  SENDGRID_API_KEY: SG.placeholder-sendgrid-ci-key
   SENDGRID_FROM_EMAIL: deploy@example.com
   SENDGRID_FROM_NAME: Tribe Deploy
   SUPABASE_SERVICE_ROLE_KEY: service-role-ci-key
