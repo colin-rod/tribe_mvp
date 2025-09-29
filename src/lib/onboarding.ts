@@ -364,6 +364,65 @@ export async function needsOnboarding(): Promise<boolean> {
 }
 
 /**
+ * Dismiss onboarding for a user
+ */
+export async function dismissOnboarding(): Promise<boolean> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        onboarding_skipped: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      logger.errorWithStack('Failed to dismiss onboarding:', error as Error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    logger.errorWithStack('Failed to dismiss onboarding:', error as Error)
+    return false
+  }
+}
+
+/**
+ * Re-enable onboarding for a user (undoes dismissal)
+ */
+export async function reEnableOnboarding(): Promise<boolean> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        onboarding_skipped: false,
+        onboarding_completed: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+
+    if (error) {
+      logger.errorWithStack('Failed to re-enable onboarding:', error as Error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    logger.errorWithStack('Failed to re-enable onboarding:', error as Error)
+    return false
+  }
+}
+
+/**
  * Onboarding validation helpers
  */
 export interface ValidationResult {

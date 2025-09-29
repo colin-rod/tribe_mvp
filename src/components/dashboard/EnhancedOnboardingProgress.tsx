@@ -8,7 +8,8 @@ import {
   CheckIcon,
   ArrowRightIcon,
   ArrowUturnUpIcon,
-  SparklesIcon
+  SparklesIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 
@@ -31,7 +32,9 @@ interface EnhancedOnboardingProgressProps {
   totalSteps: number
   onStepClick?: (stepId: string) => void
   onCollapse?: (collapsed: boolean) => void
+  onDismiss?: () => void
   canCollapse?: boolean
+  canDismiss?: boolean
   showCelebration?: boolean
   className?: string
 }
@@ -42,7 +45,9 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
   totalSteps,
   onStepClick,
   onCollapse,
+  onDismiss,
   canCollapse = true,
+  canDismiss = true,
   showCelebration = false,
   className
 }) => {
@@ -185,15 +190,27 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
               )}
             </div>
 
-            {canCollapse && (
-              <button
-                onClick={handleCollapseToggle}
-                className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
-                aria-label="Collapse progress"
-              >
-                <ChevronUpIcon className="w-4 h-4 text-neutral-500" />
-              </button>
-            )}
+            <div className="flex items-center space-x-2">
+              {canDismiss && (
+                <button
+                  onClick={() => onDismiss?.()}
+                  className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                  aria-label="Dismiss onboarding"
+                  title="Don't show this again"
+                >
+                  <XMarkIcon className="w-4 h-4 text-neutral-500" />
+                </button>
+              )}
+              {canCollapse && (
+                <button
+                  onClick={handleCollapseToggle}
+                  className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                  aria-label="Collapse progress"
+                >
+                  <ChevronUpIcon className="w-4 h-4 text-neutral-500" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

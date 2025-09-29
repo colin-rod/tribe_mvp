@@ -3,15 +3,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { createLogger } from '@/lib/logger'
 import {
-  ArrowTrendingUpIcon,
   ClockIcon,
-  HeartIcon,
-  SparklesIcon,
   XMarkIcon,
-  ChartBarIcon,
   CameraIcon
 } from '@heroicons/react/24/outline'
 
@@ -44,15 +39,7 @@ interface SmartReminder {
 }
 
 interface PersonalizationInsights {
-  averageUpdatesPerWeek: number
   favoriteUpdateType: UpdateType
-  longestStreak: number
-  totalEngagement: number
-  nextMilestone?: {
-    type: string
-    remaining: number
-    description: string
-  }
 }
 
 /**
@@ -69,8 +56,6 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
   className
 }) => {
   const [dismissedReminders, setDismissedReminders] = useState<Set<string>>(new Set())
-  const [currentInsightIndex, setCurrentInsightIndex] = useState(0)
-  const [showFullStats, setShowFullStats] = useState(false)
 
   // Load dismissed reminders from localStorage
   useEffect(() => {
@@ -86,43 +71,13 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
 
   // Calculate personalization insights
   const insights = useMemo((): PersonalizationInsights => {
-    const weeksActive = Math.max(1, daysSinceStart / 7)
-    const averageUpdatesPerWeek = updateCount / weeksActive
-
     // Mock data - in real app, this would come from analytics
     const favoriteUpdateType: UpdateType = 'photo' // Most used type
-    const longestStreak = Math.min(updateCount, 12) // Days with updates
-    const totalEngagement = updateCount * 3.2 // Average responses per update
-
-    let nextMilestone
-    if (updateCount < 10) {
-      nextMilestone = {
-        type: 'First milestone',
-        remaining: 10 - updateCount,
-        description: 'Share 10 updates to unlock insights'
-      }
-    } else if (updateCount < 50) {
-      nextMilestone = {
-        type: 'Regular sharer',
-        remaining: 50 - updateCount,
-        description: 'Share 50 updates to unlock advanced features'
-      }
-    } else if (updateCount < 100) {
-      nextMilestone = {
-        type: 'Memory keeper',
-        remaining: 100 - updateCount,
-        description: 'Share 100 updates to become a memory keeper'
-      }
-    }
 
     return {
-      averageUpdatesPerWeek,
-      favoriteUpdateType,
-      longestStreak,
-      totalEngagement,
-      nextMilestone
+      favoriteUpdateType
     }
-  }, [updateCount, daysSinceStart])
+  }, [])
 
   // Generate smart reminders based on user behavior
   const smartReminders = useMemo((): SmartReminder[] => {
@@ -236,40 +191,6 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
     }
   }, [dismissedReminders, onDismissReminder])
 
-  // Rotate insights every 5 seconds
-  const rotatingInsights = [
-    {
-      icon: ArrowTrendingUpIcon,
-      label: 'Updates per week',
-      value: insights.averageUpdatesPerWeek.toFixed(1),
-      color: 'text-green-600'
-    },
-    {
-      icon: HeartIcon,
-      label: 'Total engagement',
-      value: Math.round(insights.totalEngagement).toString(),
-      color: 'text-pink-600'
-    },
-    {
-      icon: SparklesIcon,
-      label: 'Longest streak',
-      value: `${insights.longestStreak} days`,
-      color: 'text-purple-600'
-    },
-    {
-      icon: ChartBarIcon,
-      label: 'Total updates',
-      value: updateCount.toString(),
-      color: 'text-blue-600'
-    }
-  ]
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentInsightIndex(prev => (prev + 1) % rotatingInsights.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [rotatingInsights.length])
 
   const getGreeting = () => {
     const hour = new Date().getHours()
@@ -304,72 +225,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
           </p>
         </div>
 
-        {/* Quick stats toggle */}
-        <button
-          onClick={() => setShowFullStats(!showFullStats)}
-          className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-neutral-600 hover:text-neutral-800 transition-colors"
-          aria-label="Toggle detailed stats"
-        >
-          <div className={cn(
-            'flex items-center space-x-1 transition-all duration-500',
-            rotatingInsights[currentInsightIndex].color
-          )}>
-            {React.createElement(rotatingInsights[currentInsightIndex].icon, {
-              className: "w-4 h-4"
-            })}
-            <span className="font-medium">
-              {rotatingInsights[currentInsightIndex].value}
-            </span>
-          </div>
-          <span className="hidden sm:inline">
-            {rotatingInsights[currentInsightIndex].label}
-          </span>
-        </button>
       </div>
-
-      {/* Expanded stats */}
-      {showFullStats && (
-        <div className="mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 animate-slide-up">
-          <h3 className="text-sm font-semibold text-neutral-800 mb-3">Your Journey</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {rotatingInsights.map((insight) => (
-              <div key={insight.label} className="text-center">
-                <div className={cn("inline-flex items-center justify-center w-8 h-8 rounded-full bg-neutral-100 mb-2", insight.color)}>
-                  {React.createElement(insight.icon, { className: "w-4 h-4" })}
-                </div>
-                <div className="text-lg font-semibold text-neutral-900">{insight.value}</div>
-                <div className="text-xs text-neutral-600">{insight.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {insights.nextMilestone && (
-            <div className="mt-4 pt-4 border-t border-neutral-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-800">
-                    Next: {insights.nextMilestone.type}
-                  </h4>
-                  <p className="text-xs text-neutral-600">
-                    {insights.nextMilestone.description}
-                  </p>
-                </div>
-                <Badge outline className="ml-2">
-                  {insights.nextMilestone.remaining} to go
-                </Badge>
-              </div>
-              <div className="mt-2 bg-neutral-200 rounded-full h-2">
-                <div
-                  className="bg-primary-500 h-2 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.max(10, ((updateCount % 50) / 50) * 100)}%`
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Smart reminder */}
       {activeReminder && (
@@ -383,9 +239,9 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
                 'bg-neutral-100 text-neutral-600'
               )}>
                 {activeReminder.type === 'frequency' && <ClockIcon className="h-5 w-5" />}
-                {activeReminder.type === 'milestone' && <SparklesIcon className="h-5 w-5" />}
+                {activeReminder.type === 'milestone' && <CameraIcon className="h-5 w-5" />}
                 {activeReminder.type === 'seasonal' && <CameraIcon className="h-5 w-5" />}
-                {activeReminder.type === 'engagement' && <HeartIcon className="h-5 w-5" />}
+                {activeReminder.type === 'engagement' && <ClockIcon className="h-5 w-5" />}
               </div>
             </div>
 

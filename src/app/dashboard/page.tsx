@@ -9,7 +9,7 @@ import { getChildren } from '@/lib/children'
 import { getRecipientStats } from '@/lib/recipients'
 import { getGroupStats } from '@/lib/recipient-groups'
 import { getUpdates } from '@/lib/updates'
-import { needsOnboarding } from '@/lib/onboarding'
+import { needsOnboarding, getOnboardingStatus, dismissOnboarding } from '@/lib/onboarding'
 import Navigation from '@/components/layout/Navigation'
 import { Card } from '@/components/ui/Card'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -31,8 +31,10 @@ const DashboardPage = memo(function DashboardPage() {
   const [recipientStats, setRecipientStats] = useState({ total: 0, active: 0, groups: 0 })
   const [updatesCreated, setUpdatesCreated] = useState(0)
   const [loadingStats, setLoadingStats] = useState(true)
-  const [showOnboardingProgress, setShowOnboardingProgress] = useState(true)
+  const [loadingOnboarding, setLoadingOnboarding] = useState(true)
+  const [showOnboardingProgress, setShowOnboardingProgress] = useState(false)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
   const [lastUpdateAt, setLastUpdateAt] = useState<Date | undefined>(undefined)
   const [daysSinceStart, setDaysSinceStart] = useState(1)
 
@@ -85,12 +87,28 @@ const DashboardPage = memo(function DashboardPage() {
 
   const checkOnboardingStatus = useCallback(async () => {
     try {
+      setLoadingOnboarding(true)
+
       const needsOnboard = await needsOnboarding()
       if (needsOnboard) {
         router.push('/onboarding')
+        return
+      }
+
+      // Check if user has dismissed onboarding or actually completed it
+      const onboardingStatus = await getOnboardingStatus()
+      if (onboardingStatus) {
+        setHasCompletedOnboarding(onboardingStatus.onboarding_completed || false)
+        setOnboardingDismissed(onboardingStatus.onboarding_skipped || false)
+
+        // Only show onboarding if not completed and not dismissed
+        const shouldShow = !onboardingStatus.onboarding_completed && !onboardingStatus.onboarding_skipped
+        setShowOnboardingProgress(shouldShow)
       }
     } catch (error) {
       logger.errorWithStack('Error checking onboarding status:', error as Error)
+    } finally {
+      setLoadingOnboarding(false)
     }
   }, [router])
 
@@ -136,15 +154,13 @@ const DashboardPage = memo(function DashboardPage() {
         }
       }
 
-      // Check if onboarding is complete
-      const completedSteps = onboardingSteps.filter(step => step.isCompleted).length
-      setHasCompletedOnboarding(completedSteps === onboardingSteps.length)
+      // Note: Onboarding completion is now managed by checkOnboardingStatus()
     } catch (error) {
       logger.errorWithStack('Error loading dashboard stats:', error as Error)
     } finally {
       setLoadingStats(false)
     }
-  }, [onboardingSteps, user])
+  }, [user])
 
   useEffect(() => {
     if (user && !loading) {
@@ -184,6 +200,11 @@ const DashboardPage = memo(function DashboardPage() {
         break
       case 'complete':
         setShowOnboardingProgress(false)
+        setHasCompletedOnboarding(true)
+        break
+      case 'dismiss':
+        setShowOnboardingProgress(false)
+        setOnboardingDismissed(true)
         break
       default:
         break
@@ -192,6 +213,20 @@ const DashboardPage = memo(function DashboardPage() {
 
   const handleCollapseOnboarding = useCallback((_collapsed: boolean) => {
     // Placeholder for persisting collapse preference
+  }, [])
+
+  const handleDismissOnboarding = useCallback(async () => {
+    try {
+      const success = await dismissOnboarding()
+      if (success) {
+        setShowOnboardingProgress(false)
+        setOnboardingDismissed(true)
+      } else {
+        logger.error('Failed to dismiss onboarding')
+      }
+    } catch (error) {
+      logger.errorWithStack('Error dismissing onboarding:', error as Error)
+    }
   }, [])
 
   const memoizedStats = useMemo(() => ({
@@ -240,8 +275,8 @@ const DashboardPage = memo(function DashboardPage() {
         {/* Main content container */}
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            {/* Onboarding Progress - Show if not completed */}
-            {showOnboardingProgress && !hasCompletedOnboarding && (
+            {/* Onboarding Progress - Show if not completed and not dismissed and not loading */}
+            {!loadingOnboarding && showOnboardingProgress && !hasCompletedOnboarding && !onboardingDismissed && (
               <div className="mb-6 -mt-4 relative z-10">
                 <EnhancedOnboardingProgress
                   steps={onboardingSteps}
@@ -249,6 +284,7 @@ const DashboardPage = memo(function DashboardPage() {
                   totalSteps={onboardingSteps.length}
                   onStepClick={handleOnboardingStepClick}
                   onCollapse={handleCollapseOnboarding}
+                  onDismiss={handleDismissOnboarding}
                   showCelebration={hasCompletedOnboarding}
                 />
               </div>
