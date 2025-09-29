@@ -158,6 +158,38 @@ function parseInboundEmail(formData: FormData): InboundEmail {
     }
   }
 
+  // Extract actual file content from FormData entries
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith('attachment') && value instanceof File) {
+      // Convert File to base64 content for existing attachment processing
+      const filename = value.name
+      if (attachmentInfo[key]) {
+        // Update existing attachment info with actual file data
+        attachmentInfo[key] = {
+          ...attachmentInfo[key],
+          filename: filename,
+          name: filename,
+          type: value.type,
+          size: value.size,
+          content: '' // Will be populated from File below
+        }
+      } else {
+        // Create new attachment info entry
+        attachmentInfo[key] = {
+          filename: filename,
+          name: filename,
+          type: value.type,
+          size: value.size,
+          content: '', // Will be populated from File below
+          'content-id': undefined
+        }
+      }
+
+      // Store the actual File object for later processing
+      (attachmentInfo[key] as any)._file = value
+    }
+  }
+
   const rawFrom = formData.get('from') as string || ''
 
   return {
@@ -228,17 +260,26 @@ async function uploadAttachmentToStorage(
       return null
     }
 
-    if (!attachment.content) {
-      console.error(`No content found for attachment: ${attachment.filename}`)
-      return null
-    }
-
     let binaryContent: Uint8Array
-    try {
-      binaryContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
-      console.log(`✓ Successfully decoded ${binaryContent.length} bytes`)
-    } catch (decodeError) {
-      console.error('Failed to decode base64 content:', decodeError)
+
+    // Check if we have a File object (from FormData)
+    const fileObject = (attachment as any)._file
+    if (fileObject && fileObject instanceof File) {
+      console.log(`✓ Using File object for "${attachment.filename}" (${fileObject.size} bytes)`)
+      const arrayBuffer = await fileObject.arrayBuffer()
+      binaryContent = new Uint8Array(arrayBuffer)
+      console.log(`✓ Successfully converted File to ${binaryContent.length} bytes`)
+    } else if (attachment.content) {
+      // Fallback to base64 content if available
+      try {
+        binaryContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
+        console.log(`✓ Successfully decoded base64 ${binaryContent.length} bytes`)
+      } catch (decodeError) {
+        console.error('Failed to decode base64 content:', decodeError)
+        return null
+      }
+    } else {
+      console.error(`No content found for attachment: ${attachment.filename}`)
       return null
     }
 
