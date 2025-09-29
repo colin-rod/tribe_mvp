@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { UpdateCardProps } from '@/lib/types/dashboard'
 import ChildImage from '@/components/ui/ChildImage'
 import RichTextRenderer from '@/components/ui/RichTextRenderer'
+import { MediaGallery } from '@/components/media/MediaGallery'
 import { getStatusDisplayText, getStatusColorClass } from '@/lib/utils/update-formatting'
 
 /**
@@ -112,6 +113,17 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
         />
       </div>
 
+      {/* Media preview */}
+      {update.media_urls && update.media_urls.length > 0 && (
+        <div className="relative z-10 mb-4">
+          <MediaGallery
+            mediaUrls={update.media_urls}
+            maxPreview={3}
+            className="grid-cols-3 gap-2"
+          />
+        </div>
+      )}
+
       {/* Footer with enhanced engagement metrics */}
       <div className="relative z-10 flex items-center justify-between pt-3 border-t border-neutral-100">
         <div className="flex items-center space-x-4">
@@ -139,6 +151,31 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
                `${update.responseCount} responses`}
             </span>
           </div>
+
+          {/* Media count indicator */}
+          {update.media_urls && update.media_urls.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 bg-neutral-100 rounded-full flex items-center justify-center group-hover:bg-primary-100 transition-colors duration-200">
+                <svg
+                  className="w-3.5 h-3.5 text-neutral-500 group-hover:text-primary-600 transition-colors duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+                  />
+                </svg>
+              </div>
+              <span className="text-sm text-neutral-600 font-medium">
+                {update.media_urls.length === 1 ? '1 attachment' : `${update.media_urls.length} attachments`}
+              </span>
+            </div>
+          )}
 
           {/* Unread indicator with pulse */}
           {update.hasUnreadResponses && (

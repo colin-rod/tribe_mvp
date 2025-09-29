@@ -405,21 +405,21 @@ async function processRegularAttachments(
   const mediaUrls: string[] = []
 
   try {
-    for (const [filename, attachment] of Object.entries(emailData.attachment_info)) {
+    for (const [key, attachment] of Object.entries(emailData.attachment_info)) {
       if (attachment['content-id'] && processedContentIds.has(attachment['content-id'])) {
-        console.log(`Skipping "${filename}" - already processed as inline image`)
+        console.log(`Skipping "${key}" - already processed as inline image`)
         continue
       }
 
-      if (isImageFile(filename) || isVideoFile(filename)) {
-        console.log(`✓ Processing regular attachment: "${filename}"`)
+      if (isImageFile(attachment.filename) || isVideoFile(attachment.filename)) {
+        console.log(`✓ Processing regular attachment: "${attachment.filename}"`)
         const publicUrl = await uploadAttachmentToStorage(attachment, parentId, supabase)
 
         if (publicUrl) {
           mediaUrls.push(publicUrl)
         }
       } else {
-        console.log(`✗ Skipping non-media attachment: ${filename}`)
+        console.log(`✗ Skipping non-media attachment: ${attachment.filename}`)
       }
     }
   } catch (error) {
