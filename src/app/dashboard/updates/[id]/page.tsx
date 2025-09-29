@@ -133,7 +133,7 @@ export default function UpdatePage() {
         <ConversationView
           updateId={updateId}
           update={update}
-          showAnalytics={true}
+          showAnalytics={false}
         />
       </div>
     </div>
