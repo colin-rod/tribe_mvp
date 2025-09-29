@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     // Perform startup validation on every request to catch configuration issues early
-    const { env, features } = validateStartupConfiguration()
+    const { env } = validateStartupConfiguration()
 
     const supabase = createServerClient(
       env.NEXT_PUBLIC_SUPABASE_URL,

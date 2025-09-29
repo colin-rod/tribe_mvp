@@ -39,7 +39,7 @@ export function formatChildInfo(child: DashboardUpdate['children']): UpdateChild
 /**
  * Transform database update to display-ready card data
  */
-export function transformToCardData(update: DashboardUpdate, currentUserId?: string): UpdateCardData {
+export function transformToCardData(update: DashboardUpdate, _currentUserId?: string): UpdateCardData {
   const createdAt = new Date(update.created_at)
   const lastResponseAt = update.last_response_at ? new Date(update.last_response_at) : undefined
 
@@ -64,9 +64,9 @@ export function transformToCardData(update: DashboardUpdate, currentUserId?: str
     scheduled_for: update.scheduled_for,
     sent_at: update.sent_at,
     // Engagement fields
-    like_count: (update as any).like_count || 0,
-    comment_count: (update as any).comment_count || 0,
-    isLiked: (update as any).isLiked || false
+    like_count: update.like_count || 0,
+    comment_count: update.comment_count || 0,
+    isLiked: update.isLiked || false
   }
 }
 

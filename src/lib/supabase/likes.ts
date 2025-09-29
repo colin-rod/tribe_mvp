@@ -1,11 +1,13 @@
 import { createClient } from './client'
+import { createLogger } from '@/lib/logger'
 import type {
-  Like,
   LikeWithParent,
   LikeToggleResponse,
   LikeError
 } from '@/lib/types/likes'
 import { LikeErrorType } from '@/lib/types/likes'
+
+const logger = createLogger('LikesService')
 
 /**
  * Likes operations using Supabase client
@@ -35,7 +37,7 @@ export class LikesService {
         })
 
       if (error) {
-        console.error('Error toggling like:', error)
+        logger.errorWithStack('Error toggling like:', error as Error)
         throw this.createError(LikeErrorType.UNKNOWN_ERROR, updateId, error.message)
       }
 
@@ -149,13 +151,13 @@ export class LikesService {
           table: 'likes',
           filter: `update_id=eq.${updateId}`
         },
-        async (payload: any) => {
+        async (_payload: { eventType: string; new?: LikeWithParent; old?: LikeWithParent }) => {
           // When likes change, fetch the current status
           try {
             const status = await this.getLikeStatus(updateId)
             callback(status)
           } catch (error) {
-            console.error('Error fetching like status in real-time:', error)
+            logger.errorWithStack('Error fetching like status in real-time:', error as Error)
           }
         }
       )
@@ -185,8 +187,8 @@ export class LikesService {
         },
         (payload) => {
           if (payload.new && payload.old) {
-            const newData = payload.new as any
-            const oldData = payload.old as any
+            const newData = payload.new as LikeWithParent
+            const oldData = payload.old as LikeWithParent
 
             // Only notify if like_count changed
             if (newData.like_count !== oldData.like_count) {
@@ -243,9 +245,9 @@ export class LikesService {
 
       // Build the result object
       const result: Record<string, { isLiked: boolean; likeCount: number }> = {}
-      const likedUpdates = new Set(likesData?.map((like: any) => like.update_id) || [])
+      const likedUpdates = new Set(likesData?.map((like: { update_id: string }) => like.update_id) || [])
 
-      updatesData?.forEach((update: any) => {
+      updatesData?.forEach((update: { update_id: string; like_count: number }) => {
         result[update.id] = {
           isLiked: likedUpdates.has(update.id),
           likeCount: update.like_count || 0
@@ -254,7 +256,7 @@ export class LikesService {
 
       return result
     } catch (error) {
-      console.error('Error getting batch like status:', error)
+      logger.errorWithStack('Error getting batch like status:', error as Error)
       return {}
     }
   }
@@ -275,7 +277,7 @@ export class LikesService {
 export const likesService = new LikesService()
 
 // Export utility functions
-export const isLikeError = (error: any): error is LikeError => {
+export const isLikeError = (error: unknown): error is LikeError => {
   return error && typeof error === 'object' && 'type' in error && 'updateId' in error
 }
 

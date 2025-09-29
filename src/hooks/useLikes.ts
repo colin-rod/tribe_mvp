@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { likesService, isLikeError, getLikeErrorMessage } from '@/lib/supabase/likes'
+import { createLogger } from '@/lib/logger'
 import type { LikeState, UseLikesReturn } from '@/lib/types/likes'
+
+const logger = createLogger('useLikes')
 
 /**
  * Custom hook for managing like state with optimistic updates
@@ -51,7 +54,7 @@ export function useLikes(
       }
     } catch (error) {
       if (mountedRef.current) {
-        console.error('Error refreshing likes:', error)
+        logger.errorWithStack('Error refreshing likes:', error as Error)
         const errorMessage = isLikeError(error)
           ? getLikeErrorMessage(error)
           : 'Failed to refresh likes'
@@ -100,7 +103,7 @@ export function useLikes(
       }
     } catch (error) {
       if (mountedRef.current) {
-        console.error('Error toggling like:', error)
+        logger.errorWithStack('Error toggling like:', error as Error)
 
         // Revert optimistic update after a short delay
         optimisticTimeoutRef.current = setTimeout(() => {
@@ -177,7 +180,7 @@ export function useBatchLikes(updateIds: string[]) {
       }
     } catch (error) {
       if (mountedRef.current) {
-        console.error('Error refreshing batch likes:', error)
+        logger.errorWithStack('Error refreshing batch likes:', error as Error)
         setError('Failed to load likes data')
         setLoading(false)
       }

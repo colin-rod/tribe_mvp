@@ -112,7 +112,7 @@ export async function createDefaultPrivacySettings(): Promise<PrivacySettings> {
       throw new PrivacyAPIError('User not authenticated', 'AUTH_REQUIRED')
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .rpc('create_default_privacy_settings', { user_id: user.id })
 
     if (error) {

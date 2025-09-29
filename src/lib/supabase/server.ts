@@ -1,5 +1,4 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../types/database'
 import { getEnv } from '../env'
 import { createLogger } from '../logger'

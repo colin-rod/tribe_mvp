@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
 import { FormMessage } from '@/components/ui/FormMessage'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
+import { createLogger } from '@/lib/logger'
 import type { PrivacyFormData, FormState } from '@/lib/types/profile'
 import {
   getPrivacySettings,
@@ -53,6 +54,8 @@ const VISIBILITY_OPTIONS = [
   }
 ]
 
+const logger = createLogger('PrivacySection')
+
 export function PrivacySection({ user }: PrivacySectionProps) {
   const [formData, setFormData] = useState<PrivacyFormData>({
     profileVisibility: 'friends',
@@ -74,12 +77,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
   const [exportLoading, setExportLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  // Load privacy settings on component mount
-  useEffect(() => {
-    loadPrivacySettings()
-  }, [])
-
-  const loadPrivacySettings = async () => {
+  const loadPrivacySettings = useCallback(async () => {
     try {
       setInitialLoading(true)
       const settings = await getPrivacySettings()
@@ -96,7 +94,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         })
       }
     } catch (error) {
-      console.error('Error loading privacy settings:', error)
+      logger.errorWithStack('Error loading privacy settings:', error as Error)
       setFormState({
         loading: false,
         success: false,
@@ -105,7 +103,12 @@ export function PrivacySection({ user }: PrivacySectionProps) {
     } finally {
       setInitialLoading(false)
     }
-  }
+  }, [user.user_metadata])
+
+  // Load privacy settings on component mount
+  useEffect(() => {
+    loadPrivacySettings()
+  }, [loadPrivacySettings])
 
   const handleInputChange = (field: keyof PrivacyFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -139,7 +142,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
     } catch (error) {
-      console.error('Error updating privacy settings:', error)
+      logger.errorWithStack('Error updating privacy settings:', error as Error)
       setFormState({
         loading: false,
         success: false,
@@ -172,7 +175,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
     } catch (error) {
-      console.error('Error exporting data:', error)
+      logger.errorWithStack('Error exporting data:', error as Error)
       setFormState({
         loading: false,
         success: false,
@@ -201,7 +204,7 @@ export function PrivacySection({ user }: PrivacySectionProps) {
         setFormState(prev => ({ ...prev, success: false }))
       }, 3000)
     } catch (error) {
-      console.error('Error deleting data:', error)
+      logger.errorWithStack('Error deleting data:', error as Error)
       setFormState({
         loading: false,
         success: false,

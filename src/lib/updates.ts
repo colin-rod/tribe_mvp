@@ -465,7 +465,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
 
   // Get response counts and engagement data for each update
   const updatesWithStats = await Promise.all(
-    (updates as any[]).map(async (update) => {
+    updates.map(async (update) => {
       const { count } = await supabase
         .from('responses')
         .select('*', { count: 'exact', head: true })

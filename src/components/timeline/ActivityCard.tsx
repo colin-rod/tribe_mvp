@@ -281,9 +281,9 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
               size="sm"
               showCount={true}
               className="hover:bg-neutral-50 p-1 rounded-md -m-1"
-              onLikeChange={(isLiked, count) => {
+              onLikeChange={(_isLiked, _count) => {
                 // Optional: Update parent component state if needed
-                console.log(`Update ${update.id} like changed:`, { isLiked, count })
+                // Like state updated
               }}
             />
 
