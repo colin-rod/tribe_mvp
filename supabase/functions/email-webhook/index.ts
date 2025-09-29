@@ -98,7 +98,16 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
   let childId = null
 
   // Determine the actual subject line vs extracted content
+  // For "Memory for Emma: Playing in garden" -> use "Playing in garden" as subject
+  // For "tesssst" -> use "tesssst" as subject
   const actualSubject = childName ? subjectContent : emailData.subject
+
+  console.log('Subject parsing debug:', {
+    originalSubject: emailData.subject,
+    childName,
+    subjectContent,
+    actualSubject
+  })
 
   // Validate email subject and content
   const subjectValidation = validateEmailSubject(actualSubject)
@@ -173,35 +182,71 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
     return { success: false, type: 'memory', error: 'No content or media found' }
   }
 
+  // Prepare final subject and content values with explicit null handling
+  const finalSubject = hasSubject ? actualSubject.trim() : null
+  const finalContentValue = hasContent ? finalContent.trim() : null
+
   // Create update from email content with new schema fields
   const insertData = {
     parent_id: profile.id,
     child_id: childId,
-    subject: actualSubject && actualSubject.trim() !== '' ? actualSubject.trim() : null,
-    content: finalContent && finalContent.trim() !== '' ? finalContent.trim() : null,
+    subject: finalSubject,
+    content: finalContentValue,
     rich_content: richContent,
-    content_format: 'email',
+    content_format: 'email' as const, // Explicit type assertion to ensure correct value
     media_urls: mediaUrls,
     distribution_status: 'draft' // Parent can review and send later
   }
 
   console.log('Creating update with data:', {
     ...insertData,
-    rich_content: richContent ? '[HTML content present]' : null
+    rich_content: richContent ? '[HTML content present]' : null,
+    debug_values: {
+      hasSubject,
+      hasContent,
+      hasMedia,
+      finalSubject,
+      finalContentValue
+    }
   })
 
   const { data: update, error: updateError } = await supabase
     .from('updates')
     .insert(insertData)
-    .select('id')
+    .select('id, subject, content, content_format') // Select back the fields to verify
     .single()
 
   if (updateError) {
     console.error('Failed to create update from email:', updateError)
+    console.error('Insert data that failed:', insertData)
     return { success: false, type: 'memory', error: 'Failed to create update', details: updateError.message }
   }
 
-  console.log('Created update from email:', update.id)
+  console.log('Created update from email:', {
+    id: update.id,
+    subject: update.subject,
+    content: update.content,
+    content_format: update.content_format,
+    expected_subject: finalSubject,
+    expected_content_format: 'email'
+  })
+
+  // Verify the insert was successful with correct values
+  if (update.content_format !== 'email') {
+    console.warn('WARNING: content_format was not set to email as expected:', {
+      actual: update.content_format,
+      expected: 'email',
+      update_id: update.id
+    })
+  }
+
+  if (finalSubject && update.subject !== finalSubject) {
+    console.warn('WARNING: subject was not saved as expected:', {
+      actual: update.subject,
+      expected: finalSubject,
+      update_id: update.id
+    })
+  }
 
   // Optionally send confirmation email to parent
   await sendMemoryConfirmationEmail(emailData.from, update, profile.name, supabase)
