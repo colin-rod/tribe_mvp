@@ -21,7 +21,9 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   limit = 5,
   showViewAllLink = true,
   className,
-  onCreateUpdate
+  onCreateUpdate,
+  searchQuery,
+  searchFilters
 }) {
   const router = useRouter()
   const [updates, setUpdates] = useState<UpdateCardData[]>([])
@@ -34,9 +36,56 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       setError(null)
 
       const rawUpdates = await getRecentUpdatesWithStats(limit)
-      const transformedUpdates = rawUpdates.map((update) =>
+      let transformedUpdates = rawUpdates.map((update) =>
         transformToCardData(update as DashboardUpdate)
       )
+
+      // Apply search query filter
+      if (searchQuery && searchQuery.length >= 2) {
+        const query = searchQuery.toLowerCase()
+        transformedUpdates = transformedUpdates.filter(update =>
+          update.content.toLowerCase().includes(query) ||
+          update.contentPreview.toLowerCase().includes(query) ||
+          update.child.name.toLowerCase().includes(query)
+        )
+      }
+
+      // Apply filters
+      if (searchFilters) {
+        // Content type filter
+        if (searchFilters.contentType && searchFilters.contentType !== 'all') {
+          transformedUpdates = transformedUpdates.filter(update => {
+            if (searchFilters.contentType === 'photo') {
+              return update.media_urls.some(url => url.match(/\.(jpg|jpeg|png|gif|webp)$/i))
+            } else if (searchFilters.contentType === 'video') {
+              return update.media_urls.some(url => url.match(/\.(mp4|mov|avi|webm)$/i))
+            } else if (searchFilters.contentType === 'milestone') {
+              return !!update.milestone_type
+            } else if (searchFilters.contentType === 'text') {
+              return update.media_urls.length === 0
+            }
+            return true
+          })
+        }
+
+        // Date range filter
+        if (searchFilters.dateRange) {
+          const { start, end } = searchFilters.dateRange
+          transformedUpdates = transformedUpdates.filter(update => {
+            const updateDate = new Date(update.createdAt)
+            if (start && updateDate < start) return false
+            if (end && updateDate > end) return false
+            return true
+          })
+        }
+
+        // Child filter
+        if (searchFilters.childId) {
+          transformedUpdates = transformedUpdates.filter(update =>
+            update.child_id === searchFilters.childId
+          )
+        }
+      }
 
       setUpdates(transformedUpdates)
     } catch (err) {
@@ -45,7 +94,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [limit, searchQuery, searchFilters])
 
   useEffect(() => {
     loadUpdates()

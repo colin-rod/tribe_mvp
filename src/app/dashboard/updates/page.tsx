@@ -9,12 +9,30 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { UpdatesList } from '@/components/updates'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
+import { useSearchDebounced } from '@/hooks/useSearchDebounced'
+import TimelineSearch from '@/components/timeline/TimelineSearch'
 import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
 export default function UpdatesPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [updatesListKey, setUpdatesListKey] = useState(0)
+
+  // Search functionality
+  const {
+    query,
+    filters,
+    isSearching,
+    hasActiveFilters,
+    setQuery,
+    setFilters,
+    clearSearch
+  } = useSearchDebounced({
+    delay: 300,
+    minLength: 2,
+    enableUrlPersistence: true,
+    urlParamPrefix: 'updates'
+  })
 
   const handleUpdateCompleted = useCallback(() => {
     setUpdatesListKey(prev => prev + 1)
@@ -69,7 +87,23 @@ export default function UpdatesPage() {
         </Button>
       </Header>
 
-      <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Search and Filters */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <TimelineSearch
+              query={query}
+              filters={filters}
+              onQueryChange={setQuery}
+              onFiltersChange={setFilters}
+              onClear={clearSearch}
+              isSearching={isSearching}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </div>
+        </div>
+
+        {/* Updates List */}
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <UpdatesList
@@ -77,6 +111,8 @@ export default function UpdatesPage() {
               limit={50}
               showViewAllLink={false}
               onCreateUpdate={handleCreateUpdate}
+              searchQuery={query}
+              searchFilters={filters}
             />
           </div>
         </div>

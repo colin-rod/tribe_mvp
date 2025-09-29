@@ -301,12 +301,6 @@ const DashboardPage = memo(function DashboardPage() {
                     </h3>
                     <div className="flex items-center space-x-4">
                       <Link
-                        href="/dashboard/timeline"
-                        className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors"
-                      >
-                        Timeline view →
-                      </Link>
-                      <Link
                         href="/dashboard/updates"
                         className="text-sm text-neutral-600 hover:text-neutral-700 font-medium transition-colors"
                       >

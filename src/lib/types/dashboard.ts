@@ -75,6 +75,8 @@ export interface UpdatesListProps {
   showViewAllLink?: boolean
   className?: string
   onCreateUpdate?: (type?: 'photo' | 'text' | 'video' | 'milestone') => void
+  searchQuery?: string
+  searchFilters?: Record<string, any>
 }
 
 /**
