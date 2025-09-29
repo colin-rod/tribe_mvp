@@ -39,6 +39,9 @@
     "examples/**/*",
     "**/__tests__/**/*",
     "**/*.test.ts",
-    "**/*.test.tsx"
+    "**/*.test.tsx",
+    "**/enhanced-email-webhook*.ts",
+    "**/email-webhook-standalone.ts",
+    "**/inline-image-processor.ts"
   ]
 }
