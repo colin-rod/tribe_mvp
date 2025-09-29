@@ -399,8 +399,11 @@ describe('ConversationView', () => {
 
     render(<ConversationView updateId="update-123" update={updateWithNewlines} />)
 
+    // Look for the specific div element with whitespace-pre-wrap class
     const contentElement = screen.getByText((content, element) => {
-      return element?.textContent === 'First line\n\nSecond line\nThird line' && element?.tagName === 'P'
+      return element?.textContent === 'First line\n\nSecond line\nThird line' &&
+             element?.tagName === 'DIV' &&
+             element?.classList.contains('whitespace-pre-wrap')
     })
     expect(contentElement).toHaveClass('whitespace-pre-wrap')
   })
