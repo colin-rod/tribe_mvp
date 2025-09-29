@@ -220,7 +220,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
           <p className="text-sm text-neutral-600 leading-relaxed">
             {updateCount === 0
               ? "Ready to start sharing precious moments?"
-              : `You've shared ${updateCount} beautiful ${updateCount === 1 ? 'moment' : 'moments'} so far.`
+              : `You've shared ${updateCount} ${updateCount === 1 ? 'moment' : 'moments'} so far.`
             }
           </p>
         </div>
@@ -291,9 +291,6 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
                 ? 'Today'
                 : lastUpdateAt.toLocaleDateString()
             }
-          </span>
-          <span>
-            Day {daysSinceStart} of your journey
           </span>
         </div>
       )}

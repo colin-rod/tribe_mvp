@@ -290,46 +290,6 @@ const DashboardPage = memo(function DashboardPage() {
               </div>
             )}
 
-            {/* Quick Stats - Mobile-optimized */}
-            {!loadingStats && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <Card className="hover:shadow-md transition-all duration-200" padding="md" hover>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-bold text-neutral-900">{recipientStats.total}</p>
-                    <p className="text-sm text-neutral-600">Recipients</p>
-                  </div>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-200" padding="md" hover>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-bold text-neutral-900">{updatesCreated}</p>
-                    <p className="text-sm text-neutral-600">Updates</p>
-                  </div>
-                </Card>
-
-                <Card className="hover:shadow-md transition-all duration-200" padding="md" hover>
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <p className="text-2xl font-bold text-neutral-900">{childrenCount}</p>
-                    <p className="text-sm text-neutral-600">Children</p>
-                  </div>
-                </Card>
-              </div>
-            )}
 
             {/* Recent Activity Section with Enhanced Timeline */}
             <div className="mb-8">
