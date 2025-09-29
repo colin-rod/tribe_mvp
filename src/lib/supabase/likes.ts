@@ -199,8 +199,8 @@ export class LikesService {
         },
         (payload: SupabaseRealtimePayload) => {
           if (payload.new && payload.old) {
-            const newData = payload.new as UpdateRecord
-            const oldData = payload.old as UpdateRecord
+            const newData = payload.new as unknown as UpdateRecord
+            const oldData = payload.old as unknown as UpdateRecord
 
             // Only notify if like_count changed
             if (newData.like_count !== oldData.like_count) {
