@@ -12,7 +12,9 @@ import {
   extractMessageId,
   processEmailAttachments,
   parseChildFromSubject,
-  validateSenderAuthentication
+  validateSenderAuthentication,
+  validateEmailSubject,
+  validateEmailContent
 } from '../_shared/email-processing.ts'
 
 // Environment variables
@@ -95,6 +97,16 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
   const { childName, content: subjectContent } = parseChildFromSubject(emailData.subject)
   let childId = null
 
+  // Determine the actual subject line vs extracted content
+  const actualSubject = childName ? subjectContent : emailData.subject
+
+  // Validate email subject and content
+  const subjectValidation = validateEmailSubject(actualSubject)
+  if (!subjectValidation.valid) {
+    console.log('Invalid email subject:', subjectValidation.reason)
+    return { success: false, type: 'memory', error: `Invalid subject: ${subjectValidation.reason}` }
+  }
+
   if (childName) {
     // Find child by name
     const { data: child } = await supabase
@@ -127,26 +139,60 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
   // Process attachments
   const mediaUrls = await processEmailAttachments(emailData, profile.id, supabase)
 
-  // Clean and prepare content
+  // Clean and prepare content (no longer concatenate subject with body)
   const emailContent = cleanEmailContent(emailData.text || emailData.html)
-  const finalContent = subjectContent && emailContent
-    ? `${subjectContent}\n\n${emailContent}`
-    : subjectContent || emailContent
+  const finalContent = emailContent || ''
 
-  if (!finalContent.trim() && mediaUrls.length === 0) {
+  // Validate email content
+  const contentValidation = validateEmailContent(finalContent)
+  if (!contentValidation.valid) {
+    console.log('Invalid email content:', contentValidation.reason)
+    return { success: false, type: 'memory', error: `Invalid content: ${contentValidation.reason}` }
+  }
+
+  // Prepare rich content if HTML is available
+  let richContent = null
+  if (emailData.html && emailData.html.trim() !== '') {
+    try {
+      richContent = {
+        html: emailData.html,
+        text: emailData.text || '',
+        created_at: new Date().toISOString()
+      }
+    } catch (error) {
+      console.warn('Failed to process HTML content, falling back to text only:', error)
+    }
+  }
+
+  // Validate that we have some content (subject, body, or media)
+  const hasSubject = actualSubject && actualSubject.trim() !== ''
+  const hasContent = finalContent && finalContent.trim() !== ''
+  const hasMedia = mediaUrls.length > 0
+
+  if (!hasSubject && !hasContent && !hasMedia) {
     return { success: false, type: 'memory', error: 'No content or media found' }
   }
 
-  // Create update from email content
+  // Create update from email content with new schema fields
+  const insertData = {
+    parent_id: profile.id,
+    child_id: childId,
+    subject: actualSubject && actualSubject.trim() !== '' ? actualSubject.trim() : null,
+    content: finalContent && finalContent.trim() !== '' ? finalContent.trim() : null,
+    rich_content: richContent,
+    content_format: 'email',
+    media_urls: mediaUrls,
+    distribution_status: 'draft' // Parent can review and send later
+  }
+
+  console.log('Creating update with data:', {
+    ...insertData,
+    rich_content: richContent ? '[HTML content present]' : null
+  })
+
   const { data: update, error: updateError } = await supabase
     .from('updates')
-    .insert({
-      parent_id: profile.id,
-      child_id: childId,
-      content: finalContent,
-      media_urls: mediaUrls,
-      distribution_status: 'draft' // Parent can review and send later
-    })
+    .insert(insertData)
     .select('id')
     .single()
 
@@ -211,6 +257,13 @@ async function handleUpdateResponse(emailData: InboundEmail, supabase: any): Pro
 
   // Clean response content
   const responseContent = cleanEmailContent(emailData.text || emailData.html)
+
+  // Validate response content
+  const contentValidation = validateEmailContent(responseContent)
+  if (!contentValidation.valid) {
+    console.log('Invalid response content:', contentValidation.reason)
+    return { success: false, type: 'response', error: `Invalid content: ${contentValidation.reason}` }
+  }
 
   if (!responseContent.trim() && mediaUrls.length === 0) {
     return { success: false, type: 'response', error: 'No content found' }

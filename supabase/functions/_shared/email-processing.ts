@@ -291,17 +291,73 @@ export async function processEmailAttachments(
 /**
  * Extracts child information from email subject line
  * Supports format: "Memory for [Child Name]: [content]"
+ * Enhanced to better distinguish between child name patterns and regular subjects
  */
 export function parseChildFromSubject(subject: string): { childName?: string; content: string } {
-  const childMatch = subject.match(/^Memory\s+for\s+([^:]+):\s*(.+)$/i)
+  if (!subject || subject.trim() === '') {
+    return { content: '' }
+  }
+
+  const trimmedSubject = subject.trim()
+
+  // Check for the specific "Memory for [Child Name]: [content]" pattern
+  const childMatch = trimmedSubject.match(/^Memory\s+for\s+([^:]+):\s*(.+)$/i)
   if (childMatch) {
-    return {
-      childName: childMatch[1].trim(),
-      content: childMatch[2].trim()
+    const childName = childMatch[1].trim()
+    const content = childMatch[2].trim()
+
+    // Validate that the child name looks reasonable (not too long, contains letters)
+    if (childName.length > 0 && childName.length <= 50 && /[a-zA-Z]/.test(childName)) {
+      return {
+        childName,
+        content: content || trimmedSubject // fallback to full subject if content is empty
+      }
     }
   }
 
-  return { content: subject }
+  // If no valid child pattern found, return the full subject as content
+  return { content: trimmedSubject }
+}
+
+/**
+ * Validates email subject length and content
+ */
+export function validateEmailSubject(subject: string): { valid: boolean; reason?: string } {
+  if (!subject) {
+    return { valid: true } // Empty subject is allowed
+  }
+
+  const trimmed = subject.trim()
+
+  // Check length constraints
+  if (trimmed.length > 200) {
+    return { valid: false, reason: 'Subject too long (max 200 characters)' }
+  }
+
+  // Check for potentially dangerous content
+  if (trimmed.includes('<script') || trimmed.includes('javascript:')) {
+    return { valid: false, reason: 'Subject contains potentially dangerous content' }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Validates email content length and format
+ */
+export function validateEmailContent(content: string): { valid: boolean; reason?: string } {
+  if (!content) {
+    return { valid: true } // Empty content is allowed if there's a subject or media
+  }
+
+  const trimmed = content.trim()
+
+  // Check length constraints (generous limit for email content)
+  if (trimmed.length > 10000) {
+    return { valid: false, reason: 'Content too long (max 10,000 characters)' }
+  }
+
+  return { valid: true }
 }
 
 /**

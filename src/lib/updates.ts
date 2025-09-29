@@ -9,6 +9,12 @@ export interface Update {
   parent_id: string
   child_id: string
   content: string
+  /** Optional email subject line for email-formatted updates */
+  subject?: string
+  /** Rich content stored as JSONB for advanced formatting (Quill Delta, HTML, etc.) */
+  rich_content?: Record<string, unknown>
+  /** Format type indicating how the content should be rendered and distributed */
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
   media_urls: string[]
   milestone_type?: MilestoneType
   ai_analysis: Record<string, unknown>
@@ -23,6 +29,12 @@ export interface Update {
 export interface CreateUpdateRequest {
   child_id: string
   content: string
+  /** Optional email subject line for email-formatted updates */
+  subject?: string
+  /** Rich content stored as JSONB for advanced formatting (Quill Delta, HTML, etc.) */
+  rich_content?: Record<string, unknown>
+  /** Format type indicating how the content should be rendered and distributed */
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
   milestone_type?: MilestoneType
   media_urls?: string[]
   scheduled_for?: Date
@@ -56,6 +68,9 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
       parent_id: user.id,
       child_id: updateData.child_id,
       content: updateData.content,
+      subject: updateData.subject,
+      rich_content: updateData.rich_content,
+      content_format: updateData.content_format || 'plain',
       milestone_type: updateData.milestone_type,
       media_urls: updateData.media_urls || [],
       ai_analysis: updateData.ai_analysis || {},
@@ -414,6 +429,39 @@ export async function getDraftUpdates(): Promise<Update[]> {
 
   if (error) throw error
   return data || []
+}
+
+/**
+ * Update subject and content format for an update
+ */
+export async function updateUpdateContent(
+  updateId: string,
+  content?: string,
+  subject?: string,
+  richContent?: Record<string, unknown>,
+  contentFormat?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
+): Promise<Update> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const updateData: Partial<Update> = {}
+  if (content !== undefined) updateData.content = content
+  if (subject !== undefined) updateData.subject = subject
+  if (richContent !== undefined) updateData.rich_content = richContent
+  if (contentFormat !== undefined) updateData.content_format = contentFormat
+
+  const { data, error } = await supabase
+    .from('updates')
+    .update(updateData)
+    .eq('id', updateId)
+    .eq('parent_id', user.id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
 }
 
 /**

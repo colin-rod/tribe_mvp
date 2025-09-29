@@ -4,6 +4,7 @@ import { memo } from 'react'
 import { cn } from '@/lib/utils'
 import type { UpdateCardProps } from '@/lib/types/dashboard'
 import ChildImage from '@/components/ui/ChildImage'
+import RichTextRenderer from '@/components/ui/RichTextRenderer'
 import { getStatusDisplayText, getStatusColorClass } from '@/lib/utils/update-formatting'
 
 /**
@@ -98,9 +99,17 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
 
       {/* Content preview */}
       <div className="relative z-10 mb-4">
-        <p className="text-sm text-neutral-700 leading-relaxed line-clamp-3">
-          {update.contentPreview}
-        </p>
+        <RichTextRenderer
+          content={update.content}
+          subject={update.subject}
+          richContent={update.rich_content}
+          contentFormat={update.content_format}
+          preview={true}
+          previewLength={150}
+          showSubject={true}
+          showFormatIndicator={false}
+          className="text-sm leading-relaxed"
+        />
       </div>
 
       {/* Footer with enhanced engagement metrics */}

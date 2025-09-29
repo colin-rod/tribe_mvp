@@ -8,6 +8,7 @@ import { ResponseAnalytics } from './ResponseAnalytics'
 import { formatDistanceToNow } from 'date-fns'
 import { ChatBubbleLeftIcon, ArrowTrendingUpIcon, UsersIcon, CalendarDaysIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import ChildImage from '@/components/ui/ChildImage'
+import RichTextRenderer from '@/components/ui/RichTextRenderer'
 
 interface ConfirmedRecipient {
   id: string
@@ -18,6 +19,9 @@ interface ConfirmedRecipient {
 interface Update {
   id: string
   content: string
+  subject?: string
+  rich_content?: Record<string, unknown>
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
   created_at: string
   child_id: string
   parent_id: string
@@ -126,9 +130,15 @@ export function ConversationView({
               <div className="p-6">
                 {/* Update Text */}
                 <div className="mb-6">
-                  <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
-                    {update.content}
-                  </p>
+                  <RichTextRenderer
+                    content={update.content}
+                    subject={update.subject}
+                    richContent={update.rich_content}
+                    contentFormat={update.content_format}
+                    showSubject={true}
+                    showFormatIndicator={true}
+                    className="text-gray-900 leading-relaxed"
+                  />
                 </div>
 
                 {/* Update Photos */}

@@ -1,6 +1,7 @@
 import type { DashboardUpdate, UpdateCardData, UpdateChildInfo } from '@/lib/types/dashboard'
 import { calculateAge, formatAgeShort } from '@/lib/age-utils'
 import { getTimeAgo } from './time'
+import type { ContentFormat } from '@/lib/validation/update'
 
 /**
  * Truncate content for preview display
@@ -48,7 +49,14 @@ export function transformToCardData(update: DashboardUpdate, _currentUserId?: st
     parent_id: update.parent_id,
     child_id: update.child_id,
     content: update.content,
-    contentPreview: truncateContent(update.content),
+    subject: update.subject,
+    rich_content: update.rich_content,
+    content_format: update.content_format,
+    contentPreview: generateContentPreview(
+      update.content,
+      update.rich_content,
+      update.content_format
+    ),
     child: formatChildInfo(update.children),
     createdAt,
     timeAgo: getTimeAgo(createdAt),
@@ -128,5 +136,97 @@ export function getStatusColorClass(status: string): string {
       return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
+  }
+}
+
+/**
+ * Extract plain text content from rich content based on format
+ */
+export function extractPlainText(
+  content: string,
+  richContent?: Record<string, unknown>,
+  contentFormat: ContentFormat = 'plain'
+): string {
+  // For email format, use subject + content if available
+  if (contentFormat === 'email' && richContent?.subject) {
+    return `${richContent.subject}: ${content}`
+  }
+
+  // For rich text format, try to extract plain text from rich content
+  if (contentFormat === 'rich' && richContent) {
+    // Handle Quill Delta format
+    if (richContent.ops && Array.isArray(richContent.ops)) {
+      return (richContent.ops as Array<{ insert?: string }>)
+        .map(op => op.insert || '')
+        .join('')
+        .replace(/\n/g, ' ')
+        .trim()
+    }
+
+    // Handle HTML content
+    if (typeof richContent.html === 'string') {
+      return richContent.html.replace(/<[^>]*>/g, '').trim()
+    }
+
+    // Handle plain text in rich content
+    if (typeof richContent.text === 'string') {
+      return richContent.text.trim()
+    }
+  }
+
+  // Default to the original content field
+  return content
+}
+
+/**
+ * Generate content preview with proper handling of different formats
+ */
+export function generateContentPreview(
+  content: string,
+  richContent?: Record<string, unknown>,
+  contentFormat: ContentFormat = 'plain',
+  maxLength: number = 150
+): string {
+  const plainText = extractPlainText(content, richContent, contentFormat)
+  return truncateContent(plainText, maxLength)
+}
+
+/**
+ * Get content format display label
+ */
+export function getContentFormatDisplayLabel(format: ContentFormat): string {
+  switch (format) {
+    case 'plain':
+      return 'Plain Text'
+    case 'rich':
+      return 'Rich Text'
+    case 'email':
+      return 'Email'
+    case 'sms':
+      return 'SMS'
+    case 'whatsapp':
+      return 'WhatsApp'
+    default:
+      return 'Unknown'
+  }
+}
+
+/**
+ * Get content format color class for display
+ */
+export function getContentFormatColorClass(format: ContentFormat): string {
+  switch (format) {
+    case 'plain':
+      return 'bg-gray-100 text-gray-700'
+    case 'rich':
+      return 'bg-purple-100 text-purple-700'
+    case 'email':
+      return 'bg-blue-100 text-blue-700'
+    case 'sms':
+      return 'bg-green-100 text-green-700'
+    case 'whatsapp':
+      return 'bg-green-100 text-green-700'
+    default:
+      return 'bg-gray-100 text-gray-700'
   }
 }

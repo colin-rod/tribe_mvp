@@ -7,6 +7,7 @@ import type { UpdateCardData } from '@/lib/types/dashboard'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import LikeButton from '@/components/ui/LikeButton'
+import RichTextRenderer from '@/components/ui/RichTextRenderer'
 
 interface ActivityCardProps {
   update: UpdateCardData
@@ -137,12 +138,22 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className={cn(
-              'font-semibold text-neutral-900 truncate',
+            <div className={cn(
+              'font-semibold text-neutral-900',
               compact ? 'text-sm' : 'text-base'
             )}>
-              {update.contentPreview}
-            </h3>
+              <RichTextRenderer
+                content={update.content}
+                subject={update.subject}
+                richContent={update.rich_content}
+                contentFormat={update.content_format}
+                preview={true}
+                previewLength={compact ? 80 : 120}
+                showSubject={true}
+                showFormatIndicator={false}
+                className="line-clamp-2"
+              />
+            </div>
 
             {showMetadata && (
               <div className="flex items-center space-x-2 text-xs text-neutral-500 mt-1">
@@ -247,12 +258,18 @@ const ActivityCard = memo<ActivityCardProps>(function ActivityCard({
       {/* Content */}
       {update.content && (
         <div className="mb-3">
-          <p className={cn(
-            'text-neutral-700 line-clamp-3',
-            compact ? 'text-sm' : 'text-base'
-          )}>
-            {update.content}
-          </p>
+          <RichTextRenderer
+            content={update.content}
+            subject={update.subject}
+            richContent={update.rich_content}
+            contentFormat={update.content_format}
+            showSubject={false} // Subject already shown in header preview
+            showFormatIndicator={false}
+            className={cn(
+              'text-neutral-700 line-clamp-3',
+              compact ? 'text-sm' : 'text-base'
+            )}
+          />
         </div>
       )}
 

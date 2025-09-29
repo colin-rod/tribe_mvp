@@ -2,6 +2,7 @@ import type { Update as BaseUpdate } from '@/lib/updates'
 
 /**
  * Enhanced Update interface for dashboard display with additional computed fields
+ * Extends BaseUpdate with new email/rich text support and engagement data
  */
 export interface DashboardUpdate extends BaseUpdate {
   children: {
@@ -31,12 +32,19 @@ export interface UpdateChildInfo {
 
 /**
  * Formatted update data optimized for card display
+ * Includes new email/rich text fields for enhanced content formatting
  */
 export interface UpdateCardData {
   id: string
   parent_id: string
   child_id: string
   content: string
+  /** Optional email subject line for email-formatted updates */
+  subject?: string
+  /** Rich content stored as JSONB for advanced formatting (Quill Delta, HTML, etc.) */
+  rich_content?: Record<string, unknown>
+  /** Format type indicating how the content should be rendered and distributed */
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
   contentPreview: string
   child: UpdateChildInfo
   createdAt: Date
@@ -78,6 +86,7 @@ export interface UpdatesListProps {
   searchQuery?: string
   searchFilters?: {
     contentType?: 'all' | 'photo' | 'text' | 'video' | 'milestone'
+    contentFormat?: 'all' | 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
     dateRange?: {
       start?: Date
       end?: Date

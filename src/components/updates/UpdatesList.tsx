@@ -43,11 +43,28 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       // Apply search query filter
       if (searchQuery && searchQuery.length >= 2) {
         const query = searchQuery.toLowerCase()
-        transformedUpdates = transformedUpdates.filter(update =>
-          update.content.toLowerCase().includes(query) ||
-          update.contentPreview.toLowerCase().includes(query) ||
-          update.child.name.toLowerCase().includes(query)
-        )
+        transformedUpdates = transformedUpdates.filter(update => {
+          // Search in main content
+          const contentMatch = update.content.toLowerCase().includes(query)
+
+          // Search in content preview
+          const previewMatch = update.contentPreview.toLowerCase().includes(query)
+
+          // Search in subject (for email format)
+          const subjectMatch = update.subject?.toLowerCase().includes(query) || false
+
+          // Search in child name
+          const childNameMatch = update.child.name.toLowerCase().includes(query)
+
+          // Search in rich content if available
+          let richContentMatch = false
+          if (update.rich_content) {
+            const richContentText = JSON.stringify(update.rich_content).toLowerCase()
+            richContentMatch = richContentText.includes(query)
+          }
+
+          return contentMatch || previewMatch || subjectMatch || childNameMatch || richContentMatch
+        })
       }
 
       // Apply filters
@@ -66,6 +83,13 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
             }
             return true
           })
+        }
+
+        // Content format filter (new functionality)
+        if (searchFilters.contentFormat && searchFilters.contentFormat !== 'all') {
+          transformedUpdates = transformedUpdates.filter(update =>
+            update.content_format === searchFilters.contentFormat
+          )
         }
 
         // Date range filter

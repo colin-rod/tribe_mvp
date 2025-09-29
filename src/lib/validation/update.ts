@@ -26,11 +26,26 @@ export const distributionStatuses = [
 
 export type DistributionStatus = typeof distributionStatuses[number]
 
+export const contentFormats = [
+  'plain',
+  'rich',
+  'email',
+  'sms',
+  'whatsapp'
+] as const
+
+export type ContentFormat = typeof contentFormats[number]
+
 export const updateFormSchema = z.object({
   childId: z.string().uuid('Please select a child'),
   content: z.string()
     .min(1, 'Update content is required')
     .max(2000, 'Update content must be less than 2000 characters'),
+  subject: z.string()
+    .max(200, 'Subject must be less than 200 characters')
+    .optional(),
+  richContent: z.record(z.any()).optional(),
+  contentFormat: z.enum(contentFormats).default('plain'),
   milestoneType: z.enum(milestoneTypes).optional(),
   mediaFiles: z.array(z.instanceof(File)).max(10, 'Maximum 10 photos allowed'),
   scheduledFor: z.date().optional(),
@@ -42,6 +57,9 @@ export type UpdateFormData = z.infer<typeof updateFormSchema>
 export const updateCreateSchema = z.object({
   child_id: z.string().uuid(),
   content: z.string().min(1).max(2000),
+  subject: z.string().max(200).optional(),
+  rich_content: z.record(z.any()).optional(),
+  content_format: z.enum(contentFormats).default('plain'),
   milestone_type: z.enum(milestoneTypes).optional(),
   media_urls: z.array(z.string().url()).default([]),
   scheduled_for: z.string().datetime().optional(),
@@ -135,4 +153,39 @@ export function getImportanceLevelLabel(level: number): string {
   if (level >= 5) return 'Medium'
   if (level >= 3) return 'Low'
   return 'Very Low'
+}
+
+export function getContentFormatLabel(format: ContentFormat): string {
+  const labels: Record<ContentFormat, string> = {
+    'plain': 'Plain Text',
+    'rich': 'Rich Text',
+    'email': 'Email Format',
+    'sms': 'SMS Format',
+    'whatsapp': 'WhatsApp Format'
+  }
+  return labels[format]
+}
+
+/**
+ * Validates subject line requirements for email format updates
+ */
+export function validateEmailSubject(subject: string | undefined, contentFormat: ContentFormat): string | null {
+  if (contentFormat === 'email' && !subject?.trim()) {
+    return 'Email subject is required for email format updates'
+  }
+  if (subject && subject.length > 200) {
+    return 'Subject must be less than 200 characters'
+  }
+  return null
+}
+
+/**
+ * Validates rich content structure
+ */
+export function validateRichContent(richContent: Record<string, unknown> | undefined, contentFormat: ContentFormat): string | null {
+  if (contentFormat === 'rich' && !richContent) {
+    return 'Rich content is required for rich text format updates'
+  }
+  // Add more specific validation for rich content structure if needed
+  return null
 }

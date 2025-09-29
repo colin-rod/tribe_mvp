@@ -131,6 +131,7 @@ export interface EmailProcessingResult {
   type: 'memory' | 'response' | 'unknown'
   entity_id?: string // update_id for responses, parent_id for memory emails
   error?: string
+  details?: string // Additional error details
 }
 
 export interface MemoryEmailData {
