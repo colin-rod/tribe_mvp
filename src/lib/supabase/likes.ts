@@ -7,6 +7,18 @@ import type {
 } from '@/lib/types/likes'
 import { LikeErrorType } from '@/lib/types/likes'
 
+// Supabase real-time payload types
+interface SupabaseRealtimePayload {
+  eventType: string
+  new?: Record<string, unknown>
+  old?: Record<string, unknown>
+}
+
+interface UpdateRecord {
+  id: string
+  like_count: number
+}
+
 const logger = createLogger('LikesService')
 
 /**
@@ -151,7 +163,7 @@ export class LikesService {
           table: 'likes',
           filter: `update_id=eq.${updateId}`
         },
-        async (_payload: any) => {
+        async (_payload: SupabaseRealtimePayload) => {
           // When likes change, fetch the current status
           try {
             const status = await this.getLikeStatus(updateId)
@@ -185,10 +197,10 @@ export class LikesService {
           table: 'updates',
           filter: `parent_id=eq.${parentId}`
         },
-        (payload: any) => {
+        (payload: SupabaseRealtimePayload) => {
           if (payload.new && payload.old) {
-            const newData = payload.new as { id: string; like_count: number }
-            const oldData = payload.old as { id: string; like_count: number }
+            const newData = payload.new as UpdateRecord
+            const oldData = payload.old as UpdateRecord
 
             // Only notify if like_count changed
             if (newData.like_count !== oldData.like_count) {
