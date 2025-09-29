@@ -390,29 +390,6 @@ const TimelinePage = () => {
 
       <main className="pb-20 md:pb-8">
         <ErrorBoundary>
-          {/* Performance Alerts */}
-          {performanceMonitoringFlag.enabled && alerts.length > 0 && (
-            <div className="px-4 sm:px-6 lg:px-8 pt-4">
-              <div className="max-w-4xl mx-auto">
-                {alerts.slice(0, 2).map((alert) => (
-                  <div
-                    key={alert.id}
-                    className={cn(
-                      'mb-2 p-3 rounded-md border-l-4 text-sm',
-                      alert.type === 'error' ? 'bg-red-50 border-red-400 text-red-700' :
-                      alert.type === 'warning' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' :
-                      'bg-blue-50 border-blue-400 text-blue-700'
-                    )}
-                  >
-                    <div className="font-medium">{alert.message}</div>
-                    {alert.suggestion && (
-                      <div className="mt-1 text-xs opacity-75">{alert.suggestion}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Personalized Welcome Section */}
           <PersonalizedWelcome
