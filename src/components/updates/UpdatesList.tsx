@@ -173,7 +173,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
         code: errRecord?.code,
         details: errRecord?.details,
         hint: errRecord?.hint,
-        statusCode: errRecord?.statusCode,
+        statusCode: typeof errRecord?.statusCode === 'number' ? errRecord.statusCode : undefined,
         status: errRecord?.status,
         statusText: errRecord?.statusText,
         headers: errRecord?.headers,
@@ -225,7 +225,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       } else if (errorDetails.message?.includes('Network') || !navigator.onLine) {
         userMessage = 'Network error - please check your internet connection and try again.'
         errorCategory = 'network_error'
-      } else if (errorDetails.statusCode >= 500) {
+      } else if (errorDetails.statusCode && errorDetails.statusCode >= 500) {
         userMessage = 'Server error - our team has been notified. Please try again in a few minutes.'
         errorCategory = 'server_error'
       } else if (errorDetails.statusCode === 429) {

@@ -8,7 +8,8 @@ import type {
   RecipientDigestPreview,
   CustomizeDigestRequest,
   ApproveDigestRequest,
-  DigestStats
+  DigestStats,
+  AIInclusionRationale
 } from '@/lib/types/digest'
 
 const logger = createLogger('DigestService')
@@ -113,21 +114,22 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
   const recipientMap = new Map<string, RecipientDigestPreview>()
 
   digestUpdates?.forEach((du: Record<string, unknown>) => {
-    const recipientId = du.recipient_id
-    const recipient = du.recipients
-    const update = du.updates
+    const recipientId = du.recipient_id as string
+    const recipient = du.recipients as Record<string, unknown>
+    const update = du.updates as Record<string, unknown>
+    const children = update.children as Record<string, unknown>
 
     if (!recipientMap.has(recipientId)) {
       recipientMap.set(recipientId, {
         recipient_id: recipientId,
-        recipient_name: recipient.name,
-        recipient_email: recipient.email,
-        relationship: recipient.relationship,
-        frequency_preference: recipient.frequency,
+        recipient_name: recipient.name as string,
+        recipient_email: recipient.email as string,
+        relationship: recipient.relationship as string,
+        frequency_preference: recipient.frequency as string,
         updates: [],
         email_subject: digest.title || 'New Update',
         email_preview_html: '',
-        ai_rationale: du.ai_rationale?.recipient_rationale || '',
+        ai_rationale: ((du.ai_rationale as Record<string, unknown>)?.recipient_rationale as string) || '',
         customizations_made: 0
       })
     }
@@ -135,22 +137,22 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
     const recipientPreview = recipientMap.get(recipientId)!
 
     if (du.included) {
-      const age = calculateAge(update.children.birth_date)
+      const age = calculateAge(children.birth_date as string)
 
       recipientPreview.updates.push({
-        update_id: update.id,
-        content: update.content,
-        subject: update.subject,
-        rich_content: update.rich_content,
-        content_format: update.content_format,
-        media_urls: update.media_urls || [],
-        child_name: update.children.name,
+        update_id: String(update.id),
+        content: update.content as string,
+        subject: update.subject as string | undefined,
+        rich_content: update.rich_content as Record<string, unknown> | undefined,
+        content_format: update.content_format as string,
+        media_urls: (update.media_urls as string[]) || [],
+        child_name: children.name as string,
         child_age: age,
-        milestone_type: update.milestone_type,
-        created_at: update.created_at,
-        display_order: du.display_order,
-        custom_caption: du.custom_caption,
-        ai_rationale: du.ai_rationale,
+        milestone_type: update.milestone_type as string | undefined,
+        created_at: update.created_at as string,
+        display_order: du.display_order as number,
+        custom_caption: du.custom_caption as string | undefined,
+        ai_rationale: du.ai_rationale as AIInclusionRationale | undefined,
         can_edit: true,
         can_remove: true,
         can_reorder: true
