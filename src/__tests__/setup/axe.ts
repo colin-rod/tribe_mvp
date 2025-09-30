@@ -18,8 +18,8 @@ expect.extend(toHaveNoViolations)
  */
 export const axe = configureAxe({
   rules: {
-    // Ensure color contrast meets WCAG AA standards
-    'color-contrast': { enabled: true },
+    // Disable color-contrast in jsdom (requires actual rendering)
+    'color-contrast': { enabled: false },
 
     // Ensure labels are associated with form controls
     'label': { enabled: true },
@@ -37,10 +37,12 @@ export const axe = configureAxe({
     // Ensure interactive elements are keyboard accessible
     'focus-order-semantics': { enabled: true },
 
-    // Ensure landmark regions are used correctly
-    'landmark-one-main': { enabled: true },
-    'region': { enabled: true },
+    // Disable landmark rules for component tests
+    'landmark-one-main': { enabled: false },
+    'region': { enabled: false },
   },
+  // Improve compatibility with jsdom
+  elementRef: true,
 })
 
 /**

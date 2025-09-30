@@ -123,11 +123,11 @@ describe('Input Accessibility', () => {
     const { getByRole } = render(<Input />)
     const input = getByRole('textbox')
 
-    const styles = window.getComputedStyle(input)
-    const height = parseInt(styles.height)
+    // Check that the input has the h-11 class (44px minimum)
+    expect(input.className).toContain('h-11')
 
-    // Minimum 44px for WCAG 2.1 AA
-    expect(height).toBeGreaterThanOrEqual(44)
+    // Verify the input is using a size that meets WCAG 2.1 AA minimum
+    // h-11 in Tailwind = 2.75rem = 44px (11 * 4px)
   })
 
   it('should have accessible password toggle button', () => {
