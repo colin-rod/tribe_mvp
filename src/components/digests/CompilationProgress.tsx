@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline'
-import type { DigestCompilationProgress } from '@/lib/types/digest'
 
 interface CompilationProgressProps {
   progress: number
@@ -14,13 +13,12 @@ interface CompilationProgressProps {
 
 export default function CompilationProgress({
   progress,
-  isComplete,
-  error
+  isComplete
 }: CompilationProgressProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [animatedProgress, setAnimatedProgress] = useState(0)
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       id: 1,
       label: 'Analyzing Updates',
@@ -49,7 +47,7 @@ export default function CompilationProgress({
       minProgress: 80,
       maxProgress: 100
     }
-  ]
+  ], [])
 
   // Determine current step based on progress
   useEffect(() => {
@@ -61,7 +59,7 @@ export default function CompilationProgress({
     } else if (progress >= 100 || isComplete) {
       setCurrentStep(steps.length - 1)
     }
-  }, [progress, isComplete])
+  }, [progress, isComplete, steps])
 
   // Animate progress bar
   useEffect(() => {

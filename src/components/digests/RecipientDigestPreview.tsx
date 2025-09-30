@@ -125,7 +125,7 @@ export default function RecipientDigestPreview({
                 No Updates Selected
               </h3>
               <p className="text-sm text-neutral-600">
-                AI determined no updates match this recipient's preferences for this time period.
+                AI determined no updates match this recipient&apos;s preferences for this time period.
               </p>
             </div>
           </Card>

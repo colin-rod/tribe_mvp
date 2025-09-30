@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import MediaUpload from '@/components/updates/MediaUpload'
@@ -193,7 +193,7 @@ export default function DraftEditor({
     }
   }
 
-  const handleVoiceNote = (transcript: string, audioUrl: string) => {
+  const handleVoiceNote = (transcript: string, _audioUrl: string) => {
     // Add voice note transcript to content
     const newContent = localContent
       ? `${localContent}\n\n${transcript}`
@@ -397,7 +397,7 @@ export default function DraftEditor({
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-neutral-600 mb-4">
-                  Record a voice note and we'll transcribe it for you.
+                  Record a voice note and we&apos;ll transcribe it for you.
                 </p>
                 <VoiceNoteRecorder
                   onRecordingComplete={handleVoiceNote}

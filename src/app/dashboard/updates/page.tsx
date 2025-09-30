@@ -93,10 +93,6 @@ export default function UpdatesPage() {
     // This will be handled by the UpdatesContent component
   }, [])
 
-  const handleUpdateCompleted = useCallback(() => {
-    // This will be handled by the UpdatesContent component
-  }, [])
-
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
     if (!loading && !user) {

@@ -179,19 +179,17 @@ describe('Color Contrast - WCAG AA Compliance', () => {
  * Run this test with --verbose to see detailed output
  */
 describe('Color Contrast Report', () => {
-  it('should log all primary color combinations', () => {
+  it('should validate all primary color combinations', () => {
     const white = '#ffffff'
-    console.log('\n📊 Primary Colors on White Background:')
+    // Validate primary colors on white background
 
     Object.entries(colors.primary).forEach(([shade, hex]) => {
       const normalText = meetsWCAGStandard(hex, white, false)
       const largeText = meetsWCAGStandard(hex, white, true)
 
-      console.log(
-        `  primary-${shade}: ${normalText.ratio}:1 ` +
-        `${normalText.passes ? '✓' : '✗'} normal, ` +
-        `${largeText.passes ? '✓' : '✗'} large`
-      )
+      // Verify contrast ratios are calculated
+      expect(normalText.ratio).toBeGreaterThan(0)
+      expect(largeText.ratio).toBeGreaterThan(0)
     })
   })
 })

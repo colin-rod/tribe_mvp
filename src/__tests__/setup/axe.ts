@@ -61,6 +61,7 @@ export async function axeTest(container: Element) {
  * Custom matcher type definitions for TypeScript
  */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toHaveNoViolations(): R

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
 import { Card } from '@/components/ui/Card'
 import { SparklesIcon } from '@heroicons/react/24/outline'
@@ -41,7 +40,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
               <div className="flex items-center space-x-2 mb-2">
                 <SparklesIcon className="w-6 h-6 text-orange-500" />
                 <h2 className="text-xl font-bold text-neutral-900">
-                  This Week's Highlights
+                  This Week&apos;s Highlights
                 </h2>
               </div>
               <p className="text-sm text-neutral-600">

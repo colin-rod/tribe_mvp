@@ -61,7 +61,7 @@ export default function TimelineLayout({
 
       {/* Timeline items */}
       <div className="space-y-12 md:space-y-16">
-        {Object.entries(groupedUpdates).map(([date, dateUpdates], dateIndex) => (
+        {Object.entries(groupedUpdates).map(([date, dateUpdates]) => (
           <div key={date} className="relative">
             {/* Date marker on timeline - refined styling */}
             <div className="flex items-center justify-center mb-8">

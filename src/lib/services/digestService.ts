@@ -6,7 +6,6 @@ import type {
   CompileDigestResponse,
   DigestPreviewData,
   RecipientDigestPreview,
-  UpdateInDigest,
   CustomizeDigestRequest,
   ApproveDigestRequest,
   DigestStats

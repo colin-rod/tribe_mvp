@@ -266,7 +266,7 @@ export const KEYS = {
   PAGE_DOWN: 'PageDown',
 } as const
 
-export default {
+const a11yUtils = {
   announceToScreenReader,
   getFocusableElements,
   isElementVisible,
@@ -279,3 +279,5 @@ export default {
   ARIA_LIVE,
   KEYS,
 }
+
+export default a11yUtils

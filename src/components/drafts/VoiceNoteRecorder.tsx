@@ -55,7 +55,7 @@ export default function VoiceNoteRecorder({
               Ready to Record
             </h3>
             <p className="text-sm text-neutral-600 mb-6">
-              Tap the button below to start recording your voice note. We'll transcribe it automatically.
+              Tap the button below to start recording your voice note. We&apos;ll transcribe it automatically.
             </p>
             <Button
               onClick={handleStartRecording}
