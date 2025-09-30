@@ -543,11 +543,15 @@ export async function updateUpdateContent(
 
 /**
  * Get recent updates with response counts for dashboard display
+ * Always returns an array, never null or undefined
  */
 export async function getRecentUpdatesWithStats(limit: number = 5): Promise<UpdateWithStats[]> {
   const startTime = Date.now()
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const supabase = createClient()
+
+  // Wrap entire function in try-catch to ensure we always return an array
+  try {
 
   logger.info('Starting getRecentUpdatesWithStats request', {
     limit,
@@ -569,8 +573,8 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
   // Check authentication with comprehensive error capture
   logger.debug('Checking user authentication', { requestId })
   const authStartTime = Date.now()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
 
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   const authEndTime = Date.now()
 
   if (authError) {
@@ -592,7 +596,8 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       supabaseUrl,
       timestamp: new Date().toISOString()
     })
-    throw new Error(`Authentication failed: ${authError.message} (Code: ${authError.code})`)
+    logger.info('Returning empty array due to authentication error', { requestId, errorCode: authError.code })
+    return []
   }
 
   if (!user) {
@@ -602,7 +607,8 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       supabaseUrl,
       timestamp: new Date().toISOString()
     })
-    throw new Error('Not authenticated - no user session found')
+    logger.info('Returning empty array due to no user session', { requestId })
+    return []
   }
 
   // Log session details for debugging
@@ -731,7 +737,9 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       await performDiagnosticChecks(supabase, user, requestId)
     }
 
-    throw error
+    // Return empty array instead of throwing error to prevent null access errors
+    logger.info('Returning empty array due to database error', { requestId, errorCode: error.code })
+    return []
   }
 
   logger.info('Successfully retrieved updates from database', {
@@ -777,6 +785,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       updateIds,
       timestamp: new Date().toISOString()
     })
+    // Continue with empty likes array if query fails
   }
 
   const likedUpdateIds = new Set(userLikes?.map(like => like.update_id) || [])
@@ -794,91 +803,111 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     updates.map(async (update) => {
       logger.debug('Querying responses for update', { updateId: update.id })
 
-      // Get response count with detailed error tracking
-      const responseCountStart = Date.now()
-      const { count, error: countError } = await supabase
-        .from('responses')
-        .select('*', { count: 'exact', head: true })
-        .eq('update_id', update.id)
-      const responseCountEnd = Date.now()
+      try {
+        // Get response count with detailed error tracking
+        const responseCountStart = Date.now()
+        const { count, error: countError } = await supabase
+          .from('responses')
+          .select('*', { count: 'exact', head: true })
+          .eq('update_id', update.id)
+        const responseCountEnd = Date.now()
 
-      if (countError) {
-        logger.error('Error getting response count for update', {
+        if (countError) {
+          logger.error('Error getting response count for update', {
+            requestId,
+            updateId: update.id,
+            error: {
+              code: countError.code,
+              message: countError.message,
+              details: countError.details,
+              hint: countError.hint,
+              status: (countError as any).status,
+              statusCode: (countError as any).statusCode,
+              statusText: (countError as any).statusText
+            },
+            queryDuration: responseCountEnd - responseCountStart,
+            tableName: 'responses',
+            operation: 'COUNT',
+            timestamp: new Date().toISOString()
+          })
+          // Set count to 0 if query fails to prevent null access
+        }
+
+        // Get last response with detailed error tracking
+        const lastResponseStart = Date.now()
+        const { data: lastResponse, error: lastResponseError } = await supabase
+          .from('responses')
+          .select('received_at')
+          .eq('update_id', update.id)
+          .order('received_at', { ascending: false })
+          .limit(1)
+          .single()
+        const lastResponseEnd = Date.now()
+
+        if (lastResponseError && lastResponseError.code !== 'PGRST116') {
+          logger.error('Error getting last response for update', {
+            requestId,
+            updateId: update.id,
+            error: {
+              code: lastResponseError.code,
+              message: lastResponseError.message,
+              details: lastResponseError.details,
+              hint: lastResponseError.hint,
+              status: (lastResponseError as any).status,
+              statusCode: (lastResponseError as any).statusCode,
+              statusText: (lastResponseError as any).statusText
+            },
+            queryDuration: lastResponseEnd - lastResponseStart,
+            tableName: 'responses',
+            operation: 'SELECT_LATEST',
+            timestamp: new Date().toISOString()
+          })
+          // Continue with null lastResponse if query fails
+        }
+
+        const result = {
+          ...update,
+          response_count: count || 0,
+          last_response_at: lastResponse?.received_at || null,
+          has_unread_responses: false, // For now, we'll implement this later
+          // Engagement fields
+          like_count: update.like_count || 0,
+          comment_count: update.comment_count || 0,
+          isLiked: likedUpdateIds.has(update.id)
+        }
+
+        logger.debug('Processed update stats', {
           requestId,
           updateId: update.id,
-          error: {
-            code: countError.code,
-            message: countError.message,
-            details: countError.details,
-            hint: countError.hint,
-            status: (countError as any).status,
-            statusCode: (countError as any).statusCode,
-            statusText: (countError as any).statusText
-          },
-          queryDuration: responseCountEnd - responseCountStart,
-          tableName: 'responses',
-          operation: 'COUNT',
-          timestamp: new Date().toISOString()
+          responseCount: result.response_count,
+          lastResponseAt: result.last_response_at,
+          isLiked: result.isLiked,
+          responseCountDuration: responseCountEnd - responseCountStart,
+          lastResponseDuration: lastResponseEnd - lastResponseStart,
+          childName: update.children?.name || 'Unknown',
+          contentLength: update.content?.length || 0
         })
-        // Don't throw here, just log and continue with 0 count
-      }
 
-      // Get last response with detailed error tracking
-      const lastResponseStart = Date.now()
-      const { data: lastResponse, error: lastResponseError } = await supabase
-        .from('responses')
-        .select('received_at')
-        .eq('update_id', update.id)
-        .order('received_at', { ascending: false })
-        .limit(1)
-        .single()
-      const lastResponseEnd = Date.now()
-
-      if (lastResponseError && lastResponseError.code !== 'PGRST116') {
-        logger.error('Error getting last response for update', {
+        return result
+        } catch (updateError) {
+        logger.error('Error processing individual update stats', {
           requestId,
           updateId: update.id,
-          error: {
-            code: lastResponseError.code,
-            message: lastResponseError.message,
-            details: lastResponseError.details,
-            hint: lastResponseError.hint,
-            status: (lastResponseError as any).status,
-            statusCode: (lastResponseError as any).statusCode,
-            statusText: (lastResponseError as any).statusText
-          },
-          queryDuration: lastResponseEnd - lastResponseStart,
-          tableName: 'responses',
-          operation: 'SELECT_LATEST',
+          error: updateError instanceof Error ? updateError.message : 'Unknown',
           timestamp: new Date().toISOString()
         })
-        // Don't throw here, just log and continue
+
+        // Return update with default stats if processing fails
+        return {
+          ...update,
+          response_count: 0,
+          last_response_at: null,
+          has_unread_responses: false,
+          like_count: update.like_count || 0,
+          comment_count: update.comment_count || 0,
+          isLiked: false
+        }
       }
-
-      const result = {
-        ...update,
-        response_count: count || 0,
-        last_response_at: lastResponse?.received_at || null,
-        has_unread_responses: false, // For now, we'll implement this later
-        // Engagement fields
-        like_count: update.like_count || 0,
-        comment_count: update.comment_count || 0,
-        isLiked: likedUpdateIds.has(update.id)
-      }
-
-      logger.debug('Processed update stats', {
-        requestId,
-        updateId: update.id,
-        responseCount: result.response_count,
-        lastResponseAt: result.last_response_at,
-        isLiked: result.isLiked,
-        responseCountDuration: responseCountEnd - responseCountStart,
-        lastResponseDuration: lastResponseEnd - lastResponseStart,
-        childName: update.children?.name || 'Unknown',
-        contentLength: update.content?.length || 0
-      })
-
-      return result
     })
   )
 
@@ -901,4 +930,23 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
   })
 
   return updatesWithStats as UpdateWithStats[]
+
+  } catch (globalError) {
+    const endTime = Date.now()
+    const totalDuration = endTime - startTime
+
+    logger.error('Critical error in getRecentUpdatesWithStats - returning empty array', {
+      requestId,
+      error: globalError instanceof Error ? {
+        message: globalError.message,
+        name: globalError.name,
+        stack: globalError.stack
+      } : globalError,
+      totalDuration,
+      timestamp: new Date().toISOString()
+    })
+
+    // Always return empty array, never null or undefined
+    return []
+  }
 }

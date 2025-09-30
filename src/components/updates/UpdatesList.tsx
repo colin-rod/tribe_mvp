@@ -64,12 +64,25 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       })
 
       const rawUpdates = await getRecentUpdatesWithStats(limit)
+
+      // Defensive null check to prevent "can't access property length" errors
+      if (!rawUpdates || !Array.isArray(rawUpdates)) {
+        logger.warn('UpdatesList: getRecentUpdatesWithStats returned invalid data', {
+          componentRequestId,
+          rawUpdates,
+          typeof: typeof rawUpdates,
+          isArray: Array.isArray(rawUpdates)
+        })
+        setUpdates([])
+        return
+      }
+
       let transformedUpdates = rawUpdates.map((update) =>
         transformToCardData(update as DashboardUpdate)
       )
 
-      // Apply search query filter
-      if (searchQuery && searchQuery.length >= 2) {
+      // Apply search query filter with additional null check
+      if (searchQuery && searchQuery.length >= 2 && transformedUpdates && transformedUpdates.length > 0) {
         const query = searchQuery.toLowerCase()
         transformedUpdates = transformedUpdates.filter(update => {
           // Search in main content
@@ -95,8 +108,8 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
         })
       }
 
-      // Apply filters
-      if (searchFilters) {
+      // Apply filters with additional null check
+      if (searchFilters && transformedUpdates && transformedUpdates.length > 0) {
         // Content type filter
         if (searchFilters.contentType && searchFilters.contentType !== 'all') {
           transformedUpdates = transformedUpdates.filter(update => {
@@ -140,7 +153,8 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
         }
       }
 
-      setUpdates(transformedUpdates)
+      // Final null safety check before setting updates
+      setUpdates(transformedUpdates || [])
     } catch (err) {
       const loadEndTime = Date.now()
       const loadDuration = loadEndTime - loadStartTime
