@@ -19,6 +19,7 @@ import { PromptFeed } from '@/components/lazy'
 import PersonalizedWelcome from '@/components/dashboard/PersonalizedWelcome'
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress'
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState'
+import DigestStats from '@/components/digests/DigestStats'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
 import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
@@ -28,6 +29,8 @@ const DashboardPage = memo(function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [childrenCount, setChildrenCount] = useState(0)
+  const [showDigestSentAlert, setShowDigestSentAlert] = useState(false)
+  const [showDigestScheduledAlert, setShowDigestScheduledAlert] = useState(false)
   const [recipientStats, setRecipientStats] = useState({ total: 0, active: 0, groups: 0 })
   const [updatesCreated, setUpdatesCreated] = useState(0)
   const [loadingStats, setLoadingStats] = useState(true)
@@ -82,6 +85,23 @@ const DashboardPage = memo(function DashboardPage() {
     // Redirect to login if not authenticated after loading is complete
     if (!loading && !user) {
       router.push('/login')
+    }
+
+    // Check for digest success query params
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('digest_sent') === 'true') {
+        setShowDigestSentAlert(true)
+        // Clean up URL
+        window.history.replaceState({}, '', '/dashboard')
+        setTimeout(() => setShowDigestSentAlert(false), 5000)
+      }
+      if (urlParams.get('digest_scheduled') === 'true') {
+        setShowDigestScheduledAlert(true)
+        // Clean up URL
+        window.history.replaceState({}, '', '/dashboard')
+        setTimeout(() => setShowDigestScheduledAlert(false), 5000)
+      }
     }
   }, [user, loading, router])
 
@@ -259,6 +279,55 @@ const DashboardPage = memo(function DashboardPage() {
 
       {/* Mobile-first layout with new components */}
       <main className="pb-20 md:pb-8">
+        {/* Success Alerts */}
+        {showDigestSentAlert && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">
+                  Digest sent successfully! Your recipients will receive their personalized updates.
+                </p>
+              </div>
+              <div className="ml-auto pl-3">
+                <button onClick={() => setShowDigestSentAlert(false)} className="text-green-500 hover:text-green-600">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDigestScheduledAlert && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-blue-800">
+                  Digest scheduled successfully! It will be sent at the scheduled time.
+                </p>
+              </div>
+              <div className="ml-auto pl-3">
+                <button onClick={() => setShowDigestScheduledAlert(false)} className="text-blue-500 hover:text-blue-600">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Personalized Welcome Section */}
         <PersonalizedWelcome
           userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
@@ -326,6 +395,13 @@ const DashboardPage = memo(function DashboardPage() {
                 </div>
               </Card>
             </div>
+
+            {/* Digest System Stats */}
+            {memoizedStats.hasData && (
+              <div className="mb-8">
+                <DigestStats />
+              </div>
+            )}
 
             {/* AI Prompt Suggestions - Only show if user has created updates */}
             {memoizedStats.updates > 0 && (
