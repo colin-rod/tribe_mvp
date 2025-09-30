@@ -835,16 +835,15 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
 
         // Get last response with detailed error tracking
         const lastResponseStart = Date.now()
-        const { data: lastResponse, error: lastResponseError } = await supabase
+        const { data: lastResponseData, error: lastResponseError } = await supabase
           .from('responses')
           .select('received_at')
           .eq('update_id', update.id)
           .order('received_at', { ascending: false })
           .limit(1)
-          .single()
         const lastResponseEnd = Date.now()
 
-        if (lastResponseError && lastResponseError.code !== 'PGRST116') {
+        if (lastResponseError) {
           logger.error('Error getting last response for update', {
             requestId,
             updateId: update.id,
@@ -864,6 +863,9 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
           })
           // Continue with null lastResponse if query fails
         }
+
+        // Extract first response from array or use null
+        const lastResponse = lastResponseData && lastResponseData.length > 0 ? lastResponseData[0] : null
 
         const result = {
           ...update,

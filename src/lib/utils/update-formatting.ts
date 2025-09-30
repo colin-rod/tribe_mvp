@@ -144,38 +144,44 @@ export function getStatusColorClass(status: string): string {
  */
 export function extractPlainText(
   content: string,
-  richContent?: Record<string, unknown>,
+  richContent?: Record<string, unknown> | null,
   contentFormat: ContentFormat = 'plain'
 ): string {
+  // Ensure content is never null/undefined
+  const safeContent = content || ''
+
   // For email format, use subject + content if available
-  if (contentFormat === 'email' && richContent?.subject) {
-    return `${richContent.subject}: ${content}`
+  if (contentFormat === 'email' && richContent?.subject && typeof richContent.subject === 'string') {
+    return `${richContent.subject}: ${safeContent}`
   }
 
   // For rich text format, try to extract plain text from rich content
   if (contentFormat === 'rich' && richContent) {
     // Handle Quill Delta format
     if (richContent.ops && Array.isArray(richContent.ops)) {
-      return (richContent.ops as Array<{ insert?: string }>)
+      const extracted = (richContent.ops as Array<{ insert?: string }>)
         .map(op => op.insert || '')
         .join('')
         .replace(/\n/g, ' ')
         .trim()
+      return extracted || safeContent
     }
 
     // Handle HTML content
     if (typeof richContent.html === 'string') {
-      return richContent.html.replace(/<[^>]*>/g, '').trim()
+      const extracted = richContent.html.replace(/<[^>]*>/g, '').trim()
+      return extracted || safeContent
     }
 
     // Handle plain text in rich content
     if (typeof richContent.text === 'string') {
-      return richContent.text.trim()
+      const extracted = richContent.text.trim()
+      return extracted || safeContent
     }
   }
 
   // Default to the original content field
-  return content
+  return safeContent
 }
 
 /**
@@ -183,11 +189,11 @@ export function extractPlainText(
  */
 export function generateContentPreview(
   content: string,
-  richContent?: Record<string, unknown>,
+  richContent?: Record<string, unknown> | null,
   contentFormat: ContentFormat = 'plain',
   maxLength: number = 150
 ): string {
-  const plainText = extractPlainText(content, richContent, contentFormat)
+  const plainText = extractPlainText(content || '', richContent, contentFormat)
   return truncateContent(plainText, maxLength)
 }
 
