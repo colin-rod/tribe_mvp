@@ -31,9 +31,37 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   const [error, setError] = useState<string | null>(null)
 
   const loadUpdates = useCallback(async () => {
+    const loadStartTime = Date.now()
+    const componentRequestId = `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
     try {
       setLoading(true)
       setError(null)
+
+      logger.info('UpdatesList: Starting to load updates', {
+        limit,
+        searchQuery,
+        searchFilters,
+        componentRequestId,
+        timestamp: new Date().toISOString()
+      })
+
+      // Add browser environment debugging
+      logger.debug('UpdatesList: Browser environment check', {
+        componentRequestId,
+        userAgent: navigator.userAgent,
+        cookiesEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine,
+        location: {
+          href: window.location.href,
+          origin: window.location.origin,
+          protocol: window.location.protocol
+        },
+        localStorage: {
+          available: typeof localStorage !== 'undefined',
+          supabaseSession: localStorage.getItem('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token') ? 'Present' : 'Missing'
+        }
+      })
 
       const rawUpdates = await getRecentUpdatesWithStats(limit)
       let transformedUpdates = rawUpdates.map((update) =>
@@ -114,8 +142,91 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
 
       setUpdates(transformedUpdates)
     } catch (err) {
-      logger.error('Error loading updates:', { error: err })
-      setError('Failed to load recent updates')
+      const loadEndTime = Date.now()
+      const loadDuration = loadEndTime - loadStartTime
+
+      // Capture comprehensive error details with enhanced debugging
+      const errorDetails = {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : undefined,
+        code: (err as any)?.code,
+        details: (err as any)?.details,
+        hint: (err as any)?.hint,
+        statusCode: (err as any)?.statusCode,
+        status: (err as any)?.status,
+        statusText: (err as any)?.statusText,
+        headers: (err as any)?.headers,
+        response: (err as any)?.response,
+        request: (err as any)?.request,
+        config: (err as any)?.config,
+        cause: (err as any)?.cause,
+        fullError: err
+      }
+
+      // Network and browser context
+      const contextInfo = {
+        loadDuration,
+        browserOnline: navigator.onLine,
+        connectionType: (navigator as any).connection?.effectiveType || 'unknown',
+        referrer: document.referrer,
+        userAgent: navigator.userAgent.substring(0, 100),
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight
+        },
+        timestamp: new Date().toISOString()
+      }
+
+      logger.error('UpdatesList: Critical error loading updates', {
+        componentRequestId,
+        error: errorDetails,
+        context: contextInfo,
+        component: 'UpdatesList',
+        operation: 'loadUpdates',
+        parameters: {
+          limit,
+          searchQuery,
+          searchFilters
+        }
+      })
+
+      // Enhanced error classification and user messaging
+      let userMessage = 'Failed to load recent updates'
+      let errorCategory = 'unknown'
+
+      if (errorDetails.code === 'PGRST301' || errorDetails.statusCode === 406) {
+        userMessage = 'Access denied - there may be a permission issue with your account. Please try logging out and back in.'
+        errorCategory = 'permission_denied'
+      } else if (errorDetails.message?.includes('Not authenticated') || errorDetails.message?.includes('no user session')) {
+        userMessage = 'Your session has expired. Please log in again to view your updates.'
+        errorCategory = 'authentication_required'
+      } else if (errorDetails.message?.includes('Network') || !navigator.onLine) {
+        userMessage = 'Network error - please check your internet connection and try again.'
+        errorCategory = 'network_error'
+      } else if (errorDetails.statusCode >= 500) {
+        userMessage = 'Server error - our team has been notified. Please try again in a few minutes.'
+        errorCategory = 'server_error'
+      } else if (errorDetails.statusCode === 429) {
+        userMessage = 'Too many requests - please wait a moment and try again.'
+        errorCategory = 'rate_limited'
+      } else if (errorDetails.message?.includes('CORS')) {
+        userMessage = 'Configuration error - please contact support if this persists.'
+        errorCategory = 'cors_error'
+      } else if (loadDuration > 30000) {
+        userMessage = 'Request timed out - please check your connection and try again.'
+        errorCategory = 'timeout'
+      }
+
+      // Log the error category for analytics
+      logger.info('UpdatesList: Error categorized for user feedback', {
+        componentRequestId,
+        errorCategory,
+        userMessage,
+        originalError: errorDetails.code || errorDetails.name
+      })
+
+      setError(userMessage)
     } finally {
       setLoading(false)
     }
@@ -130,8 +241,13 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   }, [router])
 
   const handleRetry = useCallback(() => {
+    logger.info('UpdatesList: User initiated retry', {
+      timestamp: new Date().toISOString(),
+      previousError: error,
+      retryNumber: 'manual'
+    })
     loadUpdates()
-  }, [loadUpdates])
+  }, [loadUpdates, error])
 
   const handleCreateUpdate = useCallback(() => {
     if (onCreateUpdate) {
