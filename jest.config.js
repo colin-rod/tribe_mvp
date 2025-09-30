@@ -16,6 +16,7 @@ const customJestConfig = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/supabase/functions/',
+    '<rootDir>/src/__tests__/setup/',
   ],
   collectCoverageFrom: [
     'src/components/responses/**/*.{ts,tsx}',
