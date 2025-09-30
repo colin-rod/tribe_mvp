@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { forwardRef, useState } from 'react'
+import { forwardRef, useState, useId } from 'react'
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -24,16 +24,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     errorMessage,
     showPassword,
     disabled,
+    id,
     ...props
   }, ref) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+    // Generate unique IDs for accessibility associations
+    const generatedId = useId()
+    const inputId = id || generatedId
+    const helperId = `${inputId}-helper`
+    const errorId = `${inputId}-error`
 
     const isError = variant === 'error' || !!errorMessage
     const isSuccess = variant === 'success'
     const isPassword = type === 'password'
     const inputType = isPassword && showPassword && isPasswordVisible ? 'text' : type
 
-    const baseClasses = 'flex h-10 w-full rounded-md border px-3 py-2 text-sm transition-colors duration-200 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+    const baseClasses = 'flex h-11 w-full rounded-md border px-3 py-2 text-sm transition-colors duration-200 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 min-touch-target'
 
     const variantClasses = {
       default: 'border-neutral-300 bg-white focus-visible:ring-primary-500',
@@ -43,15 +49,29 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const currentVariant = isError ? 'error' : isSuccess ? 'success' : 'default'
 
+    // Build aria-describedby string
+    const ariaDescribedBy = [
+      errorMessage ? errorId : null,
+      helperText ? helperId : null,
+    ].filter(Boolean).join(' ') || undefined
+
     return (
       <div className="w-full">
         {label && (
-          <label className={cn(
-            'block text-sm font-medium text-neutral-700 mb-2',
-            disabled && 'opacity-50'
-          )}>
+          <label
+            htmlFor={inputId}
+            className={cn(
+              'block text-sm font-medium text-neutral-700 mb-2',
+              disabled && 'opacity-50'
+            )}
+          >
             {label}
-            {props.required && <span className="text-error-500 ml-1">*</span>}
+            {props.required && (
+              <>
+                <span className="text-error-500 ml-1" aria-hidden="true">*</span>
+                <span className="sr-only">required</span>
+              </>
+            )}
           </label>
         )}
 
@@ -64,6 +84,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
           <input
             type={inputType}
+            id={inputId}
             className={cn(
               baseClasses,
               variantClasses[currentVariant],
@@ -80,10 +101,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               props.onBlur?.(e)
             }}
             aria-invalid={isError}
-            aria-describedby={
-              errorMessage ? `${props.id}-error` :
-              helperText ? `${props.id}-helper` : undefined
-            }
+            aria-describedby={ariaDescribedBy}
+            aria-required={props.required}
             {...props}
           />
 
@@ -118,15 +137,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {(helperText || errorMessage) && (
+        {errorMessage && (
           <p
-            className={cn(
-              'mt-2 text-sm',
-              isError ? 'text-error-600' : 'text-neutral-500'
-            )}
-            id={errorMessage ? `${props.id}-error` : `${props.id}-helper`}
+            className="mt-2 text-sm text-error-600"
+            id={errorId}
+            role="alert"
+            aria-live="polite"
           >
-            {errorMessage || helperText}
+            {errorMessage}
+          </p>
+        )}
+        {helperText && !errorMessage && (
+          <p
+            className="mt-2 text-sm text-neutral-500"
+            id={helperId}
+          >
+            {helperText}
           </p>
         )}
       </div>

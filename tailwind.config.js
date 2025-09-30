@@ -139,6 +139,10 @@ module.exports = {
         '18': '4.5rem',
         '88': '22rem',
         '128': '32rem',
+        // WCAG 2.1 AA minimum touch target sizes
+        'touch-sm': '2.75rem', // 44px minimum
+        'touch': '3rem', // 48px recommended
+        'touch-lg': '3.5rem', // 56px large targets
       },
       borderRadius: {
         'none': '0',
@@ -208,6 +212,48 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Accessibility utilities plugin
+    function({ addUtilities }) {
+      addUtilities({
+        // Screen reader only - visually hidden but accessible to screen readers
+        '.sr-only': {
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: '0',
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          borderWidth: '0',
+        },
+        // Focus-visible variant - only show when focused via keyboard
+        '.sr-only-focusable:focus': {
+          position: 'static',
+          width: 'auto',
+          height: 'auto',
+          padding: '0',
+          margin: '0',
+          overflow: 'visible',
+          clip: 'auto',
+          whiteSpace: 'normal',
+        },
+        // Minimum touch target - ensure interactive elements meet 44x44px
+        '.min-touch-target': {
+          minWidth: '44px',
+          minHeight: '44px',
+        },
+        // Focus ring with WCAG 3:1 contrast
+        '.focus-visible-enhanced': {
+          '&:focus-visible': {
+            outline: '3px solid',
+            outlineColor: '#f3841c', // primary-500
+            outlineOffset: '2px',
+          },
+        },
+      })
+    },
+  ],
 }
 
