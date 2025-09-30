@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useDigestCompilation } from '@/hooks/useDigestCompilation'
@@ -14,7 +14,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('DigestCompilePage')
 
-export default function DigestCompilePage() {
+function DigestCompileContent() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -153,5 +153,17 @@ export default function DigestCompilePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function DigestCompilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    }>
+      <DigestCompileContent />
+    </Suspense>
   )
 }
