@@ -8,7 +8,7 @@ const logger = createLogger('Updates')
 /**
  * Perform diagnostic checks when database errors occur
  */
-async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>, user: any, requestId: string) {
+async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>, user: { id: string }, requestId: string) {
   logger.info('Performing diagnostic checks after error', { requestId })
 
   try {
@@ -583,12 +583,12 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       error: {
         code: authError.code,
         message: authError.message,
-        details: (authError as any).details,
-        hint: (authError as any).hint,
-        status: (authError as any).status,
-        statusCode: (authError as any).statusCode,
-        statusText: (authError as any).statusText,
-        headers: (authError as any).headers,
+        details: (authError as unknown as Record<string, unknown>).details,
+        hint: (authError as unknown as Record<string, unknown>).hint,
+        status: (authError as unknown as Record<string, unknown>).status,
+        statusCode: (authError as unknown as Record<string, unknown>).statusCode,
+        statusText: (authError as unknown as Record<string, unknown>).statusText,
+        headers: (authError as unknown as Record<string, unknown>).headers,
         name: authError.name,
         stack: authError.stack
       },
@@ -689,10 +689,10 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
         message: error.message,
         details: error.details,
         hint: error.hint,
-        status: (error as any).status,
-        statusCode: (error as any).statusCode,
-        statusText: (error as any).statusText,
-        headers: (error as any).headers,
+        status: (error as unknown as Record<string, unknown>).status,
+        statusCode: (error as unknown as Record<string, unknown>).statusCode,
+        statusText: (error as unknown as Record<string, unknown>).statusText,
+        headers: (error as unknown as Record<string, unknown>).headers,
         name: error.name,
         stack: error.stack
       },
@@ -714,7 +714,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     }
 
     // Special handling for HTTP 406 errors
-    if (error.code === 'PGRST301' || (error as any).statusCode === 406) {
+    if (error.code === 'PGRST301' || (error as unknown as { statusCode?: number }).statusCode === 406) {
       logger.error('HTTP 406 Not Acceptable - possible RLS or permission issue', errorDetails)
 
       // Additional debugging for 406 errors
@@ -778,8 +778,8 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
         message: likesError.message,
         details: likesError.details,
         hint: likesError.hint,
-        status: (likesError as any).status,
-        statusCode: (likesError as any).statusCode
+        status: (likesError as unknown as Record<string, unknown>).status,
+        statusCode: (likesError as unknown as Record<string, unknown>).statusCode
       },
       queryDuration: likesQueryEnd - likesQueryStart,
       updateIds,
@@ -821,9 +821,9 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
               message: countError.message,
               details: countError.details,
               hint: countError.hint,
-              status: (countError as any).status,
-              statusCode: (countError as any).statusCode,
-              statusText: (countError as any).statusText
+              status: (countError as unknown as Record<string, unknown>).status,
+              statusCode: (countError as unknown as Record<string, unknown>).statusCode,
+              statusText: (countError as unknown as Record<string, unknown>).statusText
             },
             queryDuration: responseCountEnd - responseCountStart,
             tableName: 'responses',
@@ -852,9 +852,9 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
               message: lastResponseError.message,
               details: lastResponseError.details,
               hint: lastResponseError.hint,
-              status: (lastResponseError as any).status,
-              statusCode: (lastResponseError as any).statusCode,
-              statusText: (lastResponseError as any).statusText
+              status: (lastResponseError as unknown as Record<string, unknown>).status,
+              statusCode: (lastResponseError as unknown as Record<string, unknown>).statusCode,
+              statusText: (lastResponseError as unknown as Record<string, unknown>).statusText
             },
             queryDuration: lastResponseEnd - lastResponseStart,
             tableName: 'responses',

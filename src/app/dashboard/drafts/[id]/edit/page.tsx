@@ -25,7 +25,6 @@ export default function DraftEditPage() {
     getDraft,
     update,
     addMedia,
-    addText,
     markReady,
     remove,
     loading,
@@ -137,7 +136,7 @@ export default function DraftEditPage() {
               Draft Not Found
             </h2>
             <p className="text-neutral-600 mb-6">
-              The draft you're looking for doesn't exist or has been deleted.
+              The draft you&apos;re looking for doesn&apos;t exist or has been deleted.
             </p>
             <Button onClick={handleBack} variant="outline">
               <ArrowLeftIcon className="w-5 h-5 mr-2" />

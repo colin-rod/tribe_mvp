@@ -21,9 +21,6 @@ function DigestCompileContent() {
 
   const {
     compile,
-    digest,
-    previewData,
-    loading,
     error,
     compilationProgress
   } = useDigestCompilation()

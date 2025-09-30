@@ -113,7 +113,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
   // Group by recipient
   const recipientMap = new Map<string, RecipientDigestPreview>()
 
-  digestUpdates?.forEach((du: any) => {
+  digestUpdates?.forEach((du: Record<string, unknown>) => {
     const recipientId = du.recipient_id
     const recipient = du.recipients
     const update = du.updates

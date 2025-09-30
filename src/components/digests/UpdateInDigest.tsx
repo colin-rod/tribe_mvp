@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import {
@@ -152,12 +153,13 @@ export default function UpdateInDigest({
             {update.media_urls.slice(0, 3).map((url, idx) => (
               <div
                 key={idx}
-                className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100"
+                className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100"
               >
-                <img
+                <Image
                   src={url}
                   alt={`Media ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             ))}

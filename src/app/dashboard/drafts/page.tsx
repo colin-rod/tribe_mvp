@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
 import { useAuth } from '@/hooks/useAuth'
 import { useDraftManagement } from '@/hooks/useDraftManagement'
@@ -287,11 +287,12 @@ function DraftCard({
         {draft.media_urls && draft.media_urls.length > 0 && (
           <div className="flex space-x-2 mb-3 overflow-x-auto">
             {draft.media_urls.slice(0, 3).map((url, index) => (
-              <div key={index} className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100">
-                <img
+              <div key={index} className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100">
+                <Image
                   src={url}
                   alt={`Media ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             ))}

@@ -1,4 +1,4 @@
-import type { DistributionStatus } from './../../lib/validation/update'
+// DistributionStatus type available from validation/update if needed
 
 /**
  * Digest status workflow:

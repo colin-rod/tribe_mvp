@@ -12,11 +12,9 @@ import { Button } from '@/components/ui/Button'
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
-  CalendarIcon,
-  PaperAirplaneIcon
+  CalendarIcon
 } from '@heroicons/react/24/outline'
 import { createLogger } from '@/lib/logger'
-import type { RecipientDigestPreview as RecipientPreview } from '@/lib/types/digest'
 
 const logger = createLogger('DigestPreviewPage')
 

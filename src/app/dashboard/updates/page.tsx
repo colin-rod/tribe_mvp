@@ -89,7 +89,7 @@ export default function UpdatesPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
-  const handleCreateUpdate = useCallback((type: UpdateType = 'photo') => {
+  const handleCreateUpdate = useCallback((_type: UpdateType = 'photo') => {
     // This will be handled by the UpdatesContent component
   }, [])
 

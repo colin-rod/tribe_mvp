@@ -165,29 +165,31 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
       const loadDuration = loadEndTime - loadStartTime
 
       // Capture comprehensive error details with enhanced debugging
+      const errRecord = err as Record<string, unknown>
       const errorDetails = {
         message: err instanceof Error ? err.message : 'Unknown error',
         stack: err instanceof Error ? err.stack : undefined,
         name: err instanceof Error ? err.name : undefined,
-        code: (err as any)?.code,
-        details: (err as any)?.details,
-        hint: (err as any)?.hint,
-        statusCode: (err as any)?.statusCode,
-        status: (err as any)?.status,
-        statusText: (err as any)?.statusText,
-        headers: (err as any)?.headers,
-        response: (err as any)?.response,
-        request: (err as any)?.request,
-        config: (err as any)?.config,
-        cause: (err as any)?.cause,
+        code: errRecord?.code,
+        details: errRecord?.details,
+        hint: errRecord?.hint,
+        statusCode: errRecord?.statusCode,
+        status: errRecord?.status,
+        statusText: errRecord?.statusText,
+        headers: errRecord?.headers,
+        response: errRecord?.response,
+        request: errRecord?.request,
+        config: errRecord?.config,
+        cause: errRecord?.cause,
         fullError: err
       }
 
       // Network and browser context
+      const navConnection = (navigator as unknown as { connection?: { effectiveType?: string } }).connection
       const contextInfo = {
         loadDuration,
         browserOnline: navigator.onLine,
-        connectionType: (navigator as any).connection?.effectiveType || 'unknown',
+        connectionType: navConnection?.effectiveType || 'unknown',
         referrer: document.referrer,
         userAgent: navigator.userAgent.substring(0, 100),
         viewport: {
@@ -286,7 +288,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     rich_content: cardData.rich_content || undefined,
     content_format: cardData.content_format as 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | undefined,
     media_urls: cardData.media_urls,
-    milestone_type: cardData.milestone_type as any,
+    milestone_type: cardData.milestone_type as 'first_smile' | 'rolling' | 'sitting' | 'crawling' | 'first_steps' | 'first_words' | 'first_tooth' | 'walking' | 'potty_training' | 'first_day_school' | 'birthday' | 'other' | undefined,
     ai_analysis: {},
     suggested_recipients: [],
     confirmed_recipients: [],

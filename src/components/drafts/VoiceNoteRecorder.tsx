@@ -23,7 +23,7 @@ export default function VoiceNoteRecorder({
     // 2. Start recording audio
     // 3. Start duration timer
     setIsRecording(true)
-    console.log('Voice recording started')
+    // Voice recording started
   }
 
   const handleStopRecording = () => {
@@ -40,7 +40,7 @@ export default function VoiceNoteRecorder({
     const mockAudioUrl = 'https://example.com/audio.mp3'
     onRecordingComplete(mockTranscript, mockAudioUrl)
 
-    console.log('Voice recording stopped')
+    // Voice recording stopped
   }
 
   return (
