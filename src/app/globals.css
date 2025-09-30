@@ -49,11 +49,11 @@
     --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-warm: 0 4px 6px -1px rgb(251 146 60 / 0.1), 0 2px 4px -2px rgb(251 146 60 / 0.05);
+    /* Shadows - Reduced and Softer */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+    --shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 4px 8px 0 rgb(0 0 0 / 0.06);
+    --shadow-warm: 0 2px 4px 0 rgb(251 146 60 / 0.05);
 
     /* Transitions */
     --transition-fast: 150ms ease;
@@ -112,7 +112,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-md hover:shadow-lg;
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-sm hover:shadow-md;
   }
 
   .btn-secondary {
@@ -128,11 +128,11 @@
   }
 
   .btn-destructive {
-    @apply btn bg-error-500 text-white hover:bg-error-600 active:bg-error-700 shadow-md hover:shadow-lg;
+    @apply btn bg-error-500 text-white hover:bg-error-600 active:bg-error-700 shadow-sm hover:shadow-md;
   }
 
   .btn-success {
-    @apply btn bg-success-500 text-white hover:bg-success-600 active:bg-success-700 shadow-md hover:shadow-lg;
+    @apply btn bg-success-500 text-white hover:bg-success-600 active:bg-success-700 shadow-sm hover:shadow-md;
   }
 
   /* Button Sizes */
@@ -187,13 +187,13 @@
     @apply rounded-full;
   }
 
-  /* Card Components */
+  /* Card Components - Refined */
   .card {
-    @apply bg-white rounded-lg border border-neutral-200 shadow-sm p-6;
+    @apply bg-white rounded-lg border border-neutral-200 p-6;
   }
 
   .card-hover {
-    @apply card transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+    @apply card transition-all duration-200 hover:border-neutral-300 hover:shadow-sm;
   }
 
   .card-bordered {
@@ -201,7 +201,20 @@
   }
 
   .card-elevated {
-    @apply card shadow-lg;
+    @apply card shadow-md;
+  }
+
+  /* Soft Dividers */
+  .divider {
+    @apply border-neutral-200;
+  }
+
+  .divider-soft {
+    @apply border-neutral-100;
+  }
+
+  .divider-dashed {
+    @apply border-neutral-200 border-dashed;
   }
 
   /* Badge Components */

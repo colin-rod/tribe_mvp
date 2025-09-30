@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import { forwardRef } from 'react'
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined' | 'ghost'
+  variant?: 'default' | 'elevated' | 'outlined' | 'ghost' | 'minimal'
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
   hover?: boolean
   interactive?: boolean
@@ -13,10 +13,11 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     const baseClasses = 'rounded-lg transition-all duration-200'
 
     const variantClasses = {
-      default: 'bg-white border border-neutral-200 shadow-sm',
-      elevated: 'bg-white shadow-lg',
-      outlined: 'bg-white border-2 border-neutral-200',
+      default: 'bg-white border border-neutral-200',
+      elevated: 'bg-white border border-neutral-200 shadow-md',
+      outlined: 'bg-white border-2 border-neutral-300',
       ghost: 'bg-transparent',
+      minimal: 'bg-white',
     }
 
     const paddingClasses = {
@@ -27,7 +28,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       xl: 'p-12',
     }
 
-    const interactiveClasses = interactive || hover ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : ''
+    const interactiveClasses = interactive || hover ? 'hover:border-neutral-300 hover:shadow-sm cursor-pointer' : ''
 
     return (
       <div

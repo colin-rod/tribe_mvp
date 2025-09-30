@@ -13,6 +13,10 @@ import { transformToCardData } from '@/lib/utils/update-formatting'
 import UpdateCard from './UpdateCard'
 import UpdateCardSkeleton from './UpdateCardSkeleton'
 import { Button } from '@/components/ui/Button'
+import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeToggle'
+import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
+import StreamLayout from '@/components/dashboard/StreamLayout'
+import DigestModeView from '@/components/dashboard/DigestModeView'
 
 /**
  * UpdatesList component for displaying recent updates on the dashboard
@@ -29,6 +33,7 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   const [updates, setUpdates] = useState<UpdateCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
 
   const loadUpdates = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -271,6 +276,27 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
     }
   }, [onCreateUpdate, router])
 
+  // Transform UpdateCardData to UpdateForDisplay format for layout components
+  const transformToUpdateFormat = useCallback((cardData: UpdateCardData): UpdateForDisplay => ({
+    id: cardData.id,
+    parent_id: '',
+    child_id: cardData.child_id,
+    content: cardData.content,
+    subject: cardData.subject,
+    rich_content: cardData.rich_content || undefined,
+    content_format: cardData.content_format as 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | undefined,
+    media_urls: cardData.media_urls,
+    milestone_type: cardData.milestone_type as any,
+    ai_analysis: {},
+    suggested_recipients: [],
+    confirmed_recipients: [],
+    distribution_status: 'sent' as const,
+    created_at: new Date(cardData.createdAt).toISOString(),
+    child_name: cardData.child.name,
+    child_avatar: cardData.child.avatar || null,
+    response_count: cardData.responseCount || 0
+  }), [])
+
   // Loading state
   if (loading) {
     return (
@@ -357,15 +383,47 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   }
 
   // Success state with updates
+  const updatesForLayout = updates.map(transformToUpdateFormat)
+
   return (
     <div className={cn('space-y-4', className)}>
-      {updates.map((update) => (
-        <UpdateCard
-          key={update.id}
-          update={update}
-          onClick={handleUpdateClick}
+      {/* View mode toggle */}
+      <div className="flex justify-end mb-4">
+        <ViewModeToggle currentMode={viewMode} onChange={setViewMode} />
+      </div>
+
+      {/* Render based on view mode */}
+      {viewMode === 'cards' && (
+        <>
+          {updates.map((update) => (
+            <UpdateCard
+              key={update.id}
+              update={update}
+              onClick={handleUpdateClick}
+            />
+          ))}
+        </>
+      )}
+
+      {viewMode === 'timeline' && (
+        <TimelineLayout
+          updates={updatesForLayout}
+          onLike={(updateId) => logger.info('Like clicked', { updateId })}
+          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
         />
-      ))}
+      )}
+
+      {viewMode === 'stream' && (
+        <StreamLayout
+          updates={updatesForLayout}
+          onLike={(updateId) => logger.info('Like clicked', { updateId })}
+          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
+        />
+      )}
+
+      {viewMode === 'digest' && (
+        <DigestModeView updates={updatesForLayout} />
+      )}
 
       {/* View all link */}
       {showViewAllLink && updates.length >= limit && (
