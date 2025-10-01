@@ -114,3 +114,4 @@ supabase/.temp
 
 *storybook.log
 storybook-static
+.env*.local

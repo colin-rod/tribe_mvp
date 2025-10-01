@@ -101,6 +101,17 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url({
     message: 'NEXT_PUBLIC_APP_URL must be a valid URL'
   }).optional().default('http://localhost:3000'),
+
+  // Database Connection Pool Configuration (Optional)
+  DATABASE_POOL_MAX: z.string().optional(),
+  DATABASE_POOL_MIN: z.string().optional(),
+  DATABASE_CONNECTION_TIMEOUT: z.string().optional(),
+  DATABASE_IDLE_TIMEOUT: z.string().optional(),
+  DATABASE_MAX_LIFETIME: z.string().optional(),
+  DATABASE_STATEMENT_TIMEOUT: z.string().optional(),
+  DATABASE_LOG_SLOW_QUERIES: z.string().optional(),
+  DATABASE_SLOW_QUERY_THRESHOLD: z.string().optional(),
+  SUPABASE_DB_PASSWORD: z.string().optional(),
 })
 
 // Type for validated environment

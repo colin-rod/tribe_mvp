@@ -2,8 +2,33 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import type { Database } from '../types/database'
 import { getEnv } from '../env'
 import { createLogger } from '../logger'
+import { getPoolConfig, validatePoolConfig } from './connection-pool'
+import { executeWithResilience, ConnectionErrorType } from './connection-resilience'
 
 const logger = createLogger('supabase-server')
+
+// Validate pool configuration on module load
+try {
+  const poolConfig = getPoolConfig()
+  const validation = validatePoolConfig(poolConfig)
+
+  if (!validation.valid) {
+    logger.error('Invalid connection pool configuration', {
+      errors: validation.errors,
+      config: poolConfig
+    })
+  } else {
+    logger.info('Connection pool configuration loaded', {
+      maxConnections: poolConfig.maxConnections,
+      minConnections: poolConfig.minConnections,
+      environment: process.env.NODE_ENV
+    })
+  }
+} catch (error) {
+  logger.warn('Failed to load connection pool configuration', {
+    error: error instanceof Error ? error.message : String(error)
+  })
+}
 
 /**
  * Validates Supabase environment configuration for server-side usage
@@ -72,14 +97,21 @@ export function createClient(cookieStore: {
     // Additional server-side validation
     validateSupabaseServerEnvironment(env)
 
-    logger.debug('Creating Supabase server client', {
+    // Get pool configuration
+    const poolConfig = getPoolConfig()
+
+    logger.debug('Creating Supabase server client with connection pooling', {
       context: 'server-client-creation',
       urlDomain: new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname,
       keyLength: env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length,
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
+      poolConfig: {
+        maxConnections: poolConfig.maxConnections,
+        connectionTimeout: poolConfig.connectionTimeoutMs
+      }
     })
 
-    return createServerClient<Database>(
+    const client = createServerClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
@@ -110,8 +142,19 @@ export function createClient(cookieStore: {
             }
           },
         },
+        db: {
+          schema: 'public'
+        },
+        global: {
+          headers: {
+            'x-connection-timeout': String(poolConfig.connectionTimeoutMs),
+            'x-statement-timeout': String(poolConfig.statementTimeoutMs)
+          }
+        }
       }
     )
+
+    return client
   } catch (error) {
     logger.errorWithStack('Failed to create Supabase server client - application cannot continue', error as Error)
 
