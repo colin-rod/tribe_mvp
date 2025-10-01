@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { RateLimiter, RATE_LIMITS } from '../_shared/rate-limiter.ts'
 
 interface AnalyzeRequest {
   update_id: string
@@ -23,6 +24,14 @@ const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+// Initialize rate limiter
+let rateLimiter: RateLimiter | null = null
+try {
+  rateLimiter = new RateLimiter()
+} catch (error) {
+  console.warn('Rate limiter initialization failed, continuing without rate limiting:', error)
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -40,6 +49,43 @@ serve(async (req) => {
     // Validate required fields
     if (!requestData.update_id || !requestData.content || !requestData.parent_id) {
       throw new Error('Missing required fields: update_id, content, parent_id')
+    }
+
+    // Apply rate limiting by parent_id
+    if (rateLimiter) {
+      const rateLimitResult = await rateLimiter.limit(
+        requestData.parent_id,
+        RATE_LIMITS.AI_ANALYSIS
+      )
+
+      if (!rateLimitResult.success) {
+        const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Rate limit exceeded',
+            message: `Too many AI analysis requests. Please try again in ${retryAfter} seconds.`,
+            retry_after: retryAfter,
+            limit: rateLimitResult.limit,
+            remaining: rateLimitResult.remaining,
+            reset: rateLimitResult.reset,
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+              'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+              'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+              'Retry-After': retryAfter.toString(),
+            },
+          }
+        )
+      }
+
+      console.log(`Rate limit check passed for parent ${requestData.parent_id}: ${rateLimitResult.remaining}/${rateLimitResult.limit} remaining`)
     }
 
     // Get recipients for context
@@ -77,6 +123,23 @@ serve(async (req) => {
       throw new Error(`Failed to update database: ${updateError.message}`)
     }
 
+    // Get current rate limit status for response headers
+    const rateLimitStatus = rateLimiter
+      ? await rateLimiter.status(requestData.parent_id, RATE_LIMITS.AI_ANALYSIS)
+      : null
+
+    const responseHeaders: Record<string, string> = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+    }
+
+    // Add rate limit headers to response
+    if (rateLimitStatus) {
+      responseHeaders['X-RateLimit-Limit'] = rateLimitStatus.limit.toString()
+      responseHeaders['X-RateLimit-Remaining'] = rateLimitStatus.remaining.toString()
+      responseHeaders['X-RateLimit-Reset'] = rateLimitStatus.reset.toString()
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -84,10 +147,7 @@ serve(async (req) => {
         suggested_recipients: suggestedRecipients
       }),
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: responseHeaders
       }
     )
 
