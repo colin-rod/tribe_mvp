@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import UpdateInDigest from '@/components/digests/UpdateInDigest'
+import SafeHtml from '@/components/ui/SafeHtml'
 import { SparklesIcon, UserIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import type { RecipientDigestPreview } from '@/lib/types/digest'
 
@@ -154,9 +155,10 @@ export default function RecipientDigestPreview({
           <CardTitle>Email Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div
-            className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: recipient.email_preview_html }}
+          <SafeHtml
+            html={recipient.email_preview_html}
+            prose
+            aria-label="Email preview content"
           />
         </CardContent>
       </Card>

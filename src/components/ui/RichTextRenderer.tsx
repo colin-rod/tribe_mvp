@@ -4,6 +4,8 @@ import { memo } from 'react'
 import { cn } from '@/lib/utils'
 import type { ContentFormat } from '@/lib/validation/update'
 import { extractPlainText, getContentFormatDisplayLabel, getContentFormatColorClass } from '@/lib/utils/update-formatting'
+import SafeHtml from '@/components/ui/SafeHtml'
+import SafeText from '@/components/ui/SafeText'
 
 interface RichTextRendererProps {
   /** Main content text (fallback for all formats) */
@@ -124,12 +126,13 @@ const RichTextRenderer = memo<RichTextRendererProps>(function RichTextRenderer({
     }
   }
 
-  // Render plain text content
+  // Render plain text content safely
   const renderTextContent = () => {
-    return content || plainText
+    const textContent = content || plainText
+    return <SafeText text={textContent} preserveWhitespace />
   }
 
-  // Render rich content based on format
+  // Render rich content based on format with proper sanitization
   const renderRichContent = () => {
     if (!richContent) {
       return renderTextContent()
@@ -145,11 +148,12 @@ const RichTextRenderer = memo<RichTextRendererProps>(function RichTextRenderer({
             const text = op.insert
             const attrs = op.attributes || {}
 
-            let element = <span key={index}>{text}</span>
+            // Use SafeText for each text segment
+            let element = <SafeText key={index} text={text} />
 
-            // Apply basic formatting
+            // Apply basic formatting with safe text
             if (attrs.bold) {
-              element = <strong key={index}>{text}</strong>
+              element = <strong key={index}><SafeText text={text} /></strong>
             }
             if (attrs.italic) {
               element = <em key={index}>{element}</em>
@@ -164,32 +168,18 @@ const RichTextRenderer = memo<RichTextRendererProps>(function RichTextRenderer({
       )
     }
 
-    // Handle HTML content
+    // Handle HTML content with SafeHtml component
     if (typeof richContent.html === 'string') {
-      return (
-        <div
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(richContent.html) }}
-        />
-      )
+      return <SafeHtml html={richContent.html} />
     }
 
     // Handle plain text in rich content
     if (typeof richContent.text === 'string') {
-      return <div className="whitespace-pre-wrap">{richContent.text}</div>
+      return <SafeText text={richContent.text} preserveWhitespace as="div" />
     }
 
     // Fallback to main content
     return renderTextContent()
-  }
-
-  // Basic HTML sanitization (you might want to use a library like DOMPurify)
-  const sanitizeHtml = (html: string): string => {
-    // Basic sanitization - remove script tags and dangerous attributes
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+="[^"]*"/gi, '')
-      .replace(/on\w+='[^']*'/gi, '')
   }
 
   return (

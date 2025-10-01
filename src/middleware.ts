@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getEnv, getFeatureFlags } from './lib/env'
 import { createLogger } from './lib/logger'
+import { applySecurityHeaders } from './lib/security/csp'
 
 const logger = createLogger('middleware')
 
@@ -147,7 +148,9 @@ export async function middleware(request: NextRequest) {
         from: request.nextUrl.pathname,
         userId: user.id
       })
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      const dashboardRedirect = NextResponse.redirect(new URL('/dashboard', request.url))
+      applySecurityHeaders(dashboardRedirect.headers)
+      return dashboardRedirect
     }
 
     // Redirect unauthenticated users to login for protected pages
@@ -157,8 +160,13 @@ export async function middleware(request: NextRequest) {
       })
       const redirectUrl = new URL('/login', request.url)
       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
+      const redirectResponse = NextResponse.redirect(redirectUrl)
+      applySecurityHeaders(redirectResponse.headers)
+      return redirectResponse
     }
+
+    // Apply security headers to response
+    applySecurityHeaders(response.headers)
 
     return response
   } catch (error) {
