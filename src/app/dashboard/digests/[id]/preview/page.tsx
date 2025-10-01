@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/Button'
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
-  CalendarIcon
+  CalendarIcon,
+  DocumentTextIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 import { createLogger } from '@/lib/logger'
 
@@ -62,6 +64,10 @@ export default function DigestPreviewPage() {
 
   const handleBack = () => {
     router.push('/dashboard/drafts')
+  }
+
+  const handleViewParentNarrative = () => {
+    router.push(`/dashboard/digests/${digestId}/parent-view`)
   }
 
   const handleApproveAndSend = async () => {
@@ -206,13 +212,35 @@ export default function DigestPreviewPage() {
         {/* Digest Info */}
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-              {digest.title}
-            </h1>
-            <p className="text-sm text-neutral-600">
-              {new Date(digest.date_range_start).toLocaleDateString()} - {' '}
-              {new Date(digest.date_range_end).toLocaleDateString()}
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+                  {digest.title}
+                </h1>
+                <p className="text-sm text-neutral-600">
+                  {new Date(digest.date_range_start).toLocaleDateString()} - {' '}
+                  {new Date(digest.date_range_end).toLocaleDateString()}
+                </p>
+                {digest.parent_narrative && (
+                  <div className="mt-3 flex items-center space-x-2">
+                    <SparklesIcon className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs text-neutral-600">
+                      AI generated {previewData?.recipients.length || 0} personalized narratives
+                    </span>
+                  </div>
+                )}
+              </div>
+              {digest.parent_narrative && (
+                <Button
+                  onClick={handleViewParentNarrative}
+                  variant="outline"
+                  size="sm"
+                >
+                  <DocumentTextIcon className="w-4 h-4 mr-2" />
+                  View Parent Archival Story
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import UpdateInDigest from '@/components/digests/UpdateInDigest'
-import SafeHtml from '@/components/ui/SafeHtml'
-import { SparklesIcon, UserIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import DigestNarrativeView from '@/components/digests/DigestNarrativeView'
+import EmailPreview from '@/components/digests/EmailPreview'
+import { SparklesIcon, UserIcon, EnvelopeIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
+import { renderRecipientDigestEmail } from '@/lib/utils/emailTemplates'
 import type { RecipientDigestPreview } from '@/lib/types/digest'
 
 interface RecipientDigestPreviewProps {
@@ -24,6 +26,8 @@ export default function RecipientDigestPreview({
   onCustomize
 }: RecipientDigestPreviewProps) {
   const [showAIRationale, setShowAIRationale] = useState(false)
+  const [showIndividualUpdates, setShowIndividualUpdates] = useState(false)
+  const [viewMode, setViewMode] = useState<'narrative' | 'list'>('narrative')
 
   const handleRemoveUpdate = (updateId: string) => {
     onCustomize(updateId, { included: false })
@@ -105,63 +109,153 @@ export default function RecipientDigestPreview({
         </CardContent>
       </Card>
 
-      {/* Updates Preview */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-neutral-900">
-            Updates ({recipient.updates.length})
-          </h3>
-          <span className="text-sm text-neutral-500">
-            Drag to reorder
-          </span>
-        </div>
-
-        {recipient.updates.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <EnvelopeIcon className="w-8 h-8 text-neutral-400" />
+      {/* View Mode Toggle */}
+      {recipient.narrative && recipient.updates.length > 0 && (
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-neutral-700">
+                Preview Mode
+              </span>
+              <div className="flex items-center space-x-2 bg-neutral-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('narrative')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === 'narrative'
+                      ? 'bg-white text-orange-700 shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  <SparklesIcon className="w-4 h-4 inline mr-1" />
+                  Narrative
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-white text-orange-700 shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  Update List
+                </button>
               </div>
-              <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                No Updates Selected
-              </h3>
-              <p className="text-sm text-neutral-600">
-                AI determined no updates match this recipient&apos;s preferences for this time period.
-              </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Narrative View */}
+      {viewMode === 'narrative' && recipient.narrative && (
+        <div className="space-y-6">
+          <DigestNarrativeView
+            narrative={recipient.narrative}
+            recipientName={recipient.recipient_name}
+            childName={recipient.updates[0]?.child_name || 'your child'}
+          />
+
+          {/* Collapsible Individual Updates */}
+          <Card>
+            <button
+              onClick={() => setShowIndividualUpdates(!showIndividualUpdates)}
+              className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-neutral-700">
+                  Individual Updates ({recipient.updates.length})
+                </span>
+                <span className="text-xs text-neutral-500">
+                  See the source updates for this narrative
+                </span>
+              </div>
+              {showIndividualUpdates ? (
+                <ChevronUpIcon className="w-5 h-5 text-neutral-400" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5 text-neutral-400" />
+              )}
+            </button>
+
+            {showIndividualUpdates && (
+              <div className="border-t border-neutral-200 p-4">
+                <div className="space-y-4">
+                  {recipient.updates
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map((update, index) => (
+                      <UpdateInDigest
+                        key={update.update_id}
+                        update={update}
+                        index={index}
+                        totalUpdates={recipient.updates.length}
+                        onRemove={() => handleRemoveUpdate(update.update_id)}
+                        onReorder={(newIndex) => handleReorderUpdate(update.update_id, newIndex)}
+                        onEditCaption={(newCaption) => handleEditCaption(update.update_id, newCaption)}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
           </Card>
-        ) : (
-          <div className="space-y-4">
-            {recipient.updates
-              .sort((a, b) => a.display_order - b.display_order)
-              .map((update, index) => (
-                <UpdateInDigest
-                  key={update.update_id}
-                  update={update}
-                  index={index}
-                  totalUpdates={recipient.updates.length}
-                  onRemove={() => handleRemoveUpdate(update.update_id)}
-                  onReorder={(newIndex) => handleReorderUpdate(update.update_id, newIndex)}
-                  onEditCaption={(newCaption) => handleEditCaption(update.update_id, newCaption)}
-                />
-              ))}
+        </div>
+      )}
+
+      {/* List View (Original) */}
+      {(viewMode === 'list' || !recipient.narrative) && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900">
+              Updates ({recipient.updates.length})
+            </h3>
+            <span className="text-sm text-neutral-500">
+              Drag to reorder
+            </span>
           </div>
-        )}
-      </div>
+
+          {recipient.updates.length === 0 ? (
+            <Card className="p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <EnvelopeIcon className="w-8 h-8 text-neutral-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                  No Updates Selected
+                </h3>
+                <p className="text-sm text-neutral-600">
+                  AI determined no updates match this recipient&apos;s preferences for this time period.
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {recipient.updates
+                .sort((a, b) => a.display_order - b.display_order)
+                .map((update, index) => (
+                  <UpdateInDigest
+                    key={update.update_id}
+                    update={update}
+                    index={index}
+                    totalUpdates={recipient.updates.length}
+                    onRemove={() => handleRemoveUpdate(update.update_id)}
+                    onReorder={(newIndex) => handleReorderUpdate(update.update_id, newIndex)}
+                    onEditCaption={(newCaption) => handleEditCaption(update.update_id, newCaption)}
+                  />
+                ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Email Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Preview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SafeHtml
-            html={recipient.email_preview_html}
-            prose
-            aria-label="Email preview content"
-          />
-        </CardContent>
-      </Card>
+      {recipient.narrative && (
+        <EmailPreview
+          htmlContent={renderRecipientDigestEmail({
+            narrative: recipient.narrative,
+            recipient_name: recipient.recipient_name,
+            child_name: recipient.updates[0]?.child_name || 'your child',
+            date_range: `Updates from the past week`
+          })}
+          subject={recipient.email_subject}
+        />
+      )}
     </div>
   )
 }

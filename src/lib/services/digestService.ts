@@ -81,11 +81,12 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
     throw new Error(`Failed to fetch digest: ${digestError.message}`)
   }
 
-  // Fetch all digest_updates with full update and recipient data
+  // Fetch all digest_updates with full update and recipient data (including narratives)
   const { data: digestUpdates, error: updatesError } = await supabase
     .from('digest_updates')
     .select(`
       *,
+      narrative_data,
       updates:update_id (
         *,
         children:child_id (
@@ -127,6 +128,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
         relationship: recipient.relationship as string,
         frequency_preference: recipient.frequency as string,
         updates: [],
+        narrative: du.narrative_data as import('@/lib/types/digest').DigestNarrative | undefined, // CRO-267: Include AI narrative
         email_subject: digest.title || 'New Update',
         email_preview_html: '',
         ai_rationale: ((du.ai_rationale as Record<string, unknown>)?.recipient_rationale as string) || '',

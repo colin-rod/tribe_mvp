@@ -19,6 +19,7 @@ export interface Digest {
   status: DigestStatus
   ai_compilation_data: AICompilationData
   recipient_breakdown: RecipientBreakdown
+  parent_narrative?: ParentDigestNarrative  // CRO-267: AI-generated parent-facing narrative
   total_updates: number
   total_recipients: number
   sent_count: number
@@ -78,6 +79,7 @@ export interface DigestUpdate {
   custom_caption?: string
   custom_subject?: string
   ai_rationale: AIInclusionRationale
+  narrative_data?: DigestNarrative  // CRO-267: AI-generated recipient-facing narrative
   created_at: string
   updated_at: string
 }
@@ -90,6 +92,39 @@ export interface AIInclusionRationale {
   relationship_relevance?: string  // Why relevant to this relationship
   content_preference_match?: boolean  // Matches recipient's content prefs
   reasoning?: string  // Human-readable explanation
+}
+
+/**
+ * Media reference in AI-generated narrative
+ */
+export interface MediaReference {
+  id: string // update_id
+  reference_text: string // Natural sentence referencing the media
+  url: string
+  type: 'photo' | 'video' | 'audio'
+}
+
+/**
+ * Recipient-facing digest narrative (CRO-267)
+ * AI-generated warm, personalized narrative for email/SMS/WhatsApp
+ */
+export interface DigestNarrative {
+  intro: string // Short warm greeting
+  narrative: string // Coherent, engaging narrative weaving updates together
+  closing: string // Short warm closing
+  media_references: MediaReference[] // Media embedded naturally in narrative
+}
+
+/**
+ * Parent-facing digest narrative (CRO-267)
+ * AI-generated detailed, chronological narrative for print/archival
+ */
+export interface ParentDigestNarrative {
+  title: string // e.g., "Liam's September Highlights"
+  intro: string // Welcoming paragraph
+  narrative: string // Detailed chronological narrative
+  closing: string // Warm closing message
+  media_references: MediaReference[] // All media with descriptions
 }
 
 /**
@@ -131,6 +166,7 @@ export interface RecipientDigestPreview {
   relationship: string
   frequency_preference: string
   updates: UpdateInDigest[]
+  narrative?: DigestNarrative  // CRO-267: AI-generated narrative for this recipient
   email_subject: string
   email_preview_html: string
   ai_rationale: string  // Why these updates for this person

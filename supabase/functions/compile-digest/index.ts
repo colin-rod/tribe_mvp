@@ -1,6 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  generateRecipientDigestNarrative,
+  generateParentDigestNarrative,
+  type UpdateForNarrative,
+  type RecipientContext
+} from '../_shared/digest-ai.ts'
 
 interface CompileDigestRequest {
   parent_id: string
@@ -236,7 +242,40 @@ serve(async (req) => {
       throw new Error(`Failed to update status: ${updateStatusError.message}`)
     }
 
-    // Step 8: Auto-approve if requested
+    // Step 8: Generate AI narratives (CRO-267)
+    console.log('Generating AI narratives...')
+
+    try {
+      // Generate parent-facing narrative
+      const parentNarrative = await generateParentNarrativeForDigest(
+        updates as Update[],
+        recipients as Recipient[],
+        requestData
+      )
+
+      // Save parent narrative to digest
+      await supabase
+        .from('digests')
+        .update({ parent_narrative: parentNarrative })
+        .eq('id', digest.id)
+
+      console.log('Parent narrative generated')
+
+      // Generate recipient-facing narratives
+      await generateRecipientNarratives(
+        supabase,
+        digest.id,
+        updates as Update[],
+        aiResponse.recipients
+      )
+
+      console.log('All narratives generated successfully')
+    } catch (narrativeError) {
+      console.error('Failed to generate narratives:', narrativeError)
+      // Non-fatal, digest can still be used without narratives
+    }
+
+    // Step 9: Auto-approve if requested
     if (requestData.auto_approve) {
       const { error: approveError } = await supabase
         .from('digests')
@@ -466,4 +505,134 @@ function generateDefaultTitle(startDate: string, endDate: string): string {
   } else {
     return `${monthNames[start.getMonth()]} ${start.getDate()} - ${monthNames[end.getMonth()]} ${end.getDate()}`
   }
+}
+
+/**
+ * Generate parent-facing narrative for the entire digest
+ */
+async function generateParentNarrativeForDigest(
+  updates: Update[],
+  recipients: Recipient[],
+  request: CompileDigestRequest
+) {
+  const childName = updates[0]?.children?.name || 'Child'
+
+  // Transform updates to narrative format
+  const updatesForNarrative: UpdateForNarrative[] = updates.map(u => ({
+    id: u.id,
+    timestamp: u.created_at,
+    type: (u.media_urls && u.media_urls.length > 0)
+      ? (u.media_urls[0].includes('.mp4') || u.media_urls[0].includes('video') ? 'video' : 'photo')
+      : 'text',
+    content: u.content,
+    url: u.media_urls?.[0],
+    caption: u.subject,
+    milestone: !!u.milestone_type,
+    milestone_type: u.milestone_type,
+    child_name: childName,
+    child_age_months: calculateAgeInMonths(u.children?.birth_date)
+  }))
+
+  return await generateParentDigestNarrative(
+    updatesForNarrative,
+    childName,
+    request.date_range_start,
+    request.date_range_end
+  )
+}
+
+/**
+ * Generate recipient-facing narratives for all recipients
+ */
+async function generateRecipientNarratives(
+  supabase: any,
+  digestId: string,
+  updates: Update[],
+  recipientsData: AIDigestResponse['recipients']
+) {
+  // Process each recipient
+  for (const recipientData of recipientsData) {
+    // Get recipient updates
+    const recipientUpdates = recipientData.updates
+      .filter(u => u.include)
+      .map(u => {
+        const update = updates.find(upd => upd.id === u.update_id)
+        if (!update) return null
+
+        return {
+          id: update.id,
+          timestamp: update.created_at,
+          type: (update.media_urls && update.media_urls.length > 0)
+            ? (update.media_urls[0].includes('.mp4') || update.media_urls[0].includes('video') ? 'video' : 'photo')
+            : 'text',
+          content: update.content,
+          url: update.media_urls?.[0],
+          caption: update.subject,
+          milestone: !!update.milestone_type,
+          milestone_type: update.milestone_type,
+          child_name: update.children?.name || 'Child',
+          child_age_months: calculateAgeInMonths(update.children?.birth_date)
+        } as UpdateForNarrative
+      })
+      .filter((u): u is UpdateForNarrative => u !== null)
+
+    // Skip if no updates
+    if (recipientUpdates.length === 0) {
+      continue
+    }
+
+    // Generate narrative for this recipient
+    const recipientContext: RecipientContext = {
+      name: recipientData.recipient_name,
+      relationship: recipientData.recipient_name, // Will be enriched from DB if needed
+      preferences: {
+        tone: 'warm and loving',
+        max_length: recipientUpdates.length > 5 ? 'long' : 'medium'
+      }
+    }
+
+    try {
+      const narrative = await generateRecipientDigestNarrative(
+        recipientContext,
+        recipientUpdates
+      )
+
+      // Update digest_updates with narrative
+      const { error: updateError } = await supabase
+        .from('digest_updates')
+        .update({ narrative_data: narrative })
+        .eq('digest_id', digestId)
+        .eq('recipient_id', recipientData.recipient_id)
+
+      if (updateError) {
+        console.error(`Failed to save narrative for recipient ${recipientData.recipient_name}:`, updateError)
+      } else {
+        console.log(`Narrative saved for recipient ${recipientData.recipient_name}`)
+      }
+    } catch (error) {
+      console.error(`Failed to generate narrative for recipient ${recipientData.recipient_name}:`, error)
+      // Continue with other recipients
+    }
+  }
+}
+
+/**
+ * Calculate age in months from birth date
+ */
+function calculateAgeInMonths(birthDate?: string): number {
+  if (!birthDate) return 0
+
+  const birth = new Date(birthDate)
+  const now = new Date()
+
+  const years = now.getFullYear() - birth.getFullYear()
+  const months = now.getMonth() - birth.getMonth()
+  const days = now.getDate() - birth.getDate()
+
+  let ageMonths = years * 12 + months
+  if (days < 0) {
+    ageMonths--
+  }
+
+  return Math.max(0, ageMonths)
 }
