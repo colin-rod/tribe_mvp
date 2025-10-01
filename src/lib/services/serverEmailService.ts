@@ -2,6 +2,7 @@ import * as sgMail from '@sendgrid/mail'
 import { createLogger } from '@/lib/logger'
 import { getEnv, getFeatureFlags } from '@/lib/env'
 import { sanitizeHtml, sanitizeText, emailSchema } from '@/lib/validation/security'
+import { z } from 'zod'
 
 export interface EmailTemplate {
   subject: string
@@ -56,6 +57,47 @@ type TemplateData = Record<string, unknown> & {
 
 type TemplateRecord = Record<string, unknown>
 
+// Zod schemas for template data validation
+const digestUpdateSchema = z.object({
+  senderName: z.string().max(255).optional(),
+  content: z.string().max(10000).optional(),
+  timestamp: z.string().max(100).optional()
+})
+
+const responseTemplateDataSchema = z.object({
+  senderName: z.string().max(255).default('Someone'),
+  updateContent: z.string().max(10000).default(''),
+  babyName: z.string().max(255).default(''),
+  replyUrl: z.string().max(2000).default('#')
+})
+
+const promptTemplateDataSchema = z.object({
+  promptText: z.string().max(5000).default(''),
+  babyName: z.string().max(255).default(''),
+  responseUrl: z.string().max(2000).default('#')
+})
+
+const digestTemplateDataSchema = z.object({
+  updates: z.array(digestUpdateSchema).max(50).default([]),
+  period: z.enum(['daily', 'weekly', 'monthly', 'instant']).default('daily'),
+  unreadCount: z.number().int().min(0).max(10000).default(0),
+  digestUrl: z.string().max(2000).default('#')
+})
+
+const systemTemplateDataSchema = z.object({
+  title: z.string().max(255).default('System Notification'),
+  content: z.string().max(10000).default(''),
+  actionUrl: z.string().max(2000).default(''),
+  actionText: z.string().max(100).default('View Details')
+})
+
+const preferenceTemplateDataSchema = z.object({
+  recipientName: z.string().max(255).default(''),
+  senderName: z.string().max(255).default(''),
+  preferenceUrl: z.string().max(2000).default('#'),
+  babyName: z.string().max(255).default('')
+})
+
 interface SendGridError extends Error {
   response?: {
     status: number
@@ -65,6 +107,29 @@ interface SendGridError extends Error {
   }
 }
 
+/**
+ * ServerEmailService - Secure Email Service with XSS Protection
+ *
+ * Security Features:
+ * 1. HTML Entity Escaping: All user inputs are escaped before interpolation into HTML
+ * 2. DOMPurify Sanitization: HTML content fields are sanitized using DOMPurify
+ * 3. URL Validation: All URLs are validated and dangerous protocols (javascript:, data:) are blocked
+ * 4. Input Validation: Zod schemas validate structure and enforce length limits on all template data
+ * 5. Email Validation: Comprehensive email address validation with security checks
+ *
+ * XSS Prevention Strategy:
+ * - escapeHtml(): Converts HTML special characters to entities (&, <, >, ", ', /)
+ * - sanitizeUrl(): Blocks javascript:, data:, vbscript:, and file: protocols
+ * - sanitizeHtml(): Uses DOMPurify with strict configuration for content fields
+ * - Zod validation: Enforces type safety and maximum length limits on all inputs
+ *
+ * Content Security Policy (CSP):
+ * - Email templates are static HTML with inline styles only
+ * - No external resources, scripts, or dynamic content
+ * - CSP headers are set by the application middleware for web pages
+ *
+ * @see {@link https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html OWASP XSS Prevention}
+ */
 export class ServerEmailService {
   private initialized = false
   private logger = createLogger('ServerEmailService')
@@ -119,6 +184,45 @@ export class ServerEmailService {
 
   private generateMessageId(): string {
     return `tribe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  /**
+   * Escape HTML entities to prevent XSS in template interpolation
+   */
+  private escapeHtml(text: string): string {
+    const htmlEntities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      '/': '&#x2F;'
+    }
+
+    return text.replace(/[&<>"'/]/g, (char) => htmlEntities[char] || char)
+  }
+
+  /**
+   * Sanitize and escape URL to prevent javascript: and data: protocols
+   */
+  private sanitizeUrl(url: string): string {
+    if (!url) return '#'
+
+    const trimmedUrl = url.trim()
+    const lowerUrl = trimmedUrl.toLowerCase()
+
+    // Block dangerous protocols
+    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:']
+    if (dangerousProtocols.some(protocol => lowerUrl.startsWith(protocol))) {
+      return '#'
+    }
+
+    // Allow relative URLs and safe absolute URLs
+    if (trimmedUrl.startsWith('/') || trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      return this.escapeHtml(trimmedUrl)
+    }
+
+    return '#'
   }
 
   /**
@@ -337,10 +441,18 @@ export class ServerEmailService {
   }
 
   private getResponseTemplate(data: TemplateData): EmailTemplate {
-    const { senderName = 'Someone', updateContent = '', babyName = '', replyUrl = '#' } = data
+    // Validate and sanitize input data
+    const validatedData = responseTemplateDataSchema.parse(data)
+    const { senderName, updateContent, babyName, replyUrl } = validatedData
+
+    // Escape all user-controlled values for HTML context
+    const escapedSenderName = this.escapeHtml(String(senderName))
+    const escapedBabyName = babyName ? this.escapeHtml(String(babyName)) : ''
+    const escapedUpdateContent = this.escapeHtml(String(updateContent))
+    const safeReplyUrl = this.sanitizeUrl(String(replyUrl))
 
     return {
-      subject: `${senderName} responded to your update${babyName ? ` about ${babyName}` : ''}`,
+      subject: `${escapedSenderName} responded to your update${escapedBabyName ? ` about ${escapedBabyName}` : ''}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -357,14 +469,14 @@ export class ServerEmailService {
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
             <h2 style="margin: 0 0 15px 0; color: #1f2937;">New Response</h2>
-            <p style="margin: 0 0 10px 0;"><strong>${senderName}</strong> responded to your update:</p>
+            <p style="margin: 0 0 10px 0;"><strong>${escapedSenderName}</strong> responded to your update:</p>
             <div style="background: white; border-left: 4px solid #6366f1; padding: 15px; margin: 15px 0; border-radius: 4px;">
-              <p style="margin: 0; font-style: italic;">"${updateContent}"</p>
+              <p style="margin: 0; font-style: italic;">"${escapedUpdateContent}"</p>
             </div>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${replyUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">View Response</a>
+            <a href="${safeReplyUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">View Response</a>
           </div>
 
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
@@ -377,11 +489,11 @@ export class ServerEmailService {
       text: `
         New Response - Tribe
 
-        ${senderName} responded to your update${babyName ? ` about ${babyName}` : ''}:
+        ${escapedSenderName} responded to your update${escapedBabyName ? ` about ${escapedBabyName}` : ''}:
 
-        "${updateContent}"
+        "${escapedUpdateContent}"
 
-        View response: ${replyUrl}
+        View response: ${safeReplyUrl}
 
         ---
         You're receiving this because you opted in to response notifications.
@@ -391,10 +503,17 @@ export class ServerEmailService {
   }
 
   private getPromptTemplate(data: TemplateData): EmailTemplate {
-    const { promptText = '', babyName = '', responseUrl = '#' } = data
+    // Validate and sanitize input data
+    const validatedData = promptTemplateDataSchema.parse(data)
+    const { promptText, babyName, responseUrl } = validatedData
+
+    // Escape all user-controlled values for HTML context
+    const escapedPromptText = promptText ? this.escapeHtml(String(promptText)) : ''
+    const escapedBabyName = babyName ? this.escapeHtml(String(babyName)) : ''
+    const safeResponseUrl = this.sanitizeUrl(String(responseUrl))
 
     return {
-      subject: `Update request${babyName ? ` about ${babyName}` : ''}`,
+      subject: `Update request${escapedBabyName ? ` about ${escapedBabyName}` : ''}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -411,14 +530,14 @@ export class ServerEmailService {
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
             <h2 style="margin: 0 0 15px 0; color: #1f2937;">Update Request</h2>
-            <p style="margin: 0 0 15px 0;">Someone would love to hear an update${babyName ? ` about ${babyName}` : ''}!</p>
-            ${promptText ? `<div style="background: white; border-left: 4px solid #10b981; padding: 15px; margin: 15px 0; border-radius: 4px;">
-              <p style="margin: 0; font-style: italic;">"${promptText}"</p>
+            <p style="margin: 0 0 15px 0;">Someone would love to hear an update${escapedBabyName ? ` about ${escapedBabyName}` : ''}!</p>
+            ${escapedPromptText ? `<div style="background: white; border-left: 4px solid #10b981; padding: 15px; margin: 15px 0; border-radius: 4px;">
+              <p style="margin: 0; font-style: italic;">"${escapedPromptText}"</p>
             </div>` : ''}
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${responseUrl}" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">Share Update</a>
+            <a href="${safeResponseUrl}" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">Share Update</a>
           </div>
 
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
@@ -431,11 +550,11 @@ export class ServerEmailService {
       text: `
         Update Request - Tribe
 
-        Someone would love to hear an update${babyName ? ` about ${babyName}` : ''}!
+        Someone would love to hear an update${escapedBabyName ? ` about ${escapedBabyName}` : ''}!
 
-        ${promptText ? `"${promptText}"` : ''}
+        ${escapedPromptText ? `"${escapedPromptText}"` : ''}
 
-        Share update: ${responseUrl}
+        Share update: ${safeResponseUrl}
 
         ---
         You're receiving this because you opted in to prompt notifications.
@@ -445,24 +564,31 @@ export class ServerEmailService {
   }
 
   private getDigestTemplate(data: TemplateData): EmailTemplate {
-    const {
-      updates = [],
-      period = 'daily',
-      unreadCount = 0,
-      digestUrl = '#'
-    } = data
+    // Validate and sanitize input data
+    const validatedData = digestTemplateDataSchema.parse(data)
+    const { updates, period, unreadCount, digestUrl } = validatedData
 
-    const digestUpdates = Array.isArray(updates) ? updates as DigestUpdate[] : []
+    // Escape period and digestUrl
+    const escapedPeriod = this.escapeHtml(String(period))
+    const safeDigestUrl = this.sanitizeUrl(String(digestUrl))
+    const escapedUnreadCount = Number(unreadCount) || 0
+
+    // Escape all values in digest updates
+    const escapedDigestUpdates = updates.map((update) => ({
+      senderName: this.escapeHtml(String(update.senderName || 'Someone')),
+      timestamp: this.escapeHtml(String(update.timestamp || '')),
+      content: this.escapeHtml(String(update.content || ''))
+    }))
 
     return {
-      subject: `Your ${period} update digest (${unreadCount} new updates)`,
+      subject: `Your ${escapedPeriod} update digest (${escapedUnreadCount} new updates)`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${period.charAt(0).toUpperCase() + period.slice(1)} Digest - Tribe</title>
+          <title>${escapedPeriod.charAt(0).toUpperCase() + escapedPeriod.slice(1)} Digest - Tribe</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -471,16 +597,16 @@ export class ServerEmailService {
           </div>
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 15px 0; color: #1f2937;">${period.charAt(0).toUpperCase() + period.slice(1)} Digest</h2>
-            <p style="margin: 0 0 15px 0;">You have ${unreadCount} new updates from your family and friends.</p>
+            <h2 style="margin: 0 0 15px 0; color: #1f2937;">${escapedPeriod.charAt(0).toUpperCase() + escapedPeriod.slice(1)} Digest</h2>
+            <p style="margin: 0 0 15px 0;">You have ${escapedUnreadCount} new updates from your family and friends.</p>
 
-            ${digestUpdates.length > 0 ? `
+            ${escapedDigestUpdates.length > 0 ? `
               <div style="margin: 20px 0;">
-                ${digestUpdates.map((update) => `
+                ${escapedDigestUpdates.map((update) => `
                   <div style="background: white; border-radius: 6px; padding: 15px; margin: 10px 0; border-left: 4px solid #6366f1;">
-                    <div style="font-weight: 500; color: #1f2937; margin-bottom: 5px;">${update.senderName || 'Someone'}</div>
-                    <div style="color: #666; font-size: 14px; margin-bottom: 8px;">${update.timestamp || ''}</div>
-                    <div style="color: #374151;">${update.content || ''}</div>
+                    <div style="font-weight: 500; color: #1f2937; margin-bottom: 5px;">${update.senderName}</div>
+                    <div style="color: #666; font-size: 14px; margin-bottom: 8px;">${update.timestamp}</div>
+                    <div style="color: #374151;">${update.content}</div>
                   </div>
                 `).join('')}
               </div>
@@ -488,47 +614,55 @@ export class ServerEmailService {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${digestUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">View All Updates</a>
+            <a href="${safeDigestUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">View All Updates</a>
           </div>
 
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
-            <p>You're receiving this ${period} digest based on your notification preferences.</p>
+            <p>You're receiving this ${escapedPeriod} digest based on your notification preferences.</p>
             <p><a href="{{{unsubscribe_url}}}" style="color: #6366f1;">Manage preferences</a> • <a href="{{{unsubscribe_url}}}" style="color: #6366f1;">Unsubscribe</a></p>
           </div>
         </body>
         </html>
       `,
       text: `
-        ${period.charAt(0).toUpperCase() + period.slice(1)} Digest - Tribe
+        ${escapedPeriod.charAt(0).toUpperCase() + escapedPeriod.slice(1)} Digest - Tribe
 
-        You have ${unreadCount} new updates from your family and friends.
+        You have ${escapedUnreadCount} new updates from your family and friends.
 
-        ${digestUpdates.map((update) => `
-        ${update.senderName || 'Someone'} - ${update.timestamp || ''}
-        ${update.content || ''}
+        ${escapedDigestUpdates.map((update) => `
+        ${update.senderName} - ${update.timestamp}
+        ${update.content}
         `).join('\n')}
 
-        View all updates: ${digestUrl}
+        View all updates: ${safeDigestUrl}
 
         ---
-        You're receiving this ${period} digest based on your notification preferences.
+        You're receiving this ${escapedPeriod} digest based on your notification preferences.
         Manage preferences: {{{unsubscribe_url}}}
       `
     }
   }
 
   private getSystemTemplate(data: TemplateData): EmailTemplate {
-    const { title = 'System Notification', content = '', actionUrl = '', actionText = 'View Details' } = data
+    // Validate and sanitize input data
+    const validatedData = systemTemplateDataSchema.parse(data)
+    const { title, content, actionUrl, actionText } = validatedData
+
+    // Escape all user-controlled values for HTML context
+    const escapedTitle = this.escapeHtml(String(title))
+    const escapedContent = this.escapeHtml(String(content))
+    const safeActionUrl = actionUrl ? this.sanitizeUrl(String(actionUrl)) : ''
+    const escapedActionText = this.escapeHtml(String(actionText))
 
     return {
-      subject: `${title} - Tribe`,
+      subject: `${escapedTitle} - Tribe`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${title} - Tribe</title>
+          <title>${escapedTitle} - Tribe</title>
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -537,13 +671,13 @@ export class ServerEmailService {
           </div>
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 15px 0; color: #1f2937;">${title}</h2>
-            <p style="margin: 0; color: #374151;">${content}</p>
+            <h2 style="margin: 0 0 15px 0; color: #1f2937;">${escapedTitle}</h2>
+            <p style="margin: 0; color: #374151;">${escapedContent}</p>
           </div>
 
-          ${actionUrl ? `
+          ${safeActionUrl ? `
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${actionUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${actionText}</a>
+              <a href="${safeActionUrl}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${escapedActionText}</a>
             </div>
           ` : ''}
 
@@ -555,11 +689,11 @@ export class ServerEmailService {
         </html>
       `,
       text: `
-        ${title} - Tribe
+        ${escapedTitle} - Tribe
 
-        ${content}
+        ${escapedContent}
 
-        ${actionUrl ? `${actionText}: ${actionUrl}` : ''}
+        ${safeActionUrl ? `${escapedActionText}: ${safeActionUrl}` : ''}
 
         ---
         This is a system notification from Tribe.
@@ -569,10 +703,18 @@ export class ServerEmailService {
   }
 
   private getPreferenceTemplate(data: TemplateData): EmailTemplate {
-    const { recipientName = '', senderName = '', preferenceUrl = '#', babyName = '' } = data
+    // Validate and sanitize input data
+    const validatedData = preferenceTemplateDataSchema.parse(data)
+    const { recipientName, senderName, preferenceUrl, babyName } = validatedData
+
+    // Escape all user-controlled values for HTML context
+    const escapedRecipientName = this.escapeHtml(String(recipientName))
+    const escapedSenderName = this.escapeHtml(String(senderName))
+    const escapedBabyName = babyName ? this.escapeHtml(String(babyName)) : ''
+    const safePreferenceUrl = this.sanitizeUrl(String(preferenceUrl))
 
     return {
-      subject: `${senderName} wants to share${babyName ? ` ${babyName}` : ''} updates with you`,
+      subject: `${escapedSenderName} wants to share${escapedBabyName ? ` ${escapedBabyName}` : ''} updates with you`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -589,14 +731,14 @@ export class ServerEmailService {
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
             <h2 style="margin: 0 0 15px 0; color: #1f2937;">You're Invited!</h2>
-            <p style="margin: 0 0 15px 0;">Hi ${recipientName},</p>
-            <p style="margin: 0 0 15px 0;"><strong>${senderName}</strong> would like to share${babyName ? ` ${babyName}` : ''} updates with you through Tribe.</p>
+            <p style="margin: 0 0 15px 0;">Hi ${escapedRecipientName},</p>
+            <p style="margin: 0 0 15px 0;"><strong>${escapedSenderName}</strong> would like to share${escapedBabyName ? ` ${escapedBabyName}` : ''} updates with you through Tribe.</p>
             <p style="margin: 0 0 15px 0;">Tribe makes it easy to stay connected with family and friends by sharing baby updates in a private, secure way.</p>
             <p style="margin: 0;">Click below to set your preferences and start receiving updates!</p>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${preferenceUrl}" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">Set My Preferences</a>
+            <a href="${safePreferenceUrl}" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">Set My Preferences</a>
           </div>
 
           <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 15px; margin: 20px 0;">
@@ -612,7 +754,7 @@ export class ServerEmailService {
 
           <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
             <p>You can unsubscribe or change your preferences at any time.</p>
-            <p><a href="${preferenceUrl}" style="color: #6366f1;">Manage preferences</a></p>
+            <p><a href="${safePreferenceUrl}" style="color: #6366f1;">Manage preferences</a></p>
           </div>
         </body>
         </html>
@@ -620,13 +762,13 @@ export class ServerEmailService {
       text: `
         You're Invited! - Tribe
 
-        Hi ${recipientName},
+        Hi ${escapedRecipientName},
 
-        ${senderName} would like to share${babyName ? ` ${babyName}` : ''} updates with you through Tribe.
+        ${escapedSenderName} would like to share${escapedBabyName ? ` ${escapedBabyName}` : ''} updates with you through Tribe.
 
         Tribe makes it easy to stay connected with family and friends by sharing baby updates in a private, secure way.
 
-        Set your preferences: ${preferenceUrl}
+        Set your preferences: ${safePreferenceUrl}
 
         What is Tribe?
         - Private and secure sharing
