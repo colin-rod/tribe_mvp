@@ -17,7 +17,7 @@ const colors = {
     300: '#f8be6e',
     400: '#f59e34',
     500: '#f3841c',
-    600: '#d55a0a', // WCAG AA compliant
+    600: '#c04800', // WCAG AA compliant - 5.04:1 on white
     700: '#bd500f',
     800: '#964114',
     900: '#7a3713',
