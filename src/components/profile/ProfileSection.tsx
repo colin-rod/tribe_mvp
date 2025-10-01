@@ -12,8 +12,8 @@ import { FormMessage } from '@/components/ui/FormMessage'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
-import { CameraIcon } from '@heroicons/react/24/outline'
 import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload'
 
 const logger = createLogger('ProfileSection')
 
@@ -135,7 +135,8 @@ export function ProfileSection({ user }: ProfileSectionProps) {
           firstName: formData.firstName,
           lastName: formData.lastName,
           bio: formData.bio,
-          timezone: formData.timezone
+          timezone: formData.timezone,
+          avatar: formData.avatar
         }
       })
 
@@ -163,14 +164,12 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     }
   }
 
-  const handleAvatarUpload = () => {
-    // TODO: Implement avatar upload functionality
-    logger.info('Avatar upload clicked')
+  const handleAvatarUpdate = (newUrl: string) => {
+    logger.info('Avatar updated', { newUrl })
+    setFormData(prev => ({ ...prev, avatar: newUrl }))
   }
 
   const fullName = `${formData.firstName} ${formData.lastName}`.trim() || user.user_metadata?.name
-  const avatarSrc = formData.avatar || getDefaultAvatarUrl({ name: fullName })
-  const avatarAlt = formData.avatar ? 'Profile picture' : 'Default profile avatar'
 
   return (
     <div className="p-6">
@@ -183,30 +182,10 @@ export function ProfileSection({ user }: ProfileSectionProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Avatar Section */}
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Image
-              src={avatarSrc}
-              alt={avatarAlt}
-              width={64}
-              height={64}
-              className="h-16 w-16 rounded-full border-2 border-gray-200 object-cover"
-              unoptimized
-            />
-            <button
-              type="button"
-              onClick={handleAvatarUpload}
-              className="absolute -bottom-1 -right-1 p-1.5 bg-primary-600 text-white rounded-full hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
-              aria-label="Change profile picture"
-            >
-              <CameraIcon className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900">Profile Picture</p>
-            <p className="text-xs text-gray-500">JPG, PNG up to 5MB</p>
-          </div>
-        </div>
+        <ProfilePhotoUpload
+          currentPhotoUrl={formData.avatar}
+          onPhotoUpdate={handleAvatarUpdate}
+        />
 
         {/* First Name Field */}
         <FormField

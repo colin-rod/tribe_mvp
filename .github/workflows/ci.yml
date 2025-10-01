@@ -46,8 +46,14 @@ jobs:
       - name: Run type checks
         run: npm run type-check
 
+      - name: Check color contrast (WCAG AA)
+        run: npm run check:contrast
+
       - name: Run unit tests
         run: npm run test:ci
+
+      - name: Run accessibility tests
+        run: npm run test:a11y
 
       - name: Build application
         run: npm run build

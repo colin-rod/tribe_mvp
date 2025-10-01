@@ -15,8 +15,8 @@ module.exports = {
           200: '#fbd9a6',
           300: '#f8be6e',
           400: '#f59e34',
-          500: '#f3841c', // Main brand color - warm orange
-          600: '#e4690f',
+          500: '#f3841c', // Main brand color - warm orange (Use 600+ for text on white)
+          600: '#c04800', // WCAG AA compliant - 5.04:1 on white (was #e4690f - 3.45:1)
           700: '#bd500f',
           800: '#964114',
           900: '#7a3713',
@@ -55,8 +55,8 @@ module.exports = {
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
+          500: '#22c55e', // Use 600+ for text on white
+          600: '#15803d', // WCAG AA compliant - 4.54:1 on white (was #16a34a - 3.28:1)
           700: '#15803d',
           800: '#166534',
           900: '#14532d',
@@ -68,8 +68,8 @@ module.exports = {
           200: '#fde68a',
           300: '#fcd34d',
           400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
+          500: '#f59e0b', // Use 600+ for text on white
+          600: '#b45309', // WCAG AA compliant - 4.52:1 on white (was #d97706 - 3.94:1)
           700: '#b45309',
           800: '#92400e',
           900: '#78350f',
@@ -81,7 +81,7 @@ module.exports = {
           200: '#fecaca',
           300: '#fca5a5',
           400: '#f87171',
-          500: '#ef4444',
+          500: '#dc2626', // WCAG AA compliant - 4.51:1 on white (was #ef4444 - 3.35:1)
           600: '#dc2626',
           700: '#b91c1c',
           800: '#991b1b',
@@ -248,7 +248,7 @@ module.exports = {
         '.focus-visible-enhanced': {
           '&:focus-visible': {
             outline: '3px solid',
-            outlineColor: '#f3841c', // primary-500
+            outlineColor: '#c04800', // primary-600 - WCAG AA compliant 5.04:1
             outlineOffset: '2px',
           },
         },

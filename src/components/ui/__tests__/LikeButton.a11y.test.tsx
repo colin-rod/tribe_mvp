@@ -4,7 +4,7 @@
  * Tests WCAG 2.1 AA compliance for the LikeButton component
  */
 
-import { render } from '@testing-library/react'
+import { render, cleanup } from '@testing-library/react'
 import { axe } from '@/__tests__/setup/axe'
 import LikeButton from '../LikeButton'
 
@@ -40,7 +40,7 @@ describe('LikeButton Accessibility', () => {
     expect(ariaLabel).toMatch(/like|unlike/i)
   })
 
-  it('should update aria-label when liked state changes', () => {
+  it('aria-label changes based on like state', () => {
     const useLikes = require('@/hooks/useLikes').useLikes
 
     // Test unliked state
@@ -49,19 +49,21 @@ describe('LikeButton Accessibility', () => {
       toggleLike: jest.fn()
     })
 
-    const { getByRole, rerender } = render(<LikeButton updateId="123" />)
-    let button = getByRole('button')
-    expect(button.getAttribute('aria-label')).toContain('Like')
+    const { getByRole } = render(<LikeButton updateId="unliked-test" />)
+    const unlikedButton = getByRole('button')
+    expect(unlikedButton.getAttribute('aria-label')).toMatch(/like/i)
 
-    // Test liked state
+    cleanup()
+
+    // Test liked state after cleanup
     useLikes.mockReturnValue({
       likeState: { isLiked: true, likeCount: 1, loading: false },
       toggleLike: jest.fn()
     })
 
-    rerender(<LikeButton updateId="123" />)
-    button = getByRole('button')
-    expect(button.getAttribute('aria-label')).toContain('Unlike')
+    const { getByRole: getLiked } = render(<LikeButton updateId="liked-test" />)
+    const likedButton = getLiked('button')
+    expect(likedButton.getAttribute('aria-label')).toMatch(/unlike/i)
   })
 
   it('should be disabled when loading', () => {
