@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { CheckIcon } from '@heroicons/react/24/outline'
+import { FormProgress, type FormStep as ProgressStep } from '@/components/ui/FormProgress'
+import { FormFeedback } from '@/components/ui/FormFeedback'
 
 const logger = createLogger('AddRecipientForm')
 
@@ -218,61 +220,39 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
     )
   }
 
+  const formSteps: ProgressStep[] = [
+    { id: 'contact', label: 'Contact Info', description: 'Basic information' },
+    { id: 'preferences', label: 'Preferences', description: 'Communication settings' },
+    { id: 'review', label: 'Review', description: 'Confirm details' },
+  ]
+
+  const currentStepIndex = formSteps.findIndex(step => step.id === currentStep) + 1
+
   return (
     <div className="space-y-6">
-      {/* Header with Step Indicator */}
+      {/* Header */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Add New Recipient</h2>
 
-        {/* Step Indicator */}
-        <div className="flex items-center mb-8">
-          <div className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep === 'contact' ? 'bg-primary-600 text-white' : 'bg-green-600 text-white'
-            }`}>
-              {currentStep === 'contact' ? '1' : <CheckIcon className="h-4 w-4" aria-hidden="true" />}
-            </div>
-            <span className="ml-2 text-sm font-medium text-gray-900">Contact Info</span>
-          </div>
-
-          <div className="flex-1 mx-4">
-            <div className={`h-1 rounded-full ${
-              ['preferences', 'review'].includes(currentStep) ? 'bg-green-600' : 'bg-gray-300'
-            }`} />
-          </div>
-
-          <div className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep === 'preferences' ? 'bg-primary-600 text-white' :
-              currentStep === 'review' ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
-            }`}>
-              {currentStep === 'review' ? <CheckIcon className="h-4 w-4" aria-hidden="true" /> : '2'}
-            </div>
-            <span className="ml-2 text-sm font-medium text-gray-900">Preferences</span>
-          </div>
-
-          <div className="flex-1 mx-4">
-            <div className={`h-1 rounded-full ${
-              currentStep === 'review' ? 'bg-green-600' : 'bg-gray-300'
-            }`} />
-          </div>
-
-          <div className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep === 'review' ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
-            }`}>
-              3
-            </div>
-            <span className="ml-2 text-sm font-medium text-gray-900">Review</span>
-          </div>
-        </div>
+        {/* Step Progress */}
+        <FormProgress
+          steps={formSteps}
+          currentStep={currentStepIndex}
+          className="mb-8"
+        />
       </div>
 
       {/* General Error */}
       {errors.general && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{errors.general}</p>
-        </div>
+        <FormFeedback
+          type="error"
+          message={errors.general}
+          dismissible
+          onDismiss={() => setErrors(prev => {
+            const { general, ...rest } = prev
+            return rest
+          })}
+        />
       )}
 
       {/* Step Content */}
