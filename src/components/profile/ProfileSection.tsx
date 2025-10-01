@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { createLogger } from '@/lib/logger'
 import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
@@ -12,7 +11,6 @@ import { FormMessage } from '@/components/ui/FormMessage'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
-import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload'
 
 const logger = createLogger('ProfileSection')
@@ -168,8 +166,6 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     logger.info('Avatar updated', { newUrl })
     setFormData(prev => ({ ...prev, avatar: newUrl }))
   }
-
-  const fullName = `${formData.firstName} ${formData.lastName}`.trim() || user.user_metadata?.name
 
   return (
     <div className="p-6">

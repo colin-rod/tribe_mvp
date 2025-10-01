@@ -58,7 +58,6 @@ const TimelinePage = () => {
   const {
     isMonitoring,
     currentMetrics,
-    alerts: _alerts,
     performanceScore,
     recommendations,
     startMonitoring,

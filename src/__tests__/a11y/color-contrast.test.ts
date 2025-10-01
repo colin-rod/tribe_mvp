@@ -212,6 +212,7 @@ describe('Comprehensive Color Contrast Report', () => {
 
       // Log results for documentation
       if (!onWhite.passes && !onBlack.passes) {
+        // eslint-disable-next-line no-console
         console.warn(`⚠️ primary-${shade}: Neither white nor black background meets AA`)
       }
     })

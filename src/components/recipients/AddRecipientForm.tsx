@@ -16,7 +16,6 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { CheckIcon } from '@heroicons/react/24/outline'
 import { FormProgress, type FormStep as ProgressStep } from '@/components/ui/FormProgress'
 import { FormFeedback } from '@/components/ui/FormFeedback'
 
@@ -249,7 +248,8 @@ export default function AddRecipientForm({ onRecipientAdded, onCancel, selectedG
           message={errors.general}
           dismissible
           onDismiss={() => setErrors(prev => {
-            const { general, ...rest } = prev
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { general: _general, ...rest } = prev
             return rest
           })}
         />

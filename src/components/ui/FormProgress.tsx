@@ -30,7 +30,6 @@ export function FormProgress({
             const stepNumber = index + 1
             const isComplete = stepNumber < currentStep
             const isCurrent = stepNumber === currentStep
-            const isUpcoming = stepNumber > currentStep
 
             return (
               <li key={step.id} className="relative">
@@ -112,7 +111,6 @@ export function FormProgress({
           const stepNumber = index + 1
           const isComplete = stepNumber < currentStep
           const isCurrent = stepNumber === currentStep
-          const isUpcoming = stepNumber > currentStep
 
           return (
             <li key={step.id} className="flex-1">

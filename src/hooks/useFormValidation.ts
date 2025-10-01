@@ -37,7 +37,7 @@ export interface UseFormValidationReturn<T> {
 export function useFormValidation<T extends Record<string, unknown>>(
   options: UseFormValidationOptions<T> = {}
 ): UseFormValidationReturn<T> {
-  const { schema, mode = 'onSubmit', reValidateMode = 'onChange' } = options
+  const { schema } = options
 
   const [errors, setErrors] = useState<FormErrors>({})
   const [isValidating, setIsValidating] = useState(false)

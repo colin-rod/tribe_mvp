@@ -3,7 +3,6 @@ import type { Database } from '../types/database'
 import { getEnv } from '../env'
 import { createLogger } from '../logger'
 import { getPoolConfig, validatePoolConfig } from './connection-pool'
-import { executeWithResilience, ConnectionErrorType } from './connection-resilience'
 
 const logger = createLogger('supabase-server')
 

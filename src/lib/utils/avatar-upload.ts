@@ -153,7 +153,7 @@ export async function uploadAndSetAvatar(
   logger.info('Starting complete avatar upload flow')
 
   // Upload new avatar
-  const { url, path } = await uploadAvatar(file, userId)
+  const { url } = await uploadAvatar(file, userId)
 
   // Update user profile
   await updateUserAvatar(url)
