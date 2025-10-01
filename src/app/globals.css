@@ -180,11 +180,19 @@
 
   .checkbox,
   .radio {
-    @apply w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2 focus:ring-offset-0;
+    @apply w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus:ring-2 focus:ring-offset-0 cursor-pointer;
   }
 
   .radio {
     @apply rounded-full;
+  }
+
+  /* Mobile-optimized checkbox and radio - larger touch targets */
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply w-5 h-5 cursor-pointer;
+    min-width: 20px;
+    min-height: 20px;
   }
 
   /* Card Components - Refined */
@@ -329,6 +337,58 @@
 
   .hover-glow {
     @apply transition-shadow duration-200 hover:shadow-warm;
+  }
+
+  /* Mobile-First Responsive Utilities */
+  .mobile-stack {
+    @apply flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4;
+  }
+
+  .mobile-full {
+    @apply w-full sm:w-auto;
+  }
+
+  .mobile-center {
+    @apply text-center sm:text-left;
+  }
+
+  /* Touch-Optimized Spacing */
+  .mobile-padding {
+    @apply px-4 py-3 sm:px-6 sm:py-4;
+  }
+
+  .mobile-margin {
+    @apply mx-4 my-3 sm:mx-6 sm:my-4;
+  }
+
+  /* Responsive Text Sizes - Mobile First */
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+
+  /* Mobile-optimized grid */
+  .grid-mobile {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+
+  .grid-mobile-dense {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3;
   }
 }
 

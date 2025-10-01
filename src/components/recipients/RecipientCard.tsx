@@ -66,12 +66,15 @@ export default function RecipientCard({
       {/* Selection Checkbox */}
       {onSelect && (
         <div className="absolute top-4 left-4">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={(e) => onSelect(recipient.id, e.target.checked)}
-            className="w-4 h-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
-          />
+          <label className="inline-flex items-center justify-center min-touch-target cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => onSelect(recipient.id, e.target.checked)}
+              className="w-5 h-5 text-primary-600 focus:ring-2 focus:ring-primary-600 border-gray-300 rounded cursor-pointer"
+              aria-label={`Select ${recipient.name}`}
+            />
+          </label>
         </div>
       )}
 
@@ -96,15 +99,16 @@ export default function RecipientCard({
 
       {/* Action buttons */}
       {showActions && (
-        <div className="absolute top-4 right-4 flex space-x-2">
+        <div className="absolute top-4 right-4 flex space-x-1 sm:space-x-2">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => onEdit(recipient)}
-            className="p-2 h-8 w-8"
+            className="min-touch-target"
             title="Edit recipient"
+            aria-label="Edit recipient"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </Button>
@@ -112,12 +116,13 @@ export default function RecipientCard({
           {recipient.email && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => onSendPreferenceLink(recipient.id)}
-              className="p-2 h-8 w-8"
+              className="min-touch-target"
               title="Send preference link"
+              aria-label="Send preference link"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </Button>
@@ -125,12 +130,13 @@ export default function RecipientCard({
 
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => onDelete(recipient.id)}
-            className="p-2 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="min-touch-target text-red-600 hover:text-red-700 hover:bg-red-50"
             title="Delete recipient"
+            aria-label="Delete recipient"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </Button>
