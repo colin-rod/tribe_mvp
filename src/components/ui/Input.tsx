@@ -89,7 +89,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               baseClasses,
               variantClasses[currentVariant],
               leftIcon && 'pl-10',
-              (rightIcon || (isPassword && showPassword)) && 'pr-10',
+              (rightIcon || (isPassword && showPassword)) && 'pr-14',
               className
             )}
             ref={ref}
@@ -107,11 +107,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           />
 
           {(rightIcon || (isPassword && showPassword)) && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
               {isPassword && showPassword ? (
                 <button
                   type="button"
-                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors min-touch-target p-2 rounded-md hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
                   onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                   tabIndex={-1}
                   aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
@@ -129,7 +129,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                   )}
                 </button>
               ) : rightIcon ? (
-                <div className="text-neutral-400">
+                <div className="text-neutral-400 pr-2">
                   {rightIcon}
                 </div>
               ) : null}

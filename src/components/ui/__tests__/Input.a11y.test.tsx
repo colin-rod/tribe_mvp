@@ -139,6 +139,16 @@ describe('Input Accessibility', () => {
     expect(toggleButton).toHaveAttribute('aria-label')
   })
 
+  it('password toggle button should meet minimum touch target size (44x44px)', () => {
+    const { getByRole } = render(
+      <Input type="password" showPassword />
+    )
+
+    const toggleButton = getByRole('button')
+    // Check that the button has min-touch-target class which ensures 44x44px minimum
+    expect(toggleButton.className).toContain('min-touch-target')
+  })
+
   describe('Required field indicator', () => {
     it('should hide asterisk from screen readers', () => {
       const { container } = render(

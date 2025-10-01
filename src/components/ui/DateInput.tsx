@@ -222,10 +222,11 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={() => navigateYear('prev')}
-                className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                className="p-2.5 hover:bg-gray-100 rounded-md transition-colors min-touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={currentYear <= new Date().getFullYear() - 18}
+                aria-label="Previous year"
               >
-                <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+                <ChevronLeftIcon className="h-5 w-5 text-gray-600" />
               </button>
               <span className="text-sm font-medium text-gray-700 min-w-[3rem] text-center">
                 {currentYear}
@@ -233,10 +234,11 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={() => navigateYear('next')}
-                className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                className="p-2.5 hover:bg-gray-100 rounded-md transition-colors min-touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={currentYear >= new Date().getFullYear()}
+                aria-label="Next year"
               >
-                <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+                <ChevronRightIcon className="h-5 w-5 text-gray-600" />
               </button>
             </div>
 
@@ -245,10 +247,11 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={() => navigateMonth('prev')}
-                className="p-1 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 hover:bg-gray-100 rounded-md transition-colors min-touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!canNavigatePrev()}
+                aria-label="Previous month"
               >
-                <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+                <ChevronLeftIcon className="h-5 w-5 text-gray-600" />
               </button>
               <span className="text-sm font-semibold text-gray-900 min-w-[5rem] text-center">
                 {months[currentMonth]}
@@ -256,10 +259,11 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={() => navigateMonth('next')}
-                className="p-1 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 hover:bg-gray-100 rounded-md transition-colors min-touch-target disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!canNavigateNext()}
+                aria-label="Next month"
               >
-                <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+                <ChevronRightIcon className="h-5 w-5 text-gray-600" />
               </button>
             </div>
           </div>
@@ -293,7 +297,7 @@ export default function DateInput({
                   onClick={() => !disabled && handleDateSelect(date)}
                   disabled={disabled}
                   className={cn(
-                    'h-10 w-full flex items-center justify-center text-sm rounded-md transition-colors',
+                    'min-h-[44px] w-full flex items-center justify-center text-sm rounded-md transition-colors',
                     'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-1',
                     {
                       'bg-primary-600 text-white hover:bg-primary-700': selected,
@@ -302,6 +306,7 @@ export default function DateInput({
                       'text-gray-900': !disabled && !selected && !today,
                     }
                   )}
+                  aria-label={`Select ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
                 >
                   {date.getDate()}
                 </button>

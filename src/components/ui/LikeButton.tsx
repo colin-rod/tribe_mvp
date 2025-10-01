@@ -45,7 +45,7 @@ const LikeButton = memo<LikeButtonProps>(function LikeButton({
       onClick={handleClick}
       disabled={likeState.loading}
       className={cn(
-        'flex items-center space-x-1 transition-all duration-200',
+        'flex items-center space-x-1 transition-all duration-200 min-touch-target p-2',
         'hover:scale-105 active:scale-95',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         likeState.isLiked
