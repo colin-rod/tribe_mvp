@@ -39,7 +39,7 @@ jobs:
             github.event.workflow_run.head_branch == 'development')) }}
     runs-on: ubuntu-latest
     environment:
-      name: ${{ env.TARGET_BRANCH == 'main' && 'Production' || 'dev' }}
+      name: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'Production' || 'dev' }}
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - name: Check out repository
@@ -99,7 +99,7 @@ jobs:
       - name: Build optimized bundle
         run: vercel build ${{ steps.context.outputs.build_args }} --token=$VERCEL_TOKEN
         env:
-          NODE_ENV: ${{ env.TARGET_BRANCH == 'main' && 'production' || 'development' }}
+          NODE_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -111,7 +111,7 @@ jobs:
           echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
           echo "Deployed to ${DEPLOY_URL}"
         env:
-          NODE_ENV: ${{ env.TARGET_BRANCH == 'main' && 'production' || 'development' }}
+          NODE_ENV: ${{ (github.event.workflow_run.head_branch || github.ref_name) == 'main' && 'production' || 'development' }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
