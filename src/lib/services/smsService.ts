@@ -269,6 +269,97 @@ export class SMSService {
       }
     }
   }
+
+  /**
+   * Generate invitation SMS message
+   *
+   * @param inviterName - Name of person sending the invite
+   * @param invitationUrl - URL to join
+   * @param customMessage - Optional custom message from inviter
+   * @param expiresAt - Optional expiration date (for single-use)
+   * @returns Formatted SMS message
+   */
+  generateInvitationMessage(
+    inviterName: string,
+    invitationUrl: string,
+    customMessage?: string,
+    expiresAt?: string
+  ): string {
+    const parts: string[] = []
+
+    parts.push(`${inviterName} invited you to receive baby updates!`)
+
+    if (customMessage) {
+      parts.push(`\n"${customMessage}"`)
+    }
+
+    parts.push(`\nJoin here: ${invitationUrl}`)
+
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt)
+      const formattedDate = expiryDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
+      parts.push(`\n(Expires ${formattedDate})`)
+    }
+
+    return parts.join('')
+  }
+
+  /**
+   * Send invitation via SMS
+   *
+   * @param to - Recipient phone number
+   * @param inviterName - Name of person sending invite
+   * @param invitationUrl - URL to join
+   * @param customMessage - Optional custom message
+   * @param expiresAt - Optional expiration date
+   * @returns Promise resolving to SMS delivery result
+   */
+  async sendInvitationSMS(
+    to: string,
+    inviterName: string,
+    invitationUrl: string,
+    customMessage?: string,
+    expiresAt?: string
+  ): Promise<SMSDeliveryResult> {
+    const message = this.generateInvitationMessage(
+      inviterName,
+      invitationUrl,
+      customMessage,
+      expiresAt
+    )
+
+    return this.sendSMS({ to, message })
+  }
+
+  /**
+   * Send invitation via WhatsApp
+   *
+   * @param to - Recipient phone number
+   * @param inviterName - Name of person sending invite
+   * @param invitationUrl - URL to join
+   * @param customMessage - Optional custom message
+   * @param expiresAt - Optional expiration date
+   * @returns Promise resolving to WhatsApp delivery result
+   */
+  async sendInvitationWhatsApp(
+    to: string,
+    inviterName: string,
+    invitationUrl: string,
+    customMessage?: string,
+    expiresAt?: string
+  ): Promise<WhatsAppDeliveryResult> {
+    const message = this.generateInvitationMessage(
+      inviterName,
+      invitationUrl,
+      customMessage,
+      expiresAt
+    )
+
+    return this.sendWhatsApp({ to, message })
+  }
 }
 
 // Export singleton instance

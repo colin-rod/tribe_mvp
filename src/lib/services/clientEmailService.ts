@@ -30,7 +30,7 @@ export interface EmailDeliveryResult {
 
 export interface EmailApiRequest {
   to: string
-  type: 'response' | 'prompt' | 'digest' | 'system' | 'preference'
+  type: 'response' | 'prompt' | 'digest' | 'system' | 'preference' | 'invitation'
   templateData?: Record<string, unknown>
   options?: {
     from?: string
@@ -144,7 +144,7 @@ export class ClientEmailService {
 
   async sendTemplatedEmail(
     to: string,
-    templateType: 'response' | 'prompt' | 'digest' | 'system' | 'preference',
+    templateType: 'response' | 'prompt' | 'digest' | 'system' | 'preference' | 'invitation',
     templateData: Record<string, unknown> = {},
     options: Partial<EmailApiRequest['options']> = {}
   ): Promise<EmailDeliveryResult> {
@@ -161,6 +161,41 @@ export class ClientEmailService {
         ...options
       }
     })
+  }
+
+  /**
+   * Send invitation email
+   *
+   * @param to - Recipient email
+   * @param templateData - Invitation data (inviterName, babyName, customMessage, invitationUrl, expiresAt)
+   * @param options - Additional email options
+   * @returns Promise resolving to email delivery result
+   */
+  async sendInvitationEmail(
+    to: string,
+    templateData: {
+      recipientName?: string
+      inviterName: string
+      babyName?: string
+      customMessage?: string
+      invitationUrl: string
+      expiresAt?: string
+    },
+    options: Partial<EmailApiRequest['options']> = {}
+  ): Promise<EmailDeliveryResult> {
+    return this.sendTemplatedEmail(
+      to,
+      'invitation',
+      templateData,
+      {
+        categories: ['tribe-invitation', 'tribe-onboarding'],
+        customArgs: {
+          invitationType: 'single_use',
+          ...options.customArgs
+        },
+        ...options
+      }
+    )
   }
 
   // Test email functionality

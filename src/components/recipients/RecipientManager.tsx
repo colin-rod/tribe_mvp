@@ -19,12 +19,13 @@ import AddRecipientForm from './AddRecipientForm'
 import RecipientCard from './RecipientCard'
 import RecipientSearch from './RecipientSearch'
 import RecipientEditor from './RecipientEditor'
+import InvitationManager from '@/components/invitations/InvitationManager'
 
 interface RecipientManagerProps {
   selectedGroupId?: string
 }
 
-type ViewMode = 'list' | 'add' | 'import'
+type ViewMode = 'list' | 'add' | 'import' | 'invite'
 
 export default function RecipientManager({ selectedGroupId }: RecipientManagerProps) {
   const [recipients, setRecipients] = useState<Recipient[]>([])
@@ -225,6 +226,20 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     )
   }
 
+  if (viewMode === 'invite') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Invite Recipients</h1>
+          <Button variant="outline" onClick={() => setViewMode('list')}>
+            Back to Recipients
+          </Button>
+        </div>
+        <InvitationManager />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -245,6 +260,15 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Export
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setViewMode('invite')}
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Invite Recipients
           </Button>
           <Button onClick={() => setViewMode('add')}>
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
