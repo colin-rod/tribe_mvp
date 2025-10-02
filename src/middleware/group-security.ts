@@ -64,6 +64,12 @@ export async function validateParentGroupAccess(
     .eq('id', groupId)
     .single()
 
+  type GroupData = {
+    id: string
+    parent_id: string
+    name: string
+  }
+
   if (error || !group) {
     return {
       user_id: userId,
@@ -74,7 +80,7 @@ export async function validateParentGroupAccess(
     }
   }
 
-  const isOwner = group.parent_id === userId
+  const isOwner = (group as GroupData).parent_id === userId
 
   return {
     user_id: userId,
@@ -109,21 +115,29 @@ export async function validateRecipientTokenAccess(
     .eq('is_active', true)
     .single()
 
+  type RecipientData = {
+    id: string
+    parent_id: string
+    group_memberships: RecipientGroupMembershipRow[] | RecipientGroupMembershipRow
+  }
+
   if (error || !recipient) {
     throw new Error('Invalid or expired access token')
   }
 
+  const typedRecipient = recipient as RecipientData
+
   // Get active group memberships
-  const activeGroups = Array.isArray(recipient.group_memberships)
-    ? (recipient.group_memberships as RecipientGroupMembershipRow[])
+  const activeGroups = Array.isArray(typedRecipient.group_memberships)
+    ? (typedRecipient.group_memberships as RecipientGroupMembershipRow[])
         .filter(membership => membership.is_active)
         .map(membership => membership.group_id)
     : []
 
   return {
-    recipient_id: recipient.id,
+    recipient_id: typedRecipient.id,
     token,
-    parent_id: recipient.parent_id,
+    parent_id: typedRecipient.parent_id,
     groups: activeGroups,
     can_modify_settings: true
   }

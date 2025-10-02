@@ -139,23 +139,23 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
 
   if (!user) throw new Error('Not authenticated')
 
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from('updates')
     .insert({
       parent_id: user.id,
       child_id: updateData.child_id,
       content: updateData.content,
       subject: updateData.subject,
-      rich_content: updateData.rich_content,
+      rich_content: updateData.rich_content as Record<string, unknown> | undefined,
       content_format: updateData.content_format || 'plain',
       milestone_type: updateData.milestone_type,
       media_urls: updateData.media_urls || [],
-      ai_analysis: updateData.ai_analysis || {},
+      ai_analysis: updateData.ai_analysis as Record<string, unknown> | undefined || {},
       suggested_recipients: updateData.suggested_recipients || [],
       confirmed_recipients: updateData.confirmed_recipients || [],
       distribution_status: updateData.scheduled_for ? 'scheduled' : 'draft',
       scheduled_for: updateData.scheduled_for?.toISOString()
-    })
+    } as Record<string, unknown>)
     .select()
     .single()
 
@@ -239,7 +239,7 @@ export async function updateUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updates)
+    .update(updates as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -266,6 +266,10 @@ export async function deleteUpdate(updateId: string): Promise<void> {
     .eq('parent_id', user.id)
     .single()
 
+  type UpdateWithMedia = {
+    media_urls: string[] | null
+  }
+
   if (fetchError) throw fetchError
 
   // Delete the update from database
@@ -277,10 +281,12 @@ export async function deleteUpdate(updateId: string): Promise<void> {
 
   if (error) throw error
 
+  const typedUpdate = update as UpdateWithMedia
+
   // Delete associated media files from storage
-  if (update.media_urls && update.media_urls.length > 0) {
+  if (typedUpdate.media_urls && typedUpdate.media_urls.length > 0) {
     try {
-      const filePaths = update.media_urls.map((url: string) => {
+      const filePaths = typedUpdate.media_urls.map((url: string) => {
         // Extract file path from URL
         const urlParts = url.split('/')
         const fileName = urlParts[urlParts.length - 1].split('?')[0]
@@ -314,7 +320,7 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
     .update({
       distribution_status: 'sent',
       sent_at: new Date().toISOString()
-    })
+    } as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -342,7 +348,7 @@ export async function updateUpdateRecipients(
     .update({
       suggested_recipients: suggestedRecipients,
       confirmed_recipients: confirmedRecipients
-    })
+    } as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -367,8 +373,8 @@ export async function updateUpdateAIAnalysis(
   const { data, error } = await supabase
     .from('updates')
     .update({
-      ai_analysis: aiAnalysis
-    })
+      ai_analysis: aiAnalysis as Record<string, unknown>
+    } as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -394,7 +400,7 @@ export async function updateUpdateMediaUrls(
     .from('updates')
     .update({
       media_urls: mediaUrls
-    })
+    } as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -471,7 +477,7 @@ export async function scheduleUpdate(
     .update({
       scheduled_for: scheduledFor.toISOString(),
       distribution_status: 'scheduled'
-    })
+    } as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -531,7 +537,7 @@ export async function updateUpdateContent(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updateData)
+    .update(updateData as Record<string, unknown>)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -742,22 +748,32 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     return []
   }
 
+  type UpdateWithChildren = {
+    id: string
+    children?: { name?: string } | null
+    content?: string | null
+    like_count?: number | null
+    comment_count?: number | null
+  }
+
+  const typedUpdates = updates as UpdateWithChildren[] | null
+
   logger.info('Successfully retrieved updates from database', {
     requestId,
-    count: updates?.length || 0,
-    updateIds: updates?.map(u => u.id) || [],
+    count: typedUpdates?.length || 0,
+    updateIds: typedUpdates?.map(u => u.id) || [],
     queryDuration: queryEndTime - queryStartTime,
-    dataSize: JSON.stringify(updates || []).length,
-    hasChildrenData: updates?.every(u => u.children) || false,
+    dataSize: JSON.stringify(typedUpdates || []).length,
+    hasChildrenData: typedUpdates?.every(u => u.children) || false,
     timestamp: new Date().toISOString()
   })
 
-  if (!updates || updates.length === 0) {
+  if (!typedUpdates || typedUpdates.length === 0) {
     return []
   }
 
   // Get the update IDs for batch queries
-  const updateIds = updates.map(update => update.id)
+  const updateIds = typedUpdates.map(update => update.id)
 
   // Get user's likes for these updates in a single query
   logger.info('Querying likes table', { requestId, updateIds, updateCount: updateIds.length })
@@ -788,7 +804,11 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     // Continue with empty likes array if query fails
   }
 
-  const likedUpdateIds = new Set(userLikes?.map(like => like.update_id) || [])
+  type UserLike = {
+    update_id: string
+  }
+
+  const likedUpdateIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
   // Get response counts and engagement data for each update
   logger.info('Getting response counts for updates', {
@@ -800,7 +820,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
   })
 
   const updatesWithStats = await Promise.all(
-    updates.map(async (update) => {
+    typedUpdates.map(async (update) => {
       logger.debug('Querying responses for update', { updateId: update.id })
 
       try {
@@ -865,7 +885,11 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
         }
 
         // Extract first response from array or use null
-        const lastResponse = lastResponseData && lastResponseData.length > 0 ? lastResponseData[0] : null
+        type LastResponse = {
+          received_at: string | null
+        }
+
+        const lastResponse = lastResponseData && lastResponseData.length > 0 ? (lastResponseData[0] as LastResponse) : null
 
         const result = {
           ...update,

@@ -129,7 +129,7 @@ export async function POST(
       .in('recipient_id', validatedData.recipient_ids)
       .eq('is_active', true)
 
-    const alreadyMemberIds = existingMemberships?.map(m => m.recipient_id) || []
+    const alreadyMemberIds = (existingMemberships as { recipient_id: string }[] | null)?.map(m => m.recipient_id) || []
     const newRecipientIds = validatedData.recipient_ids.filter(id => !alreadyMemberIds.includes(id))
 
     if (newRecipientIds.length === 0) {

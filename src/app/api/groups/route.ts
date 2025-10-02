@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
     if (validatedData.notification_settings) {
       const { error: updateError } = await supabase
         .from('recipient_groups')
-        .update({
-          notification_settings: validatedData.notification_settings
-        })
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore - Supabase type inference limitation with JSONB columns
+        .update({ notification_settings: validatedData.notification_settings })
         .eq('id', newGroup.id)
         .eq('parent_id', user.id)
 
