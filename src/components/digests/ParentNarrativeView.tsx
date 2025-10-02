@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { PrinterIcon, PhotoIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { PrinterIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import type { ParentDigestNarrative } from '@/lib/types/digest'
 
 interface ParentNarrativeViewProps {

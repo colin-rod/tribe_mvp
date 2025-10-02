@@ -15,7 +15,7 @@ export function sanitizeHtml(html: string): string {
   if (typeof window === 'undefined') {
     // Server-side: import jsdom dynamically
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { JSDOM } = require('jsdom')
       const dom = new JSDOM('')
       // Type assertion to bypass strict WindowLike interface requirements
@@ -42,6 +42,7 @@ export function sanitizeHtml(html: string): string {
       purify.removeHooks('afterSanitizeAttributes')
       return result
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Server-side sanitization failed:', error)
       // Fallback: strip all HTML
       return stripHtml(html)
@@ -249,7 +250,7 @@ export function sanitizeEmail(email: string): string {
   if (!email) return ''
 
   // First, remove any suspicious patterns before processing
-  let cleaned = email
+  const cleaned = email
     .trim()
     .toLowerCase()
     // Remove any HTML tags

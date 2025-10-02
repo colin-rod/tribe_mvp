@@ -131,7 +131,7 @@ function handleError(
 
     return NextResponse.json(
       createErrorResponse(error.code, error.message, {
-        details: error.details as any,
+        details: error.details as Record<string, unknown> | undefined,
         requestId,
         path
       }),

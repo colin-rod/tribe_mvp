@@ -132,7 +132,7 @@ export function withRequestLogger(config: RequestLogConfig = {}) {
           } else {
             requestLog.bodySize = body.length
           }
-        } catch (error) {
+        } catch {
           logger.debug('Could not parse request body', { requestId: correlationId })
         }
       }
@@ -260,6 +260,7 @@ export function withApiMiddleware(config?: RequestLogConfig) {
   ) {
     // Apply request logger first, then error handler
     const loggerMiddleware = withRequestLogger(config)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { withErrorHandler } = require('./errorHandler')
 
     return withErrorHandler(loggerMiddleware(handler))

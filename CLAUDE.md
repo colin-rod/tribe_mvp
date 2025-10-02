@@ -153,6 +153,97 @@ When working with this repository:
 3. Clear activation criteria are defined in agent descriptions
 4. Comprehensive system prompts define expertise areas
 
+## Code Quality Standards
+
+**IMPORTANT**: Before completing any code changes, you MUST verify all quality checks pass:
+
+### Required Checks (Run After Every Code Change)
+
+1. **Linting** - Code must follow project style guidelines
+   ```bash
+   npm run lint
+   ```
+   - Fix all errors and warnings before committing
+   - No ESLint errors allowed
+   - Warnings should be addressed or explicitly suppressed with comments
+
+2. **Type Checking** - TypeScript must compile without errors
+   ```bash
+   npx tsc --noEmit
+   ```
+   - No TypeScript compilation errors
+   - All types must be properly defined
+   - Avoid using `any` type (use proper types or `unknown`)
+
+3. **Unit Tests** - All tests must pass
+   ```bash
+   npm test
+   ```
+   - All existing tests must pass
+   - New features should include tests
+   - Test coverage should not decrease
+
+### Automated Verification Workflow
+
+After making code changes, run this verification sequence:
+
+```bash
+# 1. Check linting
+npm run lint
+
+# 2. Check types
+npx tsc --noEmit
+
+# 3. Run tests
+npm test
+
+# 4. If all pass, code is ready for commit
+```
+
+### Common Issues and Fixes
+
+**Linting Errors:**
+- Unused variables: Prefix with `_` (e.g., `_unusedParam`) or remove
+- Unused imports: Remove unused import statements
+- Console statements: Use proper logger or add `eslint-disable-next-line`
+- Forbidden `require()`: Use ES6 imports or add explicit disable comment
+
+**Type Errors:**
+- Missing types: Add proper type annotations
+- `any` usage: Replace with specific types or `Record<string, unknown>`
+- Missing properties: Ensure all required interface properties are provided
+
+**Test Failures:**
+- Update snapshots if intentional: `npm test -- -u`
+- Fix broken functionality causing test failures
+- Add tests for new features
+
+### Pre-Commit Checklist
+
+Before considering any work complete:
+- [ ] `npm run lint` passes with no errors
+- [ ] `npx tsc --noEmit` passes with no errors
+- [ ] `npm test` passes with all tests green
+- [ ] New features have appropriate test coverage
+- [ ] Code follows project conventions and patterns
+- [ ] No debugging code or console.logs left in production code
+- [ ] All TODOs are tracked or completed
+
+### Integration with Development
+
+When implementing features:
+1. Write code
+2. Run quality checks immediately
+3. Fix any issues before moving forward
+4. Only mark work as complete when all checks pass
+
+This ensures:
+- High code quality maintained
+- No broken code in repository
+- Smooth collaboration with team
+- Faster review process
+- Production-ready code
+
 ## Key Files
 
 - `agents/README.md`: Complete documentation and usage guide (23,518 lines)

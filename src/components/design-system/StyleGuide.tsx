@@ -5,7 +5,7 @@
  * This component can be used for development, testing, and documentation.
  */
 
-import React, { useState } from 'react'
+import React from 'react'
 import { Container } from '@/components/ui/Container'
 import {
   Button,

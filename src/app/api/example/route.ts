@@ -23,7 +23,7 @@ const exampleRequestSchema = z.object({
  * Example GET endpoint
  * Shows basic success response with correlation ID
  */
-async function handleGet(request: NextRequest) {
+async function handleGet(_request: NextRequest) {
   logger.info('Example GET request received')
 
   // Simulate some processing

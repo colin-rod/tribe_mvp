@@ -55,8 +55,7 @@ export default function ParentViewPage() {
   // Extract child name and date range from digest
   useEffect(() => {
     if (digest) {
-      // Extract child name from recipient breakdown or AI data
-      const firstRecipient = Object.values(digest.recipient_breakdown || {})[0]
+      // Extract child name from AI data
       const name = digest.ai_compilation_data?.digest_theme?.split("'s")[0] || 'Your Child'
       setChildName(name)
 
