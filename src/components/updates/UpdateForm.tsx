@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import ChildSelector from '@/components/children/ChildSelector'
+import SmartContextualInput from './SmartContextualInput'
 import { milestoneTypes, getMilestoneLabel, validateUpdateContent } from '@/lib/validation/update'
 import type { UpdateFormData, MilestoneType } from '@/lib/validation/update'
 
 interface UpdateFormProps {
   formData: Partial<UpdateFormData>
+  previewUrls: string[]
   onFormDataChange: (data: Partial<UpdateFormData>) => void
+  onMediaChange: (files: File[]) => void
+  onMediaRemove: (index: number) => void
   onGenerateSuggestions: () => void
   isLoading?: boolean
   isAnalyzing?: boolean
@@ -19,7 +23,10 @@ interface UpdateFormProps {
 
 export default function UpdateForm({
   formData,
+  previewUrls,
   onFormDataChange,
+  onMediaChange,
+  onMediaRemove,
   onGenerateSuggestions,
   isLoading = false,
   isAnalyzing = false,
@@ -33,8 +40,7 @@ export default function UpdateForm({
     loadChildren()
   }, [loadChildren])
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const content = e.target.value
+  const handleContentChange = (content: string) => {
     onFormDataChange({ content })
 
     // Real-time validation
@@ -75,9 +81,6 @@ export default function UpdateForm({
     !contentError
   )
 
-  const characterCount = formData.content?.length || 0
-  const maxCharacters = 2000
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Error Display */}
@@ -105,32 +108,23 @@ export default function UpdateForm({
         />
       </div>
 
-      {/* Content Input */}
+      {/* Smart Contextual Input - combines text and media */}
       <div>
         <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
           Update Content <span className="text-red-500">*</span>
         </label>
-        <div className="relative">
-          <textarea
-            id="content"
-            rows={6}
-            value={formData.content || ''}
-            onChange={handleContentChange}
-            placeholder="Share what's happening with your little one..."
-            className={`w-full rounded-md border bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-              contentError
-                ? 'border-red-300 focus-visible:ring-red-600'
-                : 'border-gray-300'
-            }`}
-            disabled={isLoading}
-          />
-          <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-            <span className={characterCount > maxCharacters ? 'text-red-600' : ''}>
-              {characterCount}
-            </span>
-            /{maxCharacters}
-          </div>
-        </div>
+        <SmartContextualInput
+          content={formData.content || ''}
+          mediaFiles={formData.mediaFiles || []}
+          previewUrls={previewUrls}
+          onContentChange={handleContentChange}
+          onMediaChange={onMediaChange}
+          onMediaRemove={onMediaRemove}
+          disabled={isLoading}
+          placeholder="Share what's happening with your little one..."
+          maxCharacters={2000}
+          maxFiles={10}
+        />
         {contentError && (
           <p className="mt-1 text-sm text-red-600">{contentError}</p>
         )}

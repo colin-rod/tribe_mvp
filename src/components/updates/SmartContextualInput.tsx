@@ -1,0 +1,338 @@
+'use client'
+
+import { useState, useRef, useCallback, useEffect } from 'react'
+import Image from 'next/image'
+import { validateUpdateMediaFiles } from '@/lib/photo-upload'
+
+interface MediaItem {
+  id: string
+  file: File
+  previewUrl: string
+  type: 'image' | 'video' | 'audio'
+  position: number // Character position in text where media should appear
+}
+
+interface SmartContextualInputProps {
+  content: string
+  mediaFiles: File[]
+  previewUrls: string[]
+  onContentChange: (content: string) => void
+  onMediaChange: (files: File[]) => void
+  onMediaRemove: (index: number) => void
+  disabled?: boolean
+  placeholder?: string
+  maxCharacters?: number
+  maxFiles?: number
+}
+
+export default function SmartContextualInput({
+  content,
+  mediaFiles,
+  previewUrls,
+  onContentChange,
+  onMediaChange,
+  onMediaRemove,
+  disabled = false,
+  placeholder = "Share what's happening with your little one...",
+  maxCharacters = 2000,
+  maxFiles = 10
+}: SmartContextualInputProps) {
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync mediaFiles with mediaItems
+  useEffect(() => {
+    const items: MediaItem[] = mediaFiles.map((file, index) => {
+      const fileType = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+        ? 'video'
+        : 'audio'
+
+      return {
+        id: `${file.name}-${index}-${Date.now()}`,
+        file,
+        previewUrl: previewUrls[index] || '',
+        type: fileType,
+        position: 0 // Default position at start
+      }
+    })
+    setMediaItems(items)
+  }, [mediaFiles, previewUrls])
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value
+    if (newContent.length <= maxCharacters) {
+      onContentChange(newContent)
+    }
+  }
+
+  const processNewFiles = useCallback((newFiles: FileList | File[]) => {
+    const fileArray = Array.from(newFiles)
+    const combinedFiles = [...mediaFiles, ...fileArray]
+
+    // Validate files
+    const validationError = validateUpdateMediaFiles(combinedFiles)
+    if (validationError) {
+      // TODO: Show error to user via proper error handling
+      return
+    }
+
+    if (combinedFiles.length > maxFiles) {
+      // TODO: Show max files error to user
+      return
+    }
+
+    onMediaChange(combinedFiles)
+  }, [mediaFiles, maxFiles, onMediaChange])
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const files: File[] = []
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.kind === 'file') {
+        const file = item.getAsFile()
+        if (file) {
+          files.push(file)
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault()
+      processNewFiles(files)
+    }
+  }, [processNewFiles])
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+
+    const files = e.dataTransfer.files
+    if (files.length > 0) {
+      processNewFiles(files)
+    }
+  }, [processNewFiles])
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
+
+  const handleFileSelect = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      processNewFiles(files)
+    }
+    // Reset input so same file can be selected again
+    e.target.value = ''
+  }, [processNewFiles])
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+  }
+
+  const renderMediaPreview = (item: MediaItem, index: number) => {
+    switch (item.type) {
+      case 'image':
+        return (
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+            {item.previewUrl ? (
+              <Image
+                src={item.previewUrl}
+                alt={`Preview ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="80px"
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </div>
+        )
+      case 'video':
+        return (
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-900 flex items-center justify-center">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+            </svg>
+            <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
+              VIDEO
+            </div>
+          </div>
+        )
+      case 'audio':
+        return (
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-purple-100 flex items-center justify-center">
+            <svg className="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+            </svg>
+            <div className="absolute bottom-1 right-1 bg-purple-600 text-white text-xs px-1 rounded">
+              AUDIO
+            </div>
+          </div>
+        )
+    }
+  }
+
+  const characterCount = content.length
+
+  return (
+    <div className="space-y-4">
+      {/* Main Input Area */}
+      <div className={`relative border-2 rounded-lg transition-colors ${
+        isDragOver
+          ? 'border-primary-500 bg-primary-50'
+          : 'border-gray-300 bg-white'
+      }`}>
+        {/* Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleTextChange}
+          onPaste={handlePaste}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          placeholder={placeholder}
+          disabled={disabled}
+          rows={8}
+          className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+
+        {/* Character Count */}
+        <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white/90 px-2 py-1 rounded">
+          <span className={characterCount > maxCharacters ? 'text-red-600' : ''}>
+            {characterCount}
+          </span>
+          /{maxCharacters}
+        </div>
+
+        {/* Drag Overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 flex items-center justify-center bg-primary-50/90 border-2 border-primary-500 rounded-lg pointer-events-none">
+            <div className="text-center">
+              <svg className="mx-auto h-12 w-12 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
+              </svg>
+              <p className="mt-2 text-sm font-medium text-primary-700">Drop media here</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Helper Text */}
+      <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={handleFileSelect}
+            disabled={disabled || mediaFiles.length >= maxFiles}
+            className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Add media
+          </button>
+          <span>or drag & drop, paste photos/videos/audio</span>
+        </div>
+        <span>PNG, JPG, WebP, MP4, MP3 (max {maxFiles})</span>
+      </div>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,audio/mpeg,audio/wav"
+        onChange={handleFileInputChange}
+        className="hidden"
+        disabled={disabled}
+      />
+
+      {/* Media Previews */}
+      {mediaItems.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-medium text-gray-700">
+              Media ({mediaItems.length}/{maxFiles})
+            </h4>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {mediaItems.map((item, index) => (
+              <div
+                key={item.id}
+                className="relative group"
+              >
+                {renderMediaPreview(item, index)}
+
+                {/* File Info Tooltip */}
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                  <p className="truncate max-w-[150px]">{item.file.name}</p>
+                  <p className="text-gray-300">{formatFileSize(item.file.size)}</p>
+                </div>
+
+                {/* Remove Button */}
+                <button
+                  type="button"
+                  onClick={() => onMediaRemove(index)}
+                  disabled={disabled}
+                  className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                {/* Media Number Badge */}
+                <div className="absolute top-1 left-1 bg-gray-900/75 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium">
+                  {index + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tips */}
+      {mediaItems.length === 0 && (
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
+            💡 Pro Tip
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-blue-700">
+            <li>• Type your update first, then add media inline</li>
+            <li>• Paste images directly from clipboard (Ctrl/Cmd+V)</li>
+            <li>• Drag & drop multiple files at once</li>
+            <li>• Mix photos, videos, and audio in one update</li>
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}

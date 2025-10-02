@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUpdateCreation } from '@/hooks/useUpdateCreation'
 import { getRecipients } from '@/lib/recipients'
 import UpdateForm from '@/components/updates/UpdateForm'
-import MediaUpload from '@/components/updates/MediaUpload'
 import AISuggestionsPanel from '@/components/updates/AISuggestionsPanel'
 import UpdatePreview from '@/components/updates/UpdatePreview'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -271,21 +270,16 @@ export default function CreateUpdateWizard({
                 <div className="space-y-8">
                   <UpdateForm
                     formData={formData}
+                    previewUrls={previewUrls}
                     onFormDataChange={setFormData}
+                    onMediaChange={processMediaFiles}
+                    onMediaRemove={removeMediaFile}
                     onGenerateSuggestions={handleFormSubmit}
                     error={error ?? undefined}
                     loadChildren={loadChildren}
                     isLoading={isLoading}
                     isAnalyzing={isAnalyzing}
                     hasRequestedAnalysis={hasRequestedAnalysis}
-                  />
-
-                  <MediaUpload
-                    files={formData.mediaFiles || []}
-                    previewUrls={previewUrls}
-                    onFilesChange={processMediaFiles}
-                    onFileRemove={removeMediaFile}
-                    disabled={isLoading}
                   />
                 </div>
 
