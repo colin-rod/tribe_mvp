@@ -12,6 +12,13 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Tribe - Secure Baby Update App for Private Family Sharing',
   description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' }
+    ],
+    apple: '/apple-icon.png'
+  },
   keywords: [
     'baby update app',
     'private family sharing',

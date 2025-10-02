@@ -7,8 +7,10 @@
 
 /**
  * Generate CSP directives based on environment
+ *
+ * @param _nonce - Optional nonce value for script security in production (reserved for future use)
  */
-export function getContentSecurityPolicy(): string {
+export function getContentSecurityPolicy(_nonce?: string): string {
   const isDevelopment = process.env.NODE_ENV === 'development'
 
   // CSP directives
@@ -20,10 +22,15 @@ export function getContentSecurityPolicy(): string {
     'script-src': [
       "'self'",
       // Allow inline scripts for Next.js
+      // In production, use nonce or unsafe-inline for Next.js hydration
       isDevelopment ? "'unsafe-inline'" : '',
       isDevelopment ? "'unsafe-eval'" : '',
-      // Vercel Analytics
+      // For production Next.js 15, we need to allow inline scripts
+      // Next.js requires this for hydration and client-side scripts
+      !isDevelopment ? "'unsafe-inline'" : '',
+      // Vercel services
       'https://va.vercel-scripts.com',
+      'https://vercel.live',
       // Google Tag Manager (if needed)
       'https://www.googletagmanager.com',
       'https://www.google-analytics.com'
@@ -60,20 +67,26 @@ export function getContentSecurityPolicy(): string {
     // Connect sources (API endpoints, WebSockets)
     'connect-src': [
       "'self'",
+      // Custom domain
+      'https://*.colinrodrigues.com',
       // Supabase
       'https://*.supabase.co',
       'https://*.supabase.in',
-      // Vercel Analytics
+      // Vercel Analytics and Live
       'https://va.vercel-scripts.com',
       'https://*.vercel-analytics.com',
+      'https://vercel.live',
       // Allow WebSocket connections in development
       isDevelopment ? 'ws://localhost:*' : '',
-      isDevelopment ? 'wss://localhost:*' : ''
+      isDevelopment ? 'wss://localhost:*' : '',
+      isDevelopment ? 'ws:' : '',
+      isDevelopment ? 'wss:' : ''
     ].filter(Boolean),
 
     // Frame sources (embedded content)
     'frame-src': [
       "'self'",
+      'https://vercel.live',
       // Add trusted domains for embedded content if needed
     ],
 
