@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { validateUpdateMediaFiles } from '@/lib/photo-upload'
+import RichTextEditor from '@/components/ui/RichTextEditor'
 
 interface MediaItem {
   id: string
@@ -39,6 +40,7 @@ export default function SmartContextualInput({
 }: SmartContextualInputProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [useRichText, setUseRichText] = useState(true) // Toggle between plain text and rich text
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -67,6 +69,19 @@ export default function SmartContextualInput({
     if (newContent.length <= maxCharacters) {
       onContentChange(newContent)
     }
+  }
+
+  const handleRichTextChange = (html: string) => {
+    onContentChange(html)
+  }
+
+  // Helper to get plain text length from HTML
+  const getTextLength = (htmlOrText: string): number => {
+    if (!useRichText) return htmlOrText.length
+    // Create a temporary div to extract text from HTML
+    const div = document.createElement('div')
+    div.innerHTML = htmlOrText
+    return div.textContent?.length || 0
   }
 
   const processNewFiles = useCallback((newFiles: FileList | File[]) => {
@@ -198,51 +213,86 @@ export default function SmartContextualInput({
     }
   }
 
-  const characterCount = content.length
+  const characterCount = getTextLength(content)
 
   return (
     <div className="space-y-4">
+      {/* Editor Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useRichText}
+            onChange={(e) => setUseRichText(e.target.checked)}
+            className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+            disabled={disabled}
+          />
+          <span className="text-sm text-gray-700 font-medium">
+            Rich Text Formatting
+          </span>
+          <span className="text-xs text-gray-500">
+            (Bold, Italic, Lists, Headings, etc.)
+          </span>
+        </label>
+      </div>
+
       {/* Main Input Area */}
-      <div className={`relative border-2 rounded-lg transition-colors ${
-        isDragOver
-          ? 'border-primary-500 bg-primary-50'
-          : 'border-gray-300 bg-white'
-      }`}>
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleTextChange}
-          onPaste={handlePaste}
+      {useRichText ? (
+        <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={8}
-          className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-
-        {/* Character Count */}
-        <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white/90 px-2 py-1 rounded">
-          <span className={characterCount > maxCharacters ? 'text-red-600' : ''}>
-            {characterCount}
-          </span>
-          /{maxCharacters}
+        >
+          <RichTextEditor
+            content={content}
+            onChange={handleRichTextChange}
+            placeholder={placeholder}
+            disabled={disabled}
+            maxCharacters={maxCharacters}
+          />
         </div>
+      ) : (
+        <div className={`relative border-2 rounded-lg transition-colors ${
+          isDragOver
+            ? 'border-primary-500 bg-primary-50'
+            : 'border-gray-300 bg-white'
+        }`}>
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleTextChange}
+            onPaste={handlePaste}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={8}
+            className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+          />
 
-        {/* Drag Overlay */}
-        {isDragOver && (
-          <div className="absolute inset-0 flex items-center justify-center bg-primary-50/90 border-2 border-primary-500 rounded-lg pointer-events-none">
-            <div className="text-center">
-              <svg className="mx-auto h-12 w-12 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 48 48">
-                <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
-              </svg>
-              <p className="mt-2 text-sm font-medium text-primary-700">Drop media here</p>
-            </div>
+          {/* Character Count */}
+          <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white/90 px-2 py-1 rounded">
+            <span className={characterCount > maxCharacters ? 'text-red-600' : ''}>
+              {characterCount}
+            </span>
+            /{maxCharacters}
           </div>
-        )}
-      </div>
+
+          {/* Drag Overlay */}
+          {isDragOver && (
+            <div className="absolute inset-0 flex items-center justify-center bg-primary-50/90 border-2 border-primary-500 rounded-lg pointer-events-none">
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                  <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
+                </svg>
+                <p className="mt-2 text-sm font-medium text-primary-700">Drop media here</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Helper Text */}
       <div className="flex items-center justify-between text-xs text-gray-500">

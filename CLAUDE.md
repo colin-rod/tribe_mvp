@@ -244,6 +244,67 @@ This ensures:
 - Faster review process
 - Production-ready code
 
+## Database Migrations
+
+**IMPORTANT**: This project uses Supabase for the database. All database schema changes must be handled through SQL migrations.
+
+### Migration Guidelines
+
+1. **Always Create Migration Files**
+   - Create new migration files in `supabase/migrations/` directory
+   - Use naming convention: `YYYYMMDDHHMMSS_descriptive_name.sql`
+   - Example: `20251002000001_rich_text_support.sql`
+
+2. **Migration File Structure**
+   - Include clear header comments describing the migration
+   - Reference the Linear issue ID (e.g., CRO-90)
+   - Add descriptive comments throughout the SQL
+   - Include rollback instructions if complex
+
+3. **Never Run Migrations Directly**
+   - **DO NOT** use `supabase db push` or CLI migration tools
+   - **DO NOT** attempt to apply migrations programmatically
+   - **ALWAYS** provide the migration file for manual execution via Supabase SQL Editor
+
+4. **Migration File Format**
+   ```sql
+   -- Migration: YYYYMMDDHHMMSS_descriptive_name.sql
+   -- Description: Brief description of what this migration does
+   -- Issue: CRO-XXX - Issue title
+   --
+   -- IMPORTANT: Execute this migration via Supabase SQL Editor
+   -- Do NOT run via CLI or automated migration tools
+
+   -- Your SQL statements here
+   ```
+
+5. **After Creating Migration**
+   - Inform the user that a migration file has been created
+   - Provide the file path
+   - Instruct them to execute it via Supabase SQL Editor
+   - Do not attempt to run the migration yourself
+
+6. **Migration Best Practices**
+   - Test migrations are idempotent (can be run multiple times safely)
+   - Use `IF NOT EXISTS` / `IF EXISTS` clauses where appropriate
+   - Add helpful SQL comments explaining complex logic
+   - Document any breaking changes clearly
+   - Include data migration scripts if needed
+
+### Example Message to User
+
+```
+I've created a database migration file at:
+supabase/migrations/YYYYMMDDHHMMSS_descriptive_name.sql
+
+Please execute this migration via the Supabase SQL Editor:
+1. Open your Supabase project dashboard
+2. Navigate to SQL Editor
+3. Copy and paste the contents of the migration file
+4. Review the SQL statements
+5. Execute the migration
+```
+
 ## Key Files
 
 - `agents/README.md`: Complete documentation and usage guide (23,518 lines)
