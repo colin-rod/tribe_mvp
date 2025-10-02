@@ -120,20 +120,27 @@ module.exports = {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Inter', 'system-ui', 'sans-serif'],
       },
+      // Typography Scale - Based on 1.25 ratio (Major Third)
+      // Base: 16px (1rem), Line heights optimized for readability
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
-        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
-        '5xl': ['3rem', { lineHeight: '1' }],
-        '6xl': ['3.75rem', { lineHeight: '1' }],
-        '7xl': ['4.5rem', { lineHeight: '1' }],
-        '8xl': ['6rem', { lineHeight: '1' }],
-        '9xl': ['8rem', { lineHeight: '1' }],
+        // Body text sizes
+        'xs': ['0.75rem', { lineHeight: '1.125rem', letterSpacing: '0.01em' }],     // 12px / 18px
+        'sm': ['0.875rem', { lineHeight: '1.375rem', letterSpacing: '0.005em' }],   // 14px / 22px
+        'base': ['1rem', { lineHeight: '1.625rem' }],                                // 16px / 26px
+        'lg': ['1.125rem', { lineHeight: '1.75rem' }],                               // 18px / 28px
+        'xl': ['1.25rem', { lineHeight: '1.875rem' }],                               // 20px / 30px
+
+        // Heading sizes - Major Third scale (1.25 ratio)
+        '2xl': ['1.563rem', { lineHeight: '2rem', letterSpacing: '-0.01em' }],      // 25px / 32px - h5
+        '3xl': ['1.953rem', { lineHeight: '2.375rem', letterSpacing: '-0.015em' }], // 31.25px / 38px - h4
+        '4xl': ['2.441rem', { lineHeight: '2.875rem', letterSpacing: '-0.02em' }],  // 39px / 46px - h3
+        '5xl': ['3.052rem', { lineHeight: '3.375rem', letterSpacing: '-0.025em' }], // 48.8px / 54px - h2
+        '6xl': ['3.815rem', { lineHeight: '4rem', letterSpacing: '-0.03em' }],      // 61px / 64px - h1
+
+        // Display sizes for hero sections
+        '7xl': ['4.768rem', { lineHeight: '4.75rem', letterSpacing: '-0.035em' }],  // 76.3px / 76px
+        '8xl': ['5.96rem', { lineHeight: '5.75rem', letterSpacing: '-0.04em' }],    // 95.4px / 92px
+        '9xl': ['7.451rem', { lineHeight: '7rem', letterSpacing: '-0.045em' }],     // 119.2px / 112px
       },
       spacing: {
         '18': '4.5rem',

@@ -123,33 +123,89 @@ const SECTIONS = {
     title: 'Typography',
     component: (
       <div className="space-y-12">
+        {/* Type Scale Info */}
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-3">Typography System</h3>
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="font-semibold text-neutral-900">Scale Ratio:</span>
+              <span className="text-neutral-700 ml-2">Major Third (1.25)</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-900">Base Size:</span>
+              <span className="text-neutral-700 ml-2">16px (1rem)</span>
+            </div>
+            <div>
+              <span className="font-semibold text-neutral-900">Font Family:</span>
+              <span className="text-neutral-700 ml-2">Inter</span>
+            </div>
+          </div>
+        </div>
+
         {/* Heading Hierarchy */}
         <div>
           <h3 className="text-2xl font-bold text-neutral-900 mb-6">Heading Hierarchy</h3>
           <div className="space-y-6 bg-white p-8 rounded-lg border border-neutral-200">
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h1, .h1</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h1, .h1 - 61px / text-6xl
+              </div>
               <h1 className="h1">The quick brown fox jumps</h1>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h2, .h2</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h2, .h2 - 48.8px / text-5xl
+              </div>
               <h2 className="h2">The quick brown fox jumps</h2>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h3, .h3</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h3, .h3 - 39px / text-4xl
+              </div>
               <h3 className="h3">The quick brown fox jumps</h3>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h4, .h4</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h4, .h4 - 31.25px / text-3xl
+              </div>
               <h4 className="h4">The quick brown fox jumps</h4>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h5, .h5</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h5, .h5 - 25px / text-2xl
+              </div>
               <h5 className="h5">The quick brown fox jumps over the lazy dog</h5>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">h6, .h6</div>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                h6, .h6 - 20px / text-xl
+              </div>
               <h6 className="h6">The quick brown fox jumps over the lazy dog</h6>
+            </div>
+          </div>
+        </div>
+
+        {/* Display Sizes */}
+        <div>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6">Display Sizes (Hero Text)</h3>
+          <div className="space-y-8 bg-white p-8 rounded-lg border border-neutral-200">
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                .display-xl - 119.2px / text-9xl
+              </div>
+              <div className="display-xl">Hero XL</div>
+            </div>
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                .display-lg - 95.4px / text-8xl
+              </div>
+              <div className="display-lg">Hero Large</div>
+            </div>
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                .display-md - 76.3px / text-7xl
+              </div>
+              <div className="display-md">Hero Medium</div>
             </div>
           </div>
         </div>
@@ -159,24 +215,28 @@ const SECTIONS = {
           <h3 className="text-2xl font-bold text-neutral-900 mb-6">Body Text Sizes</h3>
           <div className="space-y-6 bg-white p-8 rounded-lg border border-neutral-200">
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">text-xs (12px)</div>
-              <p className="text-xs">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                .body-lg / text-lg - 18px
+              </div>
+              <p className="body-lg">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">text-sm (14px)</div>
-              <p className="text-sm">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                .body / text-base - 16px (default)
+              </div>
+              <p className="body">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">text-base (16px)</div>
-              <p className="text-base">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                .body-sm / text-sm - 14px
+              </div>
+              <p className="body-sm">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
             </div>
             <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">text-lg (18px)</div>
-              <p className="text-lg">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
-            </div>
-            <div>
-              <div className="text-xs font-mono text-neutral-500 mb-2">text-xl (20px)</div>
-              <p className="text-xl">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
+              <div className="text-xs font-mono text-neutral-500 mb-2">
+                .body-xs / text-xs - 12px
+              </div>
+              <p className="body-xs">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</p>
             </div>
           </div>
         </div>
@@ -185,10 +245,52 @@ const SECTIONS = {
         <div>
           <h3 className="text-2xl font-bold text-neutral-900 mb-6">Font Weights</h3>
           <div className="space-y-4 bg-white p-8 rounded-lg border border-neutral-200">
-            <p className="font-normal">Normal (400): The quick brown fox jumps over the lazy dog</p>
-            <p className="font-medium">Medium (500): The quick brown fox jumps over the lazy dog</p>
-            <p className="font-semibold">Semibold (600): The quick brown fox jumps over the lazy dog</p>
-            <p className="font-bold">Bold (700): The quick brown fox jumps over the lazy dog</p>
+            <p className="text-lg font-normal">Normal (400): The quick brown fox jumps over the lazy dog</p>
+            <p className="text-lg font-medium">Medium (500): The quick brown fox jumps over the lazy dog</p>
+            <p className="text-lg font-semibold">Semibold (600): The quick brown fox jumps over the lazy dog</p>
+            <p className="text-lg font-bold">Bold (700): The quick brown fox jumps over the lazy dog</p>
+          </div>
+        </div>
+
+        {/* Text Colors */}
+        <div>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6">Text Color Utilities</h3>
+          <div className="space-y-3 bg-white p-8 rounded-lg border border-neutral-200">
+            <p className="text-neutral-900">Default (.text-neutral-900)</p>
+            <p className="text-neutral-700">Body text (.text-neutral-700)</p>
+            <p className="text-muted">Muted text (.text-muted)</p>
+            <p className="text-subtle">Subtle text (.text-subtle)</p>
+            <p className="text-emphasis">Emphasis text (.text-emphasis)</p>
+            <p className="text-brand">Brand text (.text-brand)</p>
+            <p className="text-success">Success text (.text-success)</p>
+            <p className="text-warning">Warning text (.text-warning)</p>
+            <p className="text-error">Error text (.text-error)</p>
+            <p className="text-info">Info text (.text-info)</p>
+          </div>
+        </div>
+
+        {/* Component Examples */}
+        <div>
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6">Typography Components</h3>
+          <div className="space-y-6 bg-white p-8 rounded-lg border border-neutral-200">
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                {'<Heading level={2}>'}
+              </div>
+              <h2 className="h2">Using Heading Component</h2>
+            </div>
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                {'<Text variant="body-lg">'}
+              </div>
+              <p className="body-lg">Using Text component with body-lg variant for emphasized paragraphs.</p>
+            </div>
+            <div>
+              <div className="text-xs font-mono text-neutral-500 mb-3">
+                {'<Display size="md">'}
+              </div>
+              <div className="display-md">Display Hero Text</div>
+            </div>
           </div>
         </div>
       </div>

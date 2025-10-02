@@ -4,6 +4,16 @@ export { Input, type InputProps } from './Input'
 export { Textarea, type TextareaProps } from './Textarea'
 export { LoadingSpinner } from './LoadingSpinner'
 
+// Typography Components
+export {
+  Heading,
+  Text,
+  Display,
+  LinkText,
+  Code,
+  Typography
+} from './Typography'
+
 // Layout Components
 export { Container, type ContainerProps } from './Container'
 export { Grid, GridItem, type GridProps, type GridItemProps } from './Grid'
