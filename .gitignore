@@ -115,3 +115,8 @@ supabase/.temp
 *storybook.log
 storybook-static
 .env*.local
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

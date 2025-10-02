@@ -35,7 +35,12 @@
     "analyze:server": "ANALYZE=true BUNDLE_ANALYZE=server npm run build",
     "analyze:browser": "ANALYZE=true BUNDLE_ANALYZE=browser npm run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test:visual": "playwright test",
+    "test:visual:ui": "playwright test --ui",
+    "test:visual:update": "playwright test --update-snapshots",
+    "test:visual:debug": "playwright test --debug",
+    "test:visual:report": "playwright show-report"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -81,6 +86,7 @@
     "@axe-core/react": "^4.10.2",
     "@chromatic-com/storybook": "^4.1.1",
     "@next/bundle-analyzer": "^15.5.4",
+    "@playwright/test": "^1.55.1",
     "@storybook/addon-a11y": "^9.1.10",
     "@storybook/addon-actions": "^9.0.8",
     "@storybook/addon-backgrounds": "^9.0.8",
