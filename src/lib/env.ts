@@ -76,6 +76,12 @@ const envSchema = z.object({
     message: 'SENDGRID_FROM_EMAIL must be a valid email address'
   }).optional().default('updates@colinrodrigues.com'),
   SENDGRID_FROM_NAME: z.string().optional().default('Tribe'),
+  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
+
+  // Redis - Optional for email queue functionality
+  REDIS_URL: z.string().url({
+    message: 'REDIS_URL must be a valid URL'
+  }).optional().default('redis://localhost:6379'),
 
   // Twilio - Optional for SMS/WhatsApp functionality
   TWILIO_ACCOUNT_SID: z.string().optional(),

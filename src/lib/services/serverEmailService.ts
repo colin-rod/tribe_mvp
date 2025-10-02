@@ -3,6 +3,7 @@ import { createLogger } from '@/lib/logger'
 import { getEnv, getFeatureFlags } from '@/lib/env'
 import { sanitizeHtml, sanitizeText, emailSchema } from '@/lib/validation/security'
 import { z } from 'zod'
+import { getEmailQueue, type EmailJobData } from './emailQueue'
 
 export interface EmailTemplate {
   subject: string
@@ -133,6 +134,7 @@ interface SendGridError extends Error {
 export class ServerEmailService {
   private initialized = false
   private logger = createLogger('ServerEmailService')
+  private useQueue = false
 
   constructor() {
     this.initialize()
@@ -150,19 +152,49 @@ export class ServerEmailService {
       this.logger.debug('Initializing SendGrid with API key', {
         hasApiKey: !!env.SENDGRID_API_KEY,
         fromEmail: env.SENDGRID_FROM_EMAIL,
-        fromName: env.SENDGRID_FROM_NAME
+        fromName: env.SENDGRID_FROM_NAME,
+        hasRedis: !!env.REDIS_URL
       })
 
       sgMail.setApiKey(env.SENDGRID_API_KEY)
       this.initialized = true
 
+      // Enable queue if Redis is available
+      if (env.REDIS_URL) {
+        this.useQueue = true
+        this.logger.info('Email queue enabled - using Redis for reliability')
+
+        // Initialize queue worker
+        this.initializeQueueWorker()
+      }
+
       this.logger.info('ServerEmailService initialized successfully', {
         fromEmail: env.SENDGRID_FROM_EMAIL,
-        fromName: env.SENDGRID_FROM_NAME
+        fromName: env.SENDGRID_FROM_NAME,
+        queueEnabled: this.useQueue
       })
     } catch (error) {
       this.logger.errorWithStack('Failed to initialize ServerEmailService', error as Error)
       this.initialized = false
+    }
+  }
+
+  private async initializeQueueWorker() {
+    try {
+      const emailQueue = getEmailQueue()
+
+      // Start worker to process emails from the queue
+      await emailQueue.startWorker(async (options: EmailOptions) => {
+        return await this.sendEmailDirect(options)
+      })
+
+      this.logger.info('Email queue worker started successfully')
+    } catch (error) {
+      this.logger.error('Failed to start email queue worker', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      // Disable queue if worker fails to start
+      this.useQueue = false
     }
   }
 
@@ -274,6 +306,10 @@ export class ServerEmailService {
     }
   }
 
+  /**
+   * Send email with automatic retry logic and error handling
+   * Uses queue-based delivery if Redis is available, otherwise sends directly
+   */
   async sendEmail(options: EmailOptions): Promise<EmailDeliveryResult> {
     if (!this.initialized) {
       return {
@@ -282,7 +318,7 @@ export class ServerEmailService {
       }
     }
 
-    // Validate recipient email address
+    // Validate email addresses upfront
     if (!this.validateEmailAddress(options.to)) {
       return {
         success: false,
@@ -290,7 +326,6 @@ export class ServerEmailService {
       }
     }
 
-    // Validate sender email if provided
     if (options.from && !this.validateEmailAddress(options.from)) {
       return {
         success: false,
@@ -298,11 +333,60 @@ export class ServerEmailService {
       }
     }
 
-    // Validate reply-to email if provided
     if (options.replyTo && !this.validateEmailAddress(options.replyTo)) {
       return {
         success: false,
         error: 'Invalid reply-to email address'
+      }
+    }
+
+    // Use queue for reliability if available
+    if (this.useQueue) {
+      try {
+        const emailQueue = getEmailQueue()
+        const messageId = this.generateMessageId()
+
+        const jobData: EmailJobData = {
+          ...options,
+          jobId: messageId
+        }
+
+        await emailQueue.addEmail(jobData)
+
+        this.logger.info('Email queued for delivery', {
+          to: options.to,
+          messageId,
+          subject: options.subject
+        })
+
+        return {
+          success: true,
+          messageId,
+          statusCode: 202 // Accepted for processing
+        }
+      } catch (error) {
+        this.logger.error('Failed to queue email, falling back to direct send', {
+          error: error instanceof Error ? error.message : String(error),
+          to: options.to
+        })
+
+        // Fall back to direct send if queue fails
+        return await this.sendEmailDirect(options)
+      }
+    }
+
+    // Send directly if queue not available
+    return await this.sendEmailDirect(options)
+  }
+
+  /**
+   * Send email directly without queue (used by queue worker)
+   */
+  private async sendEmailDirect(options: EmailOptions): Promise<EmailDeliveryResult> {
+    if (!this.initialized) {
+      return {
+        success: false,
+        error: 'Email service not properly initialized'
       }
     }
 
@@ -380,6 +464,38 @@ export class ServerEmailService {
       }))
     }
 
+    // Use queue for bulk emails if available
+    if (this.useQueue) {
+      try {
+        const emailQueue = getEmailQueue()
+
+        const jobsData: EmailJobData[] = emails.map(email => ({
+          ...email,
+          jobId: this.generateMessageId()
+        }))
+
+        await emailQueue.addBulkEmails(jobsData)
+
+        this.logger.info('Bulk emails queued for delivery', {
+          count: emails.length
+        })
+
+        return jobsData.map(job => ({
+          success: true,
+          messageId: job.jobId,
+          statusCode: 202 // Accepted for processing
+        }))
+      } catch (error) {
+        this.logger.error('Failed to queue bulk emails, falling back to direct send', {
+          error: error instanceof Error ? error.message : String(error),
+          count: emails.length
+        })
+
+        // Fall back to direct send if queue fails
+      }
+    }
+
+    // Send directly if queue not available
     const results: EmailDeliveryResult[] = []
 
     // SendGrid recommends sending up to 1000 emails in a single request
@@ -828,16 +944,36 @@ export class ServerEmailService {
   }
 
   // Get configuration status
-  getStatus(): { configured: boolean; apiKey: boolean; fromEmail: boolean; environmentValid: boolean } {
+  getStatus(): {
+    configured: boolean
+    apiKey: boolean
+    fromEmail: boolean
+    environmentValid: boolean
+    queueEnabled: boolean
+    circuitBreakerState?: string
+  } {
     try {
       const env = getEnv()
       const features = getFeatureFlags()
+
+      let circuitBreakerState: string | undefined
+
+      if (this.useQueue) {
+        try {
+          const emailQueue = getEmailQueue()
+          circuitBreakerState = emailQueue.getCircuitBreakerState()
+        } catch {
+          // Queue not available
+        }
+      }
 
       return {
         configured: this.initialized,
         apiKey: !!env.SENDGRID_API_KEY,
         fromEmail: !!env.SENDGRID_FROM_EMAIL,
-        environmentValid: features.emailEnabled
+        environmentValid: features.emailEnabled,
+        queueEnabled: this.useQueue,
+        circuitBreakerState
       }
     } catch (error) {
       this.logger.warn('Failed to get environment status', { error: (error as Error).message })
@@ -845,8 +981,44 @@ export class ServerEmailService {
         configured: false,
         apiKey: false,
         fromEmail: false,
-        environmentValid: false
+        environmentValid: false,
+        queueEnabled: false
       }
+    }
+  }
+
+  // Get queue metrics (if queue is enabled)
+  async getQueueMetrics() {
+    if (!this.useQueue) {
+      return null
+    }
+
+    try {
+      const emailQueue = getEmailQueue()
+      return await emailQueue.getQueueMetrics()
+    } catch (error) {
+      this.logger.error('Failed to get queue metrics', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return null
+    }
+  }
+
+  // Retry a failed email from dead letter queue
+  async retryFailedEmail(jobId: string) {
+    if (!this.useQueue) {
+      throw new Error('Queue not enabled')
+    }
+
+    try {
+      const emailQueue = getEmailQueue()
+      return await emailQueue.retryDeadLetterJob(jobId)
+    } catch (error) {
+      this.logger.error('Failed to retry failed email', {
+        jobId,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      throw error
     }
   }
 }
