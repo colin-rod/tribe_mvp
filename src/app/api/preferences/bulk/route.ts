@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get membership information
-    const groupIds = groups?.map(g => g.id) || []
+    const groupIds = (groups as unknown as GroupRow[])?.map(g => g.id) || []
     const membershipQuery = supabase
       .from('group_memberships')
       .select(`
@@ -166,8 +166,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Organize data
-    const groupsWithMembers = groups?.map(group => {
-      const groupMemberships = memberships?.filter(m => m.group_id === group.id) || []
+    type MembershipRow = {
+      group_id: string
+      recipient_id: string
+      notification_frequency: string | null
+      preferred_channels: string[] | null
+      content_types: string[] | null
+      role: string
+      is_active: boolean
+      recipients?: {
+        id: string
+        name: string
+        email: string | null
+        relationship: string
+        is_active: boolean
+      }
+    }
+    type GroupRow = { id: string }
+
+    const groupsWithMembers = (groups as unknown as GroupRow[])?.map(group => {
+      const groupMemberships = ((memberships as unknown as MembershipRow[])?.filter(m => m.group_id === group.id) || [])
 
       return {
         ...group,
@@ -185,7 +203,7 @@ export async function GET(request: NextRequest) {
     // Generate summary if requested
     let summary: Record<string, unknown> = {}
     if (validatedQuery.settings_summary) {
-      const allMemberships = memberships || []
+      const allMemberships = (memberships as unknown as MembershipRow[]) || []
       const frequencyDistribution = new Map<string, number>()
       const channelDistribution = new Map<string, number>()
 

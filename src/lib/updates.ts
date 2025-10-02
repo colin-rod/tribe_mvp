@@ -155,7 +155,7 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
       confirmed_recipients: updateData.confirmed_recipients || [],
       distribution_status: updateData.scheduled_for ? 'scheduled' : 'draft',
       scheduled_for: updateData.scheduled_for?.toISOString()
-    } as Record<string, unknown>)
+    })
     .select()
     .single()
 
@@ -239,7 +239,7 @@ export async function updateUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updates as Record<string, unknown>)
+    .update(updates)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -318,9 +318,9 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
   const { data, error } = await supabase
     .from('updates')
     .update({
-      distribution_status: 'sent',
+      distribution_status: 'sent' as const,
       sent_at: new Date().toISOString()
-    } as Record<string, unknown>)
+    })
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -348,7 +348,7 @@ export async function updateUpdateRecipients(
     .update({
       suggested_recipients: suggestedRecipients,
       confirmed_recipients: confirmedRecipients
-    } as Record<string, unknown>)
+    })
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -374,7 +374,7 @@ export async function updateUpdateAIAnalysis(
     .from('updates')
     .update({
       ai_analysis: aiAnalysis as Record<string, unknown>
-    } as Record<string, unknown>)
+    })
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -400,7 +400,7 @@ export async function updateUpdateMediaUrls(
     .from('updates')
     .update({
       media_urls: mediaUrls
-    } as Record<string, unknown>)
+    })
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -476,8 +476,8 @@ export async function scheduleUpdate(
     .from('updates')
     .update({
       scheduled_for: scheduledFor.toISOString(),
-      distribution_status: 'scheduled'
-    } as Record<string, unknown>)
+      distribution_status: 'scheduled' as const
+    })
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -537,7 +537,7 @@ export async function updateUpdateContent(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updateData as Record<string, unknown>)
+    .update(updateData)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()

@@ -53,14 +53,13 @@ export class LikesService {
         throw this.createError(LikeErrorType.UNKNOWN_ERROR, updateId, error.message)
       }
 
-      if (!data || data.length === 0) {
+      if (!data) {
         throw this.createError(LikeErrorType.UPDATE_NOT_FOUND, updateId, 'No data returned from toggle operation')
       }
 
-      const result = data[0]
       return {
-        is_liked: result.is_liked,
-        like_count: result.like_count
+        is_liked: data.is_liked,
+        like_count: data.like_count
       }
     } catch (error) {
       if (error instanceof Error && 'type' in error) {

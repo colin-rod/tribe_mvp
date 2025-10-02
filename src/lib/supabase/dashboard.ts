@@ -203,17 +203,16 @@ export class DashboardClient {
         return { data: null, error: new Error(error.message) }
       }
 
-      const result = data?.[0]
-      if (!result) {
+      if (!data) {
         return { data: null, error: new Error('No result returned from toggle like') }
       }
 
-      logger.debug('Successfully toggled update like', result)
+      logger.debug('Successfully toggled update like', data)
 
       return {
         data: {
-          isLiked: result.is_liked,
-          likeCount: result.like_count
+          isLiked: data.is_liked,
+          likeCount: data.like_count
         },
         error: null
       }
@@ -248,19 +247,18 @@ export class DashboardClient {
         return { data: null, error: new Error(error.message) }
       }
 
-      const result = data?.[0]
-      if (!result) {
+      if (!data) {
         return { data: null, error: new Error('No result returned from add comment') }
       }
 
-      logger.debug('Successfully added update comment', result)
+      logger.debug('Successfully added update comment', data)
 
       return {
         data: {
-          id: result.id,
-          content: result.content,
-          createdAt: result.created_at,
-          commentCount: result.comment_count
+          id: data.id,
+          content: data.content,
+          createdAt: data.created_at,
+          commentCount: data.comment_count
         },
         error: null
       }

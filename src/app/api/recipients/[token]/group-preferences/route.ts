@@ -52,12 +52,14 @@ export async function PUT(
     const supabase = createClient(cookieStore)
 
     // Set token in session for RLS policies
+    // @ts-ignore - RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
     })
 
     // Verify group membership
+    type MembershipData = { id: string; is_active: boolean }
     const { data: membership, error: membershipError } = await supabase
       .from('group_memberships')
       .select('id, is_active')
@@ -72,7 +74,8 @@ export async function PUT(
       )
     }
 
-    if (!membership.is_active) {
+    const typedMembership = membership as unknown as MembershipData
+    if (!typedMembership.is_active) {
       return NextResponse.json(
         { error: 'Cannot update preferences for inactive group membership' },
         { status: 403 }
@@ -104,8 +107,9 @@ export async function PUT(
     // Update group membership preferences
     const { error: updateError } = await supabase
       .from('group_memberships')
+      // @ts-ignore - Supabase type inference issue
       .update(updateData)
-      .eq('id', membership.id)
+      .eq('id', typedMembership.id)
 
     if (updateError) {
       logger.errorWithStack('Error updating group preferences:', updateError as Error)

@@ -165,6 +165,9 @@ export interface Database {
           parent_id: string
           child_id: string
           content: string | null
+          subject: string | null
+          rich_content: Record<string, unknown> | null
+          content_format: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
           media_urls: string[]
           milestone_type: string | null
           ai_analysis: Record<string, unknown>
@@ -186,6 +189,9 @@ export interface Database {
           parent_id: string
           child_id: string
           content?: string | null
+          subject?: string | null
+          rich_content?: Record<string, unknown> | null
+          content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
           media_urls?: string[]
           milestone_type?: string | null
           ai_analysis?: Record<string, unknown>
@@ -206,6 +212,9 @@ export interface Database {
           parent_id?: string
           child_id?: string
           content?: string | null
+          subject?: string | null
+          rich_content?: Record<string, unknown> | null
+          content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
           media_urls?: string[]
           milestone_type?: string | null
           ai_analysis?: Record<string, unknown>
@@ -529,6 +538,85 @@ export interface Database {
           created_at?: string
         }
       }
+      invitations: {
+        Row: {
+          id: string
+          parent_id: string
+          invitation_type: 'single_use' | 'reusable'
+          token: string
+          status: 'active' | 'revoked' | 'used'
+          channel: 'email' | 'sms' | 'whatsapp' | 'link' | null
+          recipient_email: string | null
+          recipient_phone: string | null
+          expires_at: string | null
+          group_id: string | null
+          custom_message: string | null
+          use_count: number
+          metadata: Record<string, unknown>
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          parent_id: string
+          invitation_type: 'single_use' | 'reusable'
+          token: string
+          status?: 'active' | 'revoked' | 'used'
+          channel?: 'email' | 'sms' | 'whatsapp' | 'link' | null
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          expires_at?: string | null
+          group_id?: string | null
+          custom_message?: string | null
+          use_count?: number
+          metadata?: Record<string, unknown>
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          parent_id?: string
+          invitation_type?: 'single_use' | 'reusable'
+          token?: string
+          status?: 'active' | 'revoked' | 'used'
+          channel?: 'email' | 'sms' | 'whatsapp' | 'link' | null
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          expires_at?: string | null
+          group_id?: string | null
+          custom_message?: string | null
+          use_count?: number
+          metadata?: Record<string, unknown>
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      invitation_redemptions: {
+        Row: {
+          id: string
+          invitation_id: string
+          recipient_id: string
+          redeemed_at: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          invitation_id: string
+          recipient_id: string
+          redeemed_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          invitation_id?: string
+          recipient_id?: string
+          redeemed_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -606,10 +694,10 @@ export interface Database {
           p_update_id: string
           p_parent_id: string
         }
-        Returns: Array<{
+        Returns: {
           is_liked: boolean
           like_count: number
-        }>
+        }
       }
       add_update_comment: {
         Args: {
@@ -617,12 +705,12 @@ export interface Database {
           p_parent_id: string
           p_content: string
         }
-        Returns: Array<{
+        Returns: {
           id: string
           content: string
           created_at: string
           comment_count: number
-        }>
+        }
       }
       get_update_likes: {
         Args: {

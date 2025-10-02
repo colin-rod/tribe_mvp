@@ -19,6 +19,12 @@ export async function POST(
     }
 
     // Get current recipient and group info
+    type RecipientWithGroup = {
+      id: string
+      group_id: string | null
+      recipient_groups: { default_frequency: string; default_channels: string[] } | null
+    }
+
     const { data: recipient, error: fetchError } = await supabase
       .from('recipients')
       .select(`
@@ -33,7 +39,9 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid preference link or no group assigned' }, { status: 404 })
     }
 
-    const group = Array.isArray(recipient.recipient_groups) ? recipient.recipient_groups[0] : recipient.recipient_groups
+    // Type assertion for the joined data
+    const recipientWithGroup = recipient as unknown as RecipientWithGroup
+    const group = recipientWithGroup.recipient_groups
 
     if (!group) {
       return NextResponse.json({ error: 'No group assigned to recipient' }, { status: 400 })
@@ -41,9 +49,10 @@ export async function POST(
 
     const { error: updateError } = await supabase
       .from('recipients')
+      // @ts-ignore - Supabase type inference issue with joined tables
       .update({
-        frequency: group.default_frequency,
-        preferred_channels: group.default_channels,
+        frequency: group.default_frequency as string,
+        preferred_channels: group.default_channels as string[],
         content_types: ['photos', 'text'], // Default content types
         overrides_group_default: false
       })
