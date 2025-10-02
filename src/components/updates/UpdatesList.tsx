@@ -11,8 +11,9 @@ import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/ty
 import { getRecentUpdatesWithStats } from '@/lib/updates'
 import { transformToCardData } from '@/lib/utils/update-formatting'
 import UpdateCard from './UpdateCard'
-import UpdateCardSkeleton from './UpdateCardSkeleton'
 import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
 import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeToggle'
 import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
 import StreamLayout from '@/components/dashboard/StreamLayout'
@@ -302,50 +303,24 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   // Loading state
   if (loading) {
     return (
-      <div className={cn('space-y-4', className)}>
-        {Array.from({ length: limit }, (_, index) => (
-          <UpdateCardSkeleton key={index} />
-        ))}
-      </div>
+      <LoadingState
+        type="skeleton"
+        variant="timeline-card"
+        className={className}
+        skeletonOptions={{ count: limit }}
+      />
     )
   }
 
   // Error state
   if (error) {
     return (
-      <div className={cn('space-y-4', className)}>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <div className="text-red-400 mb-4">
-            <svg
-              className="mx-auto h-12 w-12"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-red-900 mb-2">
-            Unable to Load Updates
-          </h3>
-          <p className="text-sm text-red-700 mb-4">
-            {error}
-          </p>
-          <Button
-            variant="outline"
-            onClick={handleRetry}
-            className="border-red-300 text-red-700 hover:bg-red-50"
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <ErrorState
+        title="Unable to Load Updates"
+        message={error}
+        onRetry={handleRetry}
+        className={className}
+      />
     )
   }
 

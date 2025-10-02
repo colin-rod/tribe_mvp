@@ -3,6 +3,8 @@ export { Button, type ButtonProps } from './Button'
 export { Input, type InputProps } from './Input'
 export { Textarea, type TextareaProps } from './Textarea'
 export { LoadingSpinner } from './LoadingSpinner'
+export { LoadingState, LoadingWrapper, type LoadingStateProps, type LoadingWrapperProps } from './LoadingState'
+export { ErrorState, type ErrorStateProps } from './ErrorState'
 
 // Typography Components
 export {
@@ -32,6 +34,17 @@ export { Badge, type BadgeProps } from './Badge'
 
 // Feedback Components
 export { Alert, type AlertProps } from './Alert'
+
+// Loading Components
+export {
+  Skeleton,
+  TimelineCardSkeleton,
+  TimelineSkeleton,
+  SearchResultsSkeleton,
+  DashboardHeroSkeleton,
+  StaggeredListSkeleton,
+  GridSkeleton
+} from './SkeletonLoader'
 
 // Form Components (re-export existing ones)
 export { FormField } from './FormField'

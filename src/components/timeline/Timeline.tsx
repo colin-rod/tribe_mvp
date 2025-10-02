@@ -10,6 +10,8 @@ import TimelineSearch from './TimelineSearch'
 import ActivityCard from './ActivityCard'
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { Button } from '@/components/ui/Button'
 import MobileTimelineContainer from '@/components/dashboard/MobileTimelineContainer'
 import MobileSearchBar from '@/components/dashboard/MobileSearchBar'
@@ -345,10 +347,11 @@ const Timeline = memo<TimelineProps>(function Timeline({
           />
         )}
 
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" />
-          <span className="ml-3 text-neutral-600">Loading timeline...</span>
-        </div>
+        <LoadingState
+          type="spinner"
+          message="Loading timeline..."
+          size="lg"
+        />
       </div>
     )
   }
@@ -369,42 +372,14 @@ const Timeline = memo<TimelineProps>(function Timeline({
           />
         )}
 
-        <div className="text-center py-12">
-          <div className="text-red-400 mb-4">
-            <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">
-            Timeline Unavailable
-          </h3>
-          <p className="text-sm text-neutral-600 mb-4 max-w-sm mx-auto">
-            {error}
-          </p>
-          {retryCount > 0 && (
-            <p className="text-xs text-neutral-500 mb-4">
-              Retry attempt {retryCount} of {maxRetries}
-            </p>
-          )}
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button
-              onClick={handleRetry}
-              variant="outline"
-              disabled={!canRetry && retryCount > 0}
-            >
-              {canRetry ? 'Try Again' : 'Max Retries Reached'}
-            </Button>
-            {!canRetry && (
-              <Button
-                onClick={() => window.location.reload()}
-                variant="primary"
-              >
-                Reload Page
-              </Button>
-            )}
-          </div>
-        </div>
+        <ErrorState
+          title="Timeline Unavailable"
+          message={error}
+          onRetry={handleRetry}
+          retryCount={retryCount}
+          maxRetries={maxRetries}
+          canRetry={canRetry}
+        />
       </div>
     )
   }
