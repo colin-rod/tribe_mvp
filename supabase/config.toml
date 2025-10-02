@@ -1,4 +1,6 @@
 # Supabase configuration for Tribe MVP
+project_id = "advbcfkisejskhskrmqw"
+
 [api]
 enabled = true
 port = 54321
