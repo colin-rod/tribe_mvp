@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { forwardRef } from 'react'
+import { forwardRef, useId } from 'react'
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -10,6 +10,8 @@ export interface TextareaProps
   resize?: 'none' | 'vertical' | 'horizontal' | 'both'
   showCharCount?: boolean
   maxLength?: number
+  /** Description text for additional context */
+  description?: string
 }
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -24,8 +26,17 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     maxLength,
     disabled,
     value,
+    description,
+    id,
     ...props
   }, ref) => {
+    // Generate unique IDs for accessibility associations
+    const generatedId = useId()
+    const textareaId = id || generatedId
+    const helperId = `${textareaId}-helper`
+    const errorId = `${textareaId}-error`
+    const descriptionId = `${textareaId}-description`
+
     const isError = variant === 'error' || !!errorMessage
     const isSuccess = variant === 'success'
 
@@ -47,20 +58,46 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const currentVariant = isError ? 'error' : isSuccess ? 'success' : 'default'
     const currentLength = typeof value === 'string' ? value.length : 0
 
+    // Build comprehensive aria-describedby string
+    const ariaDescribedBy = [
+      errorMessage ? errorId : null,
+      description ? descriptionId : null,
+      helperText ? helperId : null,
+    ].filter(Boolean).join(' ') || undefined
+
     return (
       <div className="w-full">
         {label && (
-          <label className={cn(
-            'block text-sm font-medium text-neutral-700 mb-2',
-            disabled && 'opacity-50'
-          )}>
-            {label}
-            {props.required && <span className="text-error-500 ml-1">*</span>}
-          </label>
+          <div className="mb-2">
+            <label
+              htmlFor={textareaId}
+              className={cn(
+                'block text-sm font-medium text-neutral-700',
+                disabled && 'opacity-50'
+              )}
+            >
+              {label}
+              {props.required && (
+                <>
+                  <span className="text-error-500 ml-1" aria-hidden="true">*</span>
+                  <span className="sr-only"> (required)</span>
+                </>
+              )}
+            </label>
+            {description && (
+              <p
+                id={descriptionId}
+                className="mt-1 text-sm text-neutral-600"
+              >
+                {description}
+              </p>
+            )}
+          </div>
         )}
 
         <div className="relative">
           <textarea
+            id={textareaId}
             className={cn(
               baseClasses,
               variantClasses[currentVariant],
@@ -71,36 +108,44 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             disabled={disabled}
             maxLength={maxLength}
             aria-invalid={isError}
-            aria-describedby={
-              errorMessage ? `${props.id}-error` :
-              helperText ? `${props.id}-helper` : undefined
-            }
+            aria-describedby={ariaDescribedBy}
+            aria-required={props.required}
             value={value}
             {...props}
           />
         </div>
 
         <div className="flex items-center justify-between mt-2">
-          <div>
-            {(helperText || errorMessage) && (
+          <div className="flex-1">
+            {errorMessage && (
               <p
-                className={cn(
-                  'text-sm',
-                  isError ? 'text-error-600' : 'text-neutral-500'
-                )}
-                id={errorMessage ? `${props.id}-error` : `${props.id}-helper`}
+                className="text-sm text-error-600 flex items-start gap-1"
+                id={errorId}
+                role="alert"
+                aria-live="polite"
               >
-                {errorMessage || helperText}
+                {errorMessage}
+              </p>
+            )}
+            {helperText && !errorMessage && (
+              <p
+                className="text-sm text-neutral-500"
+                id={helperId}
+              >
+                {helperText}
               </p>
             )}
           </div>
 
           {showCharCount && maxLength && (
-            <div className={cn(
-              'text-xs',
-              currentLength > maxLength * 0.9 ? 'text-warning-600' :
-              currentLength === maxLength ? 'text-error-600' : 'text-neutral-500'
-            )}>
+            <div
+              className={cn(
+                'text-xs ml-2 flex-shrink-0',
+                currentLength > maxLength * 0.9 ? 'text-warning-600' :
+                currentLength === maxLength ? 'text-error-600' : 'text-neutral-500'
+              )}
+              aria-label={`${currentLength} of ${maxLength} characters used`}
+            >
               {currentLength}/{maxLength}
             </div>
           )}

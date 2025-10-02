@@ -10,6 +10,8 @@ export interface InputProps
   helperText?: string
   errorMessage?: string
   showPassword?: boolean
+  /** Description text for additional context */
+  description?: string
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -25,6 +27,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     showPassword,
     disabled,
     id,
+    description,
     ...props
   }, ref) => {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -33,6 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || generatedId
     const helperId = `${inputId}-helper`
     const errorId = `${inputId}-error`
+    const descriptionId = `${inputId}-description`
 
     const isError = variant === 'error' || !!errorMessage
     const isSuccess = variant === 'success'
@@ -49,30 +53,41 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const currentVariant = isError ? 'error' : isSuccess ? 'success' : 'default'
 
-    // Build aria-describedby string
+    // Build comprehensive aria-describedby string
     const ariaDescribedBy = [
       errorMessage ? errorId : null,
+      description ? descriptionId : null,
       helperText ? helperId : null,
     ].filter(Boolean).join(' ') || undefined
 
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={inputId}
-            className={cn(
-              'block text-sm font-medium text-neutral-700 mb-2',
-              disabled && 'opacity-50'
+          <div className="mb-2">
+            <label
+              htmlFor={inputId}
+              className={cn(
+                'block text-sm font-medium text-neutral-700',
+                disabled && 'opacity-50'
+              )}
+            >
+              {label}
+              {props.required && (
+                <>
+                  <span className="text-error-500 ml-1" aria-hidden="true">*</span>
+                  <span className="sr-only"> (required)</span>
+                </>
+              )}
+            </label>
+            {description && (
+              <p
+                id={descriptionId}
+                className="mt-1 text-sm text-neutral-600"
+              >
+                {description}
+              </p>
             )}
-          >
-            {label}
-            {props.required && (
-              <>
-                <span className="text-error-500 ml-1" aria-hidden="true">*</span>
-                <span className="sr-only">required</span>
-              </>
-            )}
-          </label>
+          </div>
         )}
 
         <div className="relative">
