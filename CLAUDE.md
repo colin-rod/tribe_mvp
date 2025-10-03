@@ -8,6 +8,73 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Description**: Smart baby update distribution platform
 **Linear Project ID**: 76e4b902-0484-480e-bd8a-c151c003211f
 
+## Linear Integration
+
+This project uses Linear for issue tracking and project management. The Linear CLI is pre-configured and ready to use.
+
+### Accessing Linear Issues
+
+You can access Linear issues directly using the CLI:
+
+```bash
+# View a specific issue
+linear issues view CRO-293
+
+# List issues
+linear issues list
+
+# View project details
+linear projects
+```
+
+### Linear CLI Commands
+
+**View Issue Details:**
+```bash
+linear issues view <issue-identifier>
+# Example: linear issues view CRO-293
+```
+
+**List Issues:**
+```bash
+linear issues list [options]
+# Options: --assignee, --state, --priority, etc.
+```
+
+**Create Issue:**
+```bash
+linear issues create [options]
+```
+
+**Update Issue:**
+```bash
+linear issues update <issueId> [options]
+```
+
+**Configuration:**
+```bash
+# View current config
+linear config show
+
+# Set API token (if needed)
+linear config set-token <token>
+```
+
+### Current Configuration
+
+The Linear CLI is already authenticated with the API token. To verify:
+```bash
+linear config show
+```
+
+### Working with Issues
+
+When working on features or bugs:
+1. Reference the Linear issue ID (e.g., CRO-293) in commits and PRs
+2. View issue details before starting work: `linear issues view CRO-293`
+3. Update issue status as you progress
+4. Link related issues in your implementation
+
 ## Repository Overview
 
 This repository contains a comprehensive collection of 86 specialized AI subagents for Claude Code, providing domain-specific expertise across software development, infrastructure, and business operations. The repository is organized as a subagent library that extends Claude Code's capabilities with specialized knowledge.

@@ -1,0 +1,54 @@
+/**
+ * QuickActionsPanel Component
+ * CRO-298: Right Pane - Activity View Context
+ *
+ * Provides quick action buttons for the activity view:
+ * - Create Update button (opens modal)
+ * - Compile Digest button
+ */
+
+'use client';
+
+import { Plus, Mail } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
+
+export interface QuickActionsPanelProps {
+  /** Callback when Create Update is clicked */
+  onCreateUpdate: () => void;
+  /** Callback when Compile Digest is clicked */
+  onCompileDigest: () => void;
+  /** Optional className for custom styling */
+  className?: string;
+}
+
+export function QuickActionsPanel({
+  onCreateUpdate,
+  onCompileDigest,
+  className,
+}: QuickActionsPanelProps) {
+  return (
+    <div className={cn('p-4 space-y-3 border-t border-neutral-200', className)}>
+      <h3 className="text-sm font-semibold text-neutral-900 mb-3">Quick Actions</h3>
+
+      <Button
+        onClick={onCreateUpdate}
+        className="w-full justify-start gap-2"
+        size="default"
+      >
+        <Plus className="h-4 w-4" />
+        Create Update
+      </Button>
+
+      <Button
+        onClick={onCompileDigest}
+        variant="outline"
+        className="w-full justify-start gap-2"
+        size="default"
+      >
+        <Mail className="h-4 w-4" />
+        Compile Digest
+      </Button>
+    </div>
+  );
+}
