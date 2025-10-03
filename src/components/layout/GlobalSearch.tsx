@@ -16,12 +16,14 @@ import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { SearchResults } from './SearchResults';
 import { SearchableItem } from '@/lib/search/fuseConfig';
 import { getCachedSearchableContent } from '@/lib/search/fetchSearchableContent';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function GlobalSearch() {
   const router = useRouter();
   const { user } = useAuth();
   const [searchableItems, setSearchableItems] = useState<SearchableItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(false); // Will be controlled by isOpen
 
   const {
     query,
@@ -64,11 +66,12 @@ export function GlobalSearch() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        aria-label="Open search (Command+K)"
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-4 w-4" aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">
+        <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded" aria-hidden="true">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
@@ -102,16 +105,24 @@ export function GlobalSearch() {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="mx-auto max-w-2xl transform rounded-xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black ring-opacity-5 transition-all">
+              <Dialog.Panel
+                ref={trapRef}
+                className="mx-auto max-w-2xl transform rounded-xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black ring-opacity-5 transition-all"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="search-dialog-title"
+              >
                 <Combobox onChange={(item: SearchableItem | null) => item && handleSelectResult(item)}>
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                    <Search className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-gray-400" aria-hidden="true" />
                     <Combobox.Input
+                      id="search-dialog-title"
                       className="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
                       placeholder="Search updates, children, recipients, and groups..."
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
                       autoFocus
+                      aria-label="Search"
                     />
                   </div>
 

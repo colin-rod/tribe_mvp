@@ -6,6 +6,9 @@ import { DevelopmentBanner, DevelopmentIndicator } from '@/components/ui/Develop
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { PerformanceProvider } from '@/components/providers/PerformanceProvider'
+import { SkipLinks } from '@/components/accessibility/SkipLinks'
+import { LayoutProvider } from '@/contexts/LayoutContext'
+import { KeyboardShortcutsProvider } from '@/components/accessibility/KeyboardShortcutsProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -129,10 +132,17 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <SkipLinks />
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">
           <AuthProvider>
-            {children}
+            <LayoutProvider>
+              <KeyboardShortcutsProvider>
+                <main id="main-content" tabIndex={-1}>
+                  {children}
+                </main>
+              </KeyboardShortcutsProvider>
+            </LayoutProvider>
           </AuthProvider>
         </div>
         <DevelopmentIndicator />
