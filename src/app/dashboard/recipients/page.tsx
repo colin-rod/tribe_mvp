@@ -1,26 +1,24 @@
+/**
+ * Recipients Page
+ * CRO-304: Component Migration & Comprehensive Testing
+ *
+ * Uses new 3-pane layout with recipients view
+ */
+
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import Navigation from '@/components/layout/Navigation'
-import Header from '@/components/layout/Header'
-import { RecipientManager } from '@/components/recipients'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
-import type { UpdateType } from '@/components/updates/CreateUpdateModal'
+import { DashboardShell } from '@/components/layout/DashboardShell'
+import { LeftNavigation } from '@/components/layout/LeftNavigation'
+import { MiddlePane } from '@/components/layout/MiddlePane'
+import { RightPaneContent } from '@/components/layout/rightPane/RightPaneContent'
 
 export default function RecipientsPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const {
-    openCreateUpdateModal,
-    createUpdateModal
-  } = useCreateUpdateModal()
-
-  const handleCreateUpdate = useCallback((type: UpdateType = 'photo') => {
-    openCreateUpdateModal(type)
-  }, [openCreateUpdateModal])
 
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
@@ -47,19 +45,11 @@ export default function RecipientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation onCreateUpdate={handleCreateUpdate} />
-
-      <Header
-        title="Recipients"
-        subtitle="Manage family and friends who receive updates"
-      />
-
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <RecipientManager />
-      </main>
-
-      {createUpdateModal}
-    </div>
+    <DashboardShell
+      leftNav={<LeftNavigation />}
+      rightPane={<RightPaneContent />}
+    >
+      <MiddlePane />
+    </DashboardShell>
   )
 }
