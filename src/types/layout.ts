@@ -24,7 +24,11 @@ export interface LayoutContextValue extends LayoutState {
 export const LAYOUT_STORAGE_KEY = 'tribe-layout-state'
 
 export const LAYOUT_BREAKPOINTS = {
-  /** Breakpoint for showing 3-pane layout (1024px) */
+  /** Breakpoint for showing 2-pane layout (1024px) */
+  LG: 1024,
+  /** Breakpoint for showing full 3-pane layout (1280px) */
+  XL: 1280,
+  /** Legacy desktop breakpoint (same as LG) */
   DESKTOP: 1024,
 } as const
 

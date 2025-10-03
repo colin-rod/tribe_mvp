@@ -7,6 +7,7 @@ import type { LayoutState } from '@/types/layout'
 /**
  * Hook for managing layout state with localStorage persistence
  * CRO-293: Core Layout Shell & Top Bar
+ * CRO-301: Responsive Breakpoint Handling
  */
 export function useLayoutState() {
   const [state, setState] = useState<LayoutState>({
@@ -15,17 +16,21 @@ export function useLayoutState() {
     isMobile: false,
   })
 
+  // Track user's manual preference for right pane (to restore when screen is large enough)
+  const [userRightPanePreference, setUserRightPanePreference] = useState(false)
+
   // Load state from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LAYOUT_STORAGE_KEY)
       if (stored) {
-        const parsed = JSON.parse(stored) as Partial<LayoutState>
+        const parsed = JSON.parse(stored) as Partial<LayoutState> & { userRightPanePreference?: boolean }
         setState(prev => ({
           ...prev,
           leftNavCollapsed: parsed.leftNavCollapsed ?? false,
           rightPaneCollapsed: parsed.rightPaneCollapsed ?? false,
         }))
+        setUserRightPanePreference(parsed.userRightPanePreference ?? false)
       }
     } catch {
       // Ignore localStorage errors (e.g., in incognito mode)
@@ -38,29 +43,56 @@ export function useLayoutState() {
       const toStore = {
         leftNavCollapsed: state.leftNavCollapsed,
         rightPaneCollapsed: state.rightPaneCollapsed,
+        userRightPanePreference,
       }
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(toStore))
     } catch {
       // Ignore localStorage errors
     }
-  }, [state.leftNavCollapsed, state.rightPaneCollapsed])
+  }, [state.leftNavCollapsed, state.rightPaneCollapsed, userRightPanePreference])
 
-  // Handle window resize to detect mobile/desktop
+  // Handle window resize to detect mobile/desktop and auto-collapse right pane
+  // CRO-301: Auto-collapse right pane below 1280px
   useEffect(() => {
-    const updateIsMobile = () => {
-      setState(prev => ({
-        ...prev,
-        isMobile: window.innerWidth < LAYOUT_BREAKPOINTS.DESKTOP,
-      }))
+    const updateLayout = () => {
+      const width = window.innerWidth
+      const isMobile = width < LAYOUT_BREAKPOINTS.LG
+      const isXL = width >= LAYOUT_BREAKPOINTS.XL
+
+      setState(prev => {
+        // If mobile (< 1024px), show mobile fallback
+        if (isMobile) {
+          return {
+            ...prev,
+            isMobile: true,
+          }
+        }
+
+        // If XL and above (>= 1280px), restore user preference
+        if (isXL) {
+          return {
+            ...prev,
+            isMobile: false,
+            rightPaneCollapsed: userRightPanePreference,
+          }
+        }
+
+        // If LG (1024px - 1279px), auto-collapse right pane
+        return {
+          ...prev,
+          isMobile: false,
+          rightPaneCollapsed: true,
+        }
+      })
     }
 
     // Set initial value
-    updateIsMobile()
+    updateLayout()
 
     // Listen for resize events
-    window.addEventListener('resize', updateIsMobile)
-    return () => window.removeEventListener('resize', updateIsMobile)
-  }, [])
+    window.addEventListener('resize', updateLayout)
+    return () => window.removeEventListener('resize', updateLayout)
+  }, [userRightPanePreference])
 
   const toggleLeftNav = useCallback(() => {
     setState(prev => ({
@@ -70,10 +102,17 @@ export function useLayoutState() {
   }, [])
 
   const toggleRightPane = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      rightPaneCollapsed: !prev.rightPaneCollapsed,
-    }))
+    setState(prev => {
+      const newCollapsed = !prev.rightPaneCollapsed
+      // Save user preference when manually toggling (only if screen is XL+)
+      if (window.innerWidth >= LAYOUT_BREAKPOINTS.XL) {
+        setUserRightPanePreference(newCollapsed)
+      }
+      return {
+        ...prev,
+        rightPaneCollapsed: newCollapsed,
+      }
+    })
   }, [])
 
   const setIsMobile = useCallback((isMobile: boolean) => {
