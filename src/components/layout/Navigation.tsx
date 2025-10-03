@@ -1,5 +1,14 @@
 'use client'
 
+/**
+ * Navigation Component
+ * CRO-303: Performance Optimization & Code Splitting
+ *
+ * Performance optimizations:
+ * - Prefetch links for likely next navigation
+ * - Uses Next.js Link with prefetch enabled for authenticated routes
+ */
+
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Navigation')
@@ -110,30 +119,35 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
               <div className="hidden md:flex ml-10 space-x-8">
                 <Link
                   href="/dashboard"
+                  prefetch={true}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/dashboard/children"
+                  prefetch={true}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Children
                 </Link>
                 <Link
                   href="/dashboard/recipients"
+                  prefetch={true}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Recipients
                 </Link>
                 <Link
                   href="/dashboard/groups"
+                  prefetch={true}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Groups
                 </Link>
                 <Link
                   href="/dashboard/drafts"
+                  prefetch={true}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Drafts

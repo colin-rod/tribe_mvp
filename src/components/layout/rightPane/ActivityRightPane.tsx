@@ -1,6 +1,7 @@
 /**
  * ActivityRightPane Component
  * CRO-298: Right Pane - Activity View Context
+ * CRO-303: Performance Optimization & Code Splitting
  *
  * Main right pane content for the Activity view, integrating:
  * - Filters panel with search, date range, child, and type filters
@@ -12,11 +13,16 @@
  * - Filter state syncs with URL params for shareability
  * - Debounced search input (300ms)
  * - Real-time stats updates based on filters
+ *
+ * Performance optimizations:
+ * - React.memo to prevent unnecessary re-renders
+ * - useMemo for filter objects to maintain referential equality
+ * - useCallback for event handlers
  */
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { FiltersPanel } from './FiltersPanel';
 import { QuickStatsCard } from './QuickStatsCard';
@@ -39,12 +45,12 @@ export interface ActivityRightPaneProps {
  * Right pane content for Activity feed view
  * Provides contextual filters, stats, and actions
  */
-export function ActivityRightPane({
+const ActivityRightPaneComponent = ({
   onCreateUpdate,
   onCompileDigest,
   onSelectAIPrompt,
   className,
-}: ActivityRightPaneProps) {
+}: ActivityRightPaneProps) => {
   const {
     filters,
     setDateRange,
@@ -54,6 +60,17 @@ export function ActivityRightPane({
     clearFilters,
     activeFilterCount,
   } = useActivityFilters();
+
+  // Memoize filter object to prevent unnecessary re-renders
+  const memoizedFilters = useMemo(
+    () => ({
+      dateRange: filters.dateRange,
+      childIds: filters.childIds,
+      updateTypes: filters.updateTypes,
+      searchQuery: filters.searchQuery,
+    }),
+    [filters.dateRange, filters.childIds, filters.updateTypes, filters.searchQuery]
+  );
 
   // Handle Create Update action
   const handleCreateUpdate = useCallback(() => {
@@ -105,14 +122,7 @@ export function ActivityRightPane({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Quick Stats Card */}
-        <QuickStatsCard
-          filters={{
-            dateRange: filters.dateRange,
-            childIds: filters.childIds,
-            updateTypes: filters.updateTypes,
-            searchQuery: filters.searchQuery,
-          }}
-        />
+        <QuickStatsCard filters={memoizedFilters} />
 
         {/* AI Suggestions Panel */}
         <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
@@ -125,4 +135,7 @@ export function ActivityRightPane({
       />
     </div>
   );
-}
+};
+
+// Export memoized component to prevent unnecessary re-renders
+export const ActivityRightPane = memo(ActivityRightPaneComponent);
