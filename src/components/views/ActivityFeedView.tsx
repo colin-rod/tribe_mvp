@@ -22,7 +22,6 @@ import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { UpdatesList } from '@/components/updates';
-import PersonalizedWelcome from '@/components/dashboard/PersonalizedWelcome';
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress';
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import DigestStats from '@/components/digests/DigestStats';
@@ -44,8 +43,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   const [showOnboardingProgress, setShowOnboardingProgress] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const [lastUpdateAt, setLastUpdateAt] = useState<Date | undefined>(undefined);
-  const [daysSinceStart, setDaysSinceStart] = useState(1);
 
   // Enable scroll restoration for this view
   useScrollRestoration({ viewKey: 'activity' });
@@ -152,23 +149,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
       const totalUpdates = updates.length;
       setUpdatesCreated(totalUpdates);
-
-      if (user) {
-        const userCreatedAt = new Date(user.created_at || Date.now());
-        const daysSinceStartValue = Math.max(1, Math.floor(
-          (Date.now() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24)
-        ));
-        setDaysSinceStart(daysSinceStartValue);
-
-        if (updates.length > 0) {
-          const mostRecent = updates.reduce((latest, current) =>
-            new Date(current.created_at).getTime() > new Date(latest.created_at).getTime()
-              ? current
-              : latest
-          );
-          setLastUpdateAt(new Date(mostRecent.created_at));
-        }
-      }
     } catch (error) {
       logger.errorWithStack('Error loading dashboard stats:', error as Error);
     } finally {
@@ -307,19 +287,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
           </div>
         </div>
       )}
-
-      {/* Personalized Welcome Section */}
-      <PersonalizedWelcome
-        userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
-        lastUpdateAt={lastUpdateAt}
-        updateCount={updatesCreated}
-        daysSinceStart={daysSinceStart}
-        onCreateUpdate={handleCreateUpdate}
-        onDismissReminder={(reminderId) => {
-          logger.info('Reminder dismissed:', { reminderId });
-        }}
-        className="mb-0"
-      />
 
       {/* Main content container */}
       <div className="px-4 sm:px-6 lg:px-8">
