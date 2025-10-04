@@ -123,8 +123,8 @@ export async function PUT(
     GroupCacheManager.invalidateRecipientCache(securityContext.recipient_id)
 
     // Get updated effective settings
-    // @ts-expect-error - Supabase RPC type inference issue
-    const { data: effectiveSettings } = await supabase.rpc(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: effectiveSettings } = await (supabase.rpc as any)(
       'get_effective_notification_settings',
       {
         p_recipient_id: securityContext.recipient_id,
@@ -324,8 +324,8 @@ export async function GET(
       }
 
       // Get effective settings
-      // @ts-expect-error - Supabase RPC type inference issue
-      const { data: effectiveSettings } = await supabase.rpc(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: effectiveSettings } = await (supabase.rpc as any)(
         'get_effective_notification_settings',
         {
           p_recipient_id: securityContext.recipient_id,
@@ -385,8 +385,8 @@ export async function GET(
 
       const enhancedMemberships = await Promise.all(
         (memberships || []).map(async (membership: MembershipWithGroup) => {
-          // @ts-expect-error - Supabase RPC type inference issue
-          const { data: effectiveSettings } = await supabase.rpc(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: effectiveSettings } = await (supabase.rpc as any)(
             'get_effective_notification_settings',
             {
               p_recipient_id: securityContext.recipient_id,

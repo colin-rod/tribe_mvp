@@ -251,17 +251,24 @@ export async function GET(
     type RecipientType = {
       id: string
       name?: string
+      email?: string
+      relationship?: string
+      created_at?: string
+      last_seen_at?: string
+      group_preferences?: Record<string, unknown>
     }
+
+    const typedRecipient = recipient as unknown as RecipientType
 
     return NextResponse.json({
       recipient: {
-        id: (recipient as RecipientType).id,
-        name: (recipient as RecipientType).name,
-        email: recipient.email,
-        relationship: recipient.relationship,
-        member_since: recipient.created_at,
-        last_seen: recipient.last_seen_at,
-        preferences: recipient.group_preferences || {}
+        id: typedRecipient.id,
+        name: typedRecipient.name,
+        email: typedRecipient.email,
+        relationship: typedRecipient.relationship,
+        member_since: typedRecipient.created_at,
+        last_seen: typedRecipient.last_seen_at,
+        preferences: typedRecipient.group_preferences || {}
       },
       memberships: enhancedMemberships,
       grouped_memberships: groupedMemberships,
@@ -310,6 +317,7 @@ export async function PUT(
     // Update recipient's group preferences
     const { error: updateError } = await supabase
       .from('recipients')
+      // @ts-expect-error - Supabase type inference issue with JSONB columns
       .update({
         group_preferences: {
           ...validatedData,
@@ -392,6 +400,13 @@ export async function POST(
     const supabase = createClient(cookieStore)
 
     // Check if group exists and get access settings
+    type GroupType = {
+      id: string
+      name: string
+      access_settings?: { allow_self_removal?: boolean } | null
+      is_default_group?: boolean
+    }
+
     const { data: group, error: groupError } = await supabase
       .from('recipient_groups')
       .select('id, name, access_settings, is_default_group')
@@ -405,12 +420,13 @@ export async function POST(
       )
     }
 
+    const typedGroup = group as unknown as GroupType
     let result: MembershipActionResult | null = null
 
     switch (validatedData.action) {
       case 'leave':
         // Check if group allows self-removal
-        if (group.access_settings?.allow_self_removal === false) {
+        if (typedGroup.access_settings?.allow_self_removal === false) {
           return NextResponse.json(
             { error: 'Self-removal is not allowed for this group' },
             { status: 403 }
@@ -418,9 +434,10 @@ export async function POST(
         }
 
         // Don't allow leaving default groups completely, just deactivate
-        if (group.is_default_group) {
+        if (typedGroup.is_default_group) {
           const { error } = await supabase
             .from('group_memberships')
+            // @ts-expect-error - Supabase type inference issue
             .update({
               is_active: false,
               updated_at: new Date().toISOString()
@@ -433,7 +450,7 @@ export async function POST(
           result = {
             action: 'deactivated',
             message: 'Membership deactivated. You can rejoin anytime.',
-            group_name: group.name
+            group_name: typedGroup.name
           }
         } else {
           // For custom groups, completely remove membership
@@ -448,13 +465,14 @@ export async function POST(
           result = {
             action: 'left',
             message: 'Successfully left the group.',
-            group_name: group.name
+            group_name: typedGroup.name
           }
         }
         break
 
       case 'join':
         // Check if membership already exists
+        type ExistingMembershipType = { is_active: boolean }
         const { data: existingMembership } = await supabase
           .from('group_memberships')
           .select('is_active')
@@ -463,7 +481,8 @@ export async function POST(
           .single()
 
         if (existingMembership) {
-          if (existingMembership.is_active) {
+          const typedExisting = existingMembership as unknown as ExistingMembershipType
+          if (typedExisting.is_active) {
             return NextResponse.json(
               { error: 'Already a member of this group' },
               { status: 409 }
@@ -472,6 +491,7 @@ export async function POST(
             // Reactivate membership
             const { error } = await supabase
               .from('group_memberships')
+              // @ts-expect-error - Supabase type inference issue
               .update({
                 is_active: true,
                 ...validatedData.notification_preferences,
@@ -485,13 +505,14 @@ export async function POST(
             result = {
               action: 'rejoined',
               message: 'Successfully rejoined the group.',
-              group_name: group.name
+              group_name: typedGroup.name
             }
           }
         } else {
           // Create new membership
           const { error } = await supabase
             .from('group_memberships')
+            // @ts-expect-error - Supabase type inference issue
             .insert({
               recipient_id: securityContext.recipient_id,
               group_id: validatedData.group_id,
@@ -505,7 +526,7 @@ export async function POST(
           result = {
             action: 'joined',
             message: 'Successfully joined the group.',
-            group_name: group.name
+            group_name: typedGroup.name
           }
         }
         break
@@ -516,7 +537,7 @@ export async function POST(
         result = {
           action: 'request_submitted',
           message: 'Join request submitted. Group admins will be notified.',
-          group_name: group.name
+          group_name: typedGroup.name
         }
         break
     }

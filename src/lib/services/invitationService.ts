@@ -78,6 +78,7 @@ export async function createSingleUseInvitation(
   // Create invitation
   const { data: invitation, error } = await supabase
     .from('invitations')
+    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       invitation_type: 'single_use',
@@ -100,13 +101,19 @@ export async function createSingleUseInvitation(
     throw new Error('Failed to create invitation')
   }
 
+  type InvitationRow = {
+    id: string
+  }
+
+  const typedInvitation = invitation as unknown as InvitationRow
+
   logger.info('Created single-use invitation', {
-    invitationId: invitation.id,
+    invitationId: typedInvitation.id,
     channel,
     expiresAt: expiresAt.toISOString()
   })
 
-  return invitation as Invitation
+  return invitation as unknown as Invitation
 }
 
 /**
@@ -139,6 +146,7 @@ export async function createReusableLink(
   // Create invitation (no expiration, unlimited uses)
   const { data: invitation, error } = await supabase
     .from('invitations')
+    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       invitation_type: 'reusable',
@@ -163,12 +171,18 @@ export async function createReusableLink(
     throw new Error('Failed to create reusable link')
   }
 
+  type InvitationRow = {
+    id: string
+  }
+
+  const typedInvitation = invitation as unknown as InvitationRow
+
   logger.info('Created reusable link', {
-    invitationId: invitation.id,
+    invitationId: typedInvitation.id,
     groupId: groupId || 'none'
   })
 
-  return invitation as Invitation
+  return invitation as unknown as Invitation
 }
 
 /**
@@ -183,6 +197,7 @@ export async function validateInvitationToken(
   const supabase = createClient()
 
   // Call the database function to validate
+  // @ts-expect-error - Supabase RPC type inference issue
   const { data, error } = await supabase.rpc('validate_invitation_token', {
     token_param: token
   })
@@ -192,7 +207,13 @@ export async function validateInvitationToken(
     return null
   }
 
-  if (!data || data.length === 0) {
+  type ValidationRow = {
+    parent_id?: string
+  }
+
+  const typedData = data as unknown as ValidationRow[]
+
+  if (!typedData || typedData.length === 0) {
     return {
       invitation_id: null,
       parent_id: null,
@@ -210,22 +231,27 @@ export async function validateInvitationToken(
     }
   }
 
-  const validation = data[0]
+  const validation = typedData[0] as Record<string, unknown>
 
   // Fetch parent name for display
   if (validation.parent_id) {
+    type ParentRow = {
+      name?: string
+    }
+
     const { data: parentData } = await supabase
       .from('profiles')
       .select('name')
-      .eq('id', validation.parent_id)
+      .eq('id', String(validation.parent_id))
       .single()
 
     if (parentData) {
-      validation.parent_name = parentData.name
+      const typedParent = parentData as unknown as ParentRow
+      validation.parent_name = typedParent.name
     }
   }
 
-  return validation as InvitationValidationResult
+  return validation as unknown as InvitationValidationResult
 }
 
 /**
@@ -277,8 +303,17 @@ export async function redeemInvitation(
   const preferenceToken = crypto.randomUUID() + '-' + Date.now().toString(36)
 
   // Create recipient
+  type RecipientRow = {
+    id: string
+    name?: string
+    email?: string
+    phone?: string
+    preference_token: string
+  }
+
   const { data: recipient, error: recipientError } = await supabase
     .from('recipients')
+    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       email: recipientData.email || null,
@@ -304,12 +339,20 @@ export async function redeemInvitation(
     }
   }
 
+  const typedRecipient = recipient as unknown as RecipientRow
+
   // Record redemption
+  type RedemptionRow = {
+    id: string
+    redeemed_at: string
+  }
+
   const { data: redemption, error: redemptionError } = await supabase
     .from('invitation_redemptions')
+    // @ts-expect-error - Supabase type inference issue
     .insert({
       invitation_id: invitationId,
-      recipient_id: recipient.id,
+      recipient_id: typedRecipient.id,
       redeemed_at: new Date().toISOString(),
       ip_address: recipientData.ip_address || null,
       user_agent: recipientData.user_agent || null
@@ -325,6 +368,7 @@ export async function redeemInvitation(
   // Update invitation based on type
   if (validation.invitation_type === 'single_use') {
     // Mark as used
+    // @ts-expect-error - Supabase RPC type inference issue
     const { error: updateError } = await supabase.rpc('mark_invitation_used', {
       invitation_id_param: invitationId
     })
@@ -334,6 +378,7 @@ export async function redeemInvitation(
     }
   } else {
     // Increment use count for reusable
+    // @ts-expect-error - Supabase RPC type inference issue
     const { error: updateError } = await supabase.rpc('increment_invitation_use_count', {
       invitation_id_param: invitationId
     })
@@ -343,24 +388,26 @@ export async function redeemInvitation(
     }
   }
 
+  const typedRedemption = redemption as unknown as RedemptionRow | null
+
   logger.info('Invitation redeemed successfully', {
     invitationId,
-    recipientId: recipient.id,
+    recipientId: typedRecipient.id,
     invitationType: validation.invitation_type
   })
 
   return {
     success: true,
     recipient: {
-      id: recipient.id,
-      name: recipient.name,
-      email: recipient.email,
-      phone: recipient.phone,
-      preference_token: recipient.preference_token
+      id: typedRecipient.id,
+      name: typedRecipient.name || '',
+      email: typedRecipient.email || null,
+      phone: typedRecipient.phone || null,
+      preference_token: typedRecipient.preference_token
     },
-    redemption: redemption ? {
-      id: redemption.id,
-      redeemed_at: redemption.redeemed_at
+    redemption: typedRedemption ? {
+      id: typedRedemption.id,
+      redeemed_at: typedRedemption.redeemed_at
     } : undefined
   }
 }
@@ -378,6 +425,7 @@ export async function revokeInvitation(
 ): Promise<{ success: boolean; invitation?: Invitation; error?: string }> {
   const supabase = createClient()
 
+  // @ts-expect-error - Supabase RPC type inference issue
   const { data, error } = await supabase.rpc('revoke_invitation', {
     invitation_id_param: invitationId,
     parent_id_param: parentId
@@ -458,8 +506,14 @@ export async function getUserInvitations(
   }
 
   // Add computed fields
-  const invitations: InvitationWithDetails[] = (data || []).map((inv) => ({
-    ...inv,
+  type InvRow = {
+    expires_at?: string | null
+    status?: string
+    recipient_groups?: { name?: string } | null
+  }
+
+  const invitations: InvitationWithDetails[] = ((data as unknown as InvRow[]) || []).map((inv) => ({
+    ...(inv as unknown as Record<string, unknown>),
     group_name: inv.recipient_groups?.name,
     is_expired: inv.expires_at ? new Date(inv.expires_at) < new Date() : false,
     is_valid: inv.status === 'active' && (inv.expires_at ? new Date(inv.expires_at) >= new Date() : true)
@@ -502,12 +556,21 @@ export async function getInvitationById(
     return null
   }
 
+  type InvitationDataType = {
+    recipient_groups?: { name?: string } | null
+    expires_at?: string | null
+    status?: string
+    invitation_redemptions?: unknown[]
+  }
+
+  const typedData = data as unknown as InvitationDataType
+
   return {
-    ...data,
-    group_name: data.recipient_groups?.name,
-    is_expired: data.expires_at ? new Date(data.expires_at) < new Date() : false,
-    is_valid: data.status === 'active' && (data.expires_at ? new Date(data.expires_at) >= new Date() : true),
-    redemptions: data.invitation_redemptions
+    ...(data as unknown as Record<string, unknown>),
+    group_name: typedData.recipient_groups?.name,
+    is_expired: typedData.expires_at ? new Date(typedData.expires_at) < new Date() : false,
+    is_valid: typedData.status === 'active' && (typedData.expires_at ? new Date(typedData.expires_at) >= new Date() : true),
+    redemptions: typedData.invitation_redemptions
   } as unknown as InvitationWithDetails
 }
 
@@ -541,20 +604,36 @@ export async function getInvitationStats(parentId: string): Promise<InvitationSt
   }
 
   // Calculate stats
+  type InvitationStatsRow = {
+    invitation_type?: string
+    status?: string
+  }
+
+  type RedemptionStatsRow = {
+    redeemed_at: string
+  }
+
   const totalInvitations = invitations?.length || 0
   const activeSingleUse =
-    invitations?.filter((i) => i.invitation_type === 'single_use' && i.status === 'active')
-      .length || 0
+    invitations?.filter((i) => {
+      const typedI = i as unknown as InvitationStatsRow
+      return typedI.invitation_type === 'single_use' && typedI.status === 'active'
+    }).length || 0
   const activeReusable =
-    invitations?.filter((i) => i.invitation_type === 'reusable' && i.status === 'active')
-      .length || 0
+    invitations?.filter((i) => {
+      const typedI = i as unknown as InvitationStatsRow
+      return typedI.invitation_type === 'reusable' && typedI.status === 'active'
+    }).length || 0
 
   const totalRedemptions = redemptions?.length || 0
 
   const oneWeekAgo = new Date()
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
   const redemptionsThisWeek =
-    redemptions?.filter((r) => new Date(r.redeemed_at) >= oneWeekAgo).length || 0
+    redemptions?.filter((r) => {
+      const typedR = r as unknown as RedemptionStatsRow
+      return new Date(typedR.redeemed_at) >= oneWeekAgo
+    }).length || 0
 
   // Count redemptions by channel (approximate via invitations)
   const redemptionsByChannel = {
@@ -564,9 +643,15 @@ export async function getInvitationStats(parentId: string): Promise<InvitationSt
     link: 0
   }
 
+  type InvitationType = {
+    channel?: string
+    use_count?: number
+  }
+
   invitations?.forEach((inv) => {
-    if (inv.channel && inv.use_count > 0) {
-      redemptionsByChannel[inv.channel as keyof typeof redemptionsByChannel] += inv.use_count
+    const typedInv = inv as unknown as InvitationType
+    if (typedInv.channel && (typedInv.use_count ?? 0) > 0) {
+      redemptionsByChannel[typedInv.channel as keyof typeof redemptionsByChannel] += (typedInv.use_count ?? 0)
     }
   })
 
@@ -612,9 +697,21 @@ export async function getReusableLinkStats(
     .limit(10)
 
   // Group redemptions by day
+  type RedemptionType = {
+    id: string
+    redeemed_at: string
+    recipient_id: string
+    recipients?: {
+      name?: string
+      email?: string
+      phone?: string
+    }
+  }
+
   const redemptionsByDay: Record<string, number> = {}
   redemptions?.forEach((r) => {
-    const date = new Date(r.redeemed_at).toISOString().split('T')[0]
+    const typedR = r as unknown as RedemptionType
+    const date = new Date(typedR.redeemed_at).toISOString().split('T')[0]
     redemptionsByDay[date] = (redemptionsByDay[date] || 0) + 1
   })
 
@@ -622,17 +719,20 @@ export async function getReusableLinkStats(
     invitation_id: invitationId,
     use_count: invitation.use_count,
     created_at: invitation.created_at,
-    recent_redemptions: (redemptions || []).map((r) => ({
-      id: r.id,
-      invitation_id: invitationId,
-      recipient_id: r.recipient_id,
-      redeemed_at: r.redeemed_at,
-      ip_address: null,
-      user_agent: null,
-      recipient_name: r.recipients?.name,
-      recipient_email: r.recipients?.email,
-      recipient_phone: r.recipients?.phone
-    })),
+    recent_redemptions: (redemptions || []).map((r) => {
+      const typedR = r as unknown as RedemptionType
+      return {
+        id: typedR.id,
+        invitation_id: invitationId,
+        recipient_id: typedR.recipient_id,
+        redeemed_at: typedR.redeemed_at,
+        ip_address: null,
+        user_agent: null,
+        recipient_name: typedR.recipients?.name,
+        recipient_email: typedR.recipients?.email,
+        recipient_phone: typedR.recipients?.phone
+      }
+    }),
     redemptions_by_day: Object.entries(redemptionsByDay).map(([date, count]) => ({
       date,
       count

@@ -95,6 +95,14 @@ export async function GET(
     const supabase = createClient(cookieStore)
 
     // Get recipient's current mute settings
+    type RecipientRow = {
+      id: string
+      name?: string
+      group_preferences?: Record<string, unknown>
+      notification_preferences?: NotificationPreferences
+      is_active: boolean
+    }
+
     const { data: recipient, error: recipientError } = await supabase
       .from('recipients')
       .select(`
@@ -115,6 +123,8 @@ export async function GET(
       )
     }
 
+    const typedRecipient = recipient as unknown as RecipientRow
+
     // Get group-specific mute settings from group_memberships
     let membershipQuery = supabase
       .from('group_memberships')
@@ -130,7 +140,7 @@ export async function GET(
           is_default_group
         )
       `)
-      .eq('recipient_id', recipient.id)
+      .eq('recipient_id', typedRecipient.id)
       .eq('is_active', true)
 
     if (validatedQuery.group_id) {
@@ -176,8 +186,8 @@ export async function GET(
     })
 
     // Global mute status
-    const globalMuteSettings = recipient.notification_preferences?.mute_settings || {}
-    const globalMuteUntil = globalMuteSettings.mute_until ? new Date(globalMuteSettings.mute_until) : null
+    const globalMuteSettings = (typedRecipient.notification_preferences?.mute_settings as Record<string, unknown> | undefined) || {}
+    const globalMuteUntil = globalMuteSettings.mute_until ? new Date(String(globalMuteSettings.mute_until)) : null
     const isGloballyMuted = globalMuteUntil && globalMuteUntil > now
 
     // Calculate summary
@@ -196,8 +206,8 @@ export async function GET(
 
     return NextResponse.json({
       recipient: {
-        id: recipient.id,
-        name: recipient.name
+        id: typedRecipient.id,
+        name: typedRecipient.name
       },
       global_mute: {
         is_muted: isGloballyMuted,
@@ -303,6 +313,7 @@ export async function POST(
           // Global mute - update recipient's notification preferences
           const { error } = await supabase
             .from('recipients')
+            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
               notification_preferences: {
                 ...(await getNotificationPreferences(supabase, securityContext.recipient_id)),
@@ -348,6 +359,7 @@ export async function POST(
           for (const group of validGroups as unknown as Array<{ group_id: string; recipient_groups: { name: string } }>) {
             const { error } = await supabase
               .from('group_memberships')
+              // @ts-expect-error - Supabase type inference issue
               .update({
                 mute_until: muteUntil?.toISOString() || null,
                 mute_settings: muteSettings
@@ -385,6 +397,7 @@ export async function POST(
 
           const { error } = await supabase
             .from('recipients')
+            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
               notification_preferences: currentPrefs
             })
@@ -403,6 +416,7 @@ export async function POST(
           // Unmute specific groups
           const { error } = await supabase
             .from('group_memberships')
+            // @ts-expect-error - Supabase type inference issue
             .update({
               mute_until: null,
               mute_settings: null
@@ -437,6 +451,7 @@ export async function POST(
         if (validatedData.scope === 'all') {
           const { error } = await supabase
             .from('recipients')
+            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
               notification_preferences: {
                 ...(await getNotificationPreferences(supabase, securityContext.recipient_id)),
@@ -457,6 +472,7 @@ export async function POST(
 
           const { error } = await supabase
             .from('group_memberships')
+            // @ts-expect-error - Supabase type inference issue
             .update({
               mute_until: muteUntil?.toISOString(),
               mute_settings: snoozeSettings
@@ -538,6 +554,7 @@ export async function DELETE(
     const [globalResult, groupResult] = await Promise.all([
       supabase
         .from('recipients')
+        // @ts-expect-error - Supabase type inference issue with JSONB columns
         .update({
           notification_preferences: currentPrefs
         })
@@ -545,6 +562,7 @@ export async function DELETE(
 
       supabase
         .from('group_memberships')
+        // @ts-expect-error - Supabase type inference issue
         .update({
           mute_until: null,
           mute_settings: null

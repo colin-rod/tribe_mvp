@@ -58,9 +58,16 @@ export class LikesService {
         throw this.createError(LikeErrorType.UPDATE_NOT_FOUND, updateId, 'No data returned from toggle operation')
       }
 
+      type ToggleResult = {
+        is_liked: boolean
+        like_count: number
+      }
+
+      const typedData = data as unknown as ToggleResult
+
       return {
-        is_liked: data.is_liked,
-        like_count: data.like_count
+        is_liked: typedData.is_liked,
+        like_count: typedData.like_count
       }
     } catch (error) {
       if (error instanceof Error && 'type' in error) {
@@ -104,9 +111,15 @@ export class LikesService {
         throw this.createError(LikeErrorType.UNKNOWN_ERROR, updateId, likeError.message)
       }
 
+      type UpdateDataType = {
+        like_count: number
+      }
+
+      const typedUpdateData = updateData as unknown as UpdateDataType
+
       return {
         isLiked: !!likeData,
-        likeCount: updateData.like_count || 0
+        likeCount: typedUpdateData.like_count || 0
       }
     } catch (error) {
       if (error instanceof Error && 'type' in error) {

@@ -80,8 +80,14 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message), hasMore: false }
       }
 
-      const hasMore = data.length > limit
-      const updates = hasMore ? data.slice(0, -1) : data
+      type UpdateType = {
+        created_at: string
+        id: string
+      }
+
+      const typedData = data as unknown as UpdateType[]
+      const hasMore = typedData.length > limit
+      const updates = hasMore ? typedData.slice(0, -1) : typedData
       const nextCursor = hasMore && updates.length > 0
         ? { createdAt: updates[updates.length - 1].created_at, id: updates[updates.length - 1].id }
         : undefined
@@ -93,7 +99,7 @@ export class DashboardClient {
       })
 
       return {
-        data: updates,
+        data: updates as unknown as UpdateWithChild[],
         error: null,
         hasMore,
         nextCursor
@@ -137,9 +143,10 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message) }
       }
 
-      logger.debug('Successfully fetched timeline updates', { count: data.length })
+      const typedData = (data || []) as unknown as TimelineUpdate[]
+      logger.debug('Successfully fetched timeline updates', { count: typedData.length })
 
-      return { data: data || [], error: null }
+      return { data: typedData, error: null }
     } catch (err) {
       logger.errorWithStack('Unexpected error fetching timeline updates', err as Error)
       return { data: [], error: err as Error }
@@ -211,12 +218,18 @@ export class DashboardClient {
         return { data: null, error: new Error('No result returned from toggle like') }
       }
 
-      logger.debug('Successfully toggled update like', data)
+      type LikeResult = {
+        is_liked: boolean
+        like_count: number
+      }
+
+      const typedData = data as unknown as LikeResult
+      logger.debug('Successfully toggled update like', typedData)
 
       return {
         data: {
-          isLiked: data.is_liked,
-          likeCount: data.like_count
+          isLiked: typedData.is_liked,
+          likeCount: typedData.like_count
         },
         error: null
       }
@@ -256,14 +269,22 @@ export class DashboardClient {
         return { data: null, error: new Error('No result returned from add comment') }
       }
 
-      logger.debug('Successfully added update comment', data)
+      type CommentResult = {
+        id: string
+        content: string
+        created_at: string
+        comment_count: number
+      }
+
+      const typedData = data as unknown as CommentResult
+      logger.debug('Successfully added update comment', typedData)
 
       return {
         data: {
-          id: data.id,
-          content: data.content,
-          createdAt: data.created_at,
-          commentCount: data.comment_count
+          id: typedData.id,
+          content: typedData.content,
+          createdAt: typedData.created_at,
+          commentCount: typedData.comment_count
         },
         error: null
       }
@@ -302,7 +323,15 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message) }
       }
 
-      const likes = (data || []).map((like: Record<string, unknown>) => ({
+      type LikeType = {
+        id: string
+        parent_id: string
+        parent_name: string
+        created_at: string
+      }
+
+      const typedData = (data || []) as unknown as LikeType[]
+      const likes = typedData.map((like) => ({
         id: like.id,
         parentId: like.parent_id,
         parentName: like.parent_name,
@@ -353,7 +382,17 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message) }
       }
 
-      const comments = (data || []).map((comment: Record<string, unknown>) => ({
+      type CommentType = {
+        id: string
+        parent_id: string
+        parent_name: string
+        content: string
+        created_at: string
+        updated_at: string
+      }
+
+      const typedData = (data || []) as unknown as CommentType[]
+      const comments = typedData.map((comment) => ({
         id: comment.id,
         parentId: comment.parent_id,
         parentName: comment.parent_name,
@@ -381,6 +420,7 @@ export class DashboardClient {
     try {
       logger.debug('Incrementing view count', { updateId, parentId })
 
+      // @ts-expect-error - Supabase RPC type inference issue
       const { error } = await this.supabase.rpc('increment_update_view_count', {
         p_update_id: updateId,
         p_parent_id: parentId
@@ -465,10 +505,11 @@ export class DashboardClient {
           const comment = payload.new
           if (comment) {
             // Verify this comment belongs to an update owned by the parent
+            const commentData = comment as Record<string, unknown>
             const { data: update } = await this.supabase
               .from('updates')
               .select('parent_id')
-              .eq('id', (comment as Record<string, unknown>).update_id)
+              .eq('id', String(commentData.update_id || ''))
               .single<{ parent_id: string }>()
 
             if (update?.parent_id === parentId) {
@@ -519,7 +560,7 @@ export class DashboardClient {
         offset: options.offset || 0
       }
     ).then(result => ({
-      data: result.data,
+      data: result.data as UpdateWithChild[],
       error: result.error
     }))
   }
@@ -550,9 +591,9 @@ export const dashboardQueries = {
     parentId: string,
     searchQuery: string,
     debounceMs: number = 300
-  ) {
+  ): Promise<{ data: UpdateWithChild[]; error: Error | null }> {
     // Simple debounce implementation
-    return new Promise((resolve) => {
+    return new Promise<{ data: UpdateWithChild[]; error: Error | null }>((resolve) => {
       setTimeout(async () => {
         const result = await dashboardClient.searchUpdates(parentId, searchQuery)
         resolve(result)
