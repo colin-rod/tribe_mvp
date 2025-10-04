@@ -10,7 +10,6 @@ import {
   UsersIcon,
   Squares2X2Icon,
   DocumentTextIcon,
-  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
 export interface NavItem {
@@ -57,11 +56,5 @@ export const navigationItems: NavItem[] = [
     label: 'Drafts',
     icon: DocumentTextIcon,
     href: '/dashboard/drafts',
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: Cog6ToothIcon,
-    href: '/dashboard/settings',
   },
 ];
