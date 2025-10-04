@@ -24,7 +24,6 @@ import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/o
 import { UpdatesList } from '@/components/updates';
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress';
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
-import DigestStats from '@/components/digests/DigestStats';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
@@ -338,7 +337,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                 </div>
 
                 {/* Filters Panel */}
-                <div className="mb-6 border-b border-neutral-200 pb-6">
+                <div className="mb-4">
                   <FiltersPanel
                     searchQuery={filters.searchQuery}
                     dateRange={filters.dateRange}
@@ -369,13 +368,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
               </div>
             </Card>
           </div>
-
-          {/* Digest System Stats */}
-          {memoizedStats.hasData && (
-            <div className="mb-8">
-              <DigestStats />
-            </div>
-          )}
         </div>
       </div>
 

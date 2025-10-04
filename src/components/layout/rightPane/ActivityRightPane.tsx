@@ -4,6 +4,7 @@
  * CRO-303: Performance Optimization & Code Splitting
  *
  * Main right pane content for the Activity view, integrating:
+ * - Digest System stats
  * - AI suggestions panel
  * - Quick actions (Create Update, Compile Digest)
  *
@@ -15,9 +16,15 @@
 'use client';
 
 import { useCallback, memo } from 'react';
+import dynamic from 'next/dynamic';
 import { AISuggestionsPanel, AIPromptSuggestion } from './AISuggestionsPanel';
 import { QuickActionsPanel } from './QuickActionsPanel';
 import { cn } from '@/lib/utils';
+
+// Lazy load DigestStats component
+const DigestStats = dynamic(() => import('@/components/digests/DigestStats'), {
+  loading: () => <div className="h-40 bg-neutral-100 animate-pulse rounded-lg" />,
+});
 
 export interface ActivityRightPaneProps {
   /** Callback when Create Update is clicked */
@@ -75,6 +82,9 @@ const ActivityRightPaneComponent = ({
     >
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Digest System Stats */}
+        <DigestStats />
+
         {/* AI Suggestions Panel */}
         <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
       </div>
