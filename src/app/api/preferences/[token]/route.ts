@@ -43,7 +43,7 @@ export async function GET(
     const supabase = createClient(cookieStore)
 
     // Set token in session for RLS policies (returns void, so we don't check result)
-    // @ts-ignore - RPC type inference issue
+    // @ts-expect-error - RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
@@ -225,7 +225,7 @@ export async function PUT(
     const supabase = createClient(cookieStore)
 
     // Set token for RLS policies
-    // @ts-ignore - RPC type inference issue
+    // @ts-expect-error - RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
@@ -289,7 +289,7 @@ export async function PUT(
 
       const { error: legacyError } = await supabase
         .from('recipients')
-        // @ts-ignore - Supabase type inference issue with joined tables
+        // @ts-expect-error - Supabase type inference issue with joined tables
         .update(legacyUpdate as {
           frequency?: string
           preferred_channels?: string[]
@@ -343,7 +343,7 @@ export async function PUT(
             // Reset to group defaults
             const { error } = await supabase
               .from('group_memberships')
-              // @ts-ignore - Supabase type inference issue
+              // @ts-expect-error - Supabase type inference issue
               .update({
                 notification_frequency: null,
                 preferred_channels: null,
@@ -370,7 +370,7 @@ export async function PUT(
             if (Object.keys(groupUpdate).length > 0) {
               const { error } = await supabase
                 .from('group_memberships')
-                // @ts-ignore - Supabase type inference issue
+                // @ts-expect-error - Supabase type inference issue
                 .update(groupUpdate as {
                   notification_frequency?: string
                   preferred_channels?: string[]
@@ -412,7 +412,7 @@ export async function PUT(
 
       const { error: notificationError } = await supabase
         .from('recipients')
-        // @ts-ignore - Supabase type inference issue
+        // @ts-expect-error - Supabase type inference issue
         .update({
           notification_preferences: updatedNotificationPrefs as Record<string, unknown>
         })

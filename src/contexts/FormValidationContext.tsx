@@ -160,7 +160,7 @@ export function FormValidationProvider<T extends Record<string, unknown>>({
         validateField(field)
       }
     },
-    [validateOnBlur]
+    [validateOnBlur, validateField]
   )
 
   // Validate single field
@@ -193,7 +193,7 @@ export function FormValidationProvider<T extends Record<string, unknown>>({
         setIsValidating(false)
       }
     },
-    [validationSchema, values]
+    [validationSchema, values, setFieldError, clearFieldError]
   )
 
   // Validate entire form

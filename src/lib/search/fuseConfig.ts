@@ -3,7 +3,7 @@
  * CRO-300: Search Functionality in Top Bar
  */
 
-import Fuse, { IFuseOptions } from 'fuse.js';
+import { IFuseOptions } from 'fuse.js';
 
 export interface SearchableItem {
   id: string;

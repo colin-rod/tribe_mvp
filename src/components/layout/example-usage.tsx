@@ -36,7 +36,6 @@ function ExampleLeftNav() {
 
       <ul className="space-y-2">
         <li><a href="/dashboard" className="block p-2 rounded hover:bg-neutral-100">Dashboard</a></li>
-        <li><a href="/dashboard/updates" className="block p-2 rounded hover:bg-neutral-100">Updates</a></li>
         <li><a href="/dashboard/children" className="block p-2 rounded hover:bg-neutral-100">Children</a></li>
         <li><a href="/dashboard/recipients" className="block p-2 rounded hover:bg-neutral-100">Recipients</a></li>
       </ul>

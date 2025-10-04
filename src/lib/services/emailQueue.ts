@@ -521,13 +521,22 @@ export class EmailQueueService {
     }
 
     // Remove from DLQ and re-add to main queue
-    const { originalJobId, errorCategory: _errorCategory, errorMessage: _errorMessage, attemptsMade: _attemptsMade, failedAt: _failedAt, ...emailData } = dlqJob.data as EmailJobData & {
+    const { originalJobId, errorCategory, errorMessage, attemptsMade, failedAt, ...emailData } = dlqJob.data as EmailJobData & {
       originalJobId?: string
       errorCategory?: EmailErrorCategory
       errorMessage?: string
       attemptsMade?: number
       failedAt?: string
     }
+
+    // Log the retry information
+    logger.info('Retrying dead letter job', {
+      originalJobId,
+      errorCategory,
+      errorMessage,
+      attemptsMade,
+      failedAt
+    })
 
     const newJob = await this.addEmail(emailData)
     await dlqJob.remove()

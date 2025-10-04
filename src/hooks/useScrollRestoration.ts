@@ -108,10 +108,11 @@ export function useScrollRestoration({
     container.addEventListener('scroll', handleScroll, { passive: true });
 
     // Cleanup: save final position and remove listener
+    const scrollPositionsRef = scrollPositions.current;
     return () => {
       container.removeEventListener('scroll', handleScroll);
       const position = getCurrentScrollPosition();
-      scrollPositions.current.set(viewKey, position);
+      scrollPositionsRef.set(viewKey, position);
     };
   }, [viewKey, enabled, scrollContainer]);
 

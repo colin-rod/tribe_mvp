@@ -52,7 +52,7 @@ export async function PUT(
     const supabase = createClient(cookieStore)
 
     // Set token in session for RLS policies
-    // @ts-ignore - RPC type inference issue
+    // @ts-expect-error - RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
@@ -107,7 +107,7 @@ export async function PUT(
     // Update group membership preferences
     const { error: updateError } = await supabase
       .from('group_memberships')
-      // @ts-ignore - Supabase type inference issue
+      // @ts-expect-error - Supabase type inference issue
       .update(updateData)
       .eq('id', typedMembership.id)
 
