@@ -2,6 +2,7 @@
 
 import { useLayout } from '@/contexts/LayoutContext'
 import { NavigationProvider } from '@/contexts/NavigationContext'
+import { ViewSelectionProvider } from '@/contexts/ViewSelectionContext'
 import { TopBar } from './TopBar'
 import { RightPane } from './RightPane'
 import { LAYOUT_DIMENSIONS, LAYOUT_Z_INDEX } from '@/types/layout'
@@ -35,17 +36,19 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
   if (isMobile) {
     return (
       <NavigationProvider>
-        <div className="h-screen flex flex-col bg-neutral-50">
-          <TopBar />
-          <main
-            className="flex-1 overflow-auto"
-            style={{
-              marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-            }}
-          >
-            {children}
-          </main>
-        </div>
+        <ViewSelectionProvider>
+          <div className="h-screen flex flex-col bg-neutral-50">
+            <TopBar />
+            <main
+              className="flex-1 overflow-auto"
+              style={{
+                marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
+              }}
+            >
+              {children}
+            </main>
+          </div>
+        </ViewSelectionProvider>
       </NavigationProvider>
     )
   }
@@ -53,53 +56,55 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
   // Desktop 3-pane layout
   return (
     <NavigationProvider>
-      <div className="h-screen flex flex-col bg-neutral-50">
-        <TopBar />
+      <ViewSelectionProvider>
+        <div className="h-screen flex flex-col bg-neutral-50">
+          <TopBar />
 
-        <div
-          className="flex-1 grid overflow-hidden"
-          style={{
-            marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-            gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr ${rightPaneCollapsed ? '0px' : 'auto'}`,
-            gridTemplateAreas: '"nav main sidebar"',
-          }}
-        >
-          {/* Left Navigation */}
-          {!leftNavCollapsed && leftNav && (
-            <aside
-              className="border-r border-neutral-200 bg-white overflow-y-auto"
-              style={{
-                gridArea: 'nav',
-                zIndex: LAYOUT_Z_INDEX.LEFT_NAV,
-              }}
-            >
-              {leftNav}
-            </aside>
-          )}
-
-          {/* Main Content */}
-          <main
-            className="overflow-y-auto"
+          <div
+            className="flex-1 grid overflow-hidden"
             style={{
-              gridArea: 'main',
+              marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
+              gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr ${rightPaneCollapsed ? '0px' : 'auto'}`,
+              gridTemplateAreas: '"nav main sidebar"',
             }}
           >
-            {children}
-          </main>
+            {/* Left Navigation */}
+            {!leftNavCollapsed && leftNav && (
+              <aside
+                className="border-r border-neutral-200 bg-white overflow-y-auto"
+                style={{
+                  gridArea: 'nav',
+                  zIndex: LAYOUT_Z_INDEX.LEFT_NAV,
+                }}
+              >
+                {leftNav}
+              </aside>
+            )}
 
-          {/* Right Sidebar */}
-          {rightPane && (
-            <div
+            {/* Main Content */}
+            <main
+              className="overflow-y-auto"
               style={{
-                gridArea: 'sidebar',
-                zIndex: LAYOUT_Z_INDEX.RIGHT_PANE,
+                gridArea: 'main',
               }}
             >
-              <RightPane>{rightPane}</RightPane>
-            </div>
-          )}
+              {children}
+            </main>
+
+            {/* Right Sidebar */}
+            {rightPane && (
+              <div
+                style={{
+                  gridArea: 'sidebar',
+                  zIndex: LAYOUT_Z_INDEX.RIGHT_PANE,
+                }}
+              >
+                <RightPane>{rightPane}</RightPane>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ViewSelectionProvider>
     </NavigationProvider>
   )
 }

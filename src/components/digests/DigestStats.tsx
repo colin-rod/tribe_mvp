@@ -42,121 +42,106 @@ export default function DigestStats() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <SparklesIcon className="w-5 h-5 text-orange-500" />
+          <CardTitle className="flex items-center space-x-2 text-base">
+            <SparklesIcon className="w-4 h-4 text-orange-500" />
             <span>Digest System</span>
           </CardTitle>
           {canCompileDigest && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
               Ready to compile
             </span>
           )}
         </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <CardContent className="pt-0">
+        {/* Compact Stats Grid */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
           {/* Drafts Count */}
-          <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100">
-            <DocumentTextIcon className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-neutral-900">
+          <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100">
+            <DocumentTextIcon className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-neutral-900">
               {summary?.total_drafts || 0}
             </p>
-            <p className="text-sm text-neutral-600">
+            <p className="text-xs text-neutral-600">
               Draft{(summary?.total_drafts || 0) !== 1 ? 's' : ''}
             </p>
             {(summary?.ready_count || 0) > 0 && (
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-green-600 mt-0.5 font-medium">
                 {summary?.ready_count} ready
               </p>
             )}
           </div>
 
           {/* Pending Digests */}
-          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-            <ClockIcon className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-neutral-900">
+          <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+            <ClockIcon className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-neutral-900">
               {stats?.pending_review || 0}
             </p>
-            <p className="text-sm text-neutral-600">Pending Review</p>
+            <p className="text-xs text-neutral-600">Pending Review</p>
           </div>
 
           {/* Sent Digests */}
-          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-100">
-            <CheckCircleIcon className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-neutral-900">
+          <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-100">
+            <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-neutral-900">
               {stats?.sent_this_month || 0}
             </p>
-            <p className="text-sm text-neutral-600">Sent This Month</p>
+            <p className="text-xs text-neutral-600">Sent This Month</p>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="space-y-3">
-          {canCompileDigest ? (
-            <Link href="/dashboard/digests/compile" className="block">
-              <Button variant="success" className="w-full">
-                <SparklesIcon className="w-5 h-5 mr-2" />
-                Compile Digest Now
+        {/* Compile Digest Action */}
+        {canCompileDigest && (
+          <Link href="/dashboard/digests/compile" className="block mb-3">
+            <Button variant="success" className="w-full" size="sm">
+              <SparklesIcon className="w-4 h-4 mr-2" />
+              Compile Digest Now
+            </Button>
+          </Link>
+        )}
+
+        {/* Additional Info */}
+        {!canCompileDigest && hasDrafts && (
+          <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 text-center mb-3">
+            <p className="text-xs text-neutral-600 mb-2">
+              Mark drafts as ready to compile
+            </p>
+            <Link href="/dashboard/drafts">
+              <Button variant="outline" size="sm" className="text-xs h-7">
+                <PencilSquareIcon className="w-3.5 h-3.5 mr-1.5" />
+                View Drafts
               </Button>
             </Link>
-          ) : hasDrafts ? (
-            <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 text-center">
-              <p className="text-sm text-neutral-600 mb-2">
-                Mark drafts as ready to compile a digest
-              </p>
-              <Link href="/dashboard/drafts">
-                <Button variant="outline" size="sm">
-                  <PencilSquareIcon className="w-4 h-4 mr-2" />
-                  View Drafts
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100 text-center">
-              <SparklesIcon className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-              <h4 className="font-medium text-neutral-900 mb-1">
-                New Workflow Available!
-              </h4>
-              <p className="text-sm text-neutral-600 mb-3">
-                Capture moments as drafts, then compile personalized digests for your recipients
-              </p>
-              <Link href="/dashboard/drafts">
-                <Button variant="primary" size="sm">
-                  <PencilSquareIcon className="w-4 h-4 mr-2" />
-                  Start Creating Drafts
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          {hasSentDigests && stats?.last_sent_at && (
-            <p className="text-xs text-neutral-500 text-center">
-              Last sent: {new Date(stats.last_sent_at).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-
-        {/* Stats Summary */}
-        {hasSentDigests && stats && (
-          <div className="mt-6 pt-6 border-t border-neutral-200">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {stats.average_updates_per_digest.toFixed(1)}
-                </p>
-                <p className="text-xs text-neutral-600">Avg Updates/Digest</p>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-neutral-900">
-                  {stats.average_recipients_per_digest.toFixed(1)}
-                </p>
-                <p className="text-xs text-neutral-600">Avg Recipients/Digest</p>
-              </div>
-            </div>
           </div>
+        )}
+
+        {!canCompileDigest && !hasDrafts && (
+          <div className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100 text-center mb-3">
+            <SparklesIcon className="w-6 h-6 text-orange-500 mx-auto mb-1.5" />
+            <p className="text-xs font-medium text-neutral-900 mb-1">
+              New Workflow Available!
+            </p>
+            <p className="text-xs text-neutral-600 mb-2">
+              Capture moments as drafts, then compile digests
+            </p>
+            <Link href="/dashboard/drafts">
+              <Button variant="primary" size="sm" className="text-xs h-7">
+                <PencilSquareIcon className="w-3.5 h-3.5 mr-1.5" />
+                Start Creating
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Last Sent Info */}
+        {hasSentDigests && stats?.last_sent_at && (
+          <p className="text-xs text-neutral-500 text-center">
+            Last sent: {new Date(stats.last_sent_at).toLocaleDateString()}
+          </p>
         )}
       </CardContent>
     </Card>
