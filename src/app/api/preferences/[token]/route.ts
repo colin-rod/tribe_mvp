@@ -105,8 +105,8 @@ export async function GET(
     if (includeMuteStatus) {
       try {
         // Check global mute status
-        const globalMuteSettings = recipient.notification_preferences?.mute_settings
-        const globalMuteUntil = globalMuteSettings?.mute_until ? new Date(globalMuteSettings.mute_until) : null
+        const globalMuteSettings = (recipient.notification_preferences as Record<string, unknown> | null)?.mute_settings as Record<string, unknown> | undefined
+        const globalMuteUntil = globalMuteSettings?.mute_until ? new Date(globalMuteSettings.mute_until as string) : null
         const isGloballyMuted = globalMuteUntil && globalMuteUntil > new Date()
 
         // Check group-specific mutes
@@ -138,7 +138,7 @@ export async function GET(
 
         enhancedData.mute_status = {
           is_globally_muted: isGloballyMuted,
-          global_mute_until: globalMuteSettings?.mute_until || null,
+          global_mute_until: (globalMuteSettings?.mute_until as string) || null,
           active_group_mutes: activeGroupMutes.length,
           group_mutes: activeGroupMutes.map(m => ({
             group_id: m.group_id,

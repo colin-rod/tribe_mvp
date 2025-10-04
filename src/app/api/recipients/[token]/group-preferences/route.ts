@@ -123,6 +123,7 @@ export async function PUT(
     GroupCacheManager.invalidateRecipientCache(securityContext.recipient_id)
 
     // Get updated effective settings
+    // @ts-expect-error - Supabase RPC type inference issue
     const { data: effectiveSettings } = await supabase.rpc(
       'get_effective_notification_settings',
       {
@@ -188,6 +189,7 @@ export async function DELETE(
     const supabase = createClient(cookieStore)
 
     // Set token in session for RLS policies
+    // @ts-expect-error - Supabase RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
@@ -211,13 +213,14 @@ export async function DELETE(
     // Reset to group defaults by clearing custom settings
     const { error: updateError } = await supabase
       .from('group_memberships')
+      // @ts-expect-error - Supabase type inference issue
       .update({
         notification_frequency: null,
         preferred_channels: null,
         content_types: null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', membership.id)
+      .eq('id', (membership as { id: string }).id)
 
     if (updateError) {
       logger.errorWithStack('Error resetting group preferences:', updateError as Error)
@@ -244,8 +247,8 @@ export async function DELETE(
     return NextResponse.json({
       message: 'Group preferences reset to defaults successfully',
       effective_settings: {
-        frequency: group?.default_frequency || 'every_update',
-        channels: group?.default_channels || ['email'],
+        frequency: (group as { default_frequency?: string } | null)?.default_frequency || 'every_update',
+        channels: (group as { default_channels?: string[] } | null)?.default_channels || ['email'],
         content_types: ['photos', 'text', 'milestones'],
         source: 'group_default'
       }
@@ -321,6 +324,7 @@ export async function GET(
       }
 
       // Get effective settings
+      // @ts-expect-error - Supabase RPC type inference issue
       const { data: effectiveSettings } = await supabase.rpc(
         'get_effective_notification_settings',
         {
@@ -329,13 +333,19 @@ export async function GET(
         }
       )
 
+      type MembershipType = {
+        notification_frequency?: string | null
+        preferred_channels?: string[] | null
+        content_types?: string[] | null
+      }
+
       return NextResponse.json({
         membership,
         effective_settings: effectiveSettings,
         has_custom_settings: !!(
-          membership.notification_frequency ||
-          membership.preferred_channels ||
-          membership.content_types
+          (membership as MembershipType).notification_frequency ||
+          (membership as MembershipType).preferred_channels ||
+          (membership as MembershipType).content_types
         )
       })
     } else {
@@ -365,8 +375,17 @@ export async function GET(
       }
 
       // Enhance with effective settings
+      type MembershipWithGroup = {
+        group_id: string
+        notification_frequency?: string | null
+        preferred_channels?: string[] | null
+        content_types?: string[] | null
+        recipient_groups: { is_default_group?: boolean }
+      }
+
       const enhancedMemberships = await Promise.all(
-        (memberships || []).map(async (membership) => {
+        (memberships || []).map(async (membership: MembershipWithGroup) => {
+          // @ts-expect-error - Supabase RPC type inference issue
           const { data: effectiveSettings } = await supabase.rpc(
             'get_effective_notification_settings',
             {
@@ -391,9 +410,9 @@ export async function GET(
         memberships: enhancedMemberships,
         summary: {
           total_groups: enhancedMemberships.length,
-          groups_with_custom_settings: enhancedMemberships.filter(m => m.has_custom_settings).length,
-          default_groups: enhancedMemberships.filter(m => m.recipient_groups.is_default_group).length,
-          custom_groups: enhancedMemberships.filter(m => !m.recipient_groups.is_default_group).length
+          groups_with_custom_settings: enhancedMemberships.filter((m: { has_custom_settings: boolean }) => m.has_custom_settings).length,
+          default_groups: enhancedMemberships.filter((m: MembershipWithGroup & { has_custom_settings: boolean }) => m.recipient_groups.is_default_group).length,
+          custom_groups: enhancedMemberships.filter((m: MembershipWithGroup & { has_custom_settings: boolean }) => !m.recipient_groups.is_default_group).length
         }
       })
     }

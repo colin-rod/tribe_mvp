@@ -43,6 +43,7 @@ export class LikesService {
 
       // Call the database function that handles the toggle logic
       const { data, error } = await this.supabase
+        // @ts-expect-error - Supabase RPC type inference issue
         .rpc('toggle_update_like', {
           p_update_id: updateId,
           p_parent_id: user.id
@@ -127,6 +128,7 @@ export class LikesService {
 
       // Use the database function to get likes with parent info
       const { data, error } = await this.supabase
+        // @ts-expect-error - Supabase RPC type inference issue
         .rpc('get_update_likes', {
           p_update_id: updateId,
           p_parent_id: user.id

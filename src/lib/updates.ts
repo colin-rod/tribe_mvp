@@ -141,7 +141,8 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
 
   const { data, error} = await supabase
     .from('updates')
-    .insert({
+    // @ts-expect-error - Supabase type inference issue
+      .insert({
       parent_id: user.id,
       child_id: updateData.child_id,
       content: updateData.content,
@@ -239,7 +240,8 @@ export async function updateUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updates)
+    // @ts-expect-error - Supabase type inference issue
+      .update(updates)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
@@ -317,7 +319,8 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
 
   const { data, error } = await supabase
     .from('updates')
-    .update({
+    // @ts-expect-error - Supabase type inference issue
+      .update({
       distribution_status: 'sent' as const,
       sent_at: new Date().toISOString()
     })
@@ -345,7 +348,8 @@ export async function updateUpdateRecipients(
 
   const { data, error } = await supabase
     .from('updates')
-    .update({
+    // @ts-expect-error - Supabase type inference issue
+      .update({
       suggested_recipients: suggestedRecipients,
       confirmed_recipients: confirmedRecipients
     })
@@ -372,7 +376,8 @@ export async function updateUpdateAIAnalysis(
 
   const { data, error } = await supabase
     .from('updates')
-    .update({
+    // @ts-expect-error - Supabase type inference issue
+      .update({
       ai_analysis: aiAnalysis as Record<string, unknown>
     })
     .eq('id', updateId)
@@ -398,7 +403,8 @@ export async function updateUpdateMediaUrls(
 
   const { data, error } = await supabase
     .from('updates')
-    .update({
+    // @ts-expect-error - Supabase type inference issue
+      .update({
       media_urls: mediaUrls
     })
     .eq('id', updateId)
@@ -474,7 +480,8 @@ export async function scheduleUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    .update({
+    // @ts-expect-error - Supabase type inference issue
+      .update({
       scheduled_for: scheduledFor.toISOString(),
       distribution_status: 'scheduled' as const
     })
@@ -537,7 +544,8 @@ export async function updateUpdateContent(
 
   const { data, error } = await supabase
     .from('updates')
-    .update(updateData)
+    // @ts-expect-error - Supabase type inference issue
+      .update(updateData)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()

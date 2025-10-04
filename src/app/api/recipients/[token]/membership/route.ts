@@ -106,6 +106,7 @@ export async function GET(
     const supabase = createClient(cookieStore)
 
     // Set token in session for RLS policies
+    // @ts-expect-error - Supabase RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
@@ -159,7 +160,7 @@ export async function GET(
           created_at
         )
       `)
-      .eq('recipient_id', recipient.id)
+      .eq('recipient_id', (recipient as { id: string }).id)
 
     if (!includeInactive) {
       membershipQuery = membershipQuery.eq('is_active', true)
@@ -189,7 +190,7 @@ export async function GET(
           ),
           effective_settings: await getEffectiveSettings(
             supabase,
-            recipient.id,
+            (recipient as { id: string }).id,
             membership.group_id,
             membership
           )
@@ -218,7 +219,7 @@ export async function GET(
 
           enhanced.recent_activity = {
             update_count: recentUpdates?.length || 0,
-            last_update: recentUpdates?.[0]?.created_at || null,
+            last_update: (recentUpdates?.[0] as { created_at: string } | undefined)?.created_at || null,
             updates: recentUpdates || []
           }
         }
@@ -236,7 +237,7 @@ export async function GET(
       custom_groups: enhancedMemberships.filter(m => !m.group.is_default_group).length,
       groups_with_custom_settings: enhancedMemberships.filter(m => m.has_custom_settings).length,
       admin_roles: enhancedMemberships.filter(m => m.role === 'admin').length,
-      preferences: recipient.group_preferences || {}
+      preferences: (recipient as { group_preferences?: Record<string, unknown> }).group_preferences || {}
     }
 
     // Group memberships by type for better organization
@@ -247,10 +248,15 @@ export async function GET(
       inactive_memberships: enhancedMemberships.filter(m => !m.is_active)
     }
 
+    type RecipientType = {
+      id: string
+      name?: string
+    }
+
     return NextResponse.json({
       recipient: {
-        id: recipient.id,
-        name: recipient.name,
+        id: (recipient as RecipientType).id,
+        name: (recipient as RecipientType).name,
         email: recipient.email,
         relationship: recipient.relationship,
         member_since: recipient.created_at,

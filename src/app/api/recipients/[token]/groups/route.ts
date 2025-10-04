@@ -36,6 +36,7 @@ export async function GET(
     // Set token in session for RLS policies
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
+    // @ts-expect-error - Supabase RPC type inference issue
     await supabase.rpc('set_config', {
       parameter: 'app.preference_token',
       value: token
