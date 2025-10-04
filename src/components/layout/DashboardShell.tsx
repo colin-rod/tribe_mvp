@@ -37,10 +37,10 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
     return (
       <NavigationProvider>
         <ViewSelectionProvider>
-          <div className="h-screen flex flex-col bg-neutral-50">
+          <div className="h-screen flex flex-col">
             <TopBar />
             <main
-              className="flex-1 overflow-auto"
+              className="flex-1 overflow-auto bg-white"
               style={{
                 marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
               }}
@@ -57,7 +57,7 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
   return (
     <NavigationProvider>
       <ViewSelectionProvider>
-        <div className="h-screen flex flex-col bg-neutral-50">
+        <div className="h-screen flex flex-col">
           <TopBar />
 
           <div
@@ -83,7 +83,7 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
 
             {/* Main Content */}
             <main
-              className="overflow-y-auto"
+              className="overflow-y-auto bg-neutral-50"
               style={{
                 gridArea: 'main',
               }}
