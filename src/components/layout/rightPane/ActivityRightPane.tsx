@@ -4,28 +4,17 @@
  * CRO-303: Performance Optimization & Code Splitting
  *
  * Main right pane content for the Activity view, integrating:
- * - Filters panel with search, date range, child, and type filters
- * - Quick stats card with live data
  * - AI suggestions panel
  * - Quick actions (Create Update, Compile Digest)
  *
- * Features:
- * - Filter state syncs with URL params for shareability
- * - Debounced search input (300ms)
- * - Real-time stats updates based on filters
- *
  * Performance optimizations:
  * - React.memo to prevent unnecessary re-renders
- * - useMemo for filter objects to maintain referential equality
  * - useCallback for event handlers
  */
 
 'use client';
 
-import { useCallback, useMemo, memo } from 'react';
-import { useActivityFilters } from '@/hooks/useActivityFilters';
-import { FiltersPanel } from './FiltersPanel';
-import { QuickStatsCard } from './QuickStatsCard';
+import { useCallback, memo } from 'react';
 import { AISuggestionsPanel, AIPromptSuggestion } from './AISuggestionsPanel';
 import { QuickActionsPanel } from './QuickActionsPanel';
 import { cn } from '@/lib/utils';
@@ -43,7 +32,7 @@ export interface ActivityRightPaneProps {
 
 /**
  * Right pane content for Activity feed view
- * Provides contextual filters, stats, and actions
+ * Provides contextual AI suggestions and quick actions
  */
 const ActivityRightPaneComponent = ({
   onCreateUpdate,
@@ -51,27 +40,6 @@ const ActivityRightPaneComponent = ({
   onSelectAIPrompt,
   className,
 }: ActivityRightPaneProps) => {
-  const {
-    filters,
-    setDateRange,
-    setChildIds,
-    setUpdateTypes,
-    setSearchQuery,
-    clearFilters,
-    activeFilterCount,
-  } = useActivityFilters();
-
-  // Memoize filter object to prevent unnecessary re-renders
-  const memoizedFilters = useMemo(
-    () => ({
-      dateRange: filters.dateRange,
-      childIds: filters.childIds,
-      updateTypes: filters.updateTypes,
-      searchQuery: filters.searchQuery,
-    }),
-    [filters.dateRange, filters.childIds, filters.updateTypes, filters.searchQuery]
-  );
-
   // Handle Create Update action
   const handleCreateUpdate = useCallback(() => {
     if (onCreateUpdate) {
@@ -105,25 +73,8 @@ const ActivityRightPaneComponent = ({
     <div
       className={cn('h-full flex flex-col bg-white overflow-y-auto', className)}
     >
-      {/* Filters Panel */}
-      <FiltersPanel
-        searchQuery={filters.searchQuery}
-        dateRange={filters.dateRange}
-        childIds={filters.childIds}
-        updateTypes={filters.updateTypes}
-        onSearchChange={setSearchQuery}
-        onDateRangeChange={setDateRange}
-        onChildIdsChange={setChildIds}
-        onUpdateTypesChange={setUpdateTypes}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-      />
-
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Quick Stats Card */}
-        <QuickStatsCard filters={memoizedFilters} />
-
         {/* AI Suggestions Panel */}
         <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
       </div>

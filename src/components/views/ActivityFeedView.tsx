@@ -26,6 +26,8 @@ import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardin
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import DigestStats from '@/components/digests/DigestStats';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
+import { useActivityFilters } from '@/hooks/useActivityFilters';
+import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
 import type { UpdateType } from '@/components/updates/CreateUpdateModal';
 
 const logger = createLogger('ActivityFeedView');
@@ -46,6 +48,17 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
   // Enable scroll restoration for this view
   useScrollRestoration({ viewKey: 'activity' });
+
+  // Activity filters
+  const {
+    filters,
+    setDateRange,
+    setChildIds,
+    setUpdateTypes,
+    setSearchQuery,
+    clearFilters,
+    activeFilterCount,
+  } = useActivityFilters();
 
   // Mock onboarding steps
   const onboardingSteps = useMemo(() => [
@@ -154,7 +167,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     } finally {
       setLoadingStats(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -306,7 +319,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
             </div>
           )}
 
-          {/* Recent Activity Section */}
+          {/* Activity Card with Filters */}
           <div className="mb-8">
             <Card variant="elevated" className="overflow-hidden">
               <div className="px-4 py-5 sm:p-6">
@@ -322,6 +335,22 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                       View all
                     </Link>
                   </div>
+                </div>
+
+                {/* Filters Panel */}
+                <div className="mb-6 border-b border-neutral-200 pb-6">
+                  <FiltersPanel
+                    searchQuery={filters.searchQuery}
+                    dateRange={filters.dateRange}
+                    childIds={filters.childIds}
+                    updateTypes={filters.updateTypes}
+                    onSearchChange={setSearchQuery}
+                    onDateRangeChange={setDateRange}
+                    onChildIdsChange={setChildIds}
+                    onUpdateTypesChange={setUpdateTypes}
+                    onClearFilters={clearFilters}
+                    activeFilterCount={activeFilterCount}
+                  />
                 </div>
 
                 {!loadingStats && memoizedStats.updates === 0 ? (
