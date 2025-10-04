@@ -22,7 +22,6 @@ import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { UpdatesList } from '@/components/updates';
-import { PromptFeed } from '@/components/lazy';
 import PersonalizedWelcome from '@/components/dashboard/PersonalizedWelcome';
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress';
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
@@ -379,21 +378,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
           {memoizedStats.hasData && (
             <div className="mb-8">
               <DigestStats />
-            </div>
-          )}
-
-          {/* AI Prompt Suggestions */}
-          {memoizedStats.updates > 0 && (
-            <div className="mb-8">
-              <PromptFeed
-                userId={user?.id}
-                limit={3}
-                showStats={false}
-                showFilters={false}
-                compact={true}
-                autoRefresh={true}
-                refreshInterval={300000}
-              />
             </div>
           )}
         </div>
