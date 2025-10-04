@@ -63,8 +63,9 @@ export function RightPane({ children, className }: RightPaneProps) {
     <aside
       ref={paneRef}
       className={cn(
-        'relative border-l border-neutral-200 bg-white',
-        'transition-all duration-200 ease-out overflow-hidden',
+        'relative bg-white',
+        'transition-all duration-200 ease-out',
+        !rightPaneCollapsed && 'border-l border-neutral-200 overflow-hidden',
         className
       )}
       style={{
@@ -73,11 +74,18 @@ export function RightPane({ children, className }: RightPaneProps) {
       aria-label="Right sidebar"
       aria-hidden={rightPaneCollapsed}
     >
-      {/* Toggle Button - positioned on left edge */}
-      <RightPaneToggle
-        isCollapsed={rightPaneCollapsed}
-        onToggle={handleToggle}
-      />
+      {/* Toggle Button - always visible, positioned on left edge when expanded or floating when collapsed */}
+      <div
+        className={cn(
+          'absolute top-1/2 -translate-y-1/2 z-10',
+          rightPaneCollapsed ? '-left-6' : '-left-3'
+        )}
+      >
+        <RightPaneToggle
+          isCollapsed={rightPaneCollapsed}
+          onToggle={handleToggle}
+        />
+      </div>
 
       {/* Content - only render when expanded to improve performance */}
       {!rightPaneCollapsed && (

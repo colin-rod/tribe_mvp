@@ -32,8 +32,6 @@ export function RightPaneToggle({
     <button
       onClick={onToggle}
       className={cn(
-        // Positioning
-        'absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10',
         // Size and shape
         'w-6 h-12 rounded-full',
         // Colors and borders
