@@ -115,15 +115,16 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: updateCheck, error: updateError } = await supabase
-          .from('child_updates')
-          .select('id, title')
+          .from('updates')
+          .select('id, content, milestone_type')
           .eq('id', delivery.update_id)
           .eq('parent_id', user.id)
           .single()
 
         type UpdateCheck = {
           id: string
-          title: string
+          content: string | null
+          milestone_type: string | null
         }
 
         if (updateError || !updateCheck) {
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
           user.id,
           {
             ...delivery.content,
-            update_title: (updateCheck as UpdateCheck).title,
+            update_title: (updateCheck as UpdateCheck).milestone_type || 'Update',
             group_name: (groupCheck as GroupCheck).name,
             delivery_options: delivery.delivery_options
           },
@@ -276,34 +277,35 @@ export async function GET(request: NextRequest) {
     if (updateId) {
       type JobWithRelations = {
         id: string
-        status: string
-        delivery_method: string
-        scheduled_for: string | null
-        processed_at: string | null
-        failure_reason: string | null
+        status: 'queued' | 'sent' | 'delivered' | 'failed'
+        channel: 'email' | 'sms' | 'whatsapp'
+        queued_at: string | null
+        sent_at: string | null
+        error_message: string | null
+        recipient_id: string
         recipients: {
           name: string
-          email: string
-        }
-        recipient_groups: {
-          name: string
+          email: string | null
+          group_id: string | null
+          recipient_groups: {
+            name: string
+          } | null
         }
       }
 
       const { data: jobs, error: jobsError } = await supabase
-        .from('notification_jobs')
+        .from('delivery_jobs')
         .select(`
-          *,
-          recipients!inner(name, email),
-          recipient_groups!inner(name)
+          id,
+          status,
+          channel,
+          queued_at,
+          sent_at,
+          error_message,
+          recipient_id,
+          recipients!inner(name, email, group_id, recipient_groups!inner(name))
         `)
         .eq('update_id', updateId)
-        .in('group_id', (
-          await supabase
-            .from('recipient_groups')
-            .select('id')
-            .eq('parent_id', user.id)
-        ).data?.map((g: { id: string }) => g.id) || [])
 
       if (jobsError) {
         logger.errorWithStack('Error fetching job status:', jobsError as Error)
@@ -315,20 +317,20 @@ export async function GET(request: NextRequest) {
       response.delivery_status = {
         update_id: updateId,
         total_jobs: typedJobs?.length || 0,
-        pending_jobs: typedJobs?.filter(j => j.status === 'pending').length || 0,
-        sent_jobs: typedJobs?.filter(j => j.status === 'sent').length || 0,
+        pending_jobs: typedJobs?.filter(j => j.status === 'queued').length || 0,
+        sent_jobs: typedJobs?.filter(j => j.status === 'sent' || j.status === 'delivered').length || 0,
         failed_jobs: typedJobs?.filter(j => j.status === 'failed').length || 0,
-        skipped_jobs: typedJobs?.filter(j => j.status === 'skipped').length || 0,
+        skipped_jobs: 0,
         jobs: typedJobs?.map(job => ({
           id: job.id,
           recipient_name: job.recipients.name,
-          recipient_email: job.recipients.email,
-          group_name: job.recipient_groups.name,
-          delivery_method: job.delivery_method,
+          recipient_email: job.recipients.email || '',
+          group_name: job.recipients.recipient_groups?.name || 'No Group',
+          delivery_method: job.channel,
           status: job.status,
-          scheduled_for: job.scheduled_for,
-          processed_at: job.processed_at,
-          failure_reason: job.failure_reason
+          scheduled_for: job.queued_at,
+          processed_at: job.sent_at,
+          failure_reason: job.error_message
         })) || []
       }
     }
@@ -370,25 +372,24 @@ export async function GET(request: NextRequest) {
     if (!updateId && !groupId) {
       type RecentJob = {
         id: string
-        status: string
-        notification_type: string
-        delivery_method: string
-        created_at: string
+        status: 'queued' | 'sent' | 'delivered' | 'failed'
+        channel: 'email' | 'sms' | 'whatsapp'
+        queued_at: string
       }
 
       const { data: recentJobs, error: recentError } = await supabase
-        .from('notification_jobs')
+        .from('delivery_jobs')
         .select(`
           id,
           status,
-          notification_type,
-          delivery_method,
-          created_at,
-          recipient_groups!inner(parent_id)
+          channel,
+          queued_at,
+          update_id,
+          updates!inner(parent_id)
         `)
-        .eq('recipient_groups.parent_id', user.id)
-        .gte('created_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
-        .order('created_at', { ascending: false })
+        .eq('updates.parent_id', user.id)
+        .gte('queued_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
+        .order('queued_at', { ascending: false })
         .limit(100)
 
       if (recentError) {
@@ -396,12 +397,10 @@ export async function GET(request: NextRequest) {
       } else {
         const statusCounts = new Map<string, number>()
         const methodCounts = new Map<string, number>()
-        const typeCounts = new Map<string, number>()
 
         for (const job of (recentJobs as RecentJob[] | null) || []) {
           statusCounts.set(job.status, (statusCounts.get(job.status) || 0) + 1)
-          methodCounts.set(job.delivery_method, (methodCounts.get(job.delivery_method) || 0) + 1)
-          typeCounts.set(job.notification_type, (typeCounts.get(job.notification_type) || 0) + 1)
+          methodCounts.set(job.channel, (methodCounts.get(job.channel) || 0) + 1)
         }
 
         response.overview = {
@@ -415,10 +414,7 @@ export async function GET(request: NextRequest) {
             method,
             count
           })),
-          notification_type_breakdown: Array.from(typeCounts.entries()).map(([type, count]) => ({
-            type,
-            count
-          }))
+          notification_type_breakdown: []
         }
       }
     }
@@ -477,32 +473,23 @@ export async function PATCH(request: NextRequest) {
       case 'retry_failed':
         // Retry failed jobs (this would need additional implementation)
         const { data: failedJobs, error: failedError } = await supabase
-          .from('notification_jobs')
-          .select('id')
+          .from('delivery_jobs')
+          .select('id, update_id, updates!inner(parent_id)')
           .eq('status', 'failed')
-          .lt('retry_count', 3)
-          .in('group_id', (
-            await supabase
-              .from('recipient_groups')
-              .select('id')
-              .eq('parent_id', user.id)
-          ).data?.map((g: { id: string }) => g.id) || [])
+          .eq('updates.parent_id', user.id)
           .limit(validatedData.batch_size)
 
         if (failedError) {
           throw new Error('Failed to fetch failed jobs')
         }
 
-        // Reset failed jobs to pending for retry
+        // Reset failed jobs to queued for retry
         if (failedJobs && failedJobs.length > 0) {
           const { error: resetError } = await supabase
-            .from('notification_jobs')
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore - Supabase type inference limitation with dynamic updates
+            .from('delivery_jobs')
             .update({
-              status: 'pending',
-              retry_count: 1,
-              scheduled_for: new Date().toISOString()
+              status: 'queued',
+              queued_at: new Date().toISOString()
             })
             .in('id', failedJobs.map((j: { id: string }) => j.id))
 
@@ -527,26 +514,23 @@ export async function PATCH(request: NextRequest) {
         break
 
       case 'cancel_pending':
+        // Get jobs owned by this user
+        const { data: userUpdates } = await supabase
+          .from('updates')
+          .select('id')
+          .eq('parent_id', user.id)
+
+        const updateIds = userUpdates?.map(u => u.id) || []
+
         // Cancel pending jobs
         let cancelQuery = supabase
-          .from('notification_jobs')
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore - Supabase type inference limitation with dynamic updates
-          .update({ status: 'cancelled' })
-          .eq('status', 'pending')
-          .in('group_id', (
-            await supabase
-              .from('recipient_groups')
-              .select('id')
-              .eq('parent_id', user.id)
-          ).data?.map((g: { id: string }) => g.id) || [])
+          .from('delivery_jobs')
+          .update({ status: 'failed' })
+          .eq('status', 'queued')
+          .in('update_id', updateIds)
 
         if (validatedData.job_ids && validatedData.job_ids.length > 0) {
           cancelQuery = cancelQuery.in('id', validatedData.job_ids)
-        }
-
-        if (validatedData.filters?.group_id) {
-          cancelQuery = cancelQuery.eq('group_id', validatedData.filters.group_id)
         }
 
         if (validatedData.filters?.update_id) {

@@ -58,7 +58,7 @@ export async function GET(
         default_groups: groupsByType.default_groups.length,
         custom_groups: groupsByType.custom_groups.length,
         groups_with_custom_settings: groups.filter(g =>
-          g.member_notification_frequency ||
+          g.member_frequency ||
           g.member_preferred_channels ||
           g.member_content_types
         ).length
@@ -136,7 +136,7 @@ export async function PUT(
           token,
           update.group_id,
           {
-            notification_frequency: update.notification_frequency,
+            frequency: update.frequency,
             preferred_channels: update.preferred_channels,
             content_types: update.content_types
           }
@@ -213,7 +213,7 @@ export async function PATCH(
 
     // Validate bulk update settings
     const bulkUpdateSchema = z.object({
-      notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+      frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
       preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
       content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
       apply_to_groups: z.array(z.string().uuid()).optional() // If not provided, applies to all groups
@@ -246,7 +246,7 @@ export async function PATCH(
           token,
           group.group_id,
           {
-            notification_frequency: validatedData.notification_frequency,
+            frequency: validatedData.frequency,
             preferred_channels: validatedData.preferred_channels,
             content_types: validatedData.content_types
           }

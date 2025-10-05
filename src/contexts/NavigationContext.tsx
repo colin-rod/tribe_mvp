@@ -57,7 +57,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         prefetch = true,
       } = options;
 
-      let targetUrl = path;
+      let targetUrl: string = path;
 
       // Handle search parameters
       if (preserveParams || Object.keys(params).length > 0) {

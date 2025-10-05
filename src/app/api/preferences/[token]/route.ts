@@ -86,7 +86,7 @@ export async function GET(
         enhancedData.group_summary = {
           total_groups: groups.length,
           groups_with_custom_settings: groups.filter(g =>
-            g.member_notification_frequency ||
+            g.member_frequency ||
             g.member_preferred_channels ||
             g.member_content_types
           ).length,
@@ -118,7 +118,7 @@ export async function GET(
         }
 
         const { data: groupMutes } = await supabase
-          .from('group_memberships')
+          .from('recipients')
           .select(`
             group_id,
             mute_until,
@@ -196,8 +196,8 @@ export async function PUT(
       content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
 
       // New group-specific preferences
-      group_preferences: z.record(z.object({
-        notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+      digest_preferences: z.record(z.object({
+        frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
         preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
         content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
         use_group_defaults: z.boolean().default(false)
@@ -311,10 +311,10 @@ export async function PUT(
       })
     }
 
-    if (preferences.update_mode === 'group_specific' && preferences.group_preferences) {
+    if (preferences.update_mode === 'group_specific' && preferences.digest_preferences) {
       // Handle group-specific preference updates
       const { data: memberships, error: membershipsError } = await supabase
-        .from('group_memberships')
+        .from('recipients')
         .select('group_id, recipient_groups!inner(name)')
         .eq('recipient_id', recipientWithGroup.id)
         .eq('is_active', true)
@@ -327,7 +327,7 @@ export async function PUT(
       type MembershipRow = { group_id: string }
       const validGroupIds = ((memberships as unknown as MembershipRow[]) || []).map(m => m.group_id)
 
-      for (const [groupId, groupPrefs] of Object.entries(preferences.group_preferences)) {
+      for (const [groupId, groupPrefs] of Object.entries(preferences.digest_preferences)) {
         if (!validGroupIds.includes(groupId)) {
           updateResults.push({
             type: 'group_specific',
@@ -342,10 +342,10 @@ export async function PUT(
           if (groupPrefs.use_group_defaults) {
             // Reset to group defaults
             const { error } = await supabase
-              .from('group_memberships')
+              .from('recipients')
               // @ts-expect-error - Supabase type inference issue
               .update({
-                notification_frequency: null,
+                frequency: null,
                 preferred_channels: null,
                 content_types: null
               })
@@ -363,16 +363,16 @@ export async function PUT(
           } else {
             // Apply custom preferences for this group
             const groupUpdate: Record<string, unknown> = {}
-            if (groupPrefs.notification_frequency) groupUpdate.notification_frequency = groupPrefs.notification_frequency
+            if (groupPrefs.frequency) groupUpdate.frequency = groupPrefs.frequency
             if (groupPrefs.preferred_channels) groupUpdate.preferred_channels = groupPrefs.preferred_channels
             if (groupPrefs.content_types) groupUpdate.content_types = groupPrefs.content_types
 
             if (Object.keys(groupUpdate).length > 0) {
               const { error } = await supabase
-                .from('group_memberships')
+                .from('recipients')
                 // @ts-expect-error - Supabase type inference issue
                 .update(groupUpdate as {
-                  notification_frequency?: string
+                  frequency?: string
                   preferred_channels?: string[]
                   content_types?: string[]
                 })

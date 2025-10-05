@@ -17,7 +17,7 @@ const logger = createLogger('GroupPreferenceSettings')
 
 // Validation schema for group-specific preferences
 const groupPreferencesSchema = z.object({
-  notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+  frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
   preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).min(1, 'At least one channel is required').optional(),
   content_types: z.array(z.enum(['photos', 'text', 'milestones'])).min(1, 'At least one content type is required').optional()
 })
@@ -28,7 +28,7 @@ type ChannelValue = 'email' | 'sms' | 'whatsapp'
 type ContentTypeValue = 'photos' | 'text' | 'milestones'
 
 interface PreferenceFormState {
-  notification_frequency: FrequencyValue | ''
+  frequency: FrequencyValue | ''
   preferred_channels: ChannelValue[]
   content_types: ContentTypeValue[]
 }
@@ -43,7 +43,7 @@ export interface GroupMembership {
     default_channels: string[]
     is_default_group: boolean
   }
-  notification_frequency?: string
+  frequency?: string
   preferred_channels?: string[]
   content_types?: string[]
   role: string
@@ -71,7 +71,7 @@ export function GroupPreferenceSettings({
   onCancel
 }: GroupPreferenceSettingsProps) {
   const [preferences, setPreferences] = useState<PreferenceFormState>({
-    notification_frequency: (membership.notification_frequency as FrequencyValue | undefined) || '',
+    frequency: (membership.frequency as FrequencyValue | undefined) || '',
     preferred_channels: (membership.preferred_channels as ChannelValue[] | undefined) || [],
     content_types: (membership.content_types as ContentTypeValue[] | undefined) || ['photos', 'text', 'milestones']
   })
@@ -82,9 +82,9 @@ export function GroupPreferenceSettings({
   const options = getPreferenceOptions()
 
   const handleFrequencyChange = (frequency: FrequencyValue) => {
-    setPreferences(prev => ({ ...prev, notification_frequency: frequency }))
+    setPreferences(prev => ({ ...prev, frequency: frequency }))
     setUseGroupDefaults(false)
-    setErrors(prev => ({ ...prev, notification_frequency: '' }))
+    setErrors(prev => ({ ...prev, frequency: '' }))
   }
 
   const handleChannelChange = (channel: ChannelValue, checked: boolean) => {
@@ -114,7 +114,7 @@ export function GroupPreferenceSettings({
   const handleUseGroupDefaults = () => {
     setUseGroupDefaults(true)
     setPreferences({
-      notification_frequency: '',
+      frequency: '',
       preferred_channels: [],
       content_types: ['photos', 'text', 'milestones']
     })
@@ -130,8 +130,8 @@ export function GroupPreferenceSettings({
     try {
       const validationData: GroupPreferencePayload = {}
 
-      if (preferences.notification_frequency) {
-        validationData.notification_frequency = preferences.notification_frequency
+      if (preferences.frequency) {
+        validationData.frequency = preferences.frequency
       }
 
       if (preferences.preferred_channels.length > 0) {
@@ -189,8 +189,8 @@ export function GroupPreferenceSettings({
         // Update custom preferences
         const updateData: GroupPreferencePayload = {}
 
-        if (preferences.notification_frequency) {
-          updateData.notification_frequency = preferences.notification_frequency
+        if (preferences.frequency) {
+          updateData.frequency = preferences.frequency
         }
 
         if (preferences.preferred_channels.length > 0) {
@@ -230,10 +230,10 @@ export function GroupPreferenceSettings({
   }
 
   const getEffectiveFrequency = (): FrequencyValue => {
-    if (useGroupDefaults || !preferences.notification_frequency) {
+    if (useGroupDefaults || !preferences.frequency) {
       return membership.group.default_frequency as FrequencyValue
     }
-    return preferences.notification_frequency
+    return preferences.frequency
   }
 
   const getEffectiveChannels = (): ChannelValue[] => {
@@ -258,7 +258,7 @@ export function GroupPreferenceSettings({
               } else {
                 setUseGroupDefaults(false)
                 setPreferences({
-                  notification_frequency: membership.effective_settings.frequency as FrequencyValue,
+                  frequency: membership.effective_settings.frequency as FrequencyValue,
                   preferred_channels: [...membership.effective_settings.channels] as ChannelValue[],
                   content_types: [...membership.effective_settings.content_types] as ContentTypeValue[]
                 })
@@ -292,7 +292,7 @@ export function GroupPreferenceSettings({
           {options.frequencies.map((option) => {
             const isGroupDefault = membership.group.default_frequency === option.value
             const isSelected = getEffectiveFrequency() === option.value
-            const isCustomSelected = !useGroupDefaults && preferences.notification_frequency === option.value
+            const isCustomSelected = !useGroupDefaults && preferences.frequency === option.value
 
             return (
               <div key={option.value} className={cn(
@@ -344,9 +344,9 @@ export function GroupPreferenceSettings({
           })}
         </fieldset>
 
-        {errors.notification_frequency && (
+        {errors.frequency && (
           <p className="mt-2 text-sm text-red-600" role="alert">
-            {errors.notification_frequency}
+            {errors.frequency}
           </p>
         )}
       </div>

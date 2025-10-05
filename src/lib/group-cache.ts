@@ -98,7 +98,7 @@ export class GroupCacheManager {
       async () => {
         const supabase = createClient()
         const { data, error } = await supabase
-          .from('group_memberships')
+          .from('recipients')
           .select(`
             *,
             recipients!inner(
@@ -111,7 +111,7 @@ export class GroupCacheManager {
           `)
           .eq('group_id', groupId)
           .eq('is_active', true)
-          .order('joined_at')
+          .order('created_at')
 
         if (error) throw error
         return data || []
@@ -129,7 +129,7 @@ export class GroupCacheManager {
       async () => {
         const supabase = createClient()
         const { data, error } = await supabase
-          .from('group_memberships')
+          .from('recipients')
           .select(`
             *,
             recipient_groups!inner(
@@ -320,7 +320,7 @@ export class GroupQueryOptimizer {
 
     if (inserts.length > 0) {
       const insertPromise = supabase
-        .from('group_memberships')
+        .from('recipients')
         .upsert(inserts.map(op => ({
           recipient_id: op.recipient_id,
           group_id: op.group_id,
@@ -333,7 +333,7 @@ export class GroupQueryOptimizer {
       // Updates need to be done individually due to different settings
       updates.forEach(op => {
         const updatePromise = supabase
-          .from('group_memberships')
+          .from('recipients')
           .update(op.settings)
           .eq('recipient_id', op.recipient_id)
           .eq('group_id', op.group_id)
@@ -343,7 +343,7 @@ export class GroupQueryOptimizer {
 
     if (deletes.length > 0) {
       const deletePromise = supabase
-        .from('group_memberships')
+        .from('recipients')
         .update({ is_active: false })
         .in('recipient_id', deletes.map(op => op.recipient_id))
         .in('group_id', deletes.map(op => op.group_id))

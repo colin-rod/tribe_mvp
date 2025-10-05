@@ -13,12 +13,10 @@ const logger = createLogger('RecipientMembershipAPI')
 type SupabaseServerClient = SupabaseClient<Database>
 type MembershipRecord = {
   id: string
-  group_id: string
-  notification_frequency: string | null
+  group_id: string | null
+  frequency: string | null
   preferred_channels: string[] | null
   content_types: string[] | null
-  role: string | null
-  joined_at: string | null
   is_active: boolean
   created_at: string | null
   updated_at: string | null
@@ -27,8 +25,6 @@ type MembershipRecord = {
     name: string
     default_frequency: string | null
     default_channels: string[] | null
-    notification_settings: Record<string, unknown> | null
-    access_settings: Record<string, unknown> | null
     is_default_group: boolean
     created_at: string | null
   }
@@ -112,7 +108,7 @@ export async function GET(
       value: token
     })
 
-    // Get recipient information and preferences
+    // Get recipient information and preferences (digest_preferences doesn't exist, use digest_preferences)
     const { data: recipient, error: recipientError } = await supabase
       .from('recipients')
       .select(`
@@ -120,9 +116,8 @@ export async function GET(
         name,
         email,
         relationship,
-        group_preferences,
-        created_at,
-        last_seen_at
+        digest_preferences,
+        created_at
       `)
       .eq('preference_token', token)
       .eq('is_active', true)
@@ -135,32 +130,29 @@ export async function GET(
       )
     }
 
-    // Get detailed group memberships
+    // Get group membership directly from recipients table (no group_memberships table exists)
+    // Recipients are linked to groups via group_id column
     let membershipQuery = supabase
-      .from('group_memberships')
+      .from('recipients')
       .select(`
         id,
         group_id,
-        notification_frequency,
+        frequency,
         preferred_channels,
         content_types,
-        role,
-        joined_at,
-        is_active,
         created_at,
         updated_at,
+        is_active,
         recipient_groups!inner(
           id,
           name,
           default_frequency,
           default_channels,
-          notification_settings,
-          access_settings,
           is_default_group,
           created_at
         )
       `)
-      .eq('recipient_id', (recipient as { id: string }).id)
+      .eq('id', (recipient as { id: string }).id)
 
     if (!includeInactive) {
       membershipQuery = membershipQuery.eq('is_active', true)
@@ -184,22 +176,22 @@ export async function GET(
           ...membership,
           group: membership.recipient_groups,
           has_custom_settings: !!(
-            membership.notification_frequency ||
+            membership.frequency ||
             membership.preferred_channels ||
             membership.content_types
           ),
           effective_settings: await getEffectiveSettings(
             supabase,
             (recipient as { id: string }).id,
-            membership.group_id,
+            membership.group_id || '',
             membership
           )
         }
 
         // Add member count and activity if requested
-        if (showOtherMembers) {
+        if (showOtherMembers && membership.group_id) {
           const { data: memberCount } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             .select('id', { count: 'exact' })
             .eq('group_id', membership.group_id)
             .eq('is_active', true)
@@ -207,12 +199,12 @@ export async function GET(
           enhanced.group.member_count = memberCount?.length || 0
         }
 
-        if (showActivity) {
-          // Get recent activity for this group
+        if (showActivity && membership.group_id) {
+          // Get recent activity for this group (child_updates table doesn't exist, use delivery_jobs)
           const { data: recentUpdates } = await supabase
-            .from('child_updates')
-            .select('id, created_at, delivery_status')
-            .eq('group_id', membership.group_id)
+            .from('delivery_jobs')
+            .select('id, queued_at, status')
+            .eq('recipient_id', (recipient as { id: string }).id)
             .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
             .order('created_at', { ascending: false })
             .limit(5)
@@ -236,8 +228,7 @@ export async function GET(
       default_groups: enhancedMemberships.filter(m => m.group.is_default_group).length,
       custom_groups: enhancedMemberships.filter(m => !m.group.is_default_group).length,
       groups_with_custom_settings: enhancedMemberships.filter(m => m.has_custom_settings).length,
-      admin_roles: enhancedMemberships.filter(m => m.role === 'admin').length,
-      preferences: (recipient as { group_preferences?: Record<string, unknown> }).group_preferences || {}
+      preferences: (recipient as { digest_preferences?: Record<string, unknown> }).digest_preferences || {}
     }
 
     // Group memberships by type for better organization
@@ -255,7 +246,7 @@ export async function GET(
       relationship?: string
       created_at?: string
       last_seen_at?: string
-      group_preferences?: Record<string, unknown>
+      digest_preferences?: Record<string, unknown>
     }
 
     const typedRecipient = recipient as unknown as RecipientType
@@ -268,7 +259,7 @@ export async function GET(
         relationship: typedRecipient.relationship,
         member_since: typedRecipient.created_at,
         last_seen: typedRecipient.last_seen_at,
-        preferences: typedRecipient.group_preferences || {}
+        preferences: typedRecipient.digest_preferences || {}
       },
       memberships: enhancedMemberships,
       grouped_memberships: groupedMemberships,
@@ -319,7 +310,7 @@ export async function PUT(
       .from('recipients')
       // @ts-expect-error - Supabase type inference issue with JSONB columns
       .update({
-        group_preferences: {
+        digest_preferences: {
           ...validatedData,
           updated_at: new Date().toISOString()
         }
@@ -388,7 +379,7 @@ export async function POST(
       group_id: z.string().uuid(),
       reason: z.string().optional(),
       notification_preferences: z.object({
-        notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+        frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
         preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
         content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional()
       }).optional()
@@ -409,7 +400,7 @@ export async function POST(
 
     const { data: group, error: groupError } = await supabase
       .from('recipient_groups')
-      .select('id, name, access_settings, is_default_group')
+      .select('id, name, is_default_group')
       .eq('id', validatedData.group_id)
       .single()
 
@@ -436,7 +427,7 @@ export async function POST(
         // Don't allow leaving default groups completely, just deactivate
         if (typedGroup.is_default_group) {
           const { error } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             // @ts-expect-error - Supabase type inference issue
             .update({
               is_active: false,
@@ -455,7 +446,7 @@ export async function POST(
         } else {
           // For custom groups, completely remove membership
           const { error } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             .delete()
             .eq('recipient_id', securityContext.recipient_id)
             .eq('group_id', validatedData.group_id)
@@ -474,7 +465,7 @@ export async function POST(
         // Check if membership already exists
         type ExistingMembershipType = { is_active: boolean }
         const { data: existingMembership } = await supabase
-          .from('group_memberships')
+          .from('recipients')
           .select('is_active')
           .eq('recipient_id', securityContext.recipient_id)
           .eq('group_id', validatedData.group_id)
@@ -490,7 +481,7 @@ export async function POST(
           } else {
             // Reactivate membership
             const { error } = await supabase
-              .from('group_memberships')
+              .from('recipients')
               // @ts-expect-error - Supabase type inference issue
               .update({
                 is_active: true,
@@ -511,7 +502,7 @@ export async function POST(
         } else {
           // Create new membership
           const { error } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             // @ts-expect-error - Supabase type inference issue
             .insert({
               recipient_id: securityContext.recipient_id,
@@ -601,15 +592,15 @@ async function getEffectiveSettings(
 
       const { data: group } = await supabase
         .from('recipient_groups')
-        .select('default_frequency, default_channels, notification_settings')
+        .select('default_frequency, default_channels')
         .eq('id', groupId)
         .single<RecipientGroupDefaults>()
 
       return {
-        frequency: membership.notification_frequency || group?.default_frequency || 'every_update',
+        frequency: membership.frequency || group?.default_frequency || 'every_update',
         channels: membership.preferred_channels || group?.default_channels || ['email'],
         content_types: membership.content_types || group?.notification_settings?.content_types || ['photos', 'text', 'milestones'],
-        source: membership.notification_frequency ? 'member_override' : 'group_default'
+        source: membership.frequency ? 'member_override' : 'group_default'
       }
     }
 

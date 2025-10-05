@@ -123,7 +123,7 @@ export async function POST(
 
     // Check for existing memberships
     const { data: existingMemberships } = await supabase
-      .from('group_memberships')
+      .from('recipients')
       .select('recipient_id')
       .eq('group_id', groupId)
       .in('recipient_id', validatedData.recipient_ids)

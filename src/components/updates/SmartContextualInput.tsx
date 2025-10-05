@@ -124,7 +124,7 @@ export default function SmartContextualInput({
     }
   }, [processNewFiles])
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement | HTMLTextAreaElement>) => {
     e.preventDefault()
     setIsDragOver(false)
 
@@ -134,12 +134,12 @@ export default function SmartContextualInput({
     }
   }, [processNewFiles])
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement | HTMLTextAreaElement>) => {
     e.preventDefault()
     setIsDragOver(true)
   }, [])
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement | HTMLTextAreaElement>) => {
     e.preventDefault()
     setIsDragOver(false)
   }, [])

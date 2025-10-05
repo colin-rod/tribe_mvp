@@ -1,6 +1,7 @@
 import { createClient } from './supabase/client'
 import type { DistributionStatus, MilestoneType } from './validation/update'
 import { createLogger } from '@/lib/logger'
+import type { Json } from '@/lib/types/database.types'
 
 
 const logger = createLogger('Updates')
@@ -81,38 +82,42 @@ async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>
     })
   }
 }
+
 export interface Update {
   id: string
   parent_id: string
   child_id: string
-  content: string
+  content: string | null
   /** Optional email subject line for email-formatted updates */
-  subject?: string
+  subject?: string | null
   /** Rich content stored as JSONB for advanced formatting (Quill Delta, HTML, etc.) */
-  rich_content?: Record<string, unknown>
+  rich_content?: Json | null
   /** Format type indicating how the content should be rendered and distributed */
-  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
-  media_urls: string[]
-  milestone_type?: MilestoneType
-  ai_analysis: Record<string, unknown>
-  suggested_recipients: string[]
-  confirmed_recipients: string[]
-  distribution_status: DistributionStatus
-  created_at: string
-  scheduled_for?: string
-  sent_at?: string
+  content_format?: string | null
+  media_urls: string[] | null
+  milestone_type?: string | null
+  ai_analysis: Json
+  suggested_recipients: string[] | null
+  confirmed_recipients: string[] | null
+  distribution_status: string
+  created_at: string | null
+  scheduled_for?: string | null
+  sent_at?: string | null
+  comment_count?: number | null
+  like_count?: number | null
+  view_count?: number | null
 }
 
 export interface CreateUpdateRequest {
   child_id: string
-  content: string
+  content?: string | null
   /** Optional email subject line for email-formatted updates */
-  subject?: string
+  subject?: string | null
   /** Rich content stored as JSONB for advanced formatting (Quill Delta, HTML, etc.) */
-  rich_content?: Record<string, unknown>
+  rich_content?: Record<string, unknown> | null
   /** Format type indicating how the content should be rendered and distributed */
-  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
-  milestone_type?: MilestoneType
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | null
+  milestone_type?: MilestoneType | null
   media_urls?: string[]
   scheduled_for?: Date
   confirmed_recipients?: string[]
@@ -141,17 +146,16 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
 
   const { data, error} = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .insert({
+    .insert({
       parent_id: user.id,
       child_id: updateData.child_id,
       content: updateData.content,
       subject: updateData.subject,
-      rich_content: updateData.rich_content as Record<string, unknown> | undefined,
+      rich_content: updateData.rich_content as Json | undefined,
       content_format: updateData.content_format || 'plain',
       milestone_type: updateData.milestone_type,
       media_urls: updateData.media_urls || [],
-      ai_analysis: updateData.ai_analysis as Record<string, unknown> | undefined || {},
+      ai_analysis: (updateData.ai_analysis as Json | undefined) || {},
       suggested_recipients: updateData.suggested_recipients || [],
       confirmed_recipients: updateData.confirmed_recipients || [],
       distribution_status: updateData.scheduled_for ? 'scheduled' : 'draft',
@@ -161,7 +165,7 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -193,7 +197,7 @@ export async function getUpdates(limit?: number): Promise<Update[]> {
   const { data, error } = await query
 
   if (error) throw error
-  return data || []
+  return (data || []) as Update[]
 }
 
 /**
@@ -223,7 +227,7 @@ export async function getUpdateById(updateId: string): Promise<Update | null> {
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return data
+  return data as Update
 }
 
 /**
@@ -240,15 +244,14 @@ export async function updateUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update(updates)
+    .update(updates)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -319,9 +322,8 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update({
-      distribution_status: 'sent' as const,
+    .update({
+      distribution_status: 'sent',
       sent_at: new Date().toISOString()
     })
     .eq('id', updateId)
@@ -330,7 +332,7 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -348,8 +350,7 @@ export async function updateUpdateRecipients(
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update({
+    .update({
       suggested_recipients: suggestedRecipients,
       confirmed_recipients: confirmedRecipients
     })
@@ -359,7 +360,7 @@ export async function updateUpdateRecipients(
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -376,9 +377,8 @@ export async function updateUpdateAIAnalysis(
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update({
-      ai_analysis: aiAnalysis as Record<string, unknown>
+    .update({
+      ai_analysis: aiAnalysis as Json
     })
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -386,7 +386,7 @@ export async function updateUpdateAIAnalysis(
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -403,8 +403,7 @@ export async function updateUpdateMediaUrls(
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update({
+    .update({
       media_urls: mediaUrls
     })
     .eq('id', updateId)
@@ -413,7 +412,7 @@ export async function updateUpdateMediaUrls(
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -433,7 +432,7 @@ export async function getUpdatesByChild(childId: string): Promise<Update[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data || []
+  return (data || []) as Update[]
 }
 
 /**
@@ -463,7 +462,7 @@ export async function getRecentUpdates(): Promise<Update[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data || []
+  return (data || []) as Update[]
 }
 
 /**
@@ -480,10 +479,9 @@ export async function scheduleUpdate(
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update({
+    .update({
       scheduled_for: scheduledFor.toISOString(),
-      distribution_status: 'scheduled' as const
+      distribution_status: 'scheduled'
     })
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -491,7 +489,7 @@ export async function scheduleUpdate(
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**
@@ -518,7 +516,7 @@ export async function getDraftUpdates(): Promise<Update[]> {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data || []
+  return (data || []) as Update[]
 }
 
 /**
@@ -539,20 +537,19 @@ export async function updateUpdateContent(
   const updateData: Partial<Update> = {}
   if (content !== undefined) updateData.content = content
   if (subject !== undefined) updateData.subject = subject
-  if (richContent !== undefined) updateData.rich_content = richContent
+  if (richContent !== undefined) updateData.rich_content = richContent as Json
   if (contentFormat !== undefined) updateData.content_format = contentFormat
 
   const { data, error } = await supabase
     .from('updates')
-    // @ts-expect-error - Supabase type inference issue
-      .update(updateData)
+    .update(updateData)
     .eq('id', updateId)
     .eq('parent_id', user.id)
     .select()
     .single()
 
   if (error) throw error
-  return data
+  return data as Update
 }
 
 /**

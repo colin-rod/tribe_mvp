@@ -18,19 +18,17 @@ export interface GroupNotificationSettings {
 
 /**
  * Enhanced group membership management interfaces
+ * Note: No group_memberships table - recipients link directly to groups
  */
 export interface GroupMembership {
   id: string
-  recipient_id: string
-  group_id: string
-  notification_frequency?: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
-  preferred_channels?: ('email' | 'sms' | 'whatsapp')[]
-  content_types?: ('photos' | 'text' | 'milestones')[]
-  role: 'member' | 'admin'
-  joined_at: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  group_id: string | null
+  frequency: string | null
+  preferred_channels: string[] | null
+  content_types: string[] | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface GroupWithMembers {
@@ -39,51 +37,45 @@ export interface GroupWithMembers {
   name: string
   default_frequency: string
   default_channels: string[]
-  notification_settings: GroupNotificationSettings | null
   member_count: number
   members: (GroupMembership & {
     recipient: {
       id: string
       name: string
-      email?: string
-      phone?: string
+      email?: string | null
+      phone?: string | null
       relationship: string
     }
   })[]
 }
 
 export interface RecipientGroupView {
-  group_id: string
+  group_id: string | null
   group_name: string
   default_frequency: string
   default_channels: string[]
-  notification_settings: GroupNotificationSettings | null
-  member_notification_frequency?: string
-  member_preferred_channels?: string[]
-  member_content_types?: string[]
-  role: string
-  joined_at: string
-  is_active: boolean
+  member_frequency?: string | null
+  member_preferred_channels?: string[] | null
+  member_content_types?: string[] | null
+  created_at: string | null
+  is_active: boolean | null
 }
 
 interface GroupMembershipWithGroup extends GroupMembership {
   recipient_groups: {
     id: string
     name: string
-    default_frequency: string
-    default_channels: string[]
-    notification_settings: GroupNotificationSettings | null
+    default_frequency: string | null
+    default_channels: string[] | null
   }
 }
 
 interface GroupMembershipWithRecipient extends GroupMembership {
-  recipients: {
-    id: string
-    name: string
-    email?: string | null
-    phone?: string | null
-    relationship: string
-  }
+  name: string
+  email: string | null
+  phone: string | null
+  relationship: string
+  parent_id: string
 }
 
 /**
@@ -106,18 +98,24 @@ export async function getRecipientGroups(token: string): Promise<RecipientGroupV
 
   // Get group memberships with group details
   const { data, error } = await supabase
-    .from('group_memberships')
+    .from('recipients')
     .select(`
-      *,
+      id,
+      group_id,
+      frequency,
+      preferred_channels,
+      content_types,
+      is_active,
+      created_at,
+      updated_at,
       recipient_groups!inner(
         id,
         name,
         default_frequency,
-        default_channels,
-        notification_settings
+        default_channels
       )
     `)
-    .eq('recipient_id', recipient.id)
+    .eq('id', recipient.id)
     .eq('is_active', true)
 
   if (error) {
@@ -130,16 +128,14 @@ export async function getRecipientGroups(token: string): Promise<RecipientGroupV
   return memberships.map((membership) => ({
     group_id: membership.group_id,
     group_name: membership.recipient_groups.name,
-    default_frequency: membership.recipient_groups.default_frequency,
-    default_channels: membership.recipient_groups.default_channels,
-    notification_settings: membership.recipient_groups.notification_settings,
-    member_notification_frequency: membership.notification_frequency,
+    default_frequency: membership.recipient_groups.default_frequency || '',
+    default_channels: membership.recipient_groups.default_channels || [],
+    member_frequency: membership.frequency,
     member_preferred_channels: membership.preferred_channels,
     member_content_types: membership.content_types,
-    role: membership.role,
-    joined_at: membership.joined_at,
+    created_at: membership.created_at,
     is_active: membership.is_active
-  }))
+  } as RecipientGroupView))
 }
 
 /**
@@ -149,7 +145,7 @@ export async function updateRecipientGroupSettings(
   token: string,
   groupId: string,
   settings: {
-    notification_frequency?: string
+    frequency?: string
     preferred_channels?: string[]
     content_types?: string[]
   }
@@ -168,11 +164,11 @@ export async function updateRecipientGroupSettings(
     throw new Error('Invalid or expired token')
   }
 
-  // Update the group membership settings
+  // Update the recipient settings
   const { error } = await supabase
-    .from('group_memberships')
+    .from('recipients')
     .update(settings)
-    .eq('recipient_id', recipient.id)
+    .eq('id', recipient.id)
     .eq('group_id', groupId)
     .eq('is_active', true)
 
@@ -205,18 +201,23 @@ export async function getGroupWithMembers(groupId: string): Promise<GroupWithMem
     throw new Error('Group not found or access denied')
   }
 
-  // Get all memberships with recipient details
+  // Get all recipients in this group
   const { data: memberships, error: membershipError } = await supabase
-    .from('group_memberships')
+    .from('recipients')
     .select(`
-      *,
-      recipients!inner(
-        id,
-        name,
-        email,
-        phone,
-        relationship
-      )
+      id,
+      name,
+      email,
+      phone,
+      relationship,
+      parent_id,
+      group_id,
+      frequency,
+      preferred_channels,
+      content_types,
+      is_active,
+      created_at,
+      updated_at
     `)
     .eq('group_id', groupId)
     .eq('is_active', true)
@@ -230,13 +231,27 @@ export async function getGroupWithMembers(groupId: string): Promise<GroupWithMem
 
   return {
     ...group,
-    notification_settings: (group.notification_settings ?? null) as GroupNotificationSettings | null,
+    default_frequency: group.default_frequency || '',
+    default_channels: group.default_channels || [],
     member_count: membershipRecords.length,
     members: membershipRecords.map((membership) => ({
-      ...membership,
-      recipient: membership.recipients
+      id: membership.id,
+      group_id: membership.group_id,
+      frequency: membership.frequency,
+      preferred_channels: membership.preferred_channels,
+      content_types: membership.content_types,
+      is_active: membership.is_active,
+      created_at: membership.created_at,
+      updated_at: membership.updated_at,
+      recipient: {
+        id: membership.id,
+        name: membership.name,
+        email: membership.email,
+        phone: membership.phone,
+        relationship: membership.relationship
+      }
     }))
-  }
+  } as GroupWithMembers
 }
 
 /**
@@ -246,7 +261,7 @@ export async function addRecipientsToGroup(
   groupId: string,
   recipientIds: string[],
   defaultSettings?: {
-    notification_frequency?: string
+    frequency?: string
     preferred_channels?: string[]
     content_types?: string[]
     role?: 'member' | 'admin'
@@ -281,22 +296,18 @@ export async function addRecipientsToGroup(
     throw new Error('Some recipients not found or access denied')
   }
 
-  // Create memberships
-  const memberships: Partial<GroupMembership>[] = recipientIds.map(recipientId => ({
-    recipient_id: recipientId,
+  // Update recipients to join the group
+  const updateData: Record<string, unknown> = {
     group_id: groupId,
-    notification_frequency: defaultSettings?.notification_frequency as GroupMembership['notification_frequency'],
-    preferred_channels: defaultSettings?.preferred_channels as GroupMembership['preferred_channels'],
-    content_types: defaultSettings?.content_types as GroupMembership['content_types'],
-    role: defaultSettings?.role || 'member'
-  }))
+    ...(defaultSettings?.frequency && { frequency: defaultSettings.frequency }),
+    ...(defaultSettings?.preferred_channels && { preferred_channels: defaultSettings.preferred_channels }),
+    ...(defaultSettings?.content_types && { content_types: defaultSettings.content_types })
+  }
 
   const { data, error } = await supabase
-    .from('group_memberships')
-    .upsert(memberships, {
-      onConflict: 'recipient_id,group_id',
-      ignoreDuplicates: false
-    })
+    .from('recipients')
+    .update(updateData)
+    .in('id', recipientIds)
     .select()
 
   if (error) {
@@ -304,7 +315,7 @@ export async function addRecipientsToGroup(
     throw new Error('Failed to add recipients to group')
   }
 
-  return data || []
+  return (data || []) as GroupMembership[]
 }
 
 /**
@@ -332,9 +343,9 @@ export async function removeRecipientFromGroup(
   }
 
   const { error } = await supabase
-    .from('group_memberships')
-    .update({ is_active: false })
-    .eq('recipient_id', recipientId)
+    .from('recipients')
+    .update({ group_id: null, is_active: false })
+    .eq('id', recipientId)
     .eq('group_id', groupId)
 
   if (error) {
@@ -362,16 +373,12 @@ export async function updateGroupNotificationSettings(
 
   if (!user) throw new Error('Not authenticated')
 
-  // Update group settings
+  // Update group settings (notification_settings column doesn't exist, only default_frequency and default_channels)
   const groupUpdates: Partial<{
-    notification_settings: GroupNotificationSettings
     default_frequency: string
     default_channels: string[]
   }> = {}
 
-  if (settings.notification_settings) {
-    groupUpdates.notification_settings = settings.notification_settings
-  }
   if (settings.default_frequency) {
     groupUpdates.default_frequency = settings.default_frequency
   }
@@ -399,9 +406,9 @@ export async function updateGroupNotificationSettings(
 
   // Optionally apply to existing members who haven't overridden settings
   if (settings.apply_to_existing_members) {
-    const memberUpdates: Partial<Pick<GroupMembership, 'notification_frequency' | 'preferred_channels'>> = {}
+    const memberUpdates: Partial<Pick<GroupMembership, 'frequency' | 'preferred_channels'>> = {}
     if (settings.default_frequency) {
-      memberUpdates.notification_frequency = settings.default_frequency as GroupMembership['notification_frequency']
+      memberUpdates.frequency = settings.default_frequency as GroupMembership['frequency']
     }
     if (settings.default_channels) {
       memberUpdates.preferred_channels = settings.default_channels as GroupMembership['preferred_channels']
@@ -409,10 +416,10 @@ export async function updateGroupNotificationSettings(
 
     if (Object.keys(memberUpdates).length > 0) {
       const { error: memberError } = await supabase
-        .from('group_memberships')
+        .from('recipients')
         .update(memberUpdates)
         .eq('group_id', groupId)
-        .is('notification_frequency', null) // Only update members without custom settings
+        .is('frequency', null) // Only update members without custom settings
         .eq('is_active', true)
 
       if (memberError) {
@@ -434,7 +441,7 @@ export async function getGroupAnalytics(): Promise<{
   total_active_memberships: number
   average_group_size: number
   groups_by_size: { size_range: string; count: number }[]
-  notification_frequency_distribution: { frequency: string; count: number }[]
+  frequency_distribution: { frequency: string; count: number }[]
 }> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -451,8 +458,8 @@ export async function getGroupAnalytics(): Promise<{
   const groupIds = groups.map(g => g.id)
 
   const membershipsResult = await supabase
-    .from('group_memberships')
-    .select('group_id, notification_frequency')
+    .from('recipients')
+    .select('group_id, frequency')
     .eq('is_active', true)
     .in('group_id', groupIds)
 
@@ -461,7 +468,9 @@ export async function getGroupAnalytics(): Promise<{
   // Calculate group sizes
   const groupSizes = new Map<string, number>()
   memberships.forEach(m => {
-    groupSizes.set(m.group_id, (groupSizes.get(m.group_id) || 0) + 1)
+    if (m.group_id) {
+      groupSizes.set(m.group_id, (groupSizes.get(m.group_id) || 0) + 1)
+    }
   })
 
   const sizeCounts = { small: 0, medium: 0, large: 0 }
@@ -474,7 +483,7 @@ export async function getGroupAnalytics(): Promise<{
   // Frequency distribution
   const frequencyDist = new Map<string, number>()
   memberships.forEach(m => {
-    const freq = m.notification_frequency || 'default'
+    const freq = m.frequency || 'default'
     frequencyDist.set(freq, (frequencyDist.get(freq) || 0) + 1)
   })
 
@@ -487,7 +496,7 @@ export async function getGroupAnalytics(): Promise<{
       { size_range: '4-10 members', count: sizeCounts.medium },
       { size_range: '11+ members', count: sizeCounts.large }
     ],
-    notification_frequency_distribution: Array.from(frequencyDist.entries()).map(([frequency, count]) => ({
+    frequency_distribution: Array.from(frequencyDist.entries()).map(([frequency, count]) => ({
       frequency,
       count
     }))

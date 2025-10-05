@@ -10,7 +10,7 @@ interface GroupContext {
   group_id: string
   group_name: string
   role: string
-  joined_at: string
+  created_at: string
 }
 
 interface GroupMembershipWithGroup extends GroupMembership {
@@ -76,7 +76,7 @@ const DEFAULT_GROUP_CONTEXT: GroupContext = {
   group_id: 'default',
   group_name: 'Family',
   role: 'member',
-  joined_at: ''
+  created_at: ''
 }
 
 /**
@@ -154,7 +154,7 @@ export class GroupNotificationResolver {
             group_id: effectiveSettings.primary_group_id,
             group_name: effectiveSettings.primary_group_name,
             role: effectiveSettings.role,
-            joined_at: effectiveSettings.joined_at
+            created_at: effectiveSettings.created_at
           }
         })
       }
@@ -179,7 +179,7 @@ export class GroupNotificationResolver {
     primary_group_id: string
     primary_group_name: string
     role: string
-    joined_at: string
+    created_at: string
   }> {
     // Priority order: individual override > group settings > platform defaults
     let effectiveFrequency: NotificationFrequency = 'weekly_digest'
@@ -218,8 +218,8 @@ export class GroupNotificationResolver {
     }
 
     // Apply individual membership overrides
-    if (primaryMembership?.notification_frequency) {
-      effectiveFrequency = primaryMembership.notification_frequency
+    if (primaryMembership?.frequency) {
+      effectiveFrequency = primaryMembership.frequency
     }
     if (primaryMembership?.preferred_channels && primaryMembership.preferred_channels.length > 0) {
       effectiveChannels = primaryMembership.preferred_channels
@@ -235,7 +235,7 @@ export class GroupNotificationResolver {
       primary_group_id: primaryMembership?.group_id || DEFAULT_GROUP_CONTEXT.group_id,
       primary_group_name: primaryMembership?.recipient_groups?.name || DEFAULT_GROUP_CONTEXT.group_name,
       role: primaryMembership?.role || DEFAULT_GROUP_CONTEXT.role,
-      joined_at: primaryMembership?.joined_at || DEFAULT_GROUP_CONTEXT.joined_at
+      created_at: primaryMembership?.created_at || DEFAULT_GROUP_CONTEXT.created_at
     }
   }
 
@@ -551,7 +551,7 @@ export class GroupDigestProcessor {
         group_id: parsed.group_id || DEFAULT_GROUP_CONTEXT.group_id,
         group_name: parsed.group_name || DEFAULT_GROUP_CONTEXT.group_name,
         role: parsed.role || DEFAULT_GROUP_CONTEXT.role,
-        joined_at: parsed.joined_at || DEFAULT_GROUP_CONTEXT.joined_at
+        created_at: parsed.created_at || DEFAULT_GROUP_CONTEXT.created_at
       }
     } catch {
       return { ...DEFAULT_GROUP_CONTEXT }

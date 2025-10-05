@@ -13,7 +13,7 @@ const logger = createLogger('MuteAPI')
 type SupabaseServerClient = SupabaseClient<Database>
 type GroupMembershipMuteRecord = {
   group_id: string
-  notification_frequency: string | null
+  frequency: string | null
   mute_until: string | null
   mute_settings: Record<string, unknown> | null
   is_active: boolean
@@ -98,7 +98,7 @@ export async function GET(
     type RecipientRow = {
       id: string
       name?: string
-      group_preferences?: Record<string, unknown>
+      digest_preferences?: Record<string, unknown>
       notification_preferences?: NotificationPreferences
       is_active: boolean
     }
@@ -108,7 +108,7 @@ export async function GET(
       .select(`
         id,
         name,
-        group_preferences,
+        digest_preferences,
         notification_preferences,
         is_active
       `)
@@ -127,10 +127,10 @@ export async function GET(
 
     // Get group-specific mute settings from group_memberships
     let membershipQuery = supabase
-      .from('group_memberships')
+      .from('recipients')
       .select(`
         group_id,
-        notification_frequency,
+        frequency,
         mute_until,
         mute_settings,
         is_active,
@@ -342,7 +342,7 @@ export async function POST(
 
           // Validate group access
           const { data: validGroups } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             .select('group_id, recipient_groups!inner(name)')
             .eq('recipient_id', securityContext.recipient_id)
             .in('group_id', targetGroupIds)
@@ -358,7 +358,7 @@ export async function POST(
           // Apply mute to each group
           for (const group of validGroups as unknown as Array<{ group_id: string; recipient_groups: { name: string } }>) {
             const { error } = await supabase
-              .from('group_memberships')
+              .from('recipients')
               // @ts-expect-error - Supabase type inference issue
               .update({
                 mute_until: muteUntil?.toISOString() || null,
@@ -415,7 +415,7 @@ export async function POST(
 
           // Unmute specific groups
           const { error } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             // @ts-expect-error - Supabase type inference issue
             .update({
               mute_until: null,
@@ -471,7 +471,7 @@ export async function POST(
           const targetGroupIds = validatedData.group_ids || []
 
           const { error } = await supabase
-            .from('group_memberships')
+            .from('recipients')
             // @ts-expect-error - Supabase type inference issue
             .update({
               mute_until: muteUntil?.toISOString(),
@@ -561,7 +561,7 @@ export async function DELETE(
         .eq('id', securityContext.recipient_id),
 
       supabase
-        .from('group_memberships')
+        .from('recipients')
         // @ts-expect-error - Supabase type inference issue
         .update({
           mute_until: null,

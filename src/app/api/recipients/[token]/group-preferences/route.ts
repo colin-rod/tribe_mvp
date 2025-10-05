@@ -11,7 +11,7 @@ const logger = createLogger('GroupPreferencesAPI')
 // Schema for group-specific preference updates
 const groupPreferencesSchema = z.object({
   group_id: z.string().uuid(),
-  notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+  frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
   preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).min(1, 'At least one channel is required').optional(),
   content_types: z.array(z.enum(['photos', 'text', 'milestones'])).min(1, 'At least one content type is required').optional()
 })
@@ -61,7 +61,7 @@ export async function PUT(
     // Verify group membership
     type MembershipData = { id: string; is_active: boolean }
     const { data: membership, error: membershipError } = await supabase
-      .from('group_memberships')
+      .from('recipients')
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
@@ -84,7 +84,7 @@ export async function PUT(
 
     // Prepare update data
     const updateData: {
-      notification_frequency?: typeof validatedData.notification_frequency
+      frequency?: typeof validatedData.frequency
       preferred_channels?: typeof validatedData.preferred_channels
       content_types?: typeof validatedData.content_types
       updated_at: string
@@ -92,8 +92,8 @@ export async function PUT(
       updated_at: new Date().toISOString()
     }
 
-    if (validatedData.notification_frequency) {
-      updateData.notification_frequency = validatedData.notification_frequency
+    if (validatedData.frequency) {
+      updateData.frequency = validatedData.frequency
     }
 
     if (validatedData.preferred_channels) {
@@ -106,7 +106,7 @@ export async function PUT(
 
     // Update group membership preferences
     const { error: updateError } = await supabase
-      .from('group_memberships')
+      .from('recipients')
       // @ts-expect-error - Supabase type inference issue
       .update(updateData)
       .eq('id', typedMembership.id)
@@ -135,7 +135,7 @@ export async function PUT(
     return NextResponse.json({
       message: 'Group preferences updated successfully',
       effective_settings: effectiveSettings || {
-        frequency: validatedData.notification_frequency || 'every_update',
+        frequency: validatedData.frequency || 'every_update',
         channels: validatedData.preferred_channels || ['email'],
         content_types: validatedData.content_types || ['photos', 'text', 'milestones'],
         source: 'member_override'
@@ -197,7 +197,7 @@ export async function DELETE(
 
     // Verify group membership
     const { data: membership, error: membershipError } = await supabase
-      .from('group_memberships')
+      .from('recipients')
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
@@ -212,10 +212,10 @@ export async function DELETE(
 
     // Reset to group defaults by clearing custom settings
     const { error: updateError } = await supabase
-      .from('group_memberships')
+      .from('recipients')
       // @ts-expect-error - Supabase type inference issue
       .update({
-        notification_frequency: null,
+        frequency: null,
         preferred_channels: null,
         content_types: null,
         updated_at: new Date().toISOString()
@@ -301,7 +301,7 @@ export async function GET(
     if (groupId) {
       // Get specific group preferences
       const { data: membership, error: membershipError } = await supabase
-        .from('group_memberships')
+        .from('recipients')
         .select(`
           *,
           recipient_groups!inner(
@@ -334,7 +334,7 @@ export async function GET(
       )
 
       type MembershipType = {
-        notification_frequency?: string | null
+        frequency?: string | null
         preferred_channels?: string[] | null
         content_types?: string[] | null
       }
@@ -343,7 +343,7 @@ export async function GET(
         membership,
         effective_settings: effectiveSettings,
         has_custom_settings: !!(
-          (membership as MembershipType).notification_frequency ||
+          (membership as MembershipType).frequency ||
           (membership as MembershipType).preferred_channels ||
           (membership as MembershipType).content_types
         )
@@ -351,7 +351,7 @@ export async function GET(
     } else {
       // Get all group preferences
       const { data: memberships, error: membershipsError } = await supabase
-        .from('group_memberships')
+        .from('recipients')
         .select(`
           *,
           recipient_groups!inner(
@@ -377,7 +377,7 @@ export async function GET(
       // Enhance with effective settings
       type MembershipWithGroup = {
         group_id: string
-        notification_frequency?: string | null
+        frequency?: string | null
         preferred_channels?: string[] | null
         content_types?: string[] | null
         recipient_groups: { is_default_group?: boolean }
@@ -398,7 +398,7 @@ export async function GET(
             ...membership,
             effective_settings: effectiveSettings,
             has_custom_settings: !!(
-              membership.notification_frequency ||
+              membership.frequency ||
               membership.preferred_channels ||
               membership.content_types
             )

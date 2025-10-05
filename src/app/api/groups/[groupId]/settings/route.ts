@@ -53,7 +53,7 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid group ID format' }, { status: 400 })
     }
 
-    // Get group with detailed settings
+    // Get group with available settings (notification_settings and access_settings don't exist in schema)
     const { data: group, error } = await supabase
       .from('recipient_groups')
       .select(`
@@ -61,8 +61,6 @@ export async function GET(
         name,
         default_frequency,
         default_channels,
-        notification_settings,
-        access_settings,
         is_default_group,
         created_at,
         updated_at
@@ -75,26 +73,28 @@ export async function GET(
       return NextResponse.json({ error: 'Group not found or access denied' }, { status: 404 })
     }
 
-    // Get member count and settings summary
+    // Get member count via recipients table (group_memberships table doesn't exist)
     const { data: memberStats } = await supabase
-      .from('group_memberships')
-      .select('notification_frequency, preferred_channels, content_types')
+      .from('recipients')
+      .select('frequency, preferred_channels, content_types')
       .eq('group_id', groupId)
       .eq('is_active', true)
 
     type MemberStats = {
-      notification_frequency: string | null
+      frequency: string | null
       preferred_channels: string[] | null
       content_types: string[] | null
     }
 
     const membersWithCustomSettings = (memberStats as MemberStats[] | null)?.filter(m =>
-      m.notification_frequency || m.preferred_channels || m.content_types
+      m.frequency !== group.default_frequency ||
+      JSON.stringify(m.preferred_channels) !== JSON.stringify(group.default_channels) ||
+      m.content_types
     ).length || 0
 
     return NextResponse.json({
       group: {
-        ...(group as Record<string, unknown>),
+        ...group,
         member_count: memberStats?.length || 0,
         members_with_custom_settings: membersWithCustomSettings
       }
@@ -201,8 +201,6 @@ export async function PUT(
         name,
         default_frequency,
         default_channels,
-        notification_settings,
-        access_settings,
         updated_at
       `)
       .eq('id', groupId)
@@ -262,25 +260,29 @@ export async function PATCH(
 
     const validatedData = partialUpdateSchema.parse(body)
 
-    // Get current group settings
+    // Get current group settings (notification_settings and access_settings columns don't exist)
     const { data: group, error: groupError } = await supabase
       .from('recipient_groups')
-      .select('notification_settings, access_settings')
+      .select('id, default_frequency, default_channels')
       .eq('id', groupId)
       .eq('parent_id', user.id)
       .single()
 
     type GroupSettings = {
-      notification_settings: Record<string, unknown> | null
-      access_settings: Record<string, unknown> | null
+      id: string
+      default_frequency: string
+      default_channels: string[]
     }
 
     if (groupError || !group) {
       return NextResponse.json({ error: 'Group not found or access denied' }, { status: 404 })
     }
 
-    // Update specific setting path
-    const currentSettings = (group as GroupSettings).notification_settings || {}
+    // Since notification_settings doesn't exist, we'll work with default_frequency and default_channels
+    const currentSettings: Record<string, unknown> = {
+      default_frequency: (group as GroupSettings).default_frequency,
+      default_channels: (group as GroupSettings).default_channels
+    }
     const updatedSettings = { ...currentSettings } as Record<string, unknown>
     const pathParts = validatedData.setting_path.split('.')
 
@@ -314,24 +316,24 @@ export async function PATCH(
     if (validatedData.apply_to_members) {
       // Apply specific setting to all members without custom overrides
       const memberUpdate: Partial<{
-        notification_frequency: string | null
+        frequency: string | null
         preferred_channels: string[] | null
       }> = {}
 
       if (validatedData.setting_path === 'default_frequency') {
-        memberUpdate.notification_frequency = validatedData.value
+        memberUpdate.frequency = validatedData.value
       } else if (validatedData.setting_path === 'default_channels') {
         memberUpdate.preferred_channels = validatedData.value
       }
 
       if (Object.keys(memberUpdate).length > 0) {
         await supabase
-          .from('group_memberships')
+          .from('recipients')
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore - Supabase type inference limitation with dynamic updates
           .update(memberUpdate)
           .eq('group_id', groupId)
-          .is('notification_frequency', null)
+          .is('frequency', null)
           .eq('is_active', true)
       }
     }

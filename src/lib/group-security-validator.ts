@@ -61,7 +61,7 @@ export const groupCreationSchema = z.object({
 export const groupUpdateSchema = groupCreationSchema.partial()
 
 export const membershipUpdateSchema = z.object({
-  notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+  frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
   preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
   content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
   role: z.enum(['member', 'admin']).optional()
@@ -74,7 +74,7 @@ export const bulkMembershipSchema = z.object({
 
 export const recipientGroupSettingsSchema = z.object({
   group_id: z.string().uuid(),
-  notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+  frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
   preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
   content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional()
 })

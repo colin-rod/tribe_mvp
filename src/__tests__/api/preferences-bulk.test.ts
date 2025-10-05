@@ -54,7 +54,7 @@ describe('Bulk Preferences API Tests', () => {
         {
           group_id: 'group-1',
           recipient_id: 'recipient-1',
-          notification_frequency: 'daily_digest',
+          frequency: 'daily_digest',
           preferred_channels: ['email'],
           content_types: ['photos', 'text'],
           role: 'member',
@@ -158,7 +158,7 @@ describe('Bulk Preferences API Tests', () => {
           ids: ['group-1']
         },
         settings: {
-          notification_frequency: 'daily_digest',
+          frequency: 'daily_digest',
           preferred_channels: ['email', 'sms']
         }
       }
@@ -181,7 +181,7 @@ describe('Bulk Preferences API Tests', () => {
           data: [{
             recipient_id: 'recipient-1',
             group_id: 'group-1',
-            notification_frequency: null,
+            frequency: null,
             preferred_channels: null,
             content_types: null,
             recipients: { id: 'recipient-1', name: 'Test', relationship: 'friend', parent_id: 'user-123' }
@@ -218,7 +218,7 @@ describe('Bulk Preferences API Tests', () => {
           ids: ['recipient-1']
         },
         settings: {
-          notification_frequency: 'weekly_digest'
+          frequency: 'weekly_digest'
         },
         preserve_custom_overrides: true
       }
@@ -235,7 +235,7 @@ describe('Bulk Preferences API Tests', () => {
           data: [{
             recipient_id: 'recipient-1',
             group_id: 'group-1',
-            notification_frequency: 'daily_digest', // Has custom setting
+            frequency: 'daily_digest', // Has custom setting
             preferred_channels: ['email'],
             content_types: ['photos'],
             recipients: { id: 'recipient-1', parent_id: 'user-123' }
@@ -293,7 +293,7 @@ describe('Bulk Preferences API Tests', () => {
           data: [{
             recipient_id: 'recipient-1',
             group_id: 'group-1',
-            notification_frequency: 'daily_digest',
+            frequency: 'daily_digest',
             preferred_channels: ['email'],
             content_types: ['photos'],
             recipients: { id: 'recipient-1', parent_id: 'user-123' }
@@ -357,7 +357,7 @@ describe('Bulk Preferences API Tests', () => {
           data: [{
             recipient_id: 'recipient-1',
             group_id: 'group-target',
-            notification_frequency: null,
+            frequency: null,
             preferred_channels: null,
             content_types: null,
             recipients: { id: 'recipient-1', parent_id: 'user-123' }
@@ -480,7 +480,7 @@ describe('Bulk Preferences API Tests', () => {
           }
         },
         settings: {
-          notification_frequency: 'daily_digest'
+          frequency: 'daily_digest'
         }
       }
 
@@ -512,7 +512,7 @@ describe('Bulk Preferences API Tests', () => {
           }
         },
         settings: {
-          notification_frequency: 'weekly_digest'
+          frequency: 'weekly_digest'
         }
       }
 
@@ -587,7 +587,7 @@ describe('Bulk Preferences API Tests', () => {
           ids: ['recipient-1', 'recipient-2']
         },
         settings: {
-          notification_frequency: 'daily_digest'
+          frequency: 'daily_digest'
         }
       }
 
@@ -601,8 +601,8 @@ describe('Bulk Preferences API Tests', () => {
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [
-            { recipient_id: 'recipient-1', group_id: 'group-1', notification_frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-1', parent_id: 'user-123' } },
-            { recipient_id: 'recipient-2', group_id: 'group-1', notification_frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-2', parent_id: 'user-123' } }
+            { recipient_id: 'recipient-1', group_id: 'group-1', frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-1', parent_id: 'user-123' } },
+            { recipient_id: 'recipient-2', group_id: 'group-1', frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-2', parent_id: 'user-123' } }
           ],
           error: null
         })

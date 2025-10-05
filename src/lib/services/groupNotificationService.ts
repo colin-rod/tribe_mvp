@@ -35,7 +35,7 @@ export interface NotificationRecipient {
 export interface GroupMembership {
   group_id: string
   group_name: string
-  notification_frequency?: string
+  frequency?: string
   preferred_channels?: string[]
   content_types?: string[]
   mute_until?: string
@@ -78,31 +78,30 @@ export class GroupNotificationService {
   async getGroupRecipients(groupId: string, parentId: string): Promise<NotificationRecipient[]> {
     try {
       const { data: memberships, error } = await this.supabase
-        .from('group_memberships')
+        .from('recipients')
         .select(`
-          *,
-          recipients!inner(
-            id,
-            name,
-            email,
-            phone,
-            preference_token,
-            relationship,
-            notification_preferences,
-            parent_id
-          ),
+          id,
+          name,
+          email,
+          phone,
+          preference_token,
+          relationship,
+          parent_id,
+          group_id,
+          frequency,
+          preferred_channels,
+          content_types,
+          is_active,
           recipient_groups!inner(
             id,
             name,
             default_frequency,
-            default_channels,
-            notification_settings
+            default_channels
           )
         `)
         .eq('group_id', groupId)
         .eq('is_active', true)
-        .eq('recipients.parent_id', parentId)
-        .eq('recipients.is_active', true)
+        .eq('parent_id', parentId)
 
       if (error) {
         logger.errorWithStack('Error fetching group recipients:', error as Error)
@@ -110,59 +109,53 @@ export class GroupNotificationService {
       }
 
       type MembershipWithRelations = {
-        recipients: {
-          id: string
-          name: string
-          email?: string
-          phone?: string
-          preference_token: string
-          relationship: string
-          notification_preferences?: NotificationPreferences
-          parent_id: string
-        }
+        id: string
+        name: string
+        email: string | null
+        phone: string | null
+        preference_token: string
+        relationship: string
+        parent_id: string
+        group_id: string | null
+        frequency: string | null
+        preferred_channels: string[] | null
+        content_types: string[] | null
+        is_active: boolean | null
         recipient_groups: {
           id: string
           name: string
-          default_frequency: string
-          default_channels: string[]
-          notification_settings: Record<string, unknown>
+          default_frequency: string | null
+          default_channels: string[] | null
         }
-        notification_frequency?: string
-        preferred_channels?: string[]
-        content_types?: string[]
-        mute_until?: string
-        mute_settings?: MuteSettings
-        is_active: boolean
       }
 
       // Transform data and check for mutes
       const recipients: NotificationRecipient[] = []
 
       for (const membership of (memberships || []) as MembershipWithRelations[]) {
-        const recipient = membership.recipients
         const group = membership.recipient_groups
 
         // Check if recipient is currently muted
-        const isMuted = await this.isRecipientMuted(recipient.id, groupId)
+        const isMuted = await this.isRecipientMuted(membership.id, groupId)
 
         if (!isMuted) {
           recipients.push({
-            id: recipient.id,
-            name: recipient.name,
-            email: recipient.email,
-            phone: recipient.phone,
-            preference_token: recipient.preference_token,
-            relationship: recipient.relationship,
-            notification_preferences: recipient.notification_preferences,
+            id: membership.id,
+            name: membership.name,
+            email: membership.email || undefined,
+            phone: membership.phone || undefined,
+            preference_token: membership.preference_token,
+            relationship: membership.relationship,
+            notification_preferences: undefined, // Not available on recipients table
             group_memberships: [{
               group_id: groupId,
               group_name: group.name,
-              notification_frequency: membership.notification_frequency,
-              preferred_channels: membership.preferred_channels,
-              content_types: membership.content_types,
-              mute_until: membership.mute_until,
-              mute_settings: membership.mute_settings,
-              is_active: membership.is_active
+              frequency: membership.frequency || undefined,
+              preferred_channels: membership.preferred_channels || undefined,
+              content_types: membership.content_types || undefined,
+              mute_until: undefined, // Not available
+              mute_settings: undefined, // Not available
+              is_active: membership.is_active || false
             }]
           })
         }
@@ -213,7 +206,7 @@ export class GroupNotificationService {
         return !preserveUrgent // If preserve_urgent is true, don't suppress urgent notifications
       }
 
-      return data
+      return Boolean(data)
 
     } catch (error) {
       logger.errorWithStack('Error checking mute status:', error as Error)
@@ -241,7 +234,7 @@ export class GroupNotificationService {
       if (error || !data) {
         // Fallback to manual resolution
         type MembershipWithGroup = {
-          notification_frequency?: string
+          frequency?: string
           preferred_channels?: string[]
           content_types?: string[]
           recipient_groups: {
@@ -251,9 +244,9 @@ export class GroupNotificationService {
         }
 
         const { data: membership } = await this.supabase
-          .from('group_memberships')
+          .from('recipients')
           .select(`
-            notification_frequency,
+            frequency,
             preferred_channels,
             content_types,
             recipient_groups!inner(
@@ -269,10 +262,10 @@ export class GroupNotificationService {
         if (membership) {
           const typedMembership = membership as unknown as MembershipWithGroup
           return {
-            frequency: typedMembership.notification_frequency || typedMembership.recipient_groups.default_frequency || 'every_update',
+            frequency: typedMembership.frequency || typedMembership.recipient_groups.default_frequency || 'every_update',
             channels: typedMembership.preferred_channels || typedMembership.recipient_groups.default_channels || ['email'],
             content_types: typedMembership.content_types || ['photos', 'text', 'milestones'],
-            source: typedMembership.notification_frequency ? 'member_override' : 'group_default'
+            source: typedMembership.frequency ? 'member_override' : 'group_default'
           }
         }
 
@@ -285,7 +278,12 @@ export class GroupNotificationService {
         }
       }
 
-      return data
+      return data as {
+        frequency: string
+        channels: string[]
+        content_types: string[]
+        source: 'member_override' | 'group_default' | 'system_default'
+      }
 
     } catch (error) {
       logger.errorWithStack('Error getting effective settings:', error as Error)
@@ -293,7 +291,7 @@ export class GroupNotificationService {
         frequency: 'every_update',
         channels: ['email'],
         content_types: ['photos', 'text', 'milestones'],
-        source: 'system_default'
+        source: 'system_default' as const
       }
     }
   }
@@ -322,7 +320,7 @@ export class GroupNotificationService {
         return true // Default to deliver if error
       }
 
-      return data || false
+      return Boolean(data)
 
     } catch (error) {
       logger.errorWithStack('Error in shouldDeliverNotification:', error as Error)
@@ -410,7 +408,7 @@ export class GroupNotificationService {
       // Store jobs in database
       if (jobs.length > 0) {
         const { error } = await this.supabase
-          .from('notification_jobs')
+          .from('delivery_jobs')
           // @ts-expect-error - Supabase type inference issue
           .insert(jobs.map(job => ({
             ...job,
@@ -439,7 +437,7 @@ export class GroupNotificationService {
     try {
       // Get pending jobs that are due
       const { data: jobs, error } = await this.supabase
-        .from('notification_jobs')
+        .from('delivery_jobs')
         .select('*')
         .eq('status', 'pending')
         .lte('scheduled_for', new Date().toISOString())
@@ -897,8 +895,7 @@ export class GroupNotificationService {
     }
 
     const { error } = await this.supabase
-      .from('notification_jobs')
-      // @ts-expect-error - Supabase type inference issue
+      .from('delivery_jobs')
       .update(updateData)
       .eq('id', jobId)
 
@@ -972,15 +969,14 @@ export class GroupNotificationService {
       startDate.setDate(startDate.getDate() - days)
 
       type JobAnalytics = {
-        delivery_method: 'email' | 'sms' | 'whatsapp'
-        status: 'pending' | 'sent' | 'failed' | 'skipped'
+        channel: 'email' | 'sms' | 'whatsapp'
+        status: 'queued' | 'sent' | 'delivered' | 'failed'
       }
 
       const { data: jobs, error } = await this.supabase
-        .from('notification_jobs')
-        .select('delivery_method, status')
-        .eq('group_id', groupId)
-        .gte('created_at', startDate.toISOString())
+        .from('delivery_jobs')
+        .select('channel, status')
+        .gte('queued_at', startDate.toISOString())
 
       if (error) {
         logger.errorWithStack('Error fetching notification analytics:', error as Error)
@@ -1003,18 +999,18 @@ export class GroupNotificationService {
         stats.total_sent++
 
         switch (job.status) {
-          case 'sent':
+          case 'delivered':
             stats.total_delivered++
             break
           case 'failed':
             stats.total_failed++
             break
-          case 'skipped':
-            stats.total_muted++
+          case 'sent':
+            stats.total_delivered++
             break
         }
 
-        channelCounts.set(job.delivery_method, (channelCounts.get(job.delivery_method) || 0) + 1)
+        channelCounts.set(job.channel, (channelCounts.get(job.channel) || 0) + 1)
       }
 
       stats.delivery_rate = stats.total_sent > 0 ? (stats.total_delivered / stats.total_sent) * 100 : 0

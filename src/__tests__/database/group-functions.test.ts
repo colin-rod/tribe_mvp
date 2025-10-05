@@ -438,7 +438,7 @@ describe('Group Management Database Functions', () => {
         insert: jest.fn().mockResolvedValueOnce(mockValidation)
       })
 
-      const insertResult = mockSupabase.from('group_memberships')
+      const insertResult = mockSupabase.from('recipients')
       const result = await insertResult.insert({
         recipient_id: 'recipient-123',
         group_id: 'group-different-parent'
@@ -458,7 +458,7 @@ describe('Group Management Database Functions', () => {
         insert: jest.fn().mockResolvedValueOnce(mockValidation)
       })
 
-      const insertResult = mockSupabase.from('group_memberships')
+      const insertResult = mockSupabase.from('recipients')
       const result = await insertResult.insert({
         recipient_id: 'recipient-at-limit',
         group_id: 'group-123'
@@ -484,7 +484,7 @@ describe('Group Management Database Functions', () => {
         insert: jest.fn().mockResolvedValueOnce(mockSuccess)
       })
 
-      const insertResult = mockSupabase.from('group_memberships')
+      const insertResult = mockSupabase.from('recipients')
       const result = await insertResult.insert({
         recipient_id: 'recipient-123',
         group_id: 'group-456',

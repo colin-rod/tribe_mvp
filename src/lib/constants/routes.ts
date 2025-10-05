@@ -72,7 +72,7 @@ export function getNavigationItemByPath(pathname: string) {
   return NAVIGATION_ITEMS.find(
     (item) =>
       item.href === pathname ||
-      item.alternateHrefs?.includes(pathname as DashboardRoute)
+      ('alternateHrefs' in item && item.alternateHrefs?.includes(pathname as DashboardRoute))
   );
 }
 

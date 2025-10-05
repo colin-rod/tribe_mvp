@@ -117,24 +117,6 @@ export function FormValidationProvider<T extends Record<string, unknown>>({
     }
   }, [])
 
-  // Debounced field validation
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedValidateField = useCallback(
-    debounce((field: keyof T) => {
-      validateField(field)
-    }, validateDebounceMs),
-    [validateDebounceMs]
-  )
-
-  // Set field value
-  const setFieldValue = useCallback((field: keyof T, value: unknown) => {
-    setValues((prev) => ({ ...prev, [field]: value }))
-
-    if (validateOnChange) {
-      debouncedValidateField(field)
-    }
-  }, [validateOnChange, debouncedValidateField])
-
   // Set field error
   const setFieldError = useCallback((field: keyof T, error: string) => {
     setErrors((prev) => ({ ...prev, [field as string]: error }))
@@ -150,18 +132,6 @@ export function FormValidationProvider<T extends Record<string, unknown>>({
     })
     clearAnnouncement()
   }, [clearAnnouncement])
-
-  // Set field touched
-  const setFieldTouched = useCallback(
-    (field: keyof T, isTouched = true) => {
-      setTouched((prev) => ({ ...prev, [field as string]: isTouched }))
-
-      if (isTouched && validateOnBlur) {
-        validateField(field)
-      }
-    },
-    [validateOnBlur, validateField]
-  )
 
   // Validate single field
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,6 +164,36 @@ export function FormValidationProvider<T extends Record<string, unknown>>({
       }
     },
     [validationSchema, values, setFieldError, clearFieldError]
+  )
+
+  // Debounced field validation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedValidateField = useCallback(
+    debounce((field: keyof T) => {
+      validateField(field)
+    }, validateDebounceMs),
+    [validateDebounceMs, validateField]
+  )
+
+  // Set field value
+  const setFieldValue = useCallback((field: keyof T, value: unknown) => {
+    setValues((prev) => ({ ...prev, [field]: value }))
+
+    if (validateOnChange) {
+      debouncedValidateField(field)
+    }
+  }, [validateOnChange, debouncedValidateField])
+
+  // Set field touched
+  const setFieldTouched = useCallback(
+    (field: keyof T, isTouched = true) => {
+      setTouched((prev) => ({ ...prev, [field as string]: isTouched }))
+
+      if (isTouched && validateOnBlur) {
+        validateField(field)
+      }
+    },
+    [validateOnBlur, validateField]
   )
 
   // Validate entire form

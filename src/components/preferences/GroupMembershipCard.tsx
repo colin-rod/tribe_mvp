@@ -33,7 +33,7 @@ export interface GroupMembership {
     is_default_group: boolean
     member_count?: number
   }
-  notification_frequency?: string
+  frequency?: string
   preferred_channels?: string[]
   content_types?: string[]
   role: string

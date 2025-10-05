@@ -23,7 +23,7 @@ const bulkPreferenceOperationSchema = z.object({
     }).optional()
   }),
   settings: z.object({
-    notification_frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
+    frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
     preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
     content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
     quiet_hours: z.object({
@@ -56,11 +56,14 @@ type TargetGroup = {
   is_default_group: boolean
 }
 type TargetRecipient = {
-  recipient_id: string
-  group_id: string
-  notification_frequency: string | null
+  id: string
+  group_id: string | null
+  frequency: string | null
   preferred_channels: string[] | null
   content_types: string[] | null
+  name: string
+  relationship: string
+  parent_id: string
 }
 type OperationResult = {
   recipient_id: string
@@ -131,11 +134,11 @@ export async function GET(request: NextRequest) {
     // Get membership information
     const groupIds = (groups as unknown as GroupRow[])?.map(g => g.id) || []
     const membershipQuery = supabase
-      .from('group_memberships')
+      .from('recipients')
       .select(`
         group_id,
         recipient_id,
-        notification_frequency,
+        frequency,
         preferred_channels,
         content_types,
         role,
@@ -169,7 +172,7 @@ export async function GET(request: NextRequest) {
     type MembershipRow = {
       group_id: string
       recipient_id: string
-      notification_frequency: string | null
+      frequency: string | null
       preferred_channels: string[] | null
       content_types: string[] | null
       role: string
@@ -191,7 +194,7 @@ export async function GET(request: NextRequest) {
         ...group,
         member_count: groupMemberships.length,
         members_with_custom_settings: groupMemberships.filter(m =>
-          m.notification_frequency || m.preferred_channels || m.content_types
+          m.frequency || m.preferred_channels || m.content_types
         ).length,
         members: groupMemberships.map(m => ({
           ...m,
@@ -208,7 +211,7 @@ export async function GET(request: NextRequest) {
       const channelDistribution = new Map<string, number>()
 
       allMemberships.forEach(m => {
-        const freq = m.notification_frequency || 'default'
+        const freq = m.frequency || 'default'
         frequencyDistribution.set(freq, (frequencyDistribution.get(freq) || 0) + 1)
 
         if (m.preferred_channels) {
@@ -222,7 +225,7 @@ export async function GET(request: NextRequest) {
         total_groups: groupsWithMembers.length,
         total_recipients: allMemberships.length,
         recipients_with_custom_settings: allMemberships.filter(m =>
-          m.notification_frequency || m.preferred_channels || m.content_types
+          m.frequency || m.preferred_channels || m.content_types
         ).length,
         frequency_distribution: Array.from(frequencyDistribution.entries()).map(([freq, count]) => ({
           frequency: freq,
@@ -343,7 +346,7 @@ export async function POST(request: NextRequest) {
     // Invalidate caches
     GroupCacheManager.invalidateUserCache(user.id)
     targetRecipients.forEach(recipient => {
-      GroupCacheManager.invalidateRecipientCache(recipient.recipient_id)
+      GroupCacheManager.invalidateRecipientCache(recipient.id)
     })
 
     // Send notifications if requested
@@ -410,54 +413,48 @@ async function getTargetRecipients(
   targetGroups: TargetGroup[]
 ): Promise<TargetRecipient[]> {
   let membershipQuery = supabase
-    .from('group_memberships')
+    .from('recipients')
     .select(`
-      recipient_id,
+      id,
       group_id,
-      notification_frequency,
+      frequency,
       preferred_channels,
       content_types,
-      recipients!inner(
-        id,
-        name,
-        relationship,
-        parent_id,
-        last_seen_at
-      )
+      name,
+      relationship,
+      parent_id
     `)
     .eq('is_active', true)
+    .eq('parent_id', userId)
 
   // Filter by target type
   if (target.type === 'recipients' && target.ids) {
-    membershipQuery = membershipQuery.in('recipient_id', target.ids)
+    membershipQuery = membershipQuery.in('id', target.ids)
   } else if (target.type === 'groups') {
     membershipQuery = membershipQuery.in('group_id', targetGroups.map(g => g.id))
   }
 
   // Apply additional filters
   if (target.filters?.relationship_type) {
-    membershipQuery = membershipQuery.in('recipients.relationship', target.filters.relationship_type)
+    membershipQuery = membershipQuery.in('relationship', target.filters.relationship_type)
   }
 
   if (target.filters?.has_custom_settings !== undefined) {
     if (target.filters.has_custom_settings) {
-      membershipQuery = membershipQuery.or('notification_frequency.not.is.null,preferred_channels.not.is.null,content_types.not.is.null')
+      membershipQuery = membershipQuery.or('frequency.not.is.null,preferred_channels.not.is.null,content_types.not.is.null')
     } else {
-      membershipQuery = membershipQuery.is('notification_frequency', null)
+      membershipQuery = membershipQuery.is('frequency', null)
         .is('preferred_channels', null)
         .is('content_types', null)
     }
   }
-
-  // Ensure recipient belongs to the authenticated user
-  membershipQuery = membershipQuery.eq('recipients.parent_id', userId)
 
   const { data: memberships } = await membershipQuery
   return (memberships as TargetRecipient[]) || []
 }
 
 type GroupMembershipUpdatePayload = {
-  notification_frequency?: BulkPreferenceSettings['notification_frequency'] | null
+  frequency?: BulkPreferenceSettings['frequency'] | null
   preferred_channels?: BulkPreferenceSettings['preferred_channels'] | null
   content_types?: BulkPreferenceSettings['content_types'] | null
 }
@@ -477,12 +474,12 @@ async function executeUpdateOperation(
       const updateData: GroupMembershipUpdatePayload = {}
 
       // Only update if preserveCustomOverrides is false or recipient doesn't have custom settings
-      const hasCustomSettings = recipient.notification_frequency ||
+      const hasCustomSettings = recipient.frequency ||
                                recipient.preferred_channels ||
                                recipient.content_types
 
       if (!preserveCustomOverrides || !hasCustomSettings) {
-        if (settings.notification_frequency) updateData.notification_frequency = settings.notification_frequency
+        if (settings.frequency) updateData.frequency = settings.frequency
         if (settings.preferred_channels) updateData.preferred_channels = settings.preferred_channels
         if (settings.content_types) updateData.content_types = settings.content_types
       }
@@ -490,16 +487,16 @@ async function executeUpdateOperation(
       if (Object.keys(updateData).length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase as any)
-          .from('group_memberships')
+          .from('recipients')
           .update(updateData)
-          .eq('recipient_id', recipient.recipient_id)
+          .eq('id', recipient.id)
           .eq('group_id', recipient.group_id)
 
         if (error) throw error
       }
 
       results.push({
-        recipient_id: recipient.recipient_id,
+        recipient_id: recipient.id,
         group_id: recipient.group_id,
         success: true,
         updates_applied: Object.keys(updateData),
@@ -508,7 +505,7 @@ async function executeUpdateOperation(
       successCount++
     } catch (error) {
       results.push({
-        recipient_id: recipient.recipient_id,
+        recipient_id: recipient.id,
         group_id: recipient.group_id,
         success: false,
         error: (error as Error).message
@@ -532,19 +529,19 @@ async function executeResetOperation(
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
-        .from('group_memberships')
+        .from('recipients')
         .update({
-          notification_frequency: null,
+          frequency: null,
           preferred_channels: null,
           content_types: null
         })
-        .eq('recipient_id', recipient.recipient_id)
+        .eq('id', recipient.id)
         .eq('group_id', recipient.group_id)
 
       if (error) throw error
 
       results.push({
-        recipient_id: recipient.recipient_id,
+        recipient_id: recipient.id,
         group_id: recipient.group_id,
         success: true,
         action: 'reset_to_group_defaults'
@@ -552,7 +549,7 @@ async function executeResetOperation(
       successCount++
     } catch (error) {
       results.push({
-        recipient_id: recipient.recipient_id,
+        recipient_id: recipient.id,
         group_id: recipient.group_id,
         success: false,
         error: (error as Error).message
@@ -572,7 +569,7 @@ async function executeCopyOperation(
   preserveCustomOverrides: boolean
 ) {
   type RecipientGroupDefaults = {
-    default_frequency: BulkPreferenceSettings['notification_frequency'] | null
+    default_frequency: BulkPreferenceSettings['frequency'] | null
     default_channels: BulkPreferenceSettings['preferred_channels'] | null
     notification_settings: { content_types?: BulkPreferenceSettings['content_types'] } | null
   }
@@ -580,7 +577,7 @@ async function executeCopyOperation(
   // Get source group settings
   const { data: sourceGroup } = await supabase
     .from('recipient_groups')
-    .select('default_frequency, default_channels, notification_settings')
+    .select('default_frequency, default_channels')
     .eq('id', sourceGroupId)
     .eq('parent_id', userId)
     .single<RecipientGroupDefaults>()
@@ -590,7 +587,7 @@ async function executeCopyOperation(
   }
 
   const settings: BulkPreferenceSettings = {
-    notification_frequency: sourceGroup.default_frequency || undefined,
+    frequency: sourceGroup.default_frequency || undefined,
     preferred_channels: sourceGroup.default_channels || undefined,
     content_types: sourceGroup.notification_settings?.content_types || ['photos', 'text', 'milestones']
   }

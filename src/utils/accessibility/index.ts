@@ -6,10 +6,25 @@
  */
 
 // Core accessibility utilities
-export * from '../a11y'
+export {
+  announceToScreenReader,
+  isElementVisible,
+  getContrastRatio,
+  meetsWCAGStandard,
+  generateAriaLabel
+} from '../a11y'
 
-// Keyboard navigation utilities
-export * from '../keyboard-navigation'
+// Keyboard navigation utilities (takes precedence for duplicates)
+export {
+  KEYBOARD_KEYS,
+  isActivationKey,
+  isArrowKey,
+  isNavigationKey,
+  handleArrowKeyNavigation,
+  getFocusableElements,
+  trapFocus,
+  restoreFocus
+} from '../keyboard-navigation'
 
 // Focus management hooks
 export { useFocusTrap } from '@/hooks/useFocusTrap'
@@ -26,6 +41,3 @@ export {
 // Accessible components
 export { Menu, MenuItemComponent } from '@/components/ui/Menu'
 export type { MenuItem, MenuProps, MenuItemProps } from '@/components/ui/Menu'
-
-// Re-export commonly used utilities
-export { KEYBOARD_KEYS } from '../keyboard-navigation'
