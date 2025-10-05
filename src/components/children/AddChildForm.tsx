@@ -91,13 +91,13 @@ export default function AddChildForm({ onChildAdded, onCancel }: AddChildFormPro
         profile_photo_url: undefined as string | undefined
       }
 
-      let newChild = await createChild(childData)
+      let newChild = await createChild(childData) as Child
 
       // Upload photo if provided and update the child with the photo URL
-      if (photo) {
+      if (photo && newChild?.id) {
         const photoUrl = await uploadChildPhoto(photo, newChild.id)
         // Update the child in the database with the photo URL
-        newChild = await updateChild(newChild.id, { profile_photo_url: photoUrl })
+        newChild = await updateChild(newChild.id, { profile_photo_url: photoUrl }) as Child
       }
 
       onChildAdded(newChild)

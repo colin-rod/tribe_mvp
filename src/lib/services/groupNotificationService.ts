@@ -109,10 +109,36 @@ export class GroupNotificationService {
         throw new Error('Failed to fetch group recipients')
       }
 
+      type MembershipWithRelations = {
+        recipients: {
+          id: string
+          name: string
+          email?: string
+          phone?: string
+          preference_token: string
+          relationship: string
+          notification_preferences?: NotificationPreferences
+          parent_id: string
+        }
+        recipient_groups: {
+          id: string
+          name: string
+          default_frequency: string
+          default_channels: string[]
+          notification_settings: Record<string, unknown>
+        }
+        notification_frequency?: string
+        preferred_channels?: string[]
+        content_types?: string[]
+        mute_until?: string
+        mute_settings?: MuteSettings
+        is_active: boolean
+      }
+
       // Transform data and check for mutes
       const recipients: NotificationRecipient[] = []
 
-      for (const membership of memberships || []) {
+      for (const membership of (memberships || []) as MembershipWithRelations[]) {
         const recipient = membership.recipients
         const group = membership.recipient_groups
 
@@ -160,6 +186,7 @@ export class GroupNotificationService {
   ): Promise<boolean> {
     try {
       const { data, error } = await this.supabase
+        // @ts-expect-error - Supabase type inference issue
         .rpc('is_recipient_muted', {
           p_recipient_id: recipientId,
           p_group_id: groupId
@@ -176,12 +203,13 @@ export class GroupNotificationService {
       // If muted, check if urgent notifications should still be delivered
       if (urgencyLevel === 'urgent') {
         const { data: muteSettings } = await this.supabase
+          // @ts-expect-error - Supabase type inference issue
           .rpc('get_mute_settings', {
             p_recipient_id: recipientId,
             p_group_id: groupId
           })
 
-        const preserveUrgent = muteSettings?.preserve_urgent !== false
+        const preserveUrgent = (muteSettings as { preserve_urgent?: boolean } | null)?.preserve_urgent !== false
         return !preserveUrgent // If preserve_urgent is true, don't suppress urgent notifications
       }
 
@@ -204,6 +232,7 @@ export class GroupNotificationService {
   }> {
     try {
       const { data, error } = await this.supabase
+        // @ts-expect-error - Supabase type inference issue
         .rpc('get_effective_notification_settings', {
           p_recipient_id: recipientId,
           p_group_id: groupId
@@ -211,6 +240,16 @@ export class GroupNotificationService {
 
       if (error || !data) {
         // Fallback to manual resolution
+        type MembershipWithGroup = {
+          notification_frequency?: string
+          preferred_channels?: string[]
+          content_types?: string[]
+          recipient_groups: {
+            default_frequency: string
+            default_channels: string[]
+          }
+        }
+
         const { data: membership } = await this.supabase
           .from('group_memberships')
           .select(`
@@ -228,11 +267,12 @@ export class GroupNotificationService {
           .single()
 
         if (membership) {
+          const typedMembership = membership as unknown as MembershipWithGroup
           return {
-            frequency: membership.notification_frequency || (membership.recipient_groups as unknown as { default_frequency: string }).default_frequency || 'every_update',
-            channels: membership.preferred_channels || (membership.recipient_groups as unknown as { default_channels: string[] }).default_channels || ['email'],
-            content_types: membership.content_types || ['photos', 'text', 'milestones'],
-            source: membership.notification_frequency ? 'member_override' : 'group_default'
+            frequency: typedMembership.notification_frequency || typedMembership.recipient_groups.default_frequency || 'every_update',
+            channels: typedMembership.preferred_channels || typedMembership.recipient_groups.default_channels || ['email'],
+            content_types: typedMembership.content_types || ['photos', 'text', 'milestones'],
+            source: typedMembership.notification_frequency ? 'member_override' : 'group_default'
           }
         }
 
@@ -269,6 +309,7 @@ export class GroupNotificationService {
   ): Promise<boolean> {
     try {
       const { data, error } = await this.supabase
+        // @ts-expect-error - Supabase type inference issue
         .rpc('should_deliver_notification', {
           p_recipient_id: recipientId,
           p_group_id: groupId,
@@ -370,6 +411,7 @@ export class GroupNotificationService {
       if (jobs.length > 0) {
         const { error } = await this.supabase
           .from('notification_jobs')
+          // @ts-expect-error - Supabase type inference issue
           .insert(jobs.map(job => ({
             ...job,
             created_at: new Date().toISOString()
@@ -415,7 +457,20 @@ export class GroupNotificationService {
 
       const results: DeliveryResult[] = []
 
-      for (const job of jobs) {
+      type NotificationJobFromDB = {
+        id: string
+        recipient_id: string
+        group_id: string
+        update_id: string
+        notification_type: 'immediate' | 'digest' | 'milestone'
+        urgency_level: 'normal' | 'urgent' | 'low'
+        delivery_method: 'email' | 'sms' | 'whatsapp'
+        content: NotificationContent
+        scheduled_for: string
+        status: 'pending' | 'sent' | 'failed' | 'skipped'
+      }
+
+      for (const job of (jobs as unknown as NotificationJobFromDB[])) {
         try {
           // Double-check if recipient is still eligible for notification
           const shouldDeliver = await this.shouldDeliverNotification(
@@ -439,7 +494,7 @@ export class GroupNotificationService {
           }
 
           // Attempt delivery
-          const deliveryResult = await this.deliverNotification(job)
+          const deliveryResult = await this.deliverNotification(job as NotificationJob)
           results.push(deliveryResult)
 
           // Update job status
@@ -483,6 +538,12 @@ export class GroupNotificationService {
     })
 
     try {
+      type RecipientDetails = {
+        email?: string
+        phone?: string
+        name: string
+      }
+
       // Get recipient details for delivery
       const { data: recipient, error: recipientError } = await this.supabase
         .from('recipients')
@@ -504,20 +565,22 @@ export class GroupNotificationService {
         }
       }
 
+      const typedRecipient = recipient as unknown as RecipientDetails
+
       // Prepare template data
       const templateData = {
         ...job.content,
-        recipient_name: recipient.name,
+        recipient_name: typedRecipient.name,
         app_domain: getEnv().APP_DOMAIN || 'localhost:3000'
       }
 
       switch (job.delivery_method) {
         case 'email':
-          return await this.deliverEmail(job, recipient.email, templateData)
+          return await this.deliverEmail(job, typedRecipient.email || '', templateData)
         case 'sms':
-          return await this.deliverSMS(job, recipient.phone, templateData)
+          return await this.deliverSMS(job, typedRecipient.phone || '', templateData)
         case 'whatsapp':
-          return await this.deliverWhatsApp(job, recipient.phone, templateData)
+          return await this.deliverWhatsApp(job, typedRecipient.phone || '', templateData)
         default:
           logger.error('Unsupported delivery method', {
             deliveryMethod: job.delivery_method,
@@ -814,12 +877,14 @@ export class GroupNotificationService {
     reason?: string,
     messageId?: string
   ): Promise<void> {
-    const updateData: {
+    type JobStatusUpdate = {
       status: 'sent' | 'failed' | 'skipped'
       processed_at: string
       failure_reason?: string
       message_id?: string
-    } = {
+    }
+
+    const updateData: JobStatusUpdate = {
       status,
       processed_at: new Date().toISOString()
     }
@@ -833,6 +898,7 @@ export class GroupNotificationService {
 
     const { error } = await this.supabase
       .from('notification_jobs')
+      // @ts-expect-error - Supabase type inference issue
       .update(updateData)
       .eq('id', jobId)
 
@@ -905,6 +971,11 @@ export class GroupNotificationService {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
 
+      type JobAnalytics = {
+        delivery_method: 'email' | 'sms' | 'whatsapp'
+        status: 'pending' | 'sent' | 'failed' | 'skipped'
+      }
+
       const { data: jobs, error } = await this.supabase
         .from('notification_jobs')
         .select('delivery_method, status')
@@ -928,7 +999,7 @@ export class GroupNotificationService {
 
       const channelCounts = new Map<string, number>()
 
-      for (const job of jobs || []) {
+      for (const job of (jobs || []) as JobAnalytics[]) {
         stats.total_sent++
 
         switch (job.status) {

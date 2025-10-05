@@ -100,10 +100,12 @@ export function PromptFeed({
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data, error } = await supabase.rpc('get_prompt_stats', {
-        user_uuid: userId,
-        child_uuid: childId
-      })
+      const { data, error } = await supabase
+        // @ts-expect-error - Supabase type inference issue
+        .rpc('get_prompt_stats', {
+          user_uuid: userId,
+          child_uuid: childId
+        })
 
       if (error) {
         logger.error('Error fetching stats', { error })
@@ -194,7 +196,19 @@ export function PromptFeed({
         throw error
       }
 
-      const transformedPrompts: AIPrompt[] = (data || []).map(prompt => ({
+      type PromptQueryResult = {
+        children?: { name: string } | null
+        prompt_templates?: {
+          id: string
+          is_community_contributed: boolean
+          effectiveness_score: number
+          usage_count: number
+          created_by: string
+        } | null
+        [key: string]: unknown
+      }
+
+      const transformedPrompts: AIPrompt[] = ((data || []) as PromptQueryResult[]).map(prompt => ({
         ...prompt,
         child_name: prompt.children?.name,
         template: prompt.prompt_templates ? {
@@ -204,7 +218,7 @@ export function PromptFeed({
           usage_count: prompt.prompt_templates.usage_count,
           created_by: prompt.prompt_templates.created_by
         } : undefined
-      }))
+      } as AIPrompt))
 
       setPrompts(transformedPrompts)
 
@@ -230,6 +244,7 @@ export function PromptFeed({
       // Update prompt status to 'acted_on'
       const { error } = await supabase
         .from('ai_prompts')
+        // @ts-expect-error - Supabase type inference issue
         .update({
           status: 'acted_on',
           acted_on_at: new Date().toISOString()
@@ -243,16 +258,19 @@ export function PromptFeed({
       // Update template analytics
       const prompt = prompts.find(p => p.id === promptId)
       if (prompt?.template_id) {
-        await supabase.from('template_analytics').insert({
-          template_id: prompt.template_id,
-          user_id: userId || '',
-          prompt_id: promptId,
-          action_taken: true,
-          action_type: 'created_update',
-          child_age_months: prompt.substituted_variables?.age_months || 0,
-          day_of_week: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-          time_of_day: getTimeOfDay()
-        })
+        await supabase
+          .from('template_analytics')
+          // @ts-expect-error - Supabase type inference issue
+          .insert([{
+            template_id: prompt.template_id,
+            user_id: userId || '',
+            prompt_id: promptId,
+            action_taken: true,
+            action_type: 'created_update',
+            child_age_months: prompt.substituted_variables?.age_months || 0,
+            day_of_week: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+            time_of_day: getTimeOfDay()
+          }])
       }
 
       // Update local state
@@ -274,6 +292,7 @@ export function PromptFeed({
       // Update prompt status to 'dismissed'
       const { error } = await supabase
         .from('ai_prompts')
+        // @ts-expect-error - Supabase type inference issue
         .update({
           status: 'dismissed'
         })
@@ -286,16 +305,19 @@ export function PromptFeed({
       // Update template analytics
       const prompt = prompts.find(p => p.id === promptId)
       if (prompt?.template_id) {
-        await supabase.from('template_analytics').insert({
-          template_id: prompt.template_id,
-          user_id: userId || '',
-          prompt_id: promptId,
-          action_taken: true,
-          action_type: 'dismissed',
-          child_age_months: prompt.substituted_variables?.age_months || 0,
-          day_of_week: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-          time_of_day: getTimeOfDay()
-        })
+        await supabase
+          .from('template_analytics')
+          // @ts-expect-error - Supabase type inference issue
+          .insert([{
+            template_id: prompt.template_id,
+            user_id: userId || '',
+            prompt_id: promptId,
+            action_taken: true,
+            action_type: 'dismissed',
+            child_age_months: prompt.substituted_variables?.age_months || 0,
+            day_of_week: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
+            time_of_day: getTimeOfDay()
+          }])
       }
 
       // Update local state

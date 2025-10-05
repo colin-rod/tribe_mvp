@@ -42,7 +42,7 @@ export class ViewErrorBoundary extends Component<
     logger.errorWithStack(
       `Error in view "${this.props.viewId}":`,
       error,
-      errorInfo
+      { componentStack: errorInfo.componentStack }
     );
   }
 

@@ -189,13 +189,14 @@ export function TemplateManager() {
 
       const { error } = await supabase
         .from('prompt_templates')
-        .insert({
+        // @ts-expect-error - Supabase type inference issue
+        .insert([{
           ...formData,
           variables,
           age_range_min: formData.age_range_min || null,
           age_range_max: formData.age_range_max || null,
           effectiveness_score: 7.0 // Default score for new templates
-        })
+        }])
 
       if (error) {
         throw error
@@ -218,6 +219,7 @@ export function TemplateManager() {
 
       const { error } = await supabase
         .from('prompt_templates')
+        // @ts-expect-error - Supabase type inference issue
         .update({
           ...formData,
           variables,
