@@ -8,6 +8,7 @@ import { FormMessage } from '@/components/ui/FormMessage'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import { useNotificationManager } from '@/hooks/useNotificationManager'
+import { withErrorBoundary } from '@/components/ui/ErrorBoundary'
 import QuietHoursConfig from './QuietHoursConfig'
 import DigestSettings from './DigestSettings'
 import NotificationTesting from './NotificationTesting'
@@ -89,7 +90,7 @@ const PROMPT_TYPES = [
   { id: 'photos', label: 'Photo Ideas', description: 'Creative photo suggestions' }
 ]
 
-export function NotificationSection({ user: _user }: NotificationSectionProps) {
+function NotificationSectionComponent({ user: _user }: NotificationSectionProps) {
   const {
     preferences,
     loading,
@@ -683,3 +684,11 @@ export function NotificationSection({ user: _user }: NotificationSectionProps) {
     </div>
   )
 }
+
+// Wrap with error boundary for production resilience
+export const NotificationSection = withErrorBoundary(NotificationSectionComponent, {
+  isolate: true,
+  onError: (error, errorInfo) => {
+    logger.error('NotificationSection error boundary caught error', { error, errorInfo })
+  }
+})

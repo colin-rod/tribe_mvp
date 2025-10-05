@@ -14,6 +14,7 @@ import UpdateCard from './UpdateCard'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorState } from '@/components/ui/ErrorState'
+import { withErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeToggle'
 import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
 import StreamLayout from '@/components/dashboard/StreamLayout'
@@ -22,7 +23,7 @@ import DigestModeView from '@/components/dashboard/DigestModeView'
 /**
  * UpdatesList component for displaying recent updates on the dashboard
  */
-const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
+const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponent({
   limit = 5,
   showViewAllLink = true,
   className,
@@ -431,6 +432,14 @@ const UpdatesList = memo<UpdatesListProps>(function UpdatesList({
   )
 })
 
-UpdatesList.displayName = 'UpdatesList'
+UpdatesListComponent.displayName = 'UpdatesListComponent'
+
+// Wrap with error boundary for production resilience
+const UpdatesList = withErrorBoundary(UpdatesListComponent, {
+  isolate: true,
+  onError: (error, errorInfo) => {
+    logger.error('UpdatesList error boundary caught error', { error, errorInfo })
+  }
+})
 
 export default UpdatesList

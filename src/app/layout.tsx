@@ -9,6 +9,7 @@ import { PerformanceProvider } from '@/components/providers/PerformanceProvider'
 import { SkipLinks } from '@/components/accessibility/SkipLinks'
 import { LayoutProvider } from '@/contexts/LayoutContext'
 import { KeyboardShortcutsProvider } from '@/components/accessibility/KeyboardShortcutsProvider'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -135,15 +136,17 @@ export default function RootLayout({
         <SkipLinks />
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">
-          <AuthProvider>
-            <LayoutProvider>
-              <KeyboardShortcutsProvider>
-                <main id="main-content" tabIndex={-1}>
-                  {children}
-                </main>
-              </KeyboardShortcutsProvider>
-            </LayoutProvider>
-          </AuthProvider>
+          <ErrorBoundary>
+            <AuthProvider>
+              <LayoutProvider>
+                <KeyboardShortcutsProvider>
+                  <main id="main-content" tabIndex={-1}>
+                    {children}
+                  </main>
+                </KeyboardShortcutsProvider>
+              </LayoutProvider>
+            </AuthProvider>
+          </ErrorBoundary>
         </div>
         <DevelopmentIndicator />
         <PerformanceProvider />
