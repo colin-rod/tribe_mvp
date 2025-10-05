@@ -19,12 +19,16 @@ const customJestConfig = {
     '<rootDir>/src/__tests__/setup/',
   ],
   collectCoverageFrom: [
-    'src/components/responses/**/*.{ts,tsx}',
-    'src/components/media/**/*.{ts,tsx}',
-    'src/hooks/useResponses*.{ts,tsx}',
+    'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{ts,tsx}',
     '!src/**/__tests__/**',
+    '!src/app/**/layout.tsx',
+    '!src/app/**/page.tsx',
+    '!src/app/**/not-found.tsx',
+    '!src/stories/**',
+    '!src/design-system/**',
+    '!src/test-utils/**',
   ],
   coverageThreshold: {
     global: {

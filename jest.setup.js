@@ -1,4 +1,9 @@
 import '@testing-library/jest-dom'
+import { TextEncoder, TextDecoder } from 'util'
+
+// Polyfill TextEncoder/TextDecoder for jsdom
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -88,6 +93,14 @@ global.Response = class MockResponse {
     this.status = init?.status || 200
     this.statusText = init?.statusText || 'OK'
     this.headers = new Map(Object.entries(init?.headers || {}))
+  }
+
+  async json() {
+    return JSON.parse(this.body || '{}')
+  }
+
+  async text() {
+    return this.body || ''
   }
 
   static json(data, init) {
