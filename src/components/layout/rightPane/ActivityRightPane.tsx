@@ -77,23 +77,22 @@ const ActivityRightPaneComponent = ({
   );
 
   return (
-    <div
-      className={cn('h-full flex flex-col bg-white overflow-y-auto', className)}
-    >
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Digest System Stats */}
-        <DigestStats />
-
-        {/* AI Suggestions Panel */}
-        <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
+    <div className={cn('p-4 space-y-4', className)}>
+      {/* Quick Actions Panel - Moved to top as a section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-neutral-900">Quick Actions</h3>
+        <QuickActionsPanel
+          onCreateUpdate={handleCreateUpdate}
+          onCompileDigest={handleCompileDigest}
+          className="border-0 p-0"
+        />
       </div>
 
-      {/* Quick Actions Panel - Fixed at bottom */}
-      <QuickActionsPanel
-        onCreateUpdate={handleCreateUpdate}
-        onCompileDigest={handleCompileDigest}
-      />
+      {/* Digest System Stats */}
+      <DigestStats />
+
+      {/* AI Suggestions Panel */}
+      <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
     </div>
   );
 };

@@ -17,7 +17,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useLayout } from '@/contexts/LayoutContext';
 import { LAYOUT_DIMENSIONS } from '@/types/layout';
-import { RightPaneToggle } from './RightPaneToggle';
 
 export interface RightPaneProps {
   /** Content to display in the right pane */
@@ -63,9 +62,9 @@ export function RightPane({ children, className }: RightPaneProps) {
     <aside
       ref={paneRef}
       className={cn(
-        'relative bg-white',
+        'relative bg-white flex flex-col',
         'transition-all duration-200 ease-out',
-        !rightPaneCollapsed && 'border-l border-neutral-200 overflow-hidden',
+        !rightPaneCollapsed && 'border-l border-neutral-200',
         className
       )}
       style={{
@@ -74,30 +73,48 @@ export function RightPane({ children, className }: RightPaneProps) {
       aria-label="Right sidebar"
       aria-hidden={rightPaneCollapsed}
     >
-      {/* Toggle Button - always visible, positioned on left edge when expanded or floating when collapsed */}
-      <div
-        className={cn(
-          'absolute top-1/2 -translate-y-1/2 z-10',
-          rightPaneCollapsed ? '-left-6' : '-left-3'
-        )}
-      >
-        <RightPaneToggle
-          isCollapsed={rightPaneCollapsed}
-          onToggle={handleToggle}
-        />
-      </div>
-
       {/* Content - only render when expanded to improve performance */}
       {!rightPaneCollapsed && (
-        <div className="h-full overflow-y-auto">
-          {children || (
-            <div className="flex items-center justify-center h-full p-8 text-center text-neutral-500">
-              <p className="text-sm">
-                Context-aware tools and filters will appear here
-              </p>
-            </div>
-          )}
-        </div>
+        <>
+          <div className="flex-1 overflow-y-auto">
+            {children || (
+              <div className="flex items-center justify-center h-full p-8 text-center text-neutral-500">
+                <p className="text-sm">
+                  Context-aware tools and filters will appear here
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Toggle Button - Fixed at bottom like left pane */}
+          <div className="border-t border-neutral-200">
+            <button
+              onClick={handleToggle}
+              className={cn(
+                'flex items-center justify-center w-full h-12',
+                'hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2',
+                'focus:ring-primary-500 focus:ring-inset'
+              )}
+              aria-label={rightPaneCollapsed ? 'Expand right pane' : 'Collapse right pane'}
+              aria-expanded={!rightPaneCollapsed}
+            >
+              <svg
+                className="w-5 h-5 text-neutral-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+        </>
       )}
     </aside>
   );

@@ -28,9 +28,7 @@ export function QuickActionsPanel({
   className,
 }: QuickActionsPanelProps) {
   return (
-    <div className={cn('p-4 space-y-3 border-t border-neutral-200', className)}>
-      <h3 className="text-sm font-semibold text-neutral-900 mb-3">Quick Actions</h3>
-
+    <div className={cn('space-y-3', className)}>
       <Button
         onClick={onCreateUpdate}
         className="w-full justify-start gap-2"

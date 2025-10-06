@@ -28,6 +28,7 @@ import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
 import type { UpdateType } from '@/components/updates/CreateUpdateModal';
+import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext';
 
 const logger = createLogger('ActivityFeedView');
 
@@ -192,6 +193,10 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     openCreateUpdateModal(type);
   }, [openCreateUpdateModal]);
 
+  const handleCompileDigest = useCallback(() => {
+    router.push('/dashboard/digests/compile');
+  }, [router]);
+
   const handleOnboardingStepClick = useCallback((stepId: string) => {
     switch (stepId) {
       case 'add-child':
@@ -250,7 +255,13 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   }
 
   return (
-    <div className="min-h-full">
+    <DashboardActionsProvider
+      value={{
+        onCreateUpdate: handleCreateUpdate,
+        onCompileDigest: handleCompileDigest,
+      }}
+    >
+      <div className="min-h-full">
       {/* Success Alerts */}
       {showDigestSentAlert && (
         <div className="bg-green-50 border-l-4 border-green-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
@@ -373,6 +384,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
       {createUpdateModal}
     </div>
+    </DashboardActionsProvider>
   );
 });
 

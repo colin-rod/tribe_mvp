@@ -16,6 +16,7 @@
 
 import dynamic from 'next/dynamic'
 import { useNavigation } from '@/contexts/NavigationContext'
+import { useDashboardActions } from '@/contexts/DashboardActionsContext'
 
 // Lazy load all right pane components with loading states
 const ActivityRightPane = dynamic(
@@ -70,10 +71,16 @@ function RightPaneSkeleton() {
 
 export function RightPaneContent() {
   const { activeItemId } = useNavigation()
+  const { onCreateUpdate, onCompileDigest } = useDashboardActions()
 
   switch (activeItemId) {
     case 'activity':
-      return <ActivityRightPane />
+      return (
+        <ActivityRightPane
+          onCreateUpdate={onCreateUpdate}
+          onCompileDigest={onCompileDigest}
+        />
+      )
     case 'digests':
       return <DigestsRightPane />
     case 'children':
