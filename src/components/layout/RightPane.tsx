@@ -121,7 +121,7 @@ export function RightPane({ children, className }: RightPaneProps) {
           <div className="flex-1 overflow-y-auto">
             {/* Sticky header inside pane */}
             <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-neutral-200">
-              <div className="px-4 py-2">
+              <div className="px-4 py-1">
                 <h2 className="text-sm font-semibold text-neutral-900">{paneTitle}</h2>
               </div>
             </div>

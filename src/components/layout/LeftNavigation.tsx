@@ -110,7 +110,7 @@ export function LeftNavigation() {
       aria-label="Main navigation"
     >
       {/* Navigation Items */}
-      <div className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+      <div className="flex-1 overflow-y-auto pt-0 pb-4 px-2 space-y-1">
         {navigationItems.map((item) => (
           <NavItem key={item.id} item={item} isCollapsed={isCollapsed} />
         ))}
