@@ -99,8 +99,8 @@ const ActivityRightPaneComponent = ({
         </div>
       )}
 
-      {/* Quick Actions - sticky within pane */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur pb-2">
+      {/* Quick Actions - sticky within pane (below pane header) */}
+      <div className="sticky top-[36px] z-10 bg-white/95 backdrop-blur pb-2">
         <h3 className="text-sm font-semibold text-neutral-900 mb-2">Quick Actions</h3>
         <QuickActionsPanel
           onCreateUpdate={handleCreateUpdate}
