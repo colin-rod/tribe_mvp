@@ -5,6 +5,7 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('UpdatesList')
 import { useState, useEffect, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
+import UpdateDetailModal from '@/components/updates/UpdateDetailModal'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/types/dashboard'
@@ -36,6 +37,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [activeUpdateId, setActiveUpdateId] = useState<string | null>(null)
 
   const loadUpdates = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -260,8 +262,8 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
   }, [loadUpdates])
 
   const handleUpdateClick = useCallback((updateId: string) => {
-    router.push(`/dashboard/updates/${updateId}`)
-  }, [router])
+    setActiveUpdateId(updateId)
+  }, [])
 
   const handleRetry = useCallback(() => {
     logger.info('UpdatesList: User initiated retry', {
@@ -428,6 +430,11 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
           </Link>
         </div>
       )}
+      <UpdateDetailModal
+        open={!!activeUpdateId}
+        updateId={activeUpdateId || ''}
+        onClose={() => setActiveUpdateId(null)}
+      />
     </div>
   )
 })
