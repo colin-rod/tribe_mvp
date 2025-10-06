@@ -151,7 +151,7 @@ export class LikesService {
         throw this.createError(LikeErrorType.UNKNOWN_ERROR, updateId, error.message)
       }
 
-      return data || []
+      return (data || []) as LikeWithParent[]
     } catch (error) {
       if (error instanceof Error && 'type' in error) {
         throw error
@@ -273,10 +273,10 @@ export class LikesService {
       const result: Record<string, { isLiked: boolean; likeCount: number }> = {}
       const likedUpdates = new Set(likesData?.map((like: { update_id: string }) => like.update_id) || [])
 
-      updatesData?.forEach((update: { id: string; like_count: number }) => {
+      updatesData?.forEach((update: { id: string; like_count: number | null }) => {
         result[update.id] = {
           isLiked: likedUpdates.has(update.id),
-          likeCount: update.like_count || 0
+          likeCount: update.like_count ?? 0
         }
       })
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 import type { DraftUpdate, DraftUpdateRequest, DraftWorkspaceSummary, ChildDraftSummary, DraftFilters } from '@/lib/types/digest'
+import type { Json } from '@/lib/types/database.types'
 
 const logger = createLogger('DraftService')
 
@@ -22,7 +23,7 @@ export async function createDraft(data: DraftUpdateRequest): Promise<DraftUpdate
       child_id: data.child_id,
       content: data.content || '',
       subject: data.subject,
-      rich_content: data.rich_content,
+      rich_content: (data.rich_content as Json) || null,
       content_format: data.content_format || 'plain',
       media_urls: data.media_urls || [],
       milestone_type: data.milestone_type,

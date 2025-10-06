@@ -10,8 +10,7 @@ export {
   announceToScreenReader,
   isElementVisible,
   getContrastRatio,
-  meetsWCAGStandard,
-  generateAriaLabel
+  meetsWCAGStandard
 } from '../a11y'
 
 // Keyboard navigation utilities (takes precedence for duplicates)
@@ -20,10 +19,8 @@ export {
   isActivationKey,
   isArrowKey,
   isNavigationKey,
-  handleArrowKeyNavigation,
   getFocusableElements,
-  trapFocus,
-  restoreFocus
+  trapFocus
 } from '../keyboard-navigation'
 
 // Focus management hooks

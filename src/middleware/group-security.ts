@@ -125,7 +125,7 @@ export async function validateRecipientTokenAccess(
     throw new Error('Invalid or expired access token')
   }
 
-  const typedRecipient = recipient as RecipientData
+  const typedRecipient = recipient as unknown as RecipientData
 
   // Get active group memberships
   const activeGroups = Array.isArray(typedRecipient.group_memberships)

@@ -176,7 +176,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
   })
 
   return {
-    digest: digest as Digest,
+    digest: digest as unknown as Digest,
     recipients
   }
 }
@@ -350,7 +350,7 @@ export async function getDigestById(digestId: string): Promise<Digest | null> {
     throw new Error(`Failed to fetch digest: ${error.message}`)
   }
 
-  return digest as Digest
+  return digest as unknown as Digest
 }
 
 /**
@@ -372,7 +372,7 @@ export async function getDigests(): Promise<Digest[]> {
     throw new Error(`Failed to fetch digests: ${error.message}`)
   }
 
-  return (digests as Digest[]) || []
+  return (digests as unknown as Digest[]) || []
 }
 
 /**
@@ -393,7 +393,7 @@ export async function getDigestStats(): Promise<DigestStats> {
     throw new Error(`Failed to fetch digest stats: ${error.message}`)
   }
 
-  const allDigests = (digests as Digest[]) || []
+  const allDigests = (digests as unknown as Digest[]) || []
   const thisMonth = new Date()
   thisMonth.setDate(1)
   thisMonth.setHours(0, 0, 0, 0)
