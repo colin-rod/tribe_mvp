@@ -49,16 +49,22 @@ const ActivityRightPaneComponent = ({
 }: ActivityRightPaneProps) => {
   // Handle Create Update action
   const handleCreateUpdate = useCallback(() => {
+    console.log('[ActivityRightPane] handleCreateUpdate called', { onCreateUpdate: typeof onCreateUpdate });
     if (onCreateUpdate) {
       onCreateUpdate();
+    } else {
+      console.warn('[ActivityRightPane] onCreateUpdate prop not provided');
     }
     // Default behavior would be to navigate or open modal
   }, [onCreateUpdate]);
 
   // Handle Compile Digest action
   const handleCompileDigest = useCallback(() => {
+    console.log('[ActivityRightPane] handleCompileDigest called', { onCompileDigest: typeof onCompileDigest });
     if (onCompileDigest) {
       onCompileDigest();
+    } else {
+      console.warn('[ActivityRightPane] onCompileDigest prop not provided');
     }
     // Default behavior would be to navigate to digest compilation
   }, [onCompileDigest]);
