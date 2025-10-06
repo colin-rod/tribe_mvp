@@ -25,11 +25,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session and verify user
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
+      // Use getUser() instead of relying on session.user for security
+      const { data: { user }, error } = await supabase.auth.getUser()
+
+      if (error) {
+        logger.warn('Error getting user on mount:', { error: error.message })
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      // If we have a verified user, also get the session for token refresh
+      if (user) {
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
+        setUser(user)
+      } else {
+        setSession(null)
+        setUser(null)
+      }
+
       setLoading(false)
     }
 

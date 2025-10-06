@@ -69,9 +69,11 @@ export function getContentSecurityPolicy(_nonce?: string): string {
       "'self'",
       // Custom domain
       'https://*.colinrodrigues.com',
-      // Supabase
+      // Supabase - include WebSocket support for Realtime
       'https://*.supabase.co',
+      'wss://*.supabase.co',
       'https://*.supabase.in',
+      'wss://*.supabase.in',
       // Vercel Analytics and Live
       'https://va.vercel-scripts.com',
       'https://*.vercel-analytics.com',
