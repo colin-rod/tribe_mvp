@@ -49,7 +49,7 @@ export default function ChildCard({ child, onEdit, onDelete, showActions = true 
 
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">
-          <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
+          <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 aspect-square">
             <ChildImage
               childId={child.id}
               photoUrl={child.profile_photo_url}

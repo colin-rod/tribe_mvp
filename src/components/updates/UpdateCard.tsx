@@ -120,6 +120,7 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
             mediaUrls={update.media_urls}
             maxPreview={3}
             className="grid-cols-3 gap-2"
+            aspect="square"
           />
         </div>
       )}

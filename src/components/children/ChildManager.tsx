@@ -80,7 +80,7 @@ export default function ChildManager() {
     return (
       <div className="text-center py-12">
         <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={loadChildren}>
+        <Button variant="secondary" onClick={loadChildren}>
           Try Again
         </Button>
       </div>
@@ -92,7 +92,7 @@ export default function ChildManager() {
       {/* Actions (header removed; controlled by parent ChildrenSection) */}
       {!showAddForm && (
         <div className="flex justify-end">
-          <Button onClick={() => setShowAddForm(true)}>
+          <Button variant="primary" onClick={() => setShowAddForm(true)}>
             Add Child
           </Button>
         </div>
@@ -121,7 +121,7 @@ export default function ChildManager() {
             Add your first child to start sharing updates with your circle.
           </p>
           {!showAddForm && (
-            <Button onClick={() => setShowAddForm(true)}>
+            <Button variant="primary" onClick={() => setShowAddForm(true)}>
               Add Child
             </Button>
           )}

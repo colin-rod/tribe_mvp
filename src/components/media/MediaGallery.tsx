@@ -9,13 +9,15 @@ interface MediaGalleryProps {
   maxPreview?: number
   className?: string
   onMediaClick?: (url: string, index: number) => void
+  aspect?: 'square' | 'fourThree'
 }
 
 export function MediaGallery({
   mediaUrls,
   maxPreview = 4,
   className = '',
-  onMediaClick
+  onMediaClick,
+  aspect = 'square'
 }: MediaGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -64,8 +66,9 @@ export function MediaGallery({
             className="relative group cursor-pointer overflow-hidden rounded-lg bg-gray-100"
             onClick={() => handleMediaClick(url, index)}
           >
+            <div className={aspect === 'square' ? 'aspect-square w-full' : 'aspect-[4/3] w-full'}>
             {isVideo(url) ? (
-              <div className="relative w-full h-20">
+              <div className="relative w-full h-full">
                 <video
                   src={url}
                   className="w-full h-full object-cover"
@@ -79,13 +82,13 @@ export function MediaGallery({
               <Image
                 src={url}
                 alt={`Media ${index + 1}`}
-                width={400}
-                height={80}
-                className="w-full h-20 object-cover transition-transform group-hover:scale-105"
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
                 quality={75}
                 sizes="(max-width: 768px) 100vw, 400px"
               />
             )}
+            </div>
 
             {/* Overlay for remaining count */}
             {index === maxPreview - 1 && remainingCount > 0 && (

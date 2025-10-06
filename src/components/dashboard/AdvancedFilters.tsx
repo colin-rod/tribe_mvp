@@ -102,6 +102,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   totalCount = 0,
   filteredCount = 0
 }) => {
+  // Progressive disclosure: collapse advanced by default
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [presetName, setPresetName] = useState('')
   const [customDateRange, setCustomDateRange] = useState({
@@ -347,7 +348,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         <div className="flex items-center space-x-2">
           {hasActiveFilters && (
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={handleClearFilters}
             >
@@ -355,11 +356,13 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </Button>
           )}
           <Button
-            variant="outline"
+            variant="tertiary"
             size="sm"
             onClick={() => setShowAdvanced(!showAdvanced)}
+            aria-expanded={showAdvanced}
+            aria-controls="advanced-filters-panel"
           >
-            {showAdvanced ? 'Hide' : 'Show'} Advanced
+            {showAdvanced ? 'Fewer filters' : 'More filters'}
           </Button>
         </div>
       </div>
@@ -375,8 +378,8 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               {bulkActions.map((action) => (
                 <Button
                   key={action.id}
-                  variant={action.color === 'danger' ? 'destructive' :
-                          action.color === 'warning' ? 'outline' : 'primary'}
+                  variant={action.color === 'danger' ? 'destructiveOutline' :
+                          action.color === 'warning' ? 'secondary' : 'primary'}
                   size="sm"
                   onClick={() => handleBulkAction(action)}
                   disabled={bulkActionLoading === action.id}
@@ -450,7 +453,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
       {/* Advanced Filters Panel */}
       {showAdvanced && (
-        <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-4">
+        <div id="advanced-filters-panel" className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg space-y-4">
           {/* Date Range Filter */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
