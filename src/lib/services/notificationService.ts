@@ -69,11 +69,7 @@ export class NotificationService {
   async createNotificationHistory(entry: Omit<NotificationHistoryEntry, 'id' | 'created_at' | 'sent_at'>): Promise<NotificationHistoryEntry> {
     const { data, error } = await this.supabase
       .from('notification_history')
-      // @ts-expect-error - Supabase type inference issue with JSONB columns
-      .insert({
-        ...entry,
-        metadata: entry.metadata || {}
-      })
+      .insert(entry as never)
       .select()
       .single()
 
@@ -81,7 +77,7 @@ export class NotificationService {
       throw new Error(`Failed to create notification history: ${error.message}`)
     }
 
-    return data
+    return data as NotificationHistoryEntry
   }
 
   // Get notification history for user
@@ -117,14 +113,13 @@ export class NotificationService {
       throw new Error(`Failed to fetch notification history: ${error.message}`)
     }
 
-    return data || []
+    return (data || []) as NotificationHistoryEntry[]
   }
 
   // Mark notification as read
   async markNotificationAsRead(notificationId: string): Promise<void> {
     const { error } = await this.supabase
       .from('notification_history')
-      // @ts-expect-error - Supabase type inference issue
       .update({ read_at: new Date().toISOString() })
       .eq('id', notificationId)
 
@@ -404,7 +399,6 @@ export class NotificationService {
   // Check if user is in quiet hours
   async isInQuietHours(userId: string, checkTime?: Date): Promise<boolean> {
     const { data, error } = await this.supabase
-      // @ts-expect-error - Supabase RPC type inference issue
       .rpc('is_in_quiet_hours', {
         user_uuid: userId,
         check_time: checkTime?.toISOString() || new Date().toISOString()
@@ -426,7 +420,6 @@ export class NotificationService {
     _content: NotificationData = {}
   ): Promise<string> {
     const { data, error } = await this.supabase
-      // @ts-expect-error - Supabase RPC type inference issue
       .rpc('schedule_digest_for_user', {
         user_uuid: userId,
         digest_type_param: digestType,
@@ -452,7 +445,7 @@ export class NotificationService {
       throw new Error(`Failed to fetch digest queue: ${error.message}`)
     }
 
-    return data || []
+    return (data || []) as DigestQueueEntry[]
   }
 
   // Get notification analytics for user

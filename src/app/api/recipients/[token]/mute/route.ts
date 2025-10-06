@@ -7,6 +7,7 @@ import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database'
+import type { Json } from '@/lib/types/database.types'
 
 const logger = createLogger('MuteAPI')
 
@@ -313,9 +314,8 @@ export async function POST(
           // Global mute - update recipient's notification preferences
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
-              notification_preferences: {
+              digest_preferences: {
                 ...(await getNotificationPreferences(supabase, securityContext.recipient_id)),
                 mute_settings: muteSettings
               }
@@ -359,10 +359,11 @@ export async function POST(
           for (const group of validGroups as unknown as Array<{ group_id: string; recipient_groups: { name: string } }>) {
             const { error } = await supabase
               .from('recipients')
-              // @ts-expect-error - Supabase type inference issue
               .update({
-                mute_until: muteUntil?.toISOString() || null,
-                mute_settings: muteSettings
+                digest_preferences: {
+                  mute_until: muteUntil?.toISOString() || null,
+                  mute_settings: muteSettings
+                }
               })
               .eq('recipient_id', securityContext.recipient_id)
               .eq('group_id', group.group_id)
@@ -397,9 +398,8 @@ export async function POST(
 
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
-              notification_preferences: currentPrefs
+              digest_preferences: currentPrefs as Json
             })
             .eq('id', securityContext.recipient_id)
 
@@ -416,10 +416,11 @@ export async function POST(
           // Unmute specific groups
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue
             .update({
-              mute_until: null,
-              mute_settings: null
+              digest_preferences: {
+                mute_until: null,
+                mute_settings: null
+              }
             })
             .eq('recipient_id', securityContext.recipient_id)
             .in('group_id', targetGroupIds)
@@ -451,9 +452,8 @@ export async function POST(
         if (validatedData.scope === 'all') {
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue with JSONB columns
             .update({
-              notification_preferences: {
+              digest_preferences: {
                 ...(await getNotificationPreferences(supabase, securityContext.recipient_id)),
                 mute_settings: snoozeSettings
               }
@@ -472,10 +472,11 @@ export async function POST(
 
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue
             .update({
-              mute_until: muteUntil?.toISOString(),
-              mute_settings: snoozeSettings
+              digest_preferences: {
+                mute_until: muteUntil?.toISOString(),
+                mute_settings: snoozeSettings
+              }
             })
             .eq('recipient_id', securityContext.recipient_id)
             .in('group_id', targetGroupIds)
@@ -554,18 +555,18 @@ export async function DELETE(
     const [globalResult, groupResult] = await Promise.all([
       supabase
         .from('recipients')
-        // @ts-expect-error - Supabase type inference issue with JSONB columns
         .update({
-          notification_preferences: currentPrefs
+          digest_preferences: currentPrefs as Json
         })
         .eq('id', securityContext.recipient_id),
 
       supabase
         .from('recipients')
-        // @ts-expect-error - Supabase type inference issue
         .update({
-          mute_until: null,
-          mute_settings: null
+          digest_preferences: {
+            mute_until: null,
+            mute_settings: null
+          }
         })
         .eq('recipient_id', securityContext.recipient_id)
     ])

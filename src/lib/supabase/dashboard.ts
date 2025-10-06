@@ -5,20 +5,49 @@
 
 import { createClient } from './client'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import type {
-  Database,
-  UpdateWithChild,
-  DashboardStats,
-  TimelineUpdate,
-  DashboardFilters,
-  PaginationParams,
-  EngagementUpdatePayload
-} from '../types/database'
+import type { Database } from '../types/database'
+import type { DashboardUpdate } from '../types/dashboard'
 import { createLogger, type LogContext } from '../logger'
 
 const logger = createLogger('dashboard-client')
 
 type UpdateRow = Database['public']['Tables']['updates']['Row']
+
+// Type definitions
+type DashboardFilters = {
+  search?: string
+  childIds?: string[]
+  milestoneTypes?: string[]
+  status?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+type PaginationParams = {
+  limit?: number
+  offset?: number
+  cursorCreatedAt?: string
+  cursorId?: string
+}
+
+type UpdateWithChild = DashboardUpdate
+
+type TimelineUpdate = DashboardUpdate
+
+type DashboardStats = {
+  total_updates: number
+  draft_count: number
+  sent_count: number
+  scheduled_count: number
+  total_recipients: number
+  total_children: number
+}
+
+type EngagementUpdatePayload = {
+  updateId: string
+  userId: string
+  action: 'like' | 'unlike'
+}
 type CommentRow = Database['public']['Tables']['comments']['Row']
 
 export class DashboardClient {
@@ -179,9 +208,9 @@ export class DashboardClient {
         return { data: null, error: new Error(error.message) }
       }
 
-      const stats = data?.[0] || null
+      const stats = (data as DashboardStats[] | null)?.[0] || null
 
-      logger.debug('Successfully fetched dashboard stats', stats)
+      logger.debug('Successfully fetched dashboard stats', stats as LogContext)
 
       return { data: stats, error: null }
     } catch (err) {
@@ -464,11 +493,9 @@ export class DashboardClient {
           if (update?.id) {
             const updateData = update as Record<string, unknown>
             callback({
-              update_id: String(updateData.id || ''),
-              parent_id: String(updateData.parent_id || ''),
-              like_count: Number(updateData.like_count) || 0,
-              response_count: Number(updateData.response_count) || 0,
-              view_count: Number(updateData.view_count) || 0
+              updateId: String(updateData.id || ''),
+              userId: String(updateData.parent_id || ''),
+              action: 'like' as const
             })
           }
         }
@@ -575,7 +602,7 @@ export const dashboardQueries = {
     return dashboardClient.getDashboardUpdates(parentId, {}, { limit })
   },
 
-  async getMilestoneUpdates(parentId: string, milestoneTypes?: Database['public']['Enums']['milestone_type'][]) {
+  async getMilestoneUpdates(parentId: string, milestoneTypes?: string[]) {
     return dashboardClient.getDashboardUpdates(parentId, { milestoneTypes })
   },
 

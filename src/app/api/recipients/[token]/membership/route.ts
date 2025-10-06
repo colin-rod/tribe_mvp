@@ -205,14 +205,18 @@ export async function GET(
             .from('delivery_jobs')
             .select('id, queued_at, status')
             .eq('recipient_id', (recipient as { id: string }).id)
-            .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
-            .order('created_at', { ascending: false })
+            .gte('queued_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Last 30 days
+            .order('queued_at', { ascending: false })
             .limit(5)
 
           enhanced.recent_activity = {
             update_count: recentUpdates?.length || 0,
-            last_update: (recentUpdates?.[0] as { created_at: string } | undefined)?.created_at || null,
-            updates: recentUpdates || []
+            last_update: recentUpdates?.[0]?.queued_at || null,
+            updates: (recentUpdates || []).map(u => ({
+              id: u.id,
+              created_at: u.queued_at || '',
+              delivery_status: u.status
+            }))
           }
         }
 
@@ -308,7 +312,6 @@ export async function PUT(
     // Update recipient's group preferences
     const { error: updateError } = await supabase
       .from('recipients')
-      // @ts-expect-error - Supabase type inference issue with JSONB columns
       .update({
         digest_preferences: {
           ...validatedData,
@@ -428,12 +431,10 @@ export async function POST(
         if (typedGroup.is_default_group) {
           const { error } = await supabase
             .from('recipients')
-            // @ts-expect-error - Supabase type inference issue
             .update({
-              is_active: false,
-              updated_at: new Date().toISOString()
+              is_active: false
             })
-            .eq('recipient_id', securityContext.recipient_id)
+            .eq('id', securityContext.recipient_id)
             .eq('group_id', validatedData.group_id)
 
           if (error) throw error
@@ -482,13 +483,11 @@ export async function POST(
             // Reactivate membership
             const { error } = await supabase
               .from('recipients')
-              // @ts-expect-error - Supabase type inference issue
               .update({
                 is_active: true,
-                ...validatedData.notification_preferences,
-                updated_at: new Date().toISOString()
+                ...validatedData.notification_preferences
               })
-              .eq('recipient_id', securityContext.recipient_id)
+              .eq('id', securityContext.recipient_id)
               .eq('group_id', validatedData.group_id)
 
             if (error) throw error
@@ -500,25 +499,12 @@ export async function POST(
             }
           }
         } else {
-          // Create new membership
-          const { error } = await supabase
-            .from('recipients')
-            // @ts-expect-error - Supabase type inference issue
-            .insert({
-              recipient_id: securityContext.recipient_id,
-              group_id: validatedData.group_id,
-              ...validatedData.notification_preferences,
-              role: 'member',
-              is_active: true
-            })
-
-          if (error) throw error
-
-          result = {
-            action: 'joined',
-            message: 'Successfully joined the group.',
-            group_name: typedGroup.name
-          }
+          // Create new membership - recipients table doesn't support direct insertion like this
+          // Recipients must already exist, we can only update them
+          return NextResponse.json(
+            { error: 'Cannot create new recipient membership. Recipient must be invited first.' },
+            { status: 400 }
+          )
         }
         break
 
@@ -566,24 +552,9 @@ async function getEffectiveSettings(
   membership: MembershipRecord
 ): Promise<EffectiveSettings> {
   try {
-    // Fall back to manual resolution since RPC function has type issues
-    let data: unknown[] | null = null
-    let error: unknown = null
-
-    // Try to call the RPC function, but if it fails, we'll fall back to manual logic
-    try {
-      const result = await supabase.rpc('get_effective_notification_settings')
-      data = result.data
-      error = result.error
-    } catch (rpcError) {
-      // RPC function failed, will use fallback logic below
-      error = rpcError
-    }
-
-    const effectiveSettings: EffectiveSettingsFunctionRow | null = data?.[0] ?? null
-
-    if (error || !effectiveSettings || !data) {
-      // Fallback to manual resolution
+    // Manual resolution of effective settings
+    {
+      // Get group defaults
       type RecipientGroupDefaults = {
         default_frequency: string | null
         default_channels: string[] | null
@@ -602,21 +573,6 @@ async function getEffectiveSettings(
         content_types: membership.content_types || group?.notification_settings?.content_types || ['photos', 'text', 'milestones'],
         source: membership.frequency ? 'member_override' : 'group_default'
       }
-    }
-
-    // At this point, effectiveSettings is guaranteed to be non-null
-    // Type assertion is safe here because we've already checked for null above
-    const settings = effectiveSettings as {
-      frequency: string;
-      channels: string[];
-      content_types: string[];
-      source: string;
-    }
-    return {
-      frequency: settings.frequency,
-      channels: settings.channels,
-      content_types: settings.content_types,
-      source: settings.source
     }
   } catch (error) {
     logger.errorWithStack('Error getting effective settings:', error as Error)

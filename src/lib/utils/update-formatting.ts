@@ -41,21 +41,21 @@ export function formatChildInfo(child: DashboardUpdate['children']): UpdateChild
  * Transform database update to display-ready card data
  */
 export function transformToCardData(update: DashboardUpdate, _currentUserId?: string): UpdateCardData {
-  const createdAt = new Date(update.created_at)
+  const createdAt = new Date(update.created_at || new Date())
   const lastResponseAt = update.last_response_at ? new Date(update.last_response_at) : undefined
 
   return {
     id: update.id,
     parent_id: update.parent_id,
     child_id: update.child_id,
-    content: update.content,
-    subject: update.subject,
-    rich_content: update.rich_content,
-    content_format: update.content_format,
+    content: update.content || '',
+    subject: update.subject || undefined,
+    rich_content: update.rich_content as Record<string, unknown> | undefined,
+    content_format: update.content_format as 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | undefined,
     contentPreview: generateContentPreview(
-      update.content,
-      update.rich_content,
-      update.content_format
+      update.content || '',
+      update.rich_content as Record<string, unknown> | null,
+      update.content_format as ContentFormat
     ),
     child: formatChildInfo(update.children),
     createdAt,
@@ -63,14 +63,14 @@ export function transformToCardData(update: DashboardUpdate, _currentUserId?: st
     responseCount: update.response_count || 0,
     hasUnreadResponses: update.has_unread_responses || false,
     lastResponseAt,
-    distributionStatus: update.distribution_status,
-    media_urls: update.media_urls,
-    milestone_type: update.milestone_type,
-    ai_analysis: update.ai_analysis,
-    suggested_recipients: update.suggested_recipients,
-    confirmed_recipients: update.confirmed_recipients,
-    scheduled_for: update.scheduled_for,
-    sent_at: update.sent_at,
+    distributionStatus: update.distribution_status as 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed',
+    media_urls: update.media_urls || [],
+    milestone_type: update.milestone_type || undefined,
+    ai_analysis: update.ai_analysis as Record<string, unknown>,
+    suggested_recipients: update.suggested_recipients || [],
+    confirmed_recipients: update.confirmed_recipients || [],
+    scheduled_for: update.scheduled_for || undefined,
+    sent_at: update.sent_at || undefined,
     // Engagement fields
     like_count: update.like_count || 0,
     comment_count: update.comment_count || 0,
@@ -83,8 +83,8 @@ export function transformToCardData(update: DashboardUpdate, _currentUserId?: st
  */
 export function sortUpdatesByDate(updates: DashboardUpdate[]): DashboardUpdate[] {
   return [...updates].sort((a, b) => {
-    const dateA = new Date(a.created_at)
-    const dateB = new Date(b.created_at)
+    const dateA = new Date(a.created_at || 0)
+    const dateB = new Date(b.created_at || 0)
     return dateB.getTime() - dateA.getTime()
   })
 }

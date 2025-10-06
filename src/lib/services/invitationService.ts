@@ -78,7 +78,6 @@ export async function createSingleUseInvitation(
   // Create invitation
   const { data: invitation, error } = await supabase
     .from('invitations')
-    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       invitation_type: 'single_use',
@@ -146,7 +145,6 @@ export async function createReusableLink(
   // Create invitation (no expiration, unlimited uses)
   const { data: invitation, error } = await supabase
     .from('invitations')
-    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       invitation_type: 'reusable',
@@ -155,14 +153,14 @@ export async function createReusableLink(
       channel: 'link',
       recipient_email: null,
       recipient_phone: null,
-      expires_at: null, // No expiration
+      expires_at: null,
       group_id: groupId || null,
       custom_message: customMessage || null,
       use_count: 0,
       metadata: {
         qrCodeSettings: qrCodeSettings || {}
-      }
-    })
+      } as never
+    } as never)
     .select()
     .single()
 
@@ -197,7 +195,6 @@ export async function validateInvitationToken(
   const supabase = createClient()
 
   // Call the database function to validate
-  // @ts-expect-error - Supabase RPC type inference issue
   const { data, error } = await supabase.rpc('validate_invitation_token', {
     token_param: token
   })
@@ -313,7 +310,6 @@ export async function redeemInvitation(
 
   const { data: recipient, error: recipientError } = await supabase
     .from('recipients')
-    // @ts-expect-error - Supabase type inference issue
     .insert({
       parent_id: parentId,
       email: recipientData.email || null,
@@ -349,7 +345,6 @@ export async function redeemInvitation(
 
   const { data: redemption, error: redemptionError } = await supabase
     .from('invitation_redemptions')
-    // @ts-expect-error - Supabase type inference issue
     .insert({
       invitation_id: invitationId,
       recipient_id: typedRecipient.id,
@@ -368,7 +363,6 @@ export async function redeemInvitation(
   // Update invitation based on type
   if (validation.invitation_type === 'single_use') {
     // Mark as used
-    // @ts-expect-error - Supabase RPC type inference issue
     const { error: updateError } = await supabase.rpc('mark_invitation_used', {
       invitation_id_param: invitationId
     })
@@ -378,7 +372,6 @@ export async function redeemInvitation(
     }
   } else {
     // Increment use count for reusable
-    // @ts-expect-error - Supabase RPC type inference issue
     const { error: updateError } = await supabase.rpc('increment_invitation_use_count', {
       invitation_id_param: invitationId
     })
@@ -425,7 +418,6 @@ export async function revokeInvitation(
 ): Promise<{ success: boolean; invitation?: Invitation; error?: string }> {
   const supabase = createClient()
 
-  // @ts-expect-error - Supabase RPC type inference issue
   const { data, error } = await supabase.rpc('revoke_invitation', {
     invitation_id_param: invitationId,
     parent_id_param: parentId
@@ -780,7 +772,10 @@ export async function getInvitationRedemptions(
     throw new Error('Failed to fetch invitation redemptions')
   }
 
-  return data || []
+  return (data || []).map(redemption => ({
+    ...redemption,
+    redeemed_at: redemption.redeemed_at || new Date().toISOString()
+  }))
 }
 
 /**
