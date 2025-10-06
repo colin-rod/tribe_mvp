@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { signIn, getAuthErrorMessage } from '@/lib/supabase/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -63,67 +62,63 @@ export default function LoginForm() {
           </div>
         )}
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email address
-          </label>
-          <div className="mt-1">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-            />
+        <fieldset disabled={loading}>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div className="mt-1">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <div className="mt-1">
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
+          <div className="mt-6">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="mt-1">
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <Link
-              href="/forgot-password"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              Forgot your password?
-            </Link>
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                href="/forgot-password"
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                Forgot your password?
+              </Link>
+            </div>
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <Button
             type="submit"
-            disabled={loading || !email || !password}
+            disabled={!email || !password}
+            loading={loading}
             className="w-full"
           >
-            {loading ? (
-              <>
-                <LoadingSpinner size="sm" />
-                Signing in...
-              </>
-            ) : (
-              'Sign in'
-            )}
+            {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </div>
       </form>

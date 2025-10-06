@@ -23,6 +23,7 @@ export interface CreateUpdateWizardProps {
   onScheduled?: () => void
   onDraftSaved?: (updateId: string) => void
   variant?: CreateUpdateWizardVariant
+  initialContent?: string
 }
 
 export default function CreateUpdateWizard({
@@ -30,7 +31,8 @@ export default function CreateUpdateWizard({
   onSent,
   onScheduled,
   onDraftSaved,
-  variant = 'page'
+  variant = 'page',
+  initialContent
 }: CreateUpdateWizardProps) {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -76,6 +78,13 @@ export default function CreateUpdateWizard({
   useEffect(() => {
     loadRecipientsData()
   }, [])
+
+  // Prefill content when provided
+  useEffect(() => {
+    if (initialContent && !formData.content) {
+      setFormData({ content: initialContent })
+    }
+  }, [initialContent, formData.content, setFormData])
 
   // Load children when component mounts
   useEffect(() => {

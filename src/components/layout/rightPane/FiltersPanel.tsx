@@ -60,6 +60,7 @@ export function FiltersPanel({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showChildFilter, setShowChildFilter] = useState(false);
   const [showTypeFilter, setShowTypeFilter] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Load children on mount
   useEffect(() => {
@@ -133,7 +134,7 @@ export function FiltersPanel({
         )}
       </div>
 
-      {/* Inline Filters - WCAG 2.1 AA Compliant (44px min touch targets) */}
+      {/* Quick Filters */}
       <div className="grid grid-cols-3 gap-2">
         {/* Date Range Filter */}
         <div className="relative col-span-1">
@@ -166,7 +167,8 @@ export function FiltersPanel({
           )}
         </div>
 
-        {/* Child Filter */}
+        {/* Child Filter (advanced) */}
+        {showAdvanced && (
         <div className="relative col-span-1">
           <button
             onClick={() => setShowChildFilter(!showChildFilter)}
@@ -218,8 +220,10 @@ export function FiltersPanel({
             </div>
           )}
         </div>
+        )}
 
-        {/* Update Type Filter */}
+        {/* Update Type Filter (advanced) */}
+        {showAdvanced && (
         <div className="relative col-span-1">
           <button
             onClick={() => setShowTypeFilter(!showTypeFilter)}
@@ -261,6 +265,19 @@ export function FiltersPanel({
             </div>
           )}
         </div>
+        )}
+      </div>
+
+      {/* Advanced toggle */}
+      <div className="flex items-center justify-end">
+        <button
+          className="text-xs text-neutral-600 hover:text-neutral-800 font-medium"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          aria-expanded={showAdvanced}
+          aria-controls="advanced-filters-rightpane"
+        >
+          {showAdvanced ? 'Fewer filters' : 'More filters'}
+        </button>
       </div>
 
       {/* Active Filters Display */}

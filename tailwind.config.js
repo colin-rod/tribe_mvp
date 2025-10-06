@@ -179,6 +179,7 @@ module.exports = {
         'shimmer': 'shimmer 2s infinite',
         'confetti-fall': 'confettiFall 3s ease-out',
         'celebration-bounce': 'celebrationBounce 0.6s ease-out',
+        'progress-indeterminate': 'progressIndeterminate 1.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -215,6 +216,11 @@ module.exports = {
           '0%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.05)' },
           '100%': { transform: 'scale(1)' },
+        },
+        progressIndeterminate: {
+          '0%': { left: '-35%', right: '100%' },
+          '60%': { left: '100%', right: '-90%' },
+          '100%': { left: '100%', right: '-90%' },
         },
       },
     },

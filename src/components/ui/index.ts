@@ -45,6 +45,8 @@ export {
   StaggeredListSkeleton,
   GridSkeleton
 } from './SkeletonLoader'
+export { ProgressBar, CircularProgress, type ProgressBarProps, type CircularProgressProps } from './ProgressBar'
+export { LoadingOverlay, InlineLoadingOverlay, type LoadingOverlayProps, type InlineLoadingOverlayProps } from './LoadingOverlay'
 
 // Form Components (re-export existing ones)
 export { FormField } from './FormField'

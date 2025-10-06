@@ -11,8 +11,8 @@ import { createContext, useContext, ReactNode } from 'react';
 import type { UpdateType } from '@/components/updates/CreateUpdateModal';
 
 export interface DashboardActionsContextType {
-  /** Open the create update modal with optional type */
-  onCreateUpdate?: (type?: UpdateType) => void;
+  /** Open the create update modal with optional type and initial content */
+  onCreateUpdate?: (type?: UpdateType, initialContent?: string) => void;
   /** Navigate to digest compilation */
   onCompileDigest?: () => void;
 }

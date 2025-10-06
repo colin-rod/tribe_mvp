@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { signUp, getAuthErrorMessage, isValidEmail, isValidPassword, getPasswordStrength } from '@/lib/supabase/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export default function SignupForm() {
   const [email, setEmail] = useState('')
@@ -107,102 +106,98 @@ export default function SignupForm() {
           </div>
         )}
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Full Name
-          </label>
-          <div className="mt-1">
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
-            />
+        <fieldset disabled={loading}>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Full Name
+            </label>
+            <div className="mt-1">
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email address
-          </label>
-          <div className="mt-1">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-            />
+          <div className="mt-6">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div className="mt-1">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <div className="mt-1">
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-            />
-            {password && (
-              <div className={`mt-1 text-xs ${getPasswordStrengthColor()}`}>
-                Password strength: {passwordStrength}
-              </div>
-            )}
+          <div className="mt-6">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="mt-1">
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+              />
+              {password && (
+                <div className={`mt-1 text-xs ${getPasswordStrengthColor()}`}>
+                  Password strength: {passwordStrength}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-            Confirm Password
-          </label>
-          <div className="mt-1">
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-            />
-            {confirmPassword && password !== confirmPassword && (
-              <div className="mt-1 text-xs text-red-600">
-                Passwords do not match
-              </div>
-            )}
+          <div className="mt-6">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
+            <div className="mt-1">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+              />
+              {confirmPassword && password !== confirmPassword && (
+                <div className="mt-1 text-xs text-red-600">
+                  Passwords do not match
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <Button
             type="submit"
-            disabled={loading || !email || !password || !confirmPassword || !name}
+            disabled={!email || !password || !confirmPassword || !name}
+            loading={loading}
             className="w-full"
           >
-            {loading ? (
-              <>
-                <LoadingSpinner size="sm" />
-                Creating account...
-              </>
-            ) : (
-              'Create account'
-            )}
+            {loading ? 'Creating account...' : 'Create account'}
           </Button>
         </div>
 

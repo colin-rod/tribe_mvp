@@ -19,6 +19,7 @@ import { useLayout } from '@/contexts/LayoutContext';
 import { LAYOUT_DIMENSIONS } from '@/types/layout';
 import { RightPaneCollapsed } from './rightPane/RightPaneCollapsed';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { useNavigation } from '@/contexts/NavigationContext';
 
 export interface RightPaneProps {
   /** Content to display in the right pane */
@@ -30,6 +31,18 @@ export interface RightPaneProps {
 export function RightPane({ children, className }: RightPaneProps) {
   const { rightPaneCollapsed, toggleRightPane } = useLayout();
   const paneRef = useRef<HTMLElement>(null);
+  const { activeItemId } = useNavigation?.() || { activeItemId: undefined } as any;
+
+  const titleMap: Record<string, string> = {
+    activity: 'Tools & Insights',
+    digests: 'Digest Tools',
+    children: 'Child Tools',
+    recipients: 'Recipient Tools',
+    groups: 'Group Tools',
+    drafts: 'Draft Tools',
+    settings: 'Settings'
+  };
+  const paneTitle = activeItemId ? (titleMap[activeItemId] || 'Tools') : 'Tools';
 
   // Keyboard shortcut: ⌘. / Ctrl+.
   useEffect(() => {
@@ -106,6 +119,12 @@ export function RightPane({ children, className }: RightPaneProps) {
         <>
           {/* Expanded (full content) view */}
           <div className="flex-1 overflow-y-auto">
+            {/* Sticky header inside pane */}
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-neutral-200">
+              <div className="px-4 py-2">
+                <h2 className="text-sm font-semibold text-neutral-900">{paneTitle}</h2>
+              </div>
+            </div>
             {children || (
               <div className="flex items-center justify-center h-full p-8 text-center text-neutral-500">
                 <p className="text-sm">
@@ -125,6 +144,7 @@ export function RightPane({ children, className }: RightPaneProps) {
                 'focus:ring-primary-500 focus:ring-inset'
               )}
               aria-label="Collapse right pane"
+              aria-expanded={!rightPaneCollapsed}
             >
               <ChevronRightIcon className="w-5 h-5 text-neutral-600" aria-hidden="true" />
             </button>

@@ -189,8 +189,8 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     onUpdateScheduled: loadDashboardStats
   });
 
-  const handleCreateUpdate = useCallback((type: UpdateType = 'photo') => {
-    openCreateUpdateModal(type);
+  const handleCreateUpdate = useCallback((type: UpdateType = 'photo', initialContent?: string) => {
+    openCreateUpdateModal(type, initialContent);
   }, [openCreateUpdateModal]);
 
   const handleCompileDigest = useCallback(() => {

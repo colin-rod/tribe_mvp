@@ -73,12 +73,18 @@ export function RightPaneContent() {
   const { activeItemId } = useNavigation()
   const { onCreateUpdate, onCompileDigest } = useDashboardActions()
 
+  const handleSelectAIPrompt = (prompt: { id: string; prompt: string; category: string }) => {
+    // Open create update modal prefilled with prompt text
+    onCreateUpdate?.(undefined, prompt.prompt)
+  }
+
   switch (activeItemId) {
     case 'activity':
       return (
         <ActivityRightPane
           onCreateUpdate={onCreateUpdate}
           onCompileDigest={onCompileDigest}
+          onSelectAIPrompt={handleSelectAIPrompt}
         />
       )
     case 'digests':

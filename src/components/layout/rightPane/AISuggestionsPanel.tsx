@@ -123,7 +123,12 @@ export function AISuggestionsPanel({
               </p>
               <p className="text-xs text-neutral-500">{suggestion.category}</p>
             </div>
-            <ArrowRight className="h-4 w-4 text-neutral-400 group-hover:text-purple-600 transition-colors shrink-0" />
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="primary" className="text-xs py-1 px-2" onClick={(e) => { e.stopPropagation(); handlePromptClick(suggestion); }}>
+                Use
+              </Button>
+              <ArrowRight className="h-4 w-4 text-neutral-400 group-hover:text-purple-600 transition-colors shrink-0" />
+            </div>
           </div>
 
           {suggestion.thumbnail && (

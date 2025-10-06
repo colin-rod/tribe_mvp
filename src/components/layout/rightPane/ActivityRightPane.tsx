@@ -78,21 +78,28 @@ const ActivityRightPaneComponent = ({
 
   return (
     <div className={cn('p-4 space-y-4', className)}>
-      {/* Quick Actions Panel - Moved to top as a section */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-neutral-900">Quick Actions</h3>
+      {/* Quick Actions - sticky within pane */}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur pb-2">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-2">Quick Actions</h3>
         <QuickActionsPanel
           onCreateUpdate={handleCreateUpdate}
           onCompileDigest={handleCompileDigest}
-          className="border-0 p-0"
+          className="border border-neutral-200 rounded-md p-3"
         />
       </div>
 
       {/* Digest System Stats */}
-      <DigestStats />
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-neutral-900">Digest Overview</h3>
+        <div className="border border-neutral-200 rounded-md p-3">
+          <DigestStats />
+        </div>
+      </div>
 
       {/* AI Suggestions Panel */}
-      <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
+      <div className="space-y-3">
+        <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} className="border border-neutral-200" />
+      </div>
     </div>
   );
 };

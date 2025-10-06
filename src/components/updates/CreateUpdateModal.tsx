@@ -11,13 +11,15 @@ interface CreateUpdateModalProps {
   onUpdateSent?: () => void
   onUpdateScheduled?: () => void
   initialType?: UpdateType
+  initialContent?: string
 }
 
 export default function CreateUpdateModal({
   open,
   onClose,
   onUpdateSent,
-  onUpdateScheduled
+  onUpdateScheduled,
+  initialContent
 }: CreateUpdateModalProps) {
   const handleSent = useCallback(() => {
     onUpdateSent?.()
@@ -41,6 +43,7 @@ export default function CreateUpdateModal({
           onCancel={onClose}
           onSent={handleSent}
           onScheduled={handleScheduled}
+          initialContent={initialContent}
         />
       </div>
     </div>
