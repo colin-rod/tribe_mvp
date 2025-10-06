@@ -2,6 +2,7 @@
 
 import { DetailCard, DetailRow } from './shared/DetailCard'
 import { StatCard } from './shared/StatCard'
+import { Button } from '@/components/ui/Button'
 
 export function DigestsRightPane() {
   // TODO: Replace with actual data from context/API
@@ -24,7 +25,7 @@ export function DigestsRightPane() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Digest Overview</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">Digest Overview</h2>
       </div>
 
       {/* Current Digest Preview */}
@@ -51,23 +52,23 @@ export function DigestsRightPane() {
 
       {/* Schedule Controls */}
       <div className="space-y-2">
-        <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+        <Button variant="primary" className="w-full">
           Send Now
-        </button>
-        <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+        </Button>
+        <Button variant="outline" className="w-full">
           Edit Schedule
-        </button>
+        </Button>
       </div>
 
       {/* Recent Digests */}
       <DetailCard title="Recent Digests">
         <div className="space-y-3">
           {digestData.recentDigests.map((digest) => (
-            <div key={digest.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-              <p className="text-sm font-medium text-gray-900">{digest.title}</p>
+            <div key={digest.id} className="pb-3 border-b border-neutral-100 last:border-0 last:pb-0">
+              <p className="text-sm font-medium text-neutral-900">{digest.title}</p>
               <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-gray-500">{digest.sentDate}</span>
-                <span className="text-xs text-gray-500">{digest.recipients} recipients</span>
+                <span className="text-xs text-neutral-500">{digest.sentDate}</span>
+                <span className="text-xs text-neutral-500">{digest.recipients} recipients</span>
               </div>
             </div>
           ))}

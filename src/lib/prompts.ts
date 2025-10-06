@@ -23,7 +23,7 @@ export async function getRandomPromptSuggestion(): Promise<PromptSuggestion | nu
     .single();
 
   if (error) {
-    console.error('Error fetching prompt suggestion:', error);
+    // Silently fail - error handling done at UI level
     return null;
   }
 
@@ -42,7 +42,7 @@ export async function trackPromptShown(promptId: string): Promise<void> {
   });
 
   if (error) {
-    console.error('Error tracking prompt shown:', error);
+    // Silently fail - tracking is non-critical
   }
 }
 
@@ -58,7 +58,7 @@ export async function trackPromptClicked(promptId: string): Promise<void> {
   });
 
   if (error) {
-    console.error('Error tracking prompt clicked:', error);
+    // Silently fail - tracking is non-critical
   }
 }
 
@@ -75,7 +75,7 @@ export async function getPromptAnalytics() {
     .order('times_shown', { ascending: false });
 
   if (error) {
-    console.error('Error fetching prompt analytics:', error);
+    // Return empty array on error - analytics is non-critical
     return [];
   }
 

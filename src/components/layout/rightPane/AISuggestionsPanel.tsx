@@ -21,7 +21,6 @@ import {
   getRandomPromptSuggestion,
   trackPromptShown,
   trackPromptClicked,
-  type PromptSuggestion as DBPromptSuggestion,
 } from '@/lib/prompts';
 
 export interface AIPromptSuggestion {
@@ -66,7 +65,8 @@ export function AISuggestionsPanel({
         await trackPromptShown(data.id);
       }
     } catch (error) {
-      console.error('Error loading prompt suggestion:', error);
+      // Error is already logged in the prompts service
+      // Silently fail and show empty state
     } finally {
       setLoading(false);
     }

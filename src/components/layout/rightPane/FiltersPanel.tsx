@@ -112,41 +112,42 @@ export function FiltersPanel({
         )}
       </div>
 
-      {/* Compact Search Input */}
+      {/* Search Input - WCAG 2.1 AA Compliant (44px min height) */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
         <Input
           type="text"
           placeholder="Search updates..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-8 pr-8 h-8 text-sm"
+          className="pl-8 pr-12 h-11 text-sm"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-neutral-400 hover:text-neutral-600 rounded-md hover:bg-neutral-100"
             aria-label="Clear search"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      {/* Compact Inline Filters */}
+      {/* Inline Filters - WCAG 2.1 AA Compliant (44px min touch targets) */}
       <div className="grid grid-cols-3 gap-2">
         {/* Date Range Filter */}
         <div className="relative col-span-1">
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
             className={cn(
-              'w-full flex items-center justify-center px-2 py-1.5 text-xs border rounded',
+              'w-full flex items-center justify-center min-h-[44px] min-w-[44px] px-3 py-3 text-xs border rounded',
               'hover:bg-neutral-50 transition-colors',
               dateRange ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
             )}
             title={dateRange ? `${format(dateRange.start, 'MMM d')} - ${format(dateRange.end, 'MMM d')}` : 'Date range'}
+            aria-label={dateRange ? `Filter by date range: ${format(dateRange.start, 'MMM d')} to ${format(dateRange.end, 'MMM d')}` : 'Filter by date range'}
           >
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-4 w-4" />
           </button>
 
           {/* Date Picker Dropdown */}
@@ -170,13 +171,14 @@ export function FiltersPanel({
           <button
             onClick={() => setShowChildFilter(!showChildFilter)}
             className={cn(
-              'w-full flex items-center justify-center px-2 py-1.5 text-xs border rounded',
+              'w-full flex items-center justify-center min-h-[44px] min-w-[44px] px-3 py-3 text-xs border rounded',
               'hover:bg-neutral-50 transition-colors',
               childIds.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
             )}
             title={childIds.length > 0 ? `${childIds.length} child(ren)` : 'All children'}
+            aria-label={childIds.length > 0 ? `Filter by children: ${childIds.length} selected` : 'Filter by children'}
           >
-            <User className="h-3.5 w-3.5" />
+            <User className="h-4 w-4" />
           </button>
 
           {/* Child Dropdown */}
@@ -222,13 +224,14 @@ export function FiltersPanel({
           <button
             onClick={() => setShowTypeFilter(!showTypeFilter)}
             className={cn(
-              'w-full flex items-center justify-center px-2 py-1.5 text-xs border rounded',
+              'w-full flex items-center justify-center min-h-[44px] min-w-[44px] px-3 py-3 text-xs border rounded',
               'hover:bg-neutral-50 transition-colors',
               updateTypes.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
             )}
             title={updateTypes.length > 0 ? `${updateTypes.length} type(s)` : 'All types'}
+            aria-label={updateTypes.length > 0 ? `Filter by update type: ${updateTypes.length} selected` : 'Filter by update type'}
           >
-            <FileText className="h-3.5 w-3.5" />
+            <FileText className="h-4 w-4" />
           </button>
 
           {/* Type Dropdown */}
@@ -270,38 +273,41 @@ export function FiltersPanel({
                 <Badge
                   key={child.id}
                   variant="secondary"
-                  className="flex items-center gap-1 text-xs px-2 py-0.5"
+                  className="flex items-center gap-1.5 text-xs px-2 py-1"
                 >
                   {child.name}
                   <button
                     onClick={() => toggleChild(child.id)}
-                    className="hover:text-neutral-900"
+                    className="p-1 rounded hover:bg-neutral-300 hover:text-neutral-900 transition-colors"
+                    aria-label={`Remove ${child.name} filter`}
                   >
-                    <X className="h-2.5 w-2.5" />
+                    <X className="h-3 w-3" />
                   </button>
                 </Badge>
               ))}
 
           {updateTypes.map((type) => (
-            <Badge key={type} variant="secondary" className="flex items-center gap-1 text-xs px-2 py-0.5">
+            <Badge key={type} variant="secondary" className="flex items-center gap-1.5 text-xs px-2 py-1">
               {type}
               <button
                 onClick={() => toggleUpdateType(type)}
-                className="hover:text-neutral-900"
+                className="p-1 rounded hover:bg-neutral-300 hover:text-neutral-900 transition-colors"
+                aria-label={`Remove ${type} filter`}
               >
-                <X className="h-2.5 w-2.5" />
+                <X className="h-3 w-3" />
               </button>
             </Badge>
           ))}
 
           {dateRange && (
-            <Badge variant="secondary" className="flex items-center gap-1 text-xs px-2 py-0.5">
+            <Badge variant="secondary" className="flex items-center gap-1.5 text-xs px-2 py-1">
               {format(dateRange.start, 'MMM d')} - {format(dateRange.end, 'MMM d')}
               <button
                 onClick={() => onDateRangeChange(null)}
-                className="hover:text-neutral-900"
+                className="p-1 rounded hover:bg-neutral-300 hover:text-neutral-900 transition-colors"
+                aria-label="Remove date range filter"
               >
-                <X className="h-2.5 w-2.5" />
+                <X className="h-3 w-3" />
               </button>
             </Badge>
           )}

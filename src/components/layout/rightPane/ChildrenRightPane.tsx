@@ -3,6 +3,7 @@
 import { useViewSelection } from '@/contexts/ViewSelectionContext'
 import { DetailCard, DetailRow } from './shared/DetailCard'
 import { StatCard } from './shared/StatCard'
+import { Button } from '@/components/ui/Button'
 
 export function ChildrenRightPane() {
   const { selectedId } = useViewSelection()
@@ -25,7 +26,7 @@ export function ChildrenRightPane() {
     return (
       <div className="p-4">
         <div className="text-center py-12">
-          <p className="text-sm text-gray-500">Select a child to view details</p>
+          <p className="text-sm text-neutral-500">Select a child to view details</p>
         </div>
       </div>
     )
@@ -34,7 +35,7 @@ export function ChildrenRightPane() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{selectedChild.name}</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{selectedChild.name}</h2>
       </div>
 
       {/* Child Details */}
@@ -62,10 +63,10 @@ export function ChildrenRightPane() {
       <DetailCard title="Recent Milestones">
         <div className="space-y-3">
           {selectedChild.recentMilestones.map((milestone) => (
-            <div key={milestone.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-              <p className="text-sm font-medium text-gray-900">{milestone.title}</p>
-              <p className="text-xs text-gray-600 mt-1">{milestone.description}</p>
-              <p className="text-xs text-gray-500 mt-1">{milestone.date}</p>
+            <div key={milestone.id} className="pb-3 border-b border-neutral-100 last:border-0 last:pb-0">
+              <p className="text-sm font-medium text-neutral-900">{milestone.title}</p>
+              <p className="text-xs text-neutral-600 mt-1">{milestone.description}</p>
+              <p className="text-xs text-neutral-500 mt-1">{milestone.date}</p>
             </div>
           ))}
         </div>
@@ -73,12 +74,12 @@ export function ChildrenRightPane() {
 
       {/* Quick Actions */}
       <div className="space-y-2">
-        <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+        <Button variant="primary" className="w-full">
           Add Update
-        </button>
-        <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+        </Button>
+        <Button variant="outline" className="w-full">
           Edit Child
-        </button>
+        </Button>
       </div>
     </div>
   )

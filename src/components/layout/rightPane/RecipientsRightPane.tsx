@@ -3,6 +3,7 @@
 import { useViewSelection } from '@/contexts/ViewSelectionContext'
 import { DetailCard, DetailRow } from './shared/DetailCard'
 import { StatCard } from './shared/StatCard'
+import { Button } from '@/components/ui/Button'
 
 export function RecipientsRightPane() {
   const { selectedId } = useViewSelection()
@@ -29,7 +30,7 @@ export function RecipientsRightPane() {
     return (
       <div className="p-4">
         <div className="text-center py-12">
-          <p className="text-sm text-gray-500">Select a recipient to view details</p>
+          <p className="text-sm text-neutral-500">Select a recipient to view details</p>
         </div>
       </div>
     )
@@ -38,7 +39,7 @@ export function RecipientsRightPane() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{selectedRecipient.name}</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{selectedRecipient.name}</h2>
       </div>
 
       {/* Contact Info */}
@@ -95,12 +96,12 @@ export function RecipientsRightPane() {
 
       {/* Quick Actions */}
       <div className="space-y-2">
-        <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+        <Button variant="primary" className="w-full">
           Edit Preferences
-        </button>
-        <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+        </Button>
+        <Button variant="outline" className="w-full">
           View History
-        </button>
+        </Button>
       </div>
     </div>
   )
