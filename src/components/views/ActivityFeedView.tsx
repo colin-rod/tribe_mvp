@@ -26,7 +26,7 @@ import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardin
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
-import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
+import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext';
 import type { UpdateType } from '@/components/updates/CreateUpdateModal';
 
 const logger = createLogger('ActivityFeedView');
@@ -245,6 +245,30 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     hasData: childrenCount > 0 || recipientStats.total > 0 || updatesCreated > 0
   }), [childrenCount, recipientStats, updatesCreated]);
 
+  const dashboardActionsValue = useMemo(() => ({
+    onCreateUpdate: handleCreateUpdate,
+    onCompileDigest: handleCompileDigest,
+    activityFilters: {
+      filters,
+      setDateRange,
+      setChildIds,
+      setUpdateTypes,
+      setSearchQuery,
+      clearFilters,
+      activeFilterCount,
+    },
+  }), [
+    handleCreateUpdate,
+    handleCompileDigest,
+    filters,
+    setDateRange,
+    setChildIds,
+    setUpdateTypes,
+    setSearchQuery,
+    clearFilters,
+    activeFilterCount,
+  ]);
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -254,6 +278,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   }
 
   return (
+    <DashboardActionsProvider value={dashboardActionsValue}>
     <div className="min-h-full">
       {/* Success Alerts */}
       {showDigestSentAlert && (
@@ -363,6 +388,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
       {createUpdateModal}
     </div>
+    </DashboardActionsProvider>
   );
 });
 
