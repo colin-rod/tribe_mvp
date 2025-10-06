@@ -17,6 +17,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useLayout } from '@/contexts/LayoutContext';
 import { LAYOUT_DIMENSIONS } from '@/types/layout';
+import { RightPaneCollapsed } from './rightPane/RightPaneCollapsed';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 export interface RightPaneProps {
   /** Content to display in the right pane */
@@ -62,20 +64,47 @@ export function RightPane({ children, className }: RightPaneProps) {
     <aside
       ref={paneRef}
       className={cn(
-        'relative bg-white flex flex-col',
+        'relative bg-white flex flex-col border-l border-neutral-200',
         'transition-all duration-200 ease-out',
-        !rightPaneCollapsed && 'border-l border-neutral-200',
         className
       )}
       style={{
-        width: rightPaneCollapsed ? 0 : LAYOUT_DIMENSIONS.RIGHT_PANE_WIDTH,
+        width: rightPaneCollapsed
+          ? LAYOUT_DIMENSIONS.RIGHT_PANE_COLLAPSED_WIDTH
+          : LAYOUT_DIMENSIONS.RIGHT_PANE_WIDTH,
       }}
       aria-label="Right sidebar"
-      aria-hidden={rightPaneCollapsed}
     >
-      {/* Content - only render when expanded to improve performance */}
-      {!rightPaneCollapsed && (
+      {rightPaneCollapsed ? (
         <>
+          {/* Collapsed (icon-only) view */}
+          <div className="flex-1 overflow-y-auto">
+            <RightPaneCollapsed
+              onIconClick={(_section) => {
+                // When an icon is clicked in collapsed mode, expand the pane
+                toggleRightPane();
+              }}
+            />
+          </div>
+
+          {/* Toggle Button - Fixed at bottom */}
+          <div className="border-t border-neutral-200">
+            <button
+              onClick={handleToggle}
+              className={cn(
+                'flex items-center justify-center w-full h-12',
+                'hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2',
+                'focus:ring-primary-500 focus:ring-inset'
+              )}
+              aria-label="Expand right pane"
+            >
+              <ChevronLeftIcon className="w-5 h-5 text-neutral-600" aria-hidden="true" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Expanded (full content) view */}
           <div className="flex-1 overflow-y-auto">
             {children || (
               <div className="flex items-center justify-center h-full p-8 text-center text-neutral-500">
@@ -86,7 +115,7 @@ export function RightPane({ children, className }: RightPaneProps) {
             )}
           </div>
 
-          {/* Toggle Button - Fixed at bottom like left pane */}
+          {/* Toggle Button - Fixed at bottom */}
           <div className="border-t border-neutral-200">
             <button
               onClick={handleToggle}
@@ -95,23 +124,9 @@ export function RightPane({ children, className }: RightPaneProps) {
                 'hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2',
                 'focus:ring-primary-500 focus:ring-inset'
               )}
-              aria-label={rightPaneCollapsed ? 'Expand right pane' : 'Collapse right pane'}
-              aria-expanded={!rightPaneCollapsed}
+              aria-label="Collapse right pane"
             >
-              <svg
-                className="w-5 h-5 text-neutral-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <ChevronRightIcon className="w-5 h-5 text-neutral-600" aria-hidden="true" />
             </button>
           </div>
         </>

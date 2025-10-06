@@ -46,4 +46,6 @@ export const LAYOUT_DIMENSIONS = {
   TOP_BAR_HEIGHT: '64px',
   /** Fixed width of the right pane when expanded */
   RIGHT_PANE_WIDTH: 320,
+  /** Fixed width of the right pane when collapsed (icon-only) */
+  RIGHT_PANE_COLLAPSED_WIDTH: 64,
 } as const
