@@ -1,4 +1,5 @@
 export { ProfileManager } from './ProfileManager'
+export { ChildrenSection } from './ChildrenSection'
 export { default as PersonalInfoForm } from './PersonalInfoForm'
 export { default as SecuritySettings } from './SecuritySettings'
 export { default as NotificationSettings } from './NotificationSettings'

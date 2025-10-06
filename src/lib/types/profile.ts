@@ -2,7 +2,7 @@ export interface ProfileTab {
   id: string
   label: string
   description: string
-  icon: 'user' | 'cog' | 'shield' | 'bell' | 'lock'
+  icon: 'user' | 'cog' | 'shield' | 'bell' | 'lock' | 'users'
 }
 
 export interface ProfileFormData {

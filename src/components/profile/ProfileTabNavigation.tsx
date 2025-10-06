@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
   BellIcon,
   LockClosedIcon,
+  UsersIcon,
   ChevronDownIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
@@ -25,7 +26,8 @@ const IconMap = {
   cog: CogIcon,
   shield: ShieldCheckIcon,
   bell: BellIcon,
-  lock: LockClosedIcon
+  lock: LockClosedIcon,
+  users: UsersIcon
 }
 
 export function ProfileTabNavigation({

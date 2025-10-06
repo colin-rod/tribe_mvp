@@ -8,6 +8,7 @@ import { AccountSection } from './AccountSection'
 import { SecuritySection } from './SecuritySection'
 import { NotificationSection } from './NotificationSection'
 import { PrivacySection } from './PrivacySection'
+import { ChildrenSection } from './ChildrenSection'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { ProfileTab } from '@/lib/types/profile'
 
@@ -41,6 +42,12 @@ const PROFILE_TABS: ProfileTab[] = [
     label: 'Privacy',
     description: 'Data privacy and sharing controls',
     icon: 'lock'
+  },
+  {
+    id: 'children',
+    label: 'Children',
+    description: 'Manage your children\'s profiles',
+    icon: 'users'
   }
 ]
 
@@ -52,7 +59,7 @@ export function ProfileManager() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const tabParam = urlParams.get('tab')
-    const validTabs = ['profile', 'account', 'security', 'notifications', 'privacy']
+    const validTabs = ['profile', 'account', 'security', 'notifications', 'privacy', 'children']
 
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam)
@@ -101,6 +108,8 @@ export function ProfileManager() {
         return <NotificationSection user={user} />
       case 'privacy':
         return <PrivacySection user={user} />
+      case 'children':
+        return <ChildrenSection user={user} />
       default:
         return <ProfileSection user={user} />
     }
