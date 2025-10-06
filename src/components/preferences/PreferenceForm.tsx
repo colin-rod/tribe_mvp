@@ -32,7 +32,8 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
   const [preferences, setPreferences] = useState<PreferenceUpdate>({
     frequency: recipient.frequency as PreferenceUpdate['frequency'],
     preferred_channels: recipient.preferred_channels as PreferenceUpdate['preferred_channels'],
-    content_types: recipient.content_types as PreferenceUpdate['content_types']
+    content_types: recipient.content_types as PreferenceUpdate['content_types'],
+    importance_threshold: (recipient.importance_threshold || 'all_updates') as PreferenceUpdate['importance_threshold']
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -43,6 +44,10 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
   const handleFrequencyChange = (frequency: PreferenceUpdate['frequency']) => {
     setPreferences(prev => ({ ...prev, frequency }))
     setErrors(prev => ({ ...prev, frequency: undefined }))
+  }
+
+  const handleImportanceThresholdChange = (threshold: NonNullable<PreferenceUpdate['importance_threshold']>) => {
+    setPreferences(prev => ({ ...prev, importance_threshold: threshold }))
   }
 
   const handleChannelChange = (channel: 'email' | 'sms' | 'whatsapp', checked: boolean) => {
@@ -198,6 +203,62 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             {errors.frequency}
           </p>
         )}
+      </div>
+
+      {/* Importance Threshold Selection - NEW FEATURE */}
+      <div>
+        <label className="text-base font-medium text-gray-900">
+          What types of updates do you want to receive?
+        </label>
+        <p className="text-sm text-gray-500 mt-1">
+          Control which updates reach you based on their importance
+        </p>
+
+        <fieldset className="mt-4">
+          <legend className="sr-only">Update importance threshold</legend>
+          <div className="space-y-3">
+            {options.importanceThresholds.map((option) => (
+              <div key={option.value} className="flex items-start p-1">
+                <div className="flex items-center h-5">
+                  <input
+                    id={`importance-${option.value}`}
+                    name="importance_threshold"
+                    type="radio"
+                    checked={preferences.importance_threshold === option.value}
+                    onChange={() => handleImportanceThresholdChange(option.value as NonNullable<PreferenceUpdate['importance_threshold']>)}
+                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
+                  />
+                </div>
+                <div className="ml-3 text-sm flex-1">
+                  <label
+                    htmlFor={`importance-${option.value}`}
+                    className="font-medium text-gray-700 cursor-pointer"
+                  >
+                    {option.label}
+                  </label>
+                  <p className="text-gray-500">{option.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </fieldset>
+
+        {/* Helpful info box */}
+        <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-md p-3">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-indigo-700">
+                <strong>Smart filtering:</strong> Our AI automatically categorizes each update.
+                You&apos;ll only receive updates that meet or exceed your chosen importance level.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Channel Selection */}

@@ -1,5 +1,11 @@
 /**
  * @jest-environment node
+ * @deprecated These tests are deprecated as of October 6, 2025
+ *
+ * Group functionality has been replaced with recipient-centric preferences.
+ * These tests are kept for reference but should not be run in CI/CD.
+ *
+ * See DEPRECATION_NOTICE.md for migration details.
  */
 
 import { createClient } from '@supabase/supabase-js'

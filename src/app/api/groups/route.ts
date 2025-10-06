@@ -1,3 +1,18 @@
+/**
+ * @deprecated This API route is deprecated as of October 6, 2025
+ *
+ * Group management has been replaced with recipient-centric preferences.
+ * This endpoint is kept for backward compatibility but should not be used in new code.
+ *
+ * Migration: supabase/migrations/20251006000001_recipient_centric_refactor.sql
+ * See DEPRECATION_NOTICE.md for details.
+ *
+ * USE INSTEAD:
+ * - Manage recipients directly via /api/recipients
+ * - Recipients have relationship-based defaults
+ * - No group management needed
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
@@ -10,6 +25,7 @@ import { z } from 'zod'
 const logger = createLogger('GroupsAPI')
 
 /**
+ * @deprecated Use /api/recipients instead
  * GET /api/groups - Get all groups for authenticated user
  */
 export async function GET(_request: NextRequest) {

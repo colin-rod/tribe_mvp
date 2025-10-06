@@ -1,3 +1,21 @@
+/**
+ * @deprecated This file is deprecated as of October 6, 2025
+ *
+ * The group-based recipient management system has been replaced with a
+ * recipient-centric model using relationship-based defaults and AI-powered
+ * importance classification.
+ *
+ * Migration: supabase/migrations/20251006000001_recipient_centric_refactor.sql
+ *
+ * USE INSTEAD:
+ * - src/lib/types/preferences.ts - For relationship-based defaults
+ * - Recipients now manage their own preferences via importance_threshold
+ * - No group management required
+ *
+ * This file is kept for backward compatibility during the transition period
+ * and will be removed in a future release. See DEPRECATION_NOTICE.md for details.
+ */
+
 import { createClient } from './supabase/client'
 import type { Database } from './types/database'
 import { createLogger } from '@/lib/logger'
@@ -5,6 +23,7 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('RecipientGroups')
 /**
+ * @deprecated Use relationship-based defaults instead
  * Interface for recipient group with enhanced data
  * Matches the database schema with additional computed fields
  */

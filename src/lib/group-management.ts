@@ -1,3 +1,12 @@
+/**
+ * @deprecated This file is deprecated as of October 6, 2025
+ *
+ * Group management functionality has been replaced with recipient-centric preferences.
+ * See DEPRECATION_NOTICE.md for migration details.
+ *
+ * USE INSTEAD: src/lib/types/preferences.ts
+ */
+
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
 

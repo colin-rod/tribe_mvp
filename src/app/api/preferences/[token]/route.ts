@@ -195,6 +195,9 @@ export async function PUT(
       preferred_channels: z.array(z.enum(['email', 'sms', 'whatsapp'])).optional(),
       content_types: z.array(z.enum(['photos', 'text', 'milestones'])).optional(),
 
+      // New recipient-centric preference: importance threshold
+      importance_threshold: z.enum(['all_updates', 'milestones_only', 'major_milestones_only']).optional(),
+
       // New group-specific preferences
       digest_preferences: z.record(z.object({
         frequency: z.enum(['every_update', 'daily_digest', 'weekly_digest', 'milestones_only']).optional(),
@@ -272,7 +275,7 @@ export async function PUT(
 
     const updateResults: UpdateResult[] = []
 
-    if (preferences.update_mode === 'legacy' || (preferences.frequency || preferences.preferred_channels || preferences.content_types)) {
+    if (preferences.update_mode === 'legacy' || (preferences.frequency || preferences.preferred_channels || preferences.content_types || preferences.importance_threshold)) {
       // Handle legacy preference updates (backward compatibility)
       const group = recipientWithGroup.recipient_groups
       const overridesGroupDefault = group ?
@@ -286,6 +289,7 @@ export async function PUT(
       if (preferences.frequency) legacyUpdate.frequency = preferences.frequency
       if (preferences.preferred_channels) legacyUpdate.preferred_channels = preferences.preferred_channels
       if (preferences.content_types) legacyUpdate.content_types = preferences.content_types
+      if (preferences.importance_threshold) legacyUpdate.importance_threshold = preferences.importance_threshold
 
       const { error: legacyError } = await supabase
         .from('recipients')

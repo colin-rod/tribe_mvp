@@ -14,6 +14,7 @@ export interface PreferenceUpdate {
   frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
   preferred_channels: ('email' | 'sms' | 'whatsapp')[]
   content_types: ('photos' | 'text' | 'milestones')[]
+  importance_threshold?: 'all_updates' | 'milestones_only' | 'major_milestones_only' // New field
 }
 
 /**
@@ -29,6 +30,7 @@ export interface RecipientWithGroup {
   frequency?: string
   preferred_channels?: string[]
   content_types?: string[]
+  importance_threshold?: 'all_updates' | 'milestones_only' | 'major_milestones_only' // New field
   overrides_group_default?: boolean
 }
 
@@ -360,6 +362,23 @@ export function getPreferenceOptions() {
         value: 'milestones_only',
         label: 'Milestones Only',
         description: 'Only receive major milestone updates'
+      }
+    ],
+    importanceThresholds: [
+      {
+        value: 'all_updates',
+        label: 'All Updates',
+        description: 'Receive everything - daily moments, milestones, and major events'
+      },
+      {
+        value: 'milestones_only',
+        label: 'Milestones Only',
+        description: 'Only developmental milestones and major achievements'
+      },
+      {
+        value: 'major_milestones_only',
+        label: 'Major Milestones Only',
+        description: 'Only the biggest moments - first steps, birthdays, major celebrations'
       }
     ],
     channels: [

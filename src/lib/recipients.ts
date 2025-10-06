@@ -1,9 +1,17 @@
 import { createClient } from './supabase/client'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
-import { getDefaultGroup } from './recipient-groups'
+// getDefaultGroup is deprecated - using relationship-based defaults instead
 import type { Database } from './types/database'
 import { createLogger } from '@/lib/logger'
+import {
+  type ImportanceThreshold,
+  type UpdateFrequency,
+  type DeliveryChannel,
+  type ContentType,
+  type RecipientRelationship,
+  getRelationshipDefaults as getDefaultPreferences
+} from './types/preferences'
 
 
 const logger = createLogger('Recipients')
@@ -17,16 +25,17 @@ export interface Recipient {
   email?: string | null
   phone?: string | null
   name: string
-  relationship: 'grandparent' | 'parent' | 'sibling' | 'friend' | 'family' | 'colleague' | 'other'
-  group_id?: string | null
-  frequency: 'every_update' | 'daily_digest' | 'weekly_digest' | 'milestones_only'
-  preferred_channels: ('email' | 'sms' | 'whatsapp')[]
-  content_types: ('photos' | 'text' | 'milestones')[]
-  overrides_group_default: boolean
+  relationship: RecipientRelationship
+  group_id?: string | null // Deprecated, kept for backward compatibility
+  frequency: UpdateFrequency
+  preferred_channels: DeliveryChannel[]
+  content_types: ContentType[]
+  importance_threshold?: ImportanceThreshold // New field - optional until migration is run
+  overrides_group_default: boolean // Deprecated, kept for backward compatibility
   preference_token: string
   is_active: boolean
   created_at: string
-  group?: RecipientGroup
+  group?: RecipientGroup // Deprecated, kept for backward compatibility
 }
 
 type RecipientRow = Database['public']['Tables']['recipients']['Row']
@@ -111,14 +120,12 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     throw new Error('Either email or phone number is required')
   }
 
-  // If no group specified, assign to default Friends group
-  let groupId = recipientData.group_id
-  if (!groupId) {
-    const friendsGroup = await getDefaultGroup('Friends')
-    if (friendsGroup) {
-      groupId = friendsGroup.id
-    }
-  }
+  // Set default preferences based on relationship (no groups)
+  const relationshipDefaults = getDefaultPreferences(recipientData.relationship as RecipientRelationship)
+
+  // Group assignment is now optional and deprecated
+  // We keep group_id for backward compatibility but it's no longer required
+  const groupId = recipientData.group_id || null
 
   // Generate unique preference token
   const preferenceToken = generatePreferenceToken()
@@ -129,10 +136,11 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     email: recipientData.email || null,
     phone: recipientData.phone || null,
     relationship: recipientData.relationship,
-    group_id: groupId,
-    frequency: recipientData.frequency || 'weekly_digest',
-    preferred_channels: recipientData.preferred_channels || ['email'],
-    content_types: recipientData.content_types || ['photos', 'text'],
+    group_id: groupId, // Optional, kept for backward compatibility
+    frequency: recipientData.frequency || relationshipDefaults.frequency,
+    preferred_channels: recipientData.preferred_channels || relationshipDefaults.channels,
+    content_types: recipientData.content_types || ['photos', 'text', 'milestones'],
+    importance_threshold: relationshipDefaults.importance_threshold, // New field
     preference_token: preferenceToken
   }
 

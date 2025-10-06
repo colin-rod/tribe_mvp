@@ -1,5 +1,8 @@
 // TypeScript definitions for AI Analysis Edge Function
 
+// Update importance classification types
+export type UpdateImportance = 'all_updates' | 'milestone' | 'major_milestone'
+
 export interface AIAnalysisRequest {
   update_id: string
   content: string
@@ -10,7 +13,13 @@ export interface AIAnalysisRequest {
 export interface AIAnalysisResult {
   keywords: string[]
   emotional_tone: 'excited' | 'proud' | 'happy' | 'concerned' | 'milestone' | 'routine' | 'funny'
+  // Legacy numeric importance (deprecated, keeping for backward compatibility)
   importance_level: number
+  // New categorical importance classification
+  suggested_importance: UpdateImportance
+  importance_confidence: number // 0.0 - 1.0
+  importance_reasoning: string // Why AI chose this classification
+  detected_milestone_type?: string // If milestone detected
   suggested_recipient_types: string[]
   confidence_score: number
 }

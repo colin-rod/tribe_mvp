@@ -1,3 +1,14 @@
+/**
+ * @deprecated This component is deprecated as of October 6, 2025
+ *
+ * Group management UI has been replaced with recipient-centric preferences.
+ * This component is kept for reference during the transition period.
+ *
+ * See DEPRECATION_NOTICE.md for migration details.
+ *
+ * DO NOT USE in new code. Manage recipients directly instead.
+ */
+
 'use client'
 
 import { createLogger } from '@/lib/logger'

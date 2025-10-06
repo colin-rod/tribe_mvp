@@ -11,10 +11,16 @@ interface AnalyzeRequest {
   parent_id: string
 }
 
+type UpdateImportance = 'all_updates' | 'milestone' | 'major_milestone'
+
 interface AnalysisResult {
   keywords: string[]
   emotional_tone: string
-  importance_level: number
+  importance_level: number // Legacy - kept for backward compatibility
+  suggested_importance: UpdateImportance // New categorical classification
+  importance_confidence: number // Confidence in importance classification (0-1)
+  importance_reasoning: string // Why AI chose this classification
+  detected_milestone_type?: string // Specific milestone if detected
   suggested_recipient_types: string[]
   suggested_recipients: string[]
   confidence_score: number
@@ -181,7 +187,7 @@ async function analyzeContentWithAI(
   }))
 
   const analysisPrompt = `
-Analyze this baby/child update and provide recipient suggestions:
+Analyze this baby/child update and classify its importance level:
 
 Content: "${requestData.content}"
 Child age: ${requestData.child_age_months} months
@@ -192,16 +198,30 @@ Available recipients: ${JSON.stringify(recipientContext, null, 2)}
 Based on this update, provide a JSON response with:
 1. keywords: Array of 3-5 relevant keywords
 2. emotional_tone: One of "excited", "proud", "happy", "concerned", "milestone", "routine", "funny"
-3. importance_level: Number 1-10 (10 = major milestone, 1 = routine update)
-4. suggested_recipient_types: Array of relationship types who should receive this ("grandparent", "close_family", "extended_family", "friends")
-5. confidence_score: Number 0-1 indicating AI confidence in suggestions
+3. importance_level: Number 1-10 (10 = major milestone, 1 = routine update) - LEGACY field
+4. suggested_importance: One of "all_updates", "milestone", "major_milestone"
+   - "major_milestone": First steps, first words, birthday, first day of school, major achievements
+   - "milestone": First smile, rolling over, sitting up, crawling, first tooth, new developmental skill
+   - "all_updates": Daily activities, cute moments, regular photos, routine updates
+5. importance_confidence: Number 0-1 indicating confidence in importance classification
+6. importance_reasoning: Brief explanation (1-2 sentences) of why this classification was chosen
+7. detected_milestone_type: If a milestone, what specific type (e.g., "first_steps", "first_words", "sitting", etc.)
+8. suggested_recipient_types: Array of relationship types who should receive this ("grandparent", "close_family", "extended_family", "friends")
+9. confidence_score: Number 0-1 indicating AI confidence in suggestions
+
+Classification Guidelines:
+- MAJOR MILESTONE: Life-changing firsts, major celebrations, significant achievements
+  Examples: first steps, first words, potty training success, birthdays, first day of school
+- MILESTONE: Developmental achievements, new skills, notable firsts
+  Examples: first smile, rolling over, sitting independently, crawling, first tooth
+- ALL UPDATES: Everything else - daily life, cute moments, regular activities, photos
+  Examples: playing at the park, wearing a cute outfit, funny face, typical day activities
 
 Consider:
-- Milestones and firsts should go to close family and grandparents
-- Routine updates can go to friends who want frequent updates
-- Funny/cute moments appeal to all recipient types
-- Medical concerns should go to close family only
-- Age-appropriate content (crawling news not relevant for newborns)
+- Content keywords (e.g., "first time", "birthday", "started", "achieved")
+- Age-appropriate milestones (crawling for 6-10 months, walking for 10-14 months)
+- Emotional intensity in parent's language
+- Significance vs routine nature of the event
 
 Respond with ONLY valid JSON, no other text.`
 
@@ -239,14 +259,25 @@ Respond with ONLY valid JSON, no other text.`
     const analysis = JSON.parse(analysisText)
 
     // Validate response structure
-    if (!analysis.keywords || !analysis.emotional_tone || !analysis.importance_level) {
-      throw new Error('Invalid AI response structure')
+    if (!analysis.keywords || !analysis.emotional_tone || !analysis.suggested_importance) {
+      throw new Error('Invalid AI response structure - missing required fields')
+    }
+
+    // Validate suggested_importance is a valid value
+    const validImportance = ['all_updates', 'milestone', 'major_milestone']
+    if (!validImportance.includes(analysis.suggested_importance)) {
+      console.warn(`Invalid suggested_importance: ${analysis.suggested_importance}, defaulting to 'all_updates'`)
+      analysis.suggested_importance = 'all_updates'
     }
 
     return {
       keywords: analysis.keywords,
       emotional_tone: analysis.emotional_tone,
-      importance_level: analysis.importance_level,
+      importance_level: analysis.importance_level || 5, // Legacy field with fallback
+      suggested_importance: analysis.suggested_importance,
+      importance_confidence: analysis.importance_confidence || 0.8,
+      importance_reasoning: analysis.importance_reasoning || 'AI classification based on content analysis',
+      detected_milestone_type: analysis.detected_milestone_type,
       suggested_recipient_types: analysis.suggested_recipient_types || [],
       suggested_recipients: [], // Will be populated by suggestRecipients
       confidence_score: analysis.confidence_score || 0.8
