@@ -128,7 +128,7 @@
     "postcss": "^8.0.0",
     "prettier": "^3.0.0",
     "storybook": "^9.1.10",
-    "supabase": "^1.110.0",
+    "supabase": "^2.48.3",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
