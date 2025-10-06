@@ -25,6 +25,7 @@ export default function RecipientSearch({
   loading = false
 }: RecipientSearchProps) {
   const [localSearch, setLocalSearch] = useState(filters.search || '')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const filtersRef = useRef(filters)
 
@@ -105,7 +106,7 @@ export default function RecipientSearch({
         <h3 className="text-lg font-medium text-gray-900">Search & Filter Recipients</h3>
         {hasActiveFilters && (
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={onClearFilters}
             disabled={loading}
@@ -152,93 +153,106 @@ export default function RecipientSearch({
         </div>
       </div>
 
-      {/* Filter Options */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Group Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Filter by Group
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {groups.map((group) => (
-              <label key={group.id} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.group_id === group.id}
-                  onChange={() => handleGroupFilter(group.id)}
-                  disabled={loading}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
-                />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-gray-900 truncate block">
-                    {group.name}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {group.recipient_count} recipients
-                    {group.is_default_group && ' • Default'}
-                  </span>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Relationship Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Filter by Relationship
-          </label>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {RELATIONSHIP_OPTIONS.map((relationship) => (
-              <label key={relationship.value} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.relationship === relationship.value}
-                  onChange={() => handleRelationshipFilter(relationship.value)}
-                  disabled={loading}
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-900">{relationship.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Status Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Filter by Status
-          </label>
-          <div className="space-y-2">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.is_active === true}
-                onChange={() => handleStatusFilter(true)}
-                disabled={loading}
-                className="w-4 h-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
-              />
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                <span className="text-sm text-gray-900">Active Recipients</span>
-              </div>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.is_active === false}
-                onChange={() => handleStatusFilter(false)}
-                disabled={loading}
-                className="w-4 h-4 text-primary-600 focus:ring-primary-600 border-gray-300 rounded"
-              />
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                <span className="text-sm text-gray-900">Inactive Recipients</span>
-              </div>
-            </label>
-          </div>
+      {/* Quick Status Filters */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => handleStatusFilter(true)}
+            disabled={loading}
+            className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+              filters.is_active === true
+                ? 'bg-primary-100 text-primary-800 border-primary-200'
+                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+            }`}
+          >
+            Active
+          </button>
+          <button
+            type="button"
+            onClick={() => handleStatusFilter(false)}
+            disabled={loading}
+            className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+              filters.is_active === false
+                ? 'bg-primary-100 text-primary-800 border-primary-200'
+                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+            }`}
+          >
+            Inactive
+          </button>
         </div>
       </div>
+
+      {/* Advanced Filters Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {showAdvanced ? 'Showing advanced filters' : 'More filters available'}
+        </div>
+        <Button
+          variant="tertiary"
+          size="sm"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          aria-expanded={showAdvanced}
+          aria-controls="recipient-advanced-filters"
+        >
+          {showAdvanced ? 'Fewer filters' : 'More filters'}
+        </Button>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      {showAdvanced && (
+        <div id="recipient-advanced-filters" className="grid grid-cols-1 md:grid-cols-2 gap-4" role="region" aria-label="Advanced recipient filters">
+          {/* Group Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by Group
+            </label>
+            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+              {groups.map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => handleGroupFilter(group.id)}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                    filters.group_id === group.id
+                      ? 'bg-primary-100 text-primary-800 border-primary-200'
+                      : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                  }`}
+                  title={`${group.recipient_count} recipients`}
+                >
+                  {group.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Relationship Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by Relationship
+            </label>
+            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+              {RELATIONSHIP_OPTIONS.map((relationship) => (
+                <button
+                  key={relationship.value}
+                  type="button"
+                  onClick={() => handleRelationshipFilter(relationship.value)}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                    filters.relationship === relationship.value
+                      ? 'bg-primary-100 text-primary-800 border-primary-200'
+                      : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                  }`}
+                >
+                  {relationship.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (

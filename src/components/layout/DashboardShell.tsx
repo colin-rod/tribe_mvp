@@ -64,7 +64,7 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
             className="flex-1 grid overflow-hidden"
             style={{
               marginTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-              gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr ${rightPaneCollapsed ? '0px' : 'auto'}`,
+              gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr auto`,
               gridTemplateAreas: '"nav main sidebar"',
             }}
           >

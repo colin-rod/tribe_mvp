@@ -3,7 +3,8 @@
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('RecipientManager')
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Snackbar from '@/components/ui/Snackbar'
 import {
   Recipient,
   getRecipients,
@@ -61,6 +62,56 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
 
   const [bulkOperation, setBulkOperation] = useState<string>('')
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  // Undo snackbar + pending deletion state
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  const pendingDeleteRef = useRef<Map<string, Recipient>>(new Map())
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const onClickAway = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickAway)
+    return () => document.removeEventListener('mousedown', onClickAway)
+  }, [])
+
+  const scheduleFinalizeDeletion = () => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current)
+    }
+    deleteTimerRef.current = setTimeout(async () => {
+      const ids = Array.from(pendingDeleteRef.current.keys())
+      if (ids.length === 0) return
+      try {
+        await Promise.all(ids.map(id => deleteRecipient(id)))
+      } catch (error) {
+        logger.errorWithStack('Error finalizing deletion:', error as Error)
+        // Best-effort: reload
+        void loadData()
+      } finally {
+        pendingDeleteRef.current.clear()
+        setSnackbarOpen(false)
+      }
+    }, 5000)
+  }
+
+  const undoDeletion = () => {
+    if (deleteTimerRef.current) {
+      clearTimeout(deleteTimerRef.current)
+      deleteTimerRef.current = null
+    }
+    const toRestore = Array.from(pendingDeleteRef.current.values())
+    if (toRestore.length > 0) {
+      setRecipients(prev => [...toRestore, ...prev])
+    }
+    pendingDeleteRef.current.clear()
+    setSnackbarOpen(false)
+  }
 
   // Load data on component mount and when filters change
   useEffect(() => {
@@ -87,22 +138,15 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
   }
 
   const handleDeleteRecipient = async (recipientId: string) => {
-    if (!confirm('Are you sure you want to delete this recipient? They will no longer receive updates.')) {
-      return
-    }
-
-    try {
-      await deleteRecipient(recipientId)
-      setRecipients(prev => prev.filter(r => r.id !== recipientId))
-      setSelectedRecipients(prev => {
-        const updated = new Set(prev)
-        updated.delete(recipientId)
-        return updated
-      })
-    } catch (error) {
-      logger.errorWithStack('Error deleting recipient:', error as Error)
-      alert('Failed to delete recipient. Please try again.')
-    }
+    // Soft delete with undo window
+    const target = recipients.find(r => r.id === recipientId)
+    if (!target) return
+    setRecipients(prev => prev.filter(r => r.id !== recipientId))
+    setSelectedRecipients(prev => { const s = new Set(prev); s.delete(recipientId); return s })
+    pendingDeleteRef.current.set(recipientId, target)
+    setSnackbarMessage('Recipient deleted')
+    setSnackbarOpen(true)
+    scheduleFinalizeDeletion()
   }
 
   const handleSendPreferenceLink = async (recipientId: string) => {
@@ -135,53 +179,66 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     }
   }
 
-  const handleBulkOperation = async () => {
-    if (selectedRecipients.size === 0 || !bulkOperation) return
-
-    const recipientIds = Array.from(selectedRecipients)
-
+  const handleBulkSendLinks = async () => {
+    if (selectedRecipients.size === 0) return
+    const ids = Array.from(selectedRecipients)
     try {
       setBulkLoading(true)
-
-      switch (bulkOperation) {
-        case 'delete':
-          if (!confirm(`Are you sure you want to delete ${recipientIds.length} recipients?`)) {
-            return
-          }
-          await Promise.all(recipientIds.map(id => deleteRecipient(id)))
-          setRecipients(prev => prev.filter(r => !recipientIds.includes(r.id)))
-          break
-
-        case 'deactivate':
-          await bulkUpdateRecipients(recipientIds, { is_active: false })
-          void loadData() // Reload to reflect changes
-          break
-
-        case 'reactivate':
-          await bulkUpdateRecipients(recipientIds, { is_active: true })
-          void loadData() // Reload to reflect changes
-          break
-
-        case 'send_links':
-          const emailRecipients = recipients.filter(r =>
-            recipientIds.includes(r.id) && r.email && r.is_active
-          )
-          await Promise.all(emailRecipients.map(r => resendPreferenceLink(r.id)))
-          alert(`Preference links sent to ${emailRecipients.length} recipients with email addresses.`)
-          break
-
-        default:
-          break
-      }
-
-      setSelectedRecipients(new Set())
-      setBulkOperation('')
+      const emailRecipients = recipients.filter(r => ids.includes(r.id) && r.email && r.is_active)
+      await Promise.all(emailRecipients.map(r => resendPreferenceLink(r.id)))
+      alert(`Preference links sent to ${emailRecipients.length} recipients with email addresses.`)
     } catch (error) {
-      logger.errorWithStack('Error performing bulk operation:', error as Error)
-      alert('Failed to perform bulk operation. Please try again.')
+      logger.errorWithStack('Error sending preference links:', error as Error)
+      alert('Failed to send preference links. Please try again.')
     } finally {
       setBulkLoading(false)
+      setSelectedRecipients(new Set())
     }
+  }
+
+  const handleBulkDeactivate = async () => {
+    if (selectedRecipients.size === 0) return
+    const ids = Array.from(selectedRecipients)
+    try {
+      setBulkLoading(true)
+      await bulkUpdateRecipients(ids, { is_active: false })
+      void loadData()
+    } catch (error) {
+      logger.errorWithStack('Error deactivating recipients:', error as Error)
+      alert('Failed to deactivate recipients. Please try again.')
+    } finally {
+      setBulkLoading(false)
+      setSelectedRecipients(new Set())
+    }
+  }
+
+  const handleBulkReactivate = async () => {
+    if (selectedRecipients.size === 0) return
+    const ids = Array.from(selectedRecipients)
+    try {
+      setBulkLoading(true)
+      await bulkUpdateRecipients(ids, { is_active: true })
+      void loadData()
+    } catch (error) {
+      logger.errorWithStack('Error reactivating recipients:', error as Error)
+      alert('Failed to reactivate recipients. Please try again.')
+    } finally {
+      setBulkLoading(false)
+      setSelectedRecipients(new Set())
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedRecipients.size === 0) return
+    const ids = Array.from(selectedRecipients)
+    const toDelete = recipients.filter(r => ids.includes(r.id))
+    if (toDelete.length === 0) return
+    setRecipients(prev => prev.filter(r => !ids.includes(r.id)))
+    setSelectedRecipients(new Set())
+    toDelete.forEach(r => pendingDeleteRef.current.set(r.id, r))
+    setSnackbarMessage(`${toDelete.length} recipient${toDelete.length !== 1 ? 's' : ''} deleted`)
+    setSnackbarOpen(true)
+    scheduleFinalizeDeletion()
   }
 
   const handleClearFilters = () => {
@@ -250,32 +307,35 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
             Manage your family and friends who receive baby updates
           </p>
         </div>
-        <div className="flex space-x-4">
-          <Button
-            variant="outline"
-            onClick={handleExportRecipients}
-            disabled={recipients.length === 0}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setViewMode('invite')}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Invite Recipients
-          </Button>
+        <div className="flex items-center space-x-3 relative" ref={moreRef}>
           <Button onClick={() => setViewMode('add')}>
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Add Recipient
           </Button>
+          <Button variant="tertiary" onClick={() => setMoreOpen(!moreOpen)} aria-expanded={moreOpen} aria-haspopup="menu">
+            More
+          </Button>
+          {moreOpen && (
+            <div role="menu" className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <button
+                role="menuitem"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                onClick={() => { setViewMode('invite'); setMoreOpen(false) }}
+              >
+                Invite recipients
+              </button>
+              <button
+                role="menuitem"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+                onClick={() => { handleExportRecipients(); setMoreOpen(false) }}
+                disabled={recipients.length === 0}
+              >
+                Export CSV
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -313,47 +373,26 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
 
       {/* Bulk Operations */}
       {selectedRecipients.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 sticky top-2 z-10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-blue-900">
-                {selectedRecipients.size} recipient{selectedRecipients.size !== 1 ? 's' : ''} selected
-              </span>
-              <select
-                value={bulkOperation}
-                onChange={(e) => setBulkOperation(e.target.value)}
-                className="rounded-md border border-blue-300 bg-white px-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                disabled={bulkLoading}
-              >
-                <option value="">Choose action...</option>
-                <option value="delete">Delete selected</option>
-                <option value="deactivate">Deactivate selected</option>
-                <option value="reactivate">Reactivate selected</option>
-                <option value="send_links">Send preference links</option>
-              </select>
+            <div className="text-sm font-medium text-blue-900">
+              {selectedRecipients.size} recipient{selectedRecipients.size !== 1 ? 's' : ''} selected
             </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedRecipients(new Set())}
-                disabled={bulkLoading}
-              >
-                Clear Selection
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" disabled={bulkLoading} onClick={handleBulkSendLinks}>
+                {bulkLoading ? <LoadingSpinner size="sm" /> : 'Send preference links'}
               </Button>
-              <Button
-                size="sm"
-                onClick={handleBulkOperation}
-                disabled={!bulkOperation || bulkLoading}
-              >
-                {bulkLoading ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  'Apply'
-                )}
+              <Button size="sm" variant="secondary" disabled={bulkLoading} onClick={handleBulkDeactivate}>
+                Deactivate
+              </Button>
+              <Button size="sm" variant="secondary" disabled={bulkLoading} onClick={handleBulkReactivate}>
+                Reactivate
+              </Button>
+              <Button size="sm" variant="destructiveOutline" disabled={bulkLoading} onClick={handleBulkDelete}>
+                Delete
+              </Button>
+              <Button size="sm" variant="tertiary" onClick={() => setSelectedRecipients(new Set())} disabled={bulkLoading}>
+                Clear selection
               </Button>
             </div>
           </div>
@@ -441,6 +480,17 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
           isOpen={!!editingRecipient}
         />
       )}
+
+      {/* Undo Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        message={snackbarMessage}
+        actionLabel="Undo"
+        onAction={undoDeletion}
+        onClose={() => { if (pendingDeleteRef.current.size > 0) { /* keep timer */ setSnackbarOpen(false) } else setSnackbarOpen(false) }}
+        duration={5000}
+        type="info"
+      />
     </div>
   )
 }

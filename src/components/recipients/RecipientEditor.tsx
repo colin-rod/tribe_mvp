@@ -221,16 +221,12 @@ export default function RecipientEditor({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={onCancel}
-        />
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
 
-        {/* Modal */}
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {/* Right-side drawer */}
+      <div className="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl border-l border-gray-200 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Edit Recipient</h2>
@@ -247,7 +243,7 @@ export default function RecipientEditor({
           </div>
 
           {/* Content */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
             {/* General Error */}
             {errors.general && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-md">
@@ -492,7 +488,7 @@ export default function RecipientEditor({
           </form>
 
           {/* Footer */}
-          <div className="flex justify-end space-x-4 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="mt-auto flex justify-end space-x-4 p-6 border-t border-gray-200 bg-gray-50">
             <Button
               type="button"
               variant="outline"
@@ -516,7 +512,6 @@ export default function RecipientEditor({
               )}
             </Button>
           </div>
-        </div>
       </div>
     </div>
   )
