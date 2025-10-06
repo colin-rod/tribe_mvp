@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createLogger } from '@/lib/logger'
+import { validateSessionMiddleware } from './session-validation'
 
 const logger = createLogger('AuthorizationMiddleware')
 
@@ -12,8 +13,57 @@ export interface AuthenticatedUser {
 
 /**
  * Middleware to ensure the user is authenticated and extract user information
+ * Enhanced with session validation and automatic refresh (CRO-99)
  */
-export async function requireAuth(_request: NextRequest): Promise<{ user: AuthenticatedUser } | NextResponse> {
+export async function requireAuth(request: NextRequest): Promise<{ user: AuthenticatedUser } | NextResponse> {
+  try {
+    // Use enhanced session validation middleware
+    const sessionResult = await validateSessionMiddleware(request)
+
+    // If session validation returned an error response, return it
+    if (sessionResult instanceof NextResponse) {
+      return sessionResult
+    }
+
+    // If session is not valid, return error
+    if (!sessionResult.isValid || !sessionResult.user) {
+      logger.warn('Session validation failed in requireAuth', {
+        isValid: sessionResult.isValid,
+        hasUser: !!sessionResult.user,
+      })
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Log successful authentication with session details
+    logger.debug('User authenticated with valid session', {
+      userId: sessionResult.user.id,
+      sessionState: sessionResult.session?.state,
+      wasRefreshed: sessionResult.wasRefreshed,
+    })
+
+    return {
+      user: {
+        id: sessionResult.user.id,
+        email: sessionResult.user.email,
+      },
+    }
+  } catch (error) {
+    logger.errorWithStack('Authentication middleware error', error as Error)
+    return NextResponse.json(
+      { error: 'Internal authentication error' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Legacy authentication without session validation (for backward compatibility)
+ * @deprecated Use requireAuth instead - it now includes session validation
+ */
+export async function requireAuthLegacy(_request: NextRequest): Promise<{ user: AuthenticatedUser } | NextResponse> {
   try {
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
@@ -146,7 +196,7 @@ export async function verifyNotificationPermissions(
       return { allowed: false, ownedEmails: [] }
     }
 
-    const ownedEmails = (userRecipients || []).map((r: { email: string }) => r.email.toLowerCase())
+    const ownedEmails = (userRecipients || []).map((r: { email: string | null }) => r.email?.toLowerCase() || '').filter(Boolean)
     const requestedEmails = recipientEmails.map(e => e.toLowerCase())
 
     // Check if all requested emails are owned by the user

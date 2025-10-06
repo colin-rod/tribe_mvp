@@ -58,23 +58,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase.auth])
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      logger.errorWithStack('Error signing out:', error as Error)
+  const signOut = async (scope: 'local' | 'global' | 'others' = 'local') => {
+    try {
+      // Call server-side logout endpoint for comprehensive session clearing
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Logout failed')
+      }
+
+      // Also sign out from Supabase client
+      const { error } = await supabase.auth.signOut({ scope })
+
+      if (error) {
+        logger.errorWithStack('Error signing out:', error as Error)
+        throw error
+      }
+
+      // Clear local state
+      setSession(null)
+      setUser(null)
+
+      logger.info('User signed out successfully', { scope })
+    } catch (error) {
+      logger.errorWithStack('Sign out error:', error as Error)
       throw error
     }
   }
 
   const refreshSession = async () => {
-    const { data, error } = await supabase.auth.refreshSession()
-    if (error) {
-      logger.errorWithStack('Error refreshing session:', error as Error)
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) {
+        logger.errorWithStack('Error refreshing session:', error as Error)
+        throw error
+      }
+      setSession(data.session)
+      setUser(data.session?.user ?? null)
+      logger.debug('Session refreshed successfully')
+    } catch (error) {
+      logger.errorWithStack('Session refresh error:', error as Error)
       throw error
     }
-    setSession(data.session)
-    setUser(data.session?.user ?? null)
   }
+
+  // Periodically check session health and refresh if needed
+  useEffect(() => {
+    if (!user) return
+
+    const checkSessionHealth = async () => {
+      try {
+        const response = await fetch('/api/auth/session')
+        if (!response.ok) {
+          logger.warn('Session health check failed', { status: response.status })
+          // If session is invalid, sign out
+          if (response.status === 401) {
+            await signOut()
+          }
+          return
+        }
+
+        const data = await response.json()
+
+        // Log warnings if any
+        if (data.warnings?.length > 0) {
+          logger.warn('Session health warnings', { warnings: data.warnings })
+        }
+
+        // Auto-refresh if session is about to expire (within 10 minutes)
+        if (data.session?.timeUntilExpiry && data.session.timeUntilExpiry < 600) {
+          logger.info('Session expiring soon, refreshing', {
+            timeUntilExpiry: data.session.timeUntilExpiry,
+          })
+          await refreshSession()
+        }
+      } catch (error) {
+        logger.errorWithStack('Session health check error:', error as Error)
+      }
+    }
+
+    // Check session health every 5 minutes
+    const interval = setInterval(checkSessionHealth, 5 * 60 * 1000)
+
+    // Initial check
+    checkSessionHealth()
+
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]) // signOut and refreshSession are stable functions
 
   const value: AuthContextType = {
     user,

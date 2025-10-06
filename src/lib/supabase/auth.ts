@@ -27,9 +27,29 @@ export async function signIn(email: string, password: string) {
   return { data, error }
 }
 
-export async function signOut() {
+/**
+ * Sign out and clear all sessions
+ * CRO-99: Enhanced logout that clears all sessions properly
+ * @param scope - 'local' (current session), 'global' (all sessions), or 'others' (all except current)
+ */
+export async function signOut(scope: 'local' | 'global' | 'others' = 'local') {
   const supabase = createClient()
-  const { error } = await supabase.auth.signOut()
+
+  // Sign out with specified scope
+  const { error } = await supabase.auth.signOut({ scope })
+
+  // Clear any local storage items that might persist
+  if (typeof window !== 'undefined') {
+    try {
+      // Clear any cached session data
+      localStorage.removeItem('supabase.auth.token')
+      sessionStorage.clear()
+    } catch {
+      // Silently fail if storage clearing fails
+      // This is non-critical and shouldn't block logout
+    }
+  }
+
   return { error }
 }
 
