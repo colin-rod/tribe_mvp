@@ -260,8 +260,24 @@ export default function CreateUpdateWizard({
   return (
     <div className={containerClassName}>
       <div className={contentWrapperClassName}>
-        {headerContent}
-        {progressContent}
+        {/* Minimal header for modal variant */}
+        {isModal ? (
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-neutral-900">Create Update</h2>
+            <button
+              type="button"
+              onClick={() => { reset(); onCancel() }}
+              className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border border-neutral-200 hover:bg-neutral-50"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            {headerContent}
+            {progressContent}
+          </>
+        )}
 
         <div className={`bg-white rounded-xl shadow-sm relative ${isModal ? 'flex-1 overflow-hidden flex flex-col' : ''}`}>
           {showGlobalOverlay && (
@@ -275,8 +291,8 @@ export default function CreateUpdateWizard({
 
           <div className={`p-6 ${isModal ? 'flex-1 overflow-y-auto' : ''}`}>
             {currentStep === 'create' && (
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-                <div className="space-y-8">
+              <div className={isModal ? 'space-y-6' : 'grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'}>
+                <div className="space-y-6">
                   <UpdateForm
                     formData={formData}
                     previewUrls={previewUrls}
@@ -292,20 +308,23 @@ export default function CreateUpdateWizard({
                   />
                 </div>
 
-                <AISuggestionsPanel
-                  analysis={aiAnalysis}
-                  isAnalyzing={isAnalyzing}
-                  hasRequestedAnalysis={hasRequestedAnalysis}
-                  recipients={recipients}
-                  recipientsLoading={recipientsLoading}
-                  recipientsError={recipientsError}
-                  selectedRecipientIds={formData.confirmedRecipients || []}
-                  onRecipientsChange={updateRecipients}
-                  onRegenerate={handleFormSubmit}
-                  onContinue={handleContinueToPreview}
-                  canContinue={Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0)}
-                  globalError={error}
-                />
+                {/* For modal, stack AI panel below form for minimal layout */}
+                <div className={isModal ? '' : ''}>
+                  <AISuggestionsPanel
+                    analysis={aiAnalysis}
+                    isAnalyzing={isAnalyzing}
+                    hasRequestedAnalysis={hasRequestedAnalysis}
+                    recipients={recipients}
+                    recipientsLoading={recipientsLoading}
+                    recipientsError={recipientsError}
+                    selectedRecipientIds={formData.confirmedRecipients || []}
+                    onRecipientsChange={updateRecipients}
+                    onRegenerate={handleFormSubmit}
+                    onContinue={handleContinueToPreview}
+                    canContinue={Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0)}
+                    globalError={error}
+                  />
+                </div>
               </div>
             )}
 

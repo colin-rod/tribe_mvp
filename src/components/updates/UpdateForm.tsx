@@ -97,22 +97,18 @@ export default function UpdateForm({
 
       {/* Child Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Child <span className="text-red-500">*</span>
-        </label>
+        <label className="sr-only">Select Child</label>
         <ChildSelector
           selectedChildId={formData.childId}
           onChildSelect={handleChildSelect}
-          placeholder="Choose which child this update is about"
+          placeholder="Select child"
           required
         />
       </div>
 
       {/* Smart Contextual Input - combines text and media */}
       <div>
-        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-          Update Content <span className="text-red-500">*</span>
-        </label>
+        <label htmlFor="content" className="sr-only">Update Content</label>
         <SmartContextualInput
           content={formData.content || ''}
           mediaFiles={formData.mediaFiles || []}
@@ -121,31 +117,26 @@ export default function UpdateForm({
           onMediaChange={onMediaChange}
           onMediaRemove={onMediaRemove}
           disabled={isLoading}
-          placeholder="Share what's happening with your little one..."
+          placeholder="Share a moment… add photos or video if you like"
           maxCharacters={2000}
           maxFiles={10}
         />
         {contentError && (
           <p className="mt-1 text-sm text-red-600">{contentError}</p>
         )}
-
-        <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
-          <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
-            These help the AI tailor suggestions:
-          </p>
-          <ul className="mt-2 space-y-1 text-sm text-blue-700">
-            <li>• Share the specific moment and why it mattered</li>
-            <li>• Include how your child and you felt</li>
-            <li>• Mention any outcomes or next steps for family</li>
+        <details className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+          <summary className="text-xs font-medium text-neutral-700 cursor-pointer">Helpful tips</summary>
+          <ul className="mt-2 space-y-1 text-sm text-neutral-700">
+            <li>• Share what happened and why it mattered</li>
+            <li>• Include how your child felt</li>
+            <li>• Add a photo or short video if you like</li>
           </ul>
-        </div>
+        </details>
       </div>
 
       {/* Milestone Selection */}
       <div>
-        <label htmlFor="milestone" className="block text-sm font-medium text-gray-700 mb-2">
-          Milestone Type (Optional)
-        </label>
+        <label htmlFor="milestone" className="sr-only">Milestone Type (Optional)</label>
         <select
           id="milestone"
           value={formData.milestoneType || 'none'}
@@ -160,16 +151,12 @@ export default function UpdateForm({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-gray-500">
-          Selecting a milestone helps our AI better understand your update
-        </p>
+        <p className="mt-1 text-xs text-gray-500">Optional — helps suggestions be more accurate</p>
       </div>
 
       {/* Submit Button */}
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <span className="text-xs text-gray-500">
-          Suggestions appear in the AI Review panel.
-        </span>
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <span className="text-xs text-gray-500">Suggestions appear in the panel below.</span>
         <button
           type="submit"
           disabled={!isFormValid || isLoading || isAnalyzing}
