@@ -13,6 +13,13 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+}
+
 export const metadata: Metadata = {
   title: 'Tribe - Secure Baby Update App for Private Family Sharing',
   description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
@@ -38,12 +45,6 @@ export const metadata: Metadata = {
   authors: [{ name: 'Tribe Team' }],
   creator: 'Tribe',
   publisher: 'Tribe',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
   robots: {
     index: true,
     follow: true,

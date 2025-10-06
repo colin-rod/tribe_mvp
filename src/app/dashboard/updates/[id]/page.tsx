@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ConversationView } from '@/components/responses'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
 interface ConfirmedRecipient {
   id: string
@@ -19,6 +20,9 @@ interface ConfirmedRecipient {
 interface Update {
   id: string
   content: string
+  subject?: string
+  rich_content?: Record<string, unknown>
+  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
   created_at: string
   child_id: string
   parent_id: string
@@ -43,6 +47,10 @@ export default function UpdatePage() {
     async function fetchUpdate() {
       try {
         const supabase = createClient()
+
+        // Log the updateId for debugging
+        logger.info('Fetching update:', { updateId })
+
         const { data, error: fetchError } = await supabase
           .from('updates')
           .select(`
@@ -59,14 +67,44 @@ export default function UpdatePage() {
 
         if (fetchError) {
           logger.errorWithStack('Error fetching update:', fetchError as Error)
-          setError('Failed to load update')
+          logger.error('Fetch error details:', {
+            code: fetchError.code,
+            message: fetchError.message,
+            details: fetchError.details,
+            hint: fetchError.hint
+          })
+          setError(`Failed to load update: ${fetchError.message}`)
           return
         }
 
-        setUpdate(data)
+        if (!data) {
+          logger.error('No data returned for update:', { updateId })
+          setError('Update not found')
+          return
+        }
+
+        // Validate that content exists and is not null
+        if (!data.content) {
+          logger.error('Update has no content:', { updateId })
+          setError('Update has no content')
+          return
+        }
+
+        logger.info('Update fetched successfully:', {
+          updateId: data.id,
+          hasChildren: !!data.children,
+          mediaCount: data.media_urls?.length || 0
+        })
+
+        // Type assertion to ensure content is non-null for ConversationView
+        setUpdate(data as unknown as Update)
       } catch (err) {
-        logger.error('Unexpected error:', { error: err })
-        setError('An unexpected error occurred')
+        logger.error('Unexpected error:', {
+          error: err,
+          message: err instanceof Error ? err.message : 'Unknown error',
+          stack: err instanceof Error ? err.stack : undefined
+        })
+        setError(`An unexpected error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`)
       } finally {
         setLoading(false)
       }
@@ -130,11 +168,13 @@ export default function UpdatePage() {
         </div>
 
         {/* Main Content */}
-        <ConversationView
-          updateId={updateId}
-          update={update}
-          showAnalytics={false}
-        />
+        <ErrorBoundary>
+          <ConversationView
+            updateId={updateId}
+            update={update}
+            showAnalytics={false}
+          />
+        </ErrorBoundary>
       </div>
     </div>
   )
