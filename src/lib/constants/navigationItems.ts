@@ -6,9 +6,7 @@
 import {
   RectangleStackIcon,
   EnvelopeIcon,
-  UserGroupIcon,
   UsersIcon,
-  Squares2X2Icon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
@@ -34,22 +32,10 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/digests',
   },
   {
-    id: 'children',
-    label: 'Children',
-    icon: UserGroupIcon,
-    href: '/dashboard/children',
-  },
-  {
     id: 'recipients',
     label: 'Recipients',
     icon: UsersIcon,
     href: '/dashboard/recipients',
-  },
-  {
-    id: 'groups',
-    label: 'Groups',
-    icon: Squares2X2Icon,
-    href: '/dashboard/groups',
   },
   {
     id: 'drafts',

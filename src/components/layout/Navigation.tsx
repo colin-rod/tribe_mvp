@@ -124,34 +124,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                 >
                   Dashboard
                 </Link>
-                <Link
-                  href="/dashboard/children"
-                  prefetch={true}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Children
-                </Link>
-                <Link
-                  href="/dashboard/recipients"
-                  prefetch={true}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Recipients
-                </Link>
-                <Link
-                  href="/dashboard/groups"
-                  prefetch={true}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Groups
-                </Link>
-                <Link
-                  href="/dashboard/drafts"
-                  prefetch={true}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Drafts
-                </Link>
                 {customActions || (
                   <button
                     type="button"
@@ -240,6 +212,17 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                       </Link>
 
                       <Link
+                        href="/dashboard/children"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
+                      >
+                        <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-3-3m-3.49-3A4 4 0 1112 4m0 8a4 4 0 100-8 4 4 0 000 8zm0 0c2.761 0 5 2.239 5 5v2H7v-2c0-2.761 2.239-5 5-5z" />
+                        </svg>
+                        Children
+                      </Link>
+
+                      <Link
                         href="/dashboard/profile?tab=security"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
@@ -319,46 +302,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h2a2 2 0 012 2v2H8V5z" />
               </svg>
               Dashboard
-            </Link>
-            <Link
-              href="/dashboard/children"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block min-h-[44px] px-3 py-3 rounded-md text-base font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100 transition-all duration-200 flex items-center"
-            >
-              <svg className="mr-3 h-5 w-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Children
-            </Link>
-            <Link
-              href="/dashboard/recipients"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block min-h-[44px] px-3 py-3 rounded-md text-base font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100 transition-all duration-200 flex items-center"
-            >
-              <svg className="mr-3 h-5 w-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-              Recipients
-            </Link>
-            <Link
-              href="/dashboard/groups"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block min-h-[44px] px-3 py-3 rounded-md text-base font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100 transition-all duration-200 flex items-center"
-            >
-              <svg className="mr-3 h-5 w-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Groups
-            </Link>
-            <Link
-              href="/dashboard/drafts"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block min-h-[44px] px-3 py-3 rounded-md text-base font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100 transition-all duration-200 flex items-center"
-            >
-              <svg className="mr-3 h-5 w-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Drafts
             </Link>
             <div className="pt-2 border-t border-neutral-200">
               {customActions || (
