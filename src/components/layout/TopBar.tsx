@@ -1,17 +1,20 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
-import { getInitials } from '@/lib/utils'
 import { LAYOUT_DIMENSIONS, LAYOUT_Z_INDEX } from '@/types/layout'
 import { GlobalSearch } from './GlobalSearch'
+import { UserDropdown } from './UserDropdown'
+import { ProfileModal } from '@/components/profile/ProfileModal'
 
 /**
  * TopBar component with three sections: logo (left), search (center), profile (right)
  * CRO-293: Core Layout Shell & Top Bar
  */
 export function TopBar() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
   return (
     <header
@@ -61,26 +64,25 @@ export function TopBar() {
             </svg>
           </button>
 
-          {/* Profile Avatar */}
+          {/* User Dropdown */}
           {user && (
-            <Link
-              href="/dashboard/profile"
-              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-neutral-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-primary-800 text-sm font-semibold">
-                  {getInitials(user.user_metadata?.name || user.email || '')}
-                </span>
-              </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-neutral-700">
-                  {user.user_metadata?.name || user.email}
-                </p>
-              </div>
-            </Link>
+            <UserDropdown
+              user={user}
+              onProfileClick={() => setIsProfileModalOpen(true)}
+              onSignOut={signOut}
+            />
           )}
         </div>
       </div>
+
+      {/* Profile Modal */}
+      {user && (
+        <ProfileModal
+          user={user}
+          open={isProfileModalOpen}
+          onOpenChange={setIsProfileModalOpen}
+        />
+      )}
     </header>
   )
 }
