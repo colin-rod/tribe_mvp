@@ -20,6 +20,8 @@ import dynamic from 'next/dynamic';
 import { AISuggestionsPanel, AIPromptSuggestion } from './AISuggestionsPanel';
 import { QuickActionsPanel } from './QuickActionsPanel';
 import { cn } from '@/lib/utils';
+import { FiltersPanel } from './FiltersPanel';
+import { useDashboardActions } from '@/contexts/DashboardActionsContext';
 
 // Lazy load DigestStats component
 const DigestStats = dynamic(() => import('@/components/digests/DigestStats'), {
@@ -47,26 +49,20 @@ const ActivityRightPaneComponent = ({
   onSelectAIPrompt,
   className,
 }: ActivityRightPaneProps) => {
+  const { activityFilters } = useDashboardActions();
+
   // Handle Create Update action
   const handleCreateUpdate = useCallback(() => {
-    console.log('[ActivityRightPane] handleCreateUpdate called', { onCreateUpdate: typeof onCreateUpdate });
     if (onCreateUpdate) {
       onCreateUpdate();
-    } else {
-      console.warn('[ActivityRightPane] onCreateUpdate prop not provided');
     }
-    // Default behavior would be to navigate or open modal
   }, [onCreateUpdate]);
 
   // Handle Compile Digest action
   const handleCompileDigest = useCallback(() => {
-    console.log('[ActivityRightPane] handleCompileDigest called', { onCompileDigest: typeof onCompileDigest });
     if (onCompileDigest) {
       onCompileDigest();
-    } else {
-      console.warn('[ActivityRightPane] onCompileDigest prop not provided');
     }
-    // Default behavior would be to navigate to digest compilation
   }, [onCompileDigest]);
 
   // Handle AI prompt selection
@@ -84,6 +80,25 @@ const ActivityRightPaneComponent = ({
 
   return (
     <div className={cn('p-4 space-y-4', className)}>
+      {/* Filters (moved from main pane) */}
+      {activityFilters && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-neutral-900">Filters</h3>
+          <FiltersPanel
+            searchQuery={activityFilters.filters.searchQuery}
+            dateRange={activityFilters.filters.dateRange}
+            childIds={activityFilters.filters.childIds}
+            updateTypes={activityFilters.filters.updateTypes as any}
+            onSearchChange={activityFilters.setSearchQuery}
+            onDateRangeChange={activityFilters.setDateRange}
+            onChildIdsChange={activityFilters.setChildIds}
+            onUpdateTypesChange={activityFilters.setUpdateTypes as any}
+            onClearFilters={activityFilters.clearFilters}
+            activeFilterCount={activityFilters.activeFilterCount}
+          />
+        </div>
+      )}
+
       {/* Quick Actions - sticky within pane */}
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur pb-2">
         <h3 className="text-sm font-semibold text-neutral-900 mb-2">Quick Actions</h3>

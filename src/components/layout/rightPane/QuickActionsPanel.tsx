@@ -27,28 +27,10 @@ export function QuickActionsPanel({
   onCompileDigest,
   className,
 }: QuickActionsPanelProps) {
-  const handleCreateClick = () => {
-    console.log('[QuickActionsPanel] Create Update clicked', { onCreateUpdate: typeof onCreateUpdate });
-    if (onCreateUpdate) {
-      onCreateUpdate();
-    } else {
-      console.error('[QuickActionsPanel] onCreateUpdate is not defined');
-    }
-  };
-
-  const handleDigestClick = () => {
-    console.log('[QuickActionsPanel] Compile Digest clicked', { onCompileDigest: typeof onCompileDigest });
-    if (onCompileDigest) {
-      onCompileDigest();
-    } else {
-      console.error('[QuickActionsPanel] onCompileDigest is not defined');
-    }
-  };
-
   return (
     <div className={cn('space-y-3', className)}>
       <Button
-        onClick={handleCreateClick}
+        onClick={onCreateUpdate}
         className="w-full justify-start gap-2"
         size="default"
       >
@@ -57,7 +39,7 @@ export function QuickActionsPanel({
       </Button>
 
       <Button
-        onClick={handleDigestClick}
+        onClick={onCompileDigest}
         variant="outline"
         className="w-full justify-start gap-2"
         size="default"

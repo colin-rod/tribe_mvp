@@ -15,6 +15,21 @@ export interface DashboardActionsContextType {
   onCreateUpdate?: (type?: UpdateType, initialContent?: string) => void;
   /** Navigate to digest compilation */
   onCompileDigest?: () => void;
+  /** Optional activity filters for right pane */
+  activityFilters?: {
+    filters: {
+      searchQuery: string
+      dateRange: { start: Date; end: Date } | null
+      childIds: string[]
+      updateTypes: ('photo' | 'video' | 'text' | 'milestone')[]
+    }
+    setDateRange: (range: { start: Date; end: Date } | null) => void
+    setChildIds: (ids: string[]) => void
+    setUpdateTypes: (types: ('photo' | 'video' | 'text' | 'milestone')[]) => void
+    setSearchQuery: (query: string) => void
+    clearFilters: () => void
+    activeFilterCount: number
+  }
 }
 
 const DashboardActionsContext = createContext<DashboardActionsContextType | undefined>(undefined);

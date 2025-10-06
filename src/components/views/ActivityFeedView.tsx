@@ -28,7 +28,6 @@ import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
 import { useActivityFilters } from '@/hooks/useActivityFilters';
 import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
 import type { UpdateType } from '@/components/updates/CreateUpdateModal';
-import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext';
 
 const logger = createLogger('ActivityFeedView');
 
@@ -255,13 +254,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   }
 
   return (
-    <DashboardActionsProvider
-      value={{
-        onCreateUpdate: handleCreateUpdate,
-        onCompileDigest: handleCompileDigest,
-      }}
-    >
-      <div className="min-h-full">
+    <div className="min-h-full">
       {/* Success Alerts */}
       {showDigestSentAlert && (
         <div className="bg-green-50 border-l-4 border-green-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
@@ -347,21 +340,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                   </div>
                 </div>
 
-                {/* Filters Panel */}
-                <div className="mb-4">
-                  <FiltersPanel
-                    searchQuery={filters.searchQuery}
-                    dateRange={filters.dateRange}
-                    childIds={filters.childIds}
-                    updateTypes={filters.updateTypes}
-                    onSearchChange={setSearchQuery}
-                    onDateRangeChange={setDateRange}
-                    onChildIdsChange={setChildIds}
-                    onUpdateTypesChange={setUpdateTypes}
-                    onClearFilters={clearFilters}
-                    activeFilterCount={activeFilterCount}
-                  />
-                </div>
+                {/* Filters moved to Right Pane */}
 
                 {!loadingStats && memoizedStats.updates === 0 ? (
                   <EmptyTimelineState
@@ -384,7 +363,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
       {createUpdateModal}
     </div>
-    </DashboardActionsProvider>
   );
 });
 

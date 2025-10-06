@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -19,10 +19,25 @@ import { DashboardShell } from '@/components/layout/DashboardShell'
 import { LeftNavigation } from '@/components/layout/LeftNavigation'
 import { MiddlePane } from '@/components/layout/MiddlePane'
 import { RightPaneContent } from '@/components/layout/rightPane/RightPaneContent'
+import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext'
+import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
+import type { UpdateType } from '@/components/updates/CreateUpdateModal'
 
 function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+
+  // Create Update Modal
+  const { openCreateUpdateModal, createUpdateModal } = useCreateUpdateModal()
+
+  // Dashboard action handlers
+  const handleCreateUpdate = useCallback((type: UpdateType = 'photo', initialContent?: string) => {
+    openCreateUpdateModal(type, initialContent)
+  }, [openCreateUpdateModal])
+
+  const handleCompileDigest = useCallback(() => {
+    router.push('/dashboard/digests/compile')
+  }, [router])
 
   useEffect(() => {
     // Redirect to login if not authenticated after loading is complete
@@ -49,12 +64,20 @@ function DashboardPage() {
   }
 
   return (
-    <DashboardShell
-      leftNav={<LeftNavigation />}
-      rightPane={<RightPaneContent />}
+    <DashboardActionsProvider
+      value={{
+        onCreateUpdate: handleCreateUpdate,
+        onCompileDigest: handleCompileDigest,
+      }}
     >
-      <MiddlePane />
-    </DashboardShell>
+      <DashboardShell
+        leftNav={<LeftNavigation />}
+        rightPane={<RightPaneContent />}
+      >
+        <MiddlePane />
+      </DashboardShell>
+      {createUpdateModal}
+    </DashboardActionsProvider>
   )
 }
 
