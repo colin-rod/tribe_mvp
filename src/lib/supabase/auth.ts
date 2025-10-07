@@ -1,8 +1,8 @@
 import { createClient } from './client'
-import type { AuthError } from '@supabase/supabase-js'
+import type { AuthError, Provider } from '@supabase/supabase-js'
 
 // Client-side auth utilities
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string, name?: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase.auth.signUp({
@@ -10,8 +10,20 @@ export async function signUp(email: string, password: string) {
     password,
     options: {
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      data: {
+        name: name || ''
+      }
     },
   })
+
+  // If signup was successful and name was provided, update the profile
+  if (data.user && name && !error) {
+    // Profile is automatically created via database trigger, so we just update it
+    await supabase
+      .from('profiles')
+      .update({ name: name.trim() })
+      .eq('id', data.user.id)
+  }
 
   return { data, error }
 }
@@ -25,6 +37,29 @@ export async function signIn(email: string, password: string) {
   })
 
   return { data, error }
+}
+
+export async function signInWithProvider(
+  provider: Provider,
+  options: { nextPath?: string; scopes?: string } = {}
+) {
+  const supabase = createClient()
+
+  const nextPath = options.nextPath ?? '/dashboard'
+  const isSafePath =
+    nextPath.startsWith('/') && !nextPath.startsWith('//') && !nextPath.includes('..')
+
+  const redirectTo = isSafePath
+    ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(nextPath)}`
+    : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+
+  return supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      scopes: options.scopes,
+    },
+  })
 }
 
 /**

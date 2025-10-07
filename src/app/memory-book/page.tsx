@@ -150,7 +150,6 @@ function SummaryTimelineCard({
   isFirst: boolean
   onClick: () => void
 }) {
-  const date = new Date(summary.digest_date)
   const dateRange = `${new Date(summary.date_range_start).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'

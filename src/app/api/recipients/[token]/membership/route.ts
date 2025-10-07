@@ -52,12 +52,6 @@ type MembershipActionResult = {
   group_name: string
 }
 
-type EffectiveSettingsFunctionRow = {
-  frequency: string
-  channels: string[]
-  content_types: string[]
-  source: string
-}
 
 // Schema for membership visibility preferences
 const membershipVisibilitySchema = z.object({

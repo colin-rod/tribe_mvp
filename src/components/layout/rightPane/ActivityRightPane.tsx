@@ -88,11 +88,11 @@ const ActivityRightPaneComponent = ({
             searchQuery={activityFilters.filters.searchQuery}
             dateRange={activityFilters.filters.dateRange}
             childIds={activityFilters.filters.childIds}
-            updateTypes={activityFilters.filters.updateTypes as any}
+            updateTypes={activityFilters.filters.updateTypes as ('text' | 'photo' | 'milestone' | 'video')[]}
             onSearchChange={activityFilters.setSearchQuery}
             onDateRangeChange={activityFilters.setDateRange}
             onChildIdsChange={activityFilters.setChildIds}
-            onUpdateTypesChange={activityFilters.setUpdateTypes as any}
+            onUpdateTypesChange={activityFilters.setUpdateTypes as (types: ('text' | 'photo' | 'milestone' | 'video')[]) => void}
             onClearFilters={activityFilters.clearFilters}
             activeFilterCount={activityFilters.activeFilterCount}
           />

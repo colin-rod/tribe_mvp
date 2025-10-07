@@ -64,7 +64,7 @@ export function AISuggestionsPanel({
         // Track that this prompt was shown
         await trackPromptShown(data.id);
       }
-    } catch (error) {
+    } catch {
       // Error is already logged in the prompts service
       // Silently fail and show empty state
     } finally {

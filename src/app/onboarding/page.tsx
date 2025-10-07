@@ -6,17 +6,24 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { OnboardingProgress, CurrentStepInfo } from '@/components/onboarding/OnboardingProgress'
+import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep'
-import { ProfileSetupStep } from '@/components/onboarding/ProfileSetupStep'
-import { ChildSetupStep } from '@/components/onboarding/ChildSetupStep'
-import { RecipientSetupStep } from '@/components/onboarding/RecipientSetupStep'
-import { FirstUpdateStep } from '@/components/onboarding/FirstUpdateStep'
+import { ProfileSetupStep, ProfileSetupStepCompact } from '@/components/onboarding/ProfileSetupStep'
+import { ChildSetupStep, ChildSetupStepCompact } from '@/components/onboarding/ChildSetupStep'
+import { FirstUpdateStep, FirstUpdateStepCompact } from '@/components/onboarding/FirstUpdateStep'
 import { CompletionStep } from '@/components/onboarding/CompletionStep'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
 
 const logger = createLogger('OnboardingPage')
+
+// Helper function to get initials from name
+function getInitials(name?: string): string {
+  if (!name) return 'U'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+}
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -31,9 +38,9 @@ export default function OnboardingPage() {
     skipStep,
     updateProfileData,
     updateChildData,
-    updateRecipientData,
     updateFirstUpdateData,
-    completeOnboarding
+    completeOnboarding,
+    dismissOnboarding
   } = useOnboarding()
 
   const [isMobile, setIsMobile] = useState(false)
@@ -86,7 +93,15 @@ export default function OnboardingPage() {
         )
 
       case 'profile-setup':
-        return (
+        return isMobile ? (
+          <ProfileSetupStepCompact
+            data={data.profile || {}}
+            onUpdate={updateProfileData}
+            onNext={nextStep}
+            onPrevious={previousStep}
+            {...commonProps}
+          />
+        ) : (
           <ProfileSetupStep
             data={data.profile || {}}
             onUpdate={updateProfileData}
@@ -97,7 +112,15 @@ export default function OnboardingPage() {
         )
 
       case 'child-setup':
-        return (
+        return isMobile ? (
+          <ChildSetupStepCompact
+            data={data.child || {}}
+            onUpdate={updateChildData}
+            onNext={nextStep}
+            onPrevious={previousStep}
+            {...commonProps}
+          />
+        ) : (
           <ChildSetupStep
             data={data.child || {}}
             onUpdate={updateChildData}
@@ -107,21 +130,19 @@ export default function OnboardingPage() {
           />
         )
 
-      case 'recipient-setup':
-        return (
-          <RecipientSetupStep
-            data={data.recipients || {}}
-            onUpdate={updateRecipientData}
+      case 'first-update':
+        return isMobile ? (
+          <FirstUpdateStepCompact
+            data={data.firstUpdate || {}}
+            onUpdate={updateFirstUpdateData}
             onNext={nextStep}
             onPrevious={previousStep}
             onSkip={skipStep}
             canSkip={state.canSkipStep}
+            childName={data.child?.name}
             {...commonProps}
           />
-        )
-
-      case 'first-update':
-        return (
+        ) : (
           <FirstUpdateStep
             data={data.firstUpdate || {}}
             onUpdate={updateFirstUpdateData}
@@ -192,18 +213,19 @@ export default function OnboardingPage() {
                   skippedSteps={state.skippedSteps}
                   totalSteps={state.totalSteps}
                   variant="compact"
-                  showTimeEstimate={false}
+                  showTimeEstimate={true}
                 />
               </div>
             )}
 
             {/* User Info */}
             <div className="flex items-center space-x-3">
-              <div className="text-sm text-gray-600">
-                {user.email}
+              {/* User Avatar with Initials */}
+              <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-semibold">
+                {getInitials(data.profile?.name || user.email?.split('@')[0])}
               </div>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={dismissOnboarding}
                 className="text-sm text-gray-500 hover:text-gray-700"
               >
                 Skip Setup
@@ -231,16 +253,6 @@ export default function OnboardingPage() {
       {/* Main Content */}
       <main className="flex-1">
         <div className="max-w-7xl mx-auto py-6 sm:py-12">
-          {/* Current Step Info - Desktop */}
-          {!isMobile && state.currentStep !== 'welcome' && state.currentStep !== 'completion' && (
-            <div className="mb-8">
-              <CurrentStepInfo
-                currentStep={state.currentStep}
-                className="max-w-4xl mx-auto"
-              />
-            </div>
-          )}
-
           {/* Step Content */}
           <div className="space-y-6">
             {getCurrentStepComponent()}

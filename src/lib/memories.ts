@@ -1,5 +1,4 @@
 import { createClient } from './supabase/client'
-import type { MemoryStatus, MilestoneType, CaptureChannel } from './validation/memory'
 import { createLogger } from '@/lib/logger'
 import type { Json } from '@/lib/types/database.types'
 import type { Memory, CreateMemoryRequest, MemoryWithStats } from './types/memory'
@@ -8,80 +7,81 @@ const logger = createLogger('Memories')
 
 /**
  * Perform diagnostic checks when database errors occur
+ * Temporarily disabled - uncomment if needed for debugging
  */
-async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>, user: { id: string }, requestId: string) {
-  logger.info('Performing diagnostic checks after error', { requestId })
+// async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>, user: { id: string }, requestId: string) {
+//   logger.info('Performing diagnostic checks after error', { requestId })
 
-  try {
-    // Check if we can access any table
-    const { data: healthCheck, error: healthError } = await supabase
-      .from('children')
-      .select('count', { count: 'exact', head: true })
-      .eq('parent_id', user.id)
+//   try {
+//     // Check if we can access any table
+//     const { data: healthCheck, error: healthError } = await supabase
+//       .from('children')
+//       .select('count', { count: 'exact', head: true })
+//       .eq('parent_id', user.id)
 
-    if (healthError) {
-      logger.error('Diagnostic: Cannot access children table', {
-        requestId,
-        error: {
-          code: healthError.code,
-          message: healthError.message,
-          details: healthError.details
-        }
-      })
-    } else {
-      logger.info('Diagnostic: Successfully accessed children table', {
-        requestId,
-        childrenCount: healthCheck
-      })
-    }
+//     if (healthError) {
+//       logger.error('Diagnostic: Cannot access children table', {
+//         requestId,
+//         error: {
+//           code: healthError.code,
+//           message: healthError.message,
+//           details: healthError.details
+//         }
+//       })
+//     } else {
+//       logger.info('Diagnostic: Successfully accessed children table', {
+//         requestId,
+//         childrenCount: healthCheck
+//       })
+//     }
 
-    // Check current session status
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError) {
-      logger.error('Diagnostic: Session check failed', {
-        requestId,
-        sessionError: sessionError.message
-      })
-    } else {
-      logger.info('Diagnostic: Session status', {
-        requestId,
-        hasSession: !!sessionData.session,
-        hasUser: !!sessionData.session?.user,
-        sessionExpiry: sessionData.session?.expires_at,
-        accessToken: sessionData.session?.access_token ? 'Present' : 'Missing'
-      })
-    }
+//     // Check current session status
+//     const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+//     if (sessionError) {
+//       logger.error('Diagnostic: Session check failed', {
+//         requestId,
+//         sessionError: sessionError.message
+//       })
+//     } else {
+//       logger.info('Diagnostic: Session status', {
+//         requestId,
+//         hasSession: !!sessionData.session,
+//         hasUser: !!sessionData.session?.user,
+//         sessionExpiry: sessionData.session?.expires_at,
+//         accessToken: sessionData.session?.access_token ? 'Present' : 'Missing'
+//       })
+//     }
 
-    // Check if we can access the memories table with a simpler query
-    const { data: simpleQuery, error: simpleError } = await supabase
-      .from('memories')
-      .select('id')
-      .eq('parent_id', user.id)
-      .limit(1)
+//     // Check if we can access the memories table with a simpler query
+//     const { data: simpleQuery, error: simpleError } = await supabase
+//       .from('memories')
+//       .select('id')
+//       .eq('parent_id', user.id)
+//       .limit(1)
 
-    if (simpleError) {
-      logger.error('Diagnostic: Simple memories query failed', {
-        requestId,
-        error: {
-          code: simpleError.code,
-          message: simpleError.message,
-          details: simpleError.details
-        }
-      })
-    } else {
-      logger.info('Diagnostic: Simple memories query succeeded', {
-        requestId,
-        hasMemories: (simpleQuery?.length || 0) > 0
-      })
-    }
+//     if (simpleError) {
+//       logger.error('Diagnostic: Simple memories query failed', {
+//         requestId,
+//         error: {
+//           code: simpleError.code,
+//           message: simpleError.message,
+//           details: simpleError.details
+//         }
+//       })
+//     } else {
+//       logger.info('Diagnostic: Simple memories query succeeded', {
+//         requestId,
+//         hasMemories: (simpleQuery?.length || 0) > 0
+//       })
+//     }
 
-  } catch (diagnosticError) {
-    logger.error('Diagnostic checks themselves failed', {
-      requestId,
-      diagnosticError: diagnosticError instanceof Error ? diagnosticError.message : 'Unknown'
-    })
-  }
-}
+//   } catch (diagnosticError) {
+//     logger.error('Diagnostic checks themselves failed', {
+//       requestId,
+//       diagnosticError: diagnosticError instanceof Error ? diagnosticError.message : 'Unknown'
+//     })
+//   }
+// }
 
 /**
  * Create a new memory
@@ -606,7 +606,7 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Mem
           comment_count: memory.comment_count || 0,
           isLiked: likedMemoryIds.has(memory.id)
         }
-      } catch (error) {
+      } catch {
         logger.error('Error processing individual memory stats', {
           requestId,
           memoryId: memory.id

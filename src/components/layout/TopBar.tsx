@@ -35,13 +35,13 @@ export function TopBar() {
           </Link>
         </div>
 
-        {/* Center Section: Global Search */}
-        <div className="flex-1 max-w-2xl mx-4">
-          <GlobalSearch />
-        </div>
-
-        {/* Right Section: Profile */}
+        {/* Right Section: Search, Notifications, and Profile */}
         <div className="flex items-center space-x-4">
+          {/* Global Search */}
+          <div className="w-80">
+            <GlobalSearch />
+          </div>
+
           {/* Notifications */}
           <button
             type="button"

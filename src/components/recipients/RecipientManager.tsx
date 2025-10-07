@@ -60,7 +60,6 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     }
   }, [filters])
 
-  const [bulkOperation, setBulkOperation] = useState<string>('')
   const [bulkLoading, setBulkLoading] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)

@@ -31,7 +31,7 @@ export interface RightPaneProps {
 export function RightPane({ children, className }: RightPaneProps) {
   const { rightPaneCollapsed, toggleRightPane } = useLayout();
   const paneRef = useRef<HTMLElement>(null);
-  const { activeItemId } = useNavigation?.() || { activeItemId: undefined } as any;
+  const { activeItemId } = useNavigation?.() || { activeItemId: undefined } as { activeItemId: string | undefined };
 
   const titleMap: Record<string, string> = {
     activity: 'Tools & Insights',

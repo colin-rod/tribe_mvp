@@ -5,13 +5,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
-import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import { validateChildName, validateBirthDate } from '@/lib/validation/child'
 import type { ChildSetupData } from '@/hooks/useOnboarding'
+import { createChild } from '@/lib/children'
 import {
   UserIcon,
   PhotoIcon,
-  LockClosedIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
 
@@ -72,8 +71,6 @@ export function ChildSetupStep({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const privacyMessage = getPrivacyMessageForStep('child-setup')
 
   // Update parent state when form data changes
   useEffect(() => {
@@ -155,9 +152,18 @@ export function ChildSetupStep({
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isValid) {
+      // Auto-save child data before proceeding
+      try {
+        await createChild({
+          name: formData.name,
+          birth_date: formData.birth_date
+        })
+      } catch {
+        // Silently fail - data is still in state
+      }
       onNext()
     }
   }
@@ -198,12 +204,6 @@ export function ChildSetupStep({
         <p className="text-gray-600">
           Name and birth date
         </p>
-        {privacyMessage && (
-          <p className="text-xs text-gray-500 flex items-center justify-center space-x-2">
-            <LockClosedIcon className="w-4 h-4" />
-            <span>{privacyMessage}</span>
-          </p>
-        )}
       </div>
 
       {/* Form */}
@@ -346,7 +346,7 @@ export function ChildSetupStep({
               !isValid && 'opacity-50 cursor-not-allowed'
             )}
           >
-            Continue →
+            Continue
           </Button>
         </div>
       </form>
@@ -444,7 +444,7 @@ export function ChildSetupStepCompact({
             ← Back
           </Button>
           <Button type="submit" disabled={!isValid} size="sm">
-            Continue →
+            Continue
           </Button>
         </div>
       </form>

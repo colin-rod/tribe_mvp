@@ -8,7 +8,6 @@ import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { Button } from '@/components/ui/Button'
 import { MediaGallery } from '@/components/media/MediaGallery'
-import { cn } from '@/lib/utils'
 
 /**
  * Individual Memory Book Summary Page
@@ -26,6 +25,7 @@ export default function MemoryBookSummaryPage() {
 
   useEffect(() => {
     loadSummary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summaryId])
 
   async function loadSummary() {
@@ -168,12 +168,13 @@ export default function MemoryBookSummaryPage() {
             <div className="mb-12">
               <h2 className="text-2xl font-semibold text-neutral-900 mb-6">Memory Highlights</h2>
               <div className="space-y-6">
-                {narrative.media_references.map((ref, index) => (
+                {narrative.media_references.map((ref) => (
                   <div
                     key={ref.id}
                     className="flex gap-4 p-4 bg-white rounded-lg border border-neutral-200"
                   >
                     <div className="flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden bg-neutral-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={ref.url}
                         alt={ref.reference_text}

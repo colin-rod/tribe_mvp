@@ -30,7 +30,7 @@ export interface DashboardShellProps {
  * - Navigation state managed via NavigationProvider
  */
 export function DashboardShell({ leftNav, children, rightPane }: DashboardShellProps) {
-  const { leftNavCollapsed, rightPaneCollapsed, isMobile } = useLayout()
+  const { leftNavCollapsed, isMobile } = useLayout()
 
   // On mobile, show single column layout
   if (isMobile) {

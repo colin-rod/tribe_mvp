@@ -133,12 +133,14 @@ export async function middleware(request: NextRequest) {
 
     const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
                       request.nextUrl.pathname.startsWith('/signup')
+    const isOnboardingPage = request.nextUrl.pathname.startsWith('/onboarding')
     const isProtectedPage = request.nextUrl.pathname.startsWith('/dashboard')
 
     logger.debug('Middleware auth check', {
       path: request.nextUrl.pathname,
       hasUser: !!user,
       isAuthPage,
+      isOnboardingPage,
       isProtectedPage
     })
 
@@ -163,6 +165,25 @@ export async function middleware(request: NextRequest) {
       const redirectResponse = NextResponse.redirect(redirectUrl)
       applySecurityHeaders(redirectResponse.headers)
       return redirectResponse
+    }
+
+    // Check onboarding completion for protected pages
+    if (user && isProtectedPage && !isOnboardingPage) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', user.id)
+        .single()
+
+      if (profile && !profile.onboarding_completed) {
+        logger.info('Redirecting user with incomplete onboarding', {
+          from: request.nextUrl.pathname,
+          userId: user.id
+        })
+        const onboardingRedirect = NextResponse.redirect(new URL('/onboarding', request.url))
+        applySecurityHeaders(onboardingRedirect.headers)
+        return onboardingRedirect
+      }
     }
 
     // Apply security headers to response

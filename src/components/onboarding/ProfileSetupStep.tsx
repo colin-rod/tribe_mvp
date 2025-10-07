@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
-import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import type { ProfileSetupData } from '@/hooks/useOnboarding'
 import { UserIcon } from '@heroicons/react/24/outline'
 
@@ -33,8 +32,6 @@ export function ProfileSetupStep({
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isValid, setIsValid] = useState(false)
-
-  const privacyMessage = getPrivacyMessageForStep('profile-setup')
 
   // Common timezones for quick selection
   const commonTimezones = [
@@ -81,10 +78,31 @@ export function ProfileSetupStep({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  // Auto-save profile data on blur
+  const handleAutoSave = async () => {
+    if (!formData.name || !formData.timezone || !isValid) return
+
+    try {
+      await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          timezone: formData.timezone
+        })
+      })
+    } catch {
+      // Silently fail - data is still in state
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isValid) {
-      onNext()
+      // Save before proceeding
+      handleAutoSave().finally(() => {
+        onNext()
+      })
     }
   }
 
@@ -101,11 +119,6 @@ export function ProfileSetupStep({
         <p className="text-lg text-gray-600">
           Name and timezone
         </p>
-        {privacyMessage && (
-          <p className="text-xs text-gray-500">
-            {privacyMessage}
-          </p>
-        )}
       </div>
 
       {/* Form */}
@@ -120,6 +133,7 @@ export function ProfileSetupStep({
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
+            onBlur={handleAutoSave}
             placeholder="Enter your full name"
             className={cn(
               'text-base',
@@ -140,6 +154,7 @@ export function ProfileSetupStep({
             id="timezone"
             value={formData.timezone}
             onChange={(e) => handleInputChange('timezone', e.target.value)}
+            onBlur={handleAutoSave}
             className={cn(
               'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
               errors.timezone && 'border-red-500 focus-visible:ring-red-500'
@@ -187,7 +202,7 @@ export function ProfileSetupStep({
               !isValid && 'opacity-50 cursor-not-allowed'
             )}
           >
-            Continue →
+            Continue
           </Button>
         </div>
       </form>
@@ -291,7 +306,7 @@ export function ProfileSetupStepCompact({
             ← Back
           </Button>
           <Button type="submit" disabled={!isValid} size="sm">
-            Continue →
+            Continue
           </Button>
         </div>
       </form>

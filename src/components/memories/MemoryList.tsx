@@ -4,7 +4,6 @@ import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('MemoryList')
 import { useState, useEffect, useCallback, memo } from 'react'
-import { useRouter } from 'next/navigation'
 import MemoryDetailModal from '@/components/memories/MemoryDetailModal'
 import { cn } from '@/lib/utils'
 import { getRecentMemoriesWithStats, getNewMemoriesCount } from '@/lib/memories'
@@ -34,7 +33,6 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   onCreateMemory,
   searchQuery
 }) {
-  const router = useRouter()
   const [memories, setMemories] = useState<MemoryCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -204,7 +202,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   if (memories.length === 0 && searchQuery) {
     return (
       <div className={cn('text-center py-12', className)}>
-        <p className="text-sm text-neutral-500">No memories found for "{searchQuery}"</p>
+        <p className="text-sm text-neutral-500">No memories found for &quot;{searchQuery}&quot;</p>
       </div>
     )
   }

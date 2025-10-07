@@ -81,6 +81,7 @@ export interface UseOnboardingReturn {
   saveProgress: () => Promise<void>
   completeOnboarding: () => Promise<void>
   resetOnboarding: () => Promise<void>
+  dismissOnboarding: () => Promise<void>
 
   // Utilities
   getStepProgress: () => number
@@ -93,13 +94,11 @@ const STEP_ORDER: OnboardingStep[] = [
   'welcome',
   'profile-setup',
   'child-setup',
-  'recipient-setup',
   'first-update',
   'completion'
 ]
 
 const SKIPPABLE_STEPS: OnboardingStep[] = [
-  'recipient-setup',
   'first-update'
 ]
 
@@ -123,6 +122,52 @@ export function useOnboarding(): UseOnboardingReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // localStorage key helper
+  const getStorageKey = useCallback((step: string) => {
+    return user ? `onboarding_${user.id}_${step}` : null
+  }, [user])
+
+  // Save step data to localStorage
+  const saveStepToLocalStorage = useCallback((step: OnboardingStep, stepData: unknown) => {
+    const key = getStorageKey(step)
+    if (key && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(key, JSON.stringify(stepData))
+      } catch (err) {
+        loggerRef.current.error('Failed to save to localStorage', { error: err })
+      }
+    }
+  }, [getStorageKey])
+
+  // Load step data from localStorage
+  const loadStepFromLocalStorage = useCallback((step: OnboardingStep) => {
+    const key = getStorageKey(step)
+    if (key && typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(key)
+        return stored ? JSON.parse(stored) : null
+      } catch (err) {
+        loggerRef.current.error('Failed to load from localStorage', { error: err })
+        return null
+      }
+    }
+    return null
+  }, [getStorageKey])
+
+  // Clear all onboarding localStorage data
+  const clearOnboardingStorage = useCallback(() => {
+    if (user && typeof window !== 'undefined') {
+      try {
+        STEP_ORDER.forEach(step => {
+          const key = getStorageKey(step)
+          if (key) localStorage.removeItem(key)
+        })
+      } catch (err) {
+        loggerRef.current.error('Failed to clear localStorage', { error: err })
+      }
+    }
+  }, [user, getStorageKey])
+
   // Update state when step changes
   useEffect(() => {
     const stepIndex = STEP_ORDER.indexOf(state.currentStep)
@@ -143,7 +188,7 @@ export function useOnboarding(): UseOnboardingReturn {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('onboarding_step, onboarding_completed, onboarding_skipped')
+        .select('onboarding_step, onboarding_completed, onboarding_skipped, name')
         .eq('id', user.id)
         .single()
 
@@ -152,6 +197,28 @@ export function useOnboarding(): UseOnboardingReturn {
       if (profile?.onboarding_completed) {
         router.push('/dashboard')
         return
+      }
+
+      // Load data from localStorage or database
+      const storedProfile = loadStepFromLocalStorage('profile-setup')
+      const storedChild = loadStepFromLocalStorage('child-setup')
+      const storedFirstUpdate = loadStepFromLocalStorage('first-update')
+
+      // Pre-populate profile data if available (prefer localStorage, fallback to database)
+      if (storedProfile || profile?.name) {
+        setData(prev => ({
+          ...prev,
+          profile: storedProfile || {
+            ...prev.profile,
+            name: profile.name,
+            timezone: prev.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+            emailNotifications: prev.profile?.emailNotifications ?? true,
+            smsNotifications: prev.profile?.smsNotifications ?? false,
+            pushNotifications: prev.profile?.pushNotifications ?? true
+          },
+          child: storedChild || prev.child,
+          firstUpdate: storedFirstUpdate || prev.firstUpdate
+        }))
       }
 
       if (profile?.onboarding_step && profile.onboarding_step > 0) {
@@ -170,7 +237,7 @@ export function useOnboarding(): UseOnboardingReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [user, supabase, router])
+  }, [user, supabase, router, loadStepFromLocalStorage])
 
   // Load existing progress when user changes
   useEffect(() => {
@@ -266,6 +333,9 @@ export function useOnboarding(): UseOnboardingReturn {
           .eq('id', user.id)
       }
 
+      // Clear localStorage cache on completion
+      clearOnboardingStorage()
+
       // Navigate to dashboard
       router.push('/dashboard')
     } catch (err) {
@@ -273,11 +343,21 @@ export function useOnboarding(): UseOnboardingReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [user, data, supabase, router])
+  }, [user, data, supabase, router, clearOnboardingStorage])
 
   const nextStep = useCallback(async () => {
     const currentIndex = state.currentStepIndex
     const currentStep = state.currentStep
+
+    // Track analytics event
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'onboarding_step_continue', {
+        step_name: currentStep,
+        step_index: currentIndex,
+        direction: 'forward',
+        timestamp: new Date().toISOString()
+      })
+    }
 
     // Mark current step as completed
     setState(prev => ({
@@ -303,6 +383,17 @@ export function useOnboarding(): UseOnboardingReturn {
 
   const previousStep = useCallback(() => {
     const currentIndex = state.currentStepIndex
+    const currentStep = state.currentStep
+
+    // Track analytics event
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'onboarding_step_previous', {
+        step_name: currentStep,
+        step_index: currentIndex,
+        direction: 'backward',
+        timestamp: new Date().toISOString()
+      })
+    }
 
     if (currentIndex > 0) {
       const prevStep = STEP_ORDER[currentIndex - 1]
@@ -312,14 +403,24 @@ export function useOnboarding(): UseOnboardingReturn {
         currentStepIndex: currentIndex - 1
       }))
     }
-  }, [state.currentStepIndex])
+  }, [state.currentStepIndex, state.currentStep])
 
   const skipStep = useCallback(async () => {
     const currentStep = state.currentStep
+    const currentIndex = state.currentStepIndex
 
     if (!SKIPPABLE_STEPS.includes(currentStep)) {
       setError('This step cannot be skipped')
       return
+    }
+
+    // Track analytics event
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'onboarding_step_skip', {
+        step_name: currentStep,
+        step_index: currentIndex,
+        timestamp: new Date().toISOString()
+      })
     }
 
     // Mark step as skipped
@@ -328,8 +429,11 @@ export function useOnboarding(): UseOnboardingReturn {
       skippedSteps: new Set([...prev.skippedSteps, currentStep])
     }))
 
+    // Save progress including skip
+    await saveProgress()
+
     await nextStep()
-  }, [state.currentStep, nextStep])
+  }, [state.currentStep, state.currentStepIndex, nextStep, saveProgress])
 
   const goToStep = useCallback((step: OnboardingStep) => {
     const stepIndex = STEP_ORDER.indexOf(step)
@@ -347,20 +451,24 @@ export function useOnboarding(): UseOnboardingReturn {
   }, [])
 
   const updateProfileData = useCallback((newData: Partial<ProfileSetupData>) => {
+    const updatedProfile = { ...data.profile, ...newData } as ProfileSetupData
     setData(prev => ({
       ...prev,
-      profile: { ...prev.profile, ...newData } as ProfileSetupData
+      profile: updatedProfile
     }))
+    saveStepToLocalStorage('profile-setup', updatedProfile)
     setError(null)
-  }, [])
+  }, [data.profile, saveStepToLocalStorage])
 
   const updateChildData = useCallback((newData: Partial<ChildSetupData>) => {
+    const updatedChild = { ...data.child, ...newData } as ChildSetupData
     setData(prev => ({
       ...prev,
-      child: { ...prev.child, ...newData } as ChildSetupData
+      child: updatedChild
     }))
+    saveStepToLocalStorage('child-setup', updatedChild)
     setError(null)
-  }, [])
+  }, [data.child, saveStepToLocalStorage])
 
   const updateRecipientData = useCallback((newData: Partial<RecipientSetupData>) => {
     setData(prev => ({
@@ -371,12 +479,14 @@ export function useOnboarding(): UseOnboardingReturn {
   }, [])
 
   const updateFirstUpdateData = useCallback((newData: Partial<FirstUpdateData>) => {
+    const updatedFirstUpdate = { ...data.firstUpdate, ...newData } as FirstUpdateData
     setData(prev => ({
       ...prev,
-      firstUpdate: { ...prev.firstUpdate, ...newData } as FirstUpdateData
+      firstUpdate: updatedFirstUpdate
     }))
+    saveStepToLocalStorage('first-update', updatedFirstUpdate)
     setError(null)
-  }, [])
+  }, [data.firstUpdate, saveStepToLocalStorage])
 
   const resetOnboarding = useCallback(async () => {
     if (!user) return
@@ -412,6 +522,35 @@ export function useOnboarding(): UseOnboardingReturn {
     }
   }, [user, supabase])
 
+  const dismissOnboarding = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setIsLoading(true)
+
+      // Mark onboarding as completed but skipped
+      await supabase
+        .from('profiles')
+        .update({
+          onboarding_completed: true,
+          onboarding_skipped: true,
+          onboarding_step: STEP_ORDER.length,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      // Clear localStorage cache
+      clearOnboardingStorage()
+
+      // Navigate to dashboard
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to dismiss onboarding')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, supabase, router, clearOnboardingStorage])
+
   const getStepProgress = useCallback((): number => {
     return Math.round((state.currentStepIndex / (STEP_ORDER.length - 1)) * 100)
   }, [state.currentStepIndex])
@@ -424,8 +563,6 @@ export function useOnboarding(): UseOnboardingReturn {
         return Boolean(data.profile?.name && data.profile?.timezone)
       case 'child-setup':
         return Boolean(data.child?.name && data.child?.birth_date)
-      case 'recipient-setup':
-        return Boolean(data.recipients?.recipients?.length) || state.canSkipStep
       case 'first-update':
         return Boolean(data.firstUpdate?.content && data.firstUpdate?.childId) || state.canSkipStep
       case 'completion':
@@ -459,6 +596,7 @@ export function useOnboarding(): UseOnboardingReturn {
     saveProgress,
     completeOnboarding,
     resetOnboarding,
+    dismissOnboarding,
     getStepProgress,
     canProceedToNext,
     isStepCompleted,

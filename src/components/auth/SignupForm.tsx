@@ -57,7 +57,7 @@ export default function SignupForm() {
     }
 
     try {
-      const { data, error } = await signUp(email, password)
+      const { data, error } = await signUp(email, password, name)
 
       if (error) {
         setError(getAuthErrorMessage(error))

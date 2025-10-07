@@ -55,11 +55,7 @@ export function FirstUpdateStep({
     `${childName} just learned to roll over!`,
     `Caught ${childName} smiling at me today`,
     `${childName}'s first day at daycare went amazing!`,
-    `Look at how much ${childName} has grown this month!`,
-    `${childName} said their first word today!`,
-    `Enjoying some quality time with ${childName} at the park`,
-    `${childName} is getting so good at tummy time!`,
-    `Can't believe how fast ${childName} is growing up`
+    `${childName} said their first word today!`
   ]
 
   // Update parent state when form data changes
@@ -85,8 +81,8 @@ export function FirstUpdateStep({
       if (!canSkip) {
         newErrors.content = 'Update content is required'
       }
-    } else if (formData.content.trim().length < 10) {
-      newErrors.content = 'Update should be at least 10 characters'
+    } else if (formData.content.trim().length < 5) {
+      newErrors.content = 'Update should be at least 5 characters'
     } else if (formData.content.trim().length > 1000) {
       newErrors.content = 'Update should be less than 1000 characters'
     }
@@ -226,7 +222,7 @@ export function FirstUpdateStep({
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-3">Need inspiration? Try one of these:</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {updatePrompts.slice(0, 6).map((prompt, index) => (
+              {updatePrompts.map((prompt, index) => (
                 <button
                   key={index}
                   type="button"
@@ -350,7 +346,7 @@ export function FirstUpdateStep({
         )}
 
         {/* AI Preview */}
-        {formData.content.trim() && (
+        {formData.content.trim().length > 40 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <div className="text-blue-600">
@@ -405,7 +401,7 @@ export function FirstUpdateStep({
                 variant="ghost"
                 onClick={handleSkip}
               >
-                Skip for now
+                Skip
               </Button>
             )}
             <Button
@@ -413,7 +409,7 @@ export function FirstUpdateStep({
               disabled={!isValid && !(canSkip && !formData.content.trim())}
               className="px-8"
             >
-              {formData.content.trim() ? 'Continue' : 'Skip'} →
+              {formData.content.trim() ? 'Continue' : 'Skip'}
             </Button>
           </div>
         </div>
@@ -499,7 +495,7 @@ export function FirstUpdateStepCompact({
               </Button>
             )}
             <Button type="submit" size="sm">
-              Continue →
+              Continue
             </Button>
           </div>
         </div>

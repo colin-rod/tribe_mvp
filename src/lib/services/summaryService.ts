@@ -6,7 +6,6 @@ import type {
   CompileSummaryResponse,
   SummaryPreviewData,
   RecipientSummaryPreview,
-  CustomizeSummaryRequest,
   ApproveSummaryRequest,
   SummaryStats,
   AutoPublishReminder

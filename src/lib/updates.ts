@@ -1,5 +1,5 @@
 import { createClient } from './supabase/client'
-import type { DistributionStatus, MilestoneType } from './validation/update'
+import type { MilestoneType } from './validation/update'
 import { createLogger } from '@/lib/logger'
 import type { Json } from '@/lib/types/database.types'
 
