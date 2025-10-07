@@ -1406,6 +1406,27 @@ export type Database = {
         Args: { html_content: string; max_length?: number }
         Returns: boolean
       }
+      get_summaries_for_auto_publish: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          parent_id: string
+          title: string
+          compiled_at: string
+          auto_publish_hours: number
+        }[]
+      }
+      get_summaries_needing_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          parent_id: string
+          title: string
+          compiled_at: string
+          last_reminder_sent_at: string | null
+          reminder_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
