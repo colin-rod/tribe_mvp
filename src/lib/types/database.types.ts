@@ -265,19 +265,21 @@ export type Database = {
           },
         ]
       }
-      digest_updates: {
+      summary_memories: {
         Row: {
           ai_rationale: Json | null
           created_at: string | null
           custom_caption: string | null
           custom_subject: string | null
-          digest_id: string
           display_order: number
           id: string
           included: boolean | null
+          memory_id: string
           narrative_data: Json | null
+          photo_count: number | null
           recipient_id: string
-          update_id: string
+          render_style: string | null
+          summary_id: string
           updated_at: string | null
         }
         Insert: {
@@ -285,13 +287,15 @@ export type Database = {
           created_at?: string | null
           custom_caption?: string | null
           custom_subject?: string | null
-          digest_id: string
           display_order?: number
           id?: string
           included?: boolean | null
+          memory_id: string
           narrative_data?: Json | null
+          photo_count?: number | null
           recipient_id: string
-          update_id: string
+          render_style?: string | null
+          summary_id: string
           updated_at?: string | null
         }
         Update: {
@@ -299,35 +303,37 @@ export type Database = {
           created_at?: string | null
           custom_caption?: string | null
           custom_subject?: string | null
-          digest_id?: string
           display_order?: number
           id?: string
           included?: boolean | null
+          memory_id?: string
           narrative_data?: Json | null
+          photo_count?: number | null
           recipient_id?: string
-          update_id?: string
+          render_style?: string | null
+          summary_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "digest_updates_digest_id_fkey"
-            columns: ["digest_id"]
+            foreignKeyName: "summary_memories_summary_id_fkey"
+            columns: ["summary_id"]
             isOneToOne: false
-            referencedRelation: "digests"
+            referencedRelation: "summaries"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "digest_updates_recipient_id_fkey"
+            foreignKeyName: "summary_memories_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "digest_updates_update_id_fkey"
-            columns: ["update_id"]
+            foreignKeyName: "summary_memories_memory_id_fkey"
+            columns: ["memory_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
             referencedColumns: ["id"]
           },
         ]

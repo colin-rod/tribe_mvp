@@ -224,10 +224,14 @@ export async function PATCH(
     // Get recipient's groups
     const recipientGroups = await getRecipientGroups(token)
 
+    const groupsWithIds = recipientGroups.filter(
+      (group): group is typeof group & { group_id: string } => typeof group.group_id === 'string'
+    )
+
     // Determine which groups to update
     const targetGroups = validatedData.apply_to_groups
-      ? recipientGroups.filter(g => validatedData.apply_to_groups!.includes(g.group_id))
-      : recipientGroups
+      ? groupsWithIds.filter(g => validatedData.apply_to_groups!.includes(g.group_id))
+      : groupsWithIds
 
     if (targetGroups.length === 0) {
       return NextResponse.json(

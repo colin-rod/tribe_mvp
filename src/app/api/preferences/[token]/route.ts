@@ -6,14 +6,17 @@ import { validateRecipientTokenAccess } from '@/middleware/group-security'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
+import type { Json } from '@/lib/types/database.types'
 
 const logger = createLogger('PreferencesAPI')
 
 // Type definitions for recipient with joined data
+type NotificationPreferences = { [key: string]: Json | undefined }
+
 type RecipientWithGroup = {
   id: string
   group_id: string | null
-  notification_preferences: Record<string, unknown>
+  notification_preferences: NotificationPreferences | null
   recipient_groups: { default_frequency: string; default_channels: string[] } | null
 }
 export async function GET(
@@ -105,7 +108,7 @@ export async function GET(
     if (includeMuteStatus) {
       try {
         // Check global mute status
-        const globalMuteSettings = (recipient.notification_preferences as Record<string, unknown> | null)?.mute_settings as Record<string, unknown> | undefined
+        const globalMuteSettings = (recipient.notification_preferences?.mute_settings as NotificationPreferences | undefined)
         const globalMuteUntil = globalMuteSettings?.mute_until ? new Date(globalMuteSettings.mute_until as string) : null
         const isGloballyMuted = globalMuteUntil && globalMuteUntil > new Date()
 
@@ -404,17 +407,19 @@ export async function PUT(
 
     if (preferences.notification_preferences) {
       // Update global notification preferences
-      const currentNotificationPrefs = recipientWithGroup.notification_preferences || {}
-      const updatedNotificationPrefs = {
+      const currentNotificationPrefs =
+        (recipientWithGroup.notification_preferences as NotificationPreferences | null) ?? {}
+      const incomingNotificationPrefs = preferences.notification_preferences as NotificationPreferences | undefined
+      const updatedNotificationPrefs: NotificationPreferences = {
         ...currentNotificationPrefs,
-        ...preferences.notification_preferences,
+        ...(incomingNotificationPrefs ?? {}),
         updated_at: new Date().toISOString()
       }
 
       const { error: notificationError } = await supabase
         .from('recipients')
         .update({
-          digest_preferences: updatedNotificationPrefs as Record<string, unknown>
+          notification_preferences: updatedNotificationPrefs
         })
         .eq('preference_token', token)
         .eq('is_active', true)

@@ -265,19 +265,21 @@ export type Database = {
           },
         ]
       }
-      digest_updates: {
+      summary_memories: {
         Row: {
           ai_rationale: Json | null
           created_at: string | null
           custom_caption: string | null
           custom_subject: string | null
-          digest_id: string
           display_order: number
           id: string
           included: boolean | null
+          memory_id: string
           narrative_data: Json | null
+          photo_count: number | null
           recipient_id: string
-          update_id: string
+          render_style: string | null
+          summary_id: string
           updated_at: string | null
         }
         Insert: {
@@ -285,13 +287,15 @@ export type Database = {
           created_at?: string | null
           custom_caption?: string | null
           custom_subject?: string | null
-          digest_id: string
           display_order?: number
           id?: string
           included?: boolean | null
+          memory_id: string
           narrative_data?: Json | null
+          photo_count?: number | null
           recipient_id: string
-          update_id: string
+          render_style?: string | null
+          summary_id: string
           updated_at?: string | null
         }
         Update: {
@@ -299,35 +303,37 @@ export type Database = {
           created_at?: string | null
           custom_caption?: string | null
           custom_subject?: string | null
-          digest_id?: string
           display_order?: number
           id?: string
           included?: boolean | null
+          memory_id?: string
           narrative_data?: Json | null
+          photo_count?: number | null
           recipient_id?: string
-          update_id?: string
+          render_style?: string | null
+          summary_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "digest_updates_digest_id_fkey"
-            columns: ["digest_id"]
+            foreignKeyName: "summary_memories_summary_id_fkey"
+            columns: ["summary_id"]
             isOneToOne: false
-            referencedRelation: "digests"
+            referencedRelation: "summaries"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "digest_updates_recipient_id_fkey"
+            foreignKeyName: "summary_memories_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "digest_updates_update_id_fkey"
-            columns: ["update_id"]
+            foreignKeyName: "summary_memories_memory_id_fkey"
+            columns: ["memory_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
             referencedColumns: ["id"]
           },
         ]
@@ -513,6 +519,124 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memories: {
+        Row: {
+          id: string
+          parent_id: string
+          child_id: string
+          content: string | null
+          media_urls: string[] | null
+          milestone_type: string | null
+          ai_analysis: Json | null
+          suggested_recipients: string[] | null
+          confirmed_recipients: string[] | null
+          distribution_status: string | null
+          created_at: string | null
+          updated_at: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          subject: string | null
+          rich_content: Json | null
+          content_format: string | null
+          like_count: number | null
+          comment_count: number | null
+          response_count: number | null
+          view_count: number | null
+          search_vector: unknown | null
+          summary_id: string | null
+          ai_suggested_importance: string | null
+          importance_level: string | null
+          importance_overridden: boolean | null
+          is_new: boolean | null
+          capture_channel: string | null
+          marked_ready_at: string | null
+        }
+        Insert: {
+          id?: string
+          parent_id: string
+          child_id: string
+          content?: string | null
+          media_urls?: string[] | null
+          milestone_type?: string | null
+          ai_analysis?: Json | null
+          suggested_recipients?: string[] | null
+          confirmed_recipients?: string[] | null
+          distribution_status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          rich_content?: Json | null
+          content_format?: string | null
+          like_count?: number | null
+          comment_count?: number | null
+          response_count?: number | null
+          view_count?: number | null
+          search_vector?: unknown | null
+          summary_id?: string | null
+          ai_suggested_importance?: string | null
+          importance_level?: string | null
+          importance_overridden?: boolean | null
+          is_new?: boolean | null
+          capture_channel?: string | null
+          marked_ready_at?: string | null
+        }
+        Update: {
+          id?: string
+          parent_id?: string
+          child_id?: string
+          content?: string | null
+          media_urls?: string[] | null
+          milestone_type?: string | null
+          ai_analysis?: Json | null
+          suggested_recipients?: string[] | null
+          confirmed_recipients?: string[] | null
+          distribution_status?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          rich_content?: Json | null
+          content_format?: string | null
+          like_count?: number | null
+          comment_count?: number | null
+          response_count?: number | null
+          view_count?: number | null
+          search_vector?: unknown | null
+          summary_id?: string | null
+          ai_suggested_importance?: string | null
+          importance_level?: string | null
+          importance_overridden?: boolean | null
+          is_new?: boolean | null
+          capture_channel?: string | null
+          marked_ready_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_summary_id_fkey"
+            columns: ["summary_id"]
+            isOneToOne: false
+            referencedRelation: "summaries"
             referencedColumns: ["id"]
           },
         ]
@@ -932,6 +1056,89 @@ export type Database = {
           },
         ]
       }
+      summaries: {
+        Row: {
+          id: string
+          parent_id: string
+          title: string
+          digest_date: string
+          date_range_start: string
+          date_range_end: string
+          status: string | null
+          ai_compilation_data: Json | null
+          recipient_breakdown: Json | null
+          total_updates: number | null
+          total_recipients: number | null
+          sent_count: number | null
+          failed_count: number | null
+          compiled_at: string | null
+          approved_at: string | null
+          sent_at: string | null
+          created_at: string | null
+          updated_at: string | null
+          parent_narrative: Json | null
+          auto_publish_hours: number | null
+          last_reminder_sent_at: string | null
+          reminder_count: number | null
+        }
+        Insert: {
+          id?: string
+          parent_id: string
+          title: string
+          digest_date: string
+          date_range_start: string
+          date_range_end: string
+          status?: string | null
+          ai_compilation_data?: Json | null
+          recipient_breakdown?: Json | null
+          total_updates?: number | null
+          total_recipients?: number | null
+          sent_count?: number | null
+          failed_count?: number | null
+          compiled_at?: string | null
+          approved_at?: string | null
+          sent_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          parent_narrative?: Json | null
+          auto_publish_hours?: number | null
+          last_reminder_sent_at?: string | null
+          reminder_count?: number | null
+        }
+        Update: {
+          id?: string
+          parent_id?: string
+          title?: string
+          digest_date?: string
+          date_range_start?: string
+          date_range_end?: string
+          status?: string | null
+          ai_compilation_data?: Json | null
+          recipient_breakdown?: Json | null
+          total_updates?: number | null
+          total_recipients?: number | null
+          sent_count?: number | null
+          failed_count?: number | null
+          compiled_at?: string | null
+          approved_at?: string | null
+          sent_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          parent_narrative?: Json | null
+          auto_publish_hours?: number | null
+          last_reminder_sent_at?: string | null
+          reminder_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "summaries_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       updates: {
         Row: {
           ai_analysis: Json | null
@@ -1204,6 +1411,27 @@ export type Database = {
       validate_rich_text_length: {
         Args: { html_content: string; max_length?: number }
         Returns: boolean
+      }
+      get_summaries_for_auto_publish: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          parent_id: string
+          title: string
+          compiled_at: string
+          auto_publish_hours: number
+        }[]
+      }
+      get_summaries_needing_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          parent_id: string
+          title: string
+          compiled_at: string
+          last_reminder_sent_at: string | null
+          reminder_count: number
+        }[]
       }
     }
     Enums: {

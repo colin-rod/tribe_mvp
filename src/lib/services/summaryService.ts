@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
+import type { Json, Tables } from '@/lib/types/database.types'
 import type {
   Summary,
   CompileSummaryRequest,
@@ -8,10 +9,43 @@ import type {
   RecipientSummaryPreview,
   ApproveSummaryRequest,
   SummaryStats,
-  AutoPublishReminder
+  AutoPublishReminder,
+  SummaryNarrative,
+  AIInclusionRationale,
+  RenderStyle
 } from '@/lib/types/summary'
 
 const logger = createLogger('SummaryService')
+type SummaryRow = Tables<'summaries'>
+type SummaryMemoryWithRelations = {
+  recipients: {
+    id: string
+    name: string | null
+    email: string | null
+    relationship: string | null
+    frequency_preference: string | null
+  } | null
+  narrative_data: Json | null
+  render_style: string | null
+  display_order: number
+  custom_caption: string | null
+  ai_rationale: { reasoning?: string } | null
+  memories: {
+    id: string
+    content: string | null
+    subject: string | null
+    rich_content: Json | null
+    content_format: string | null
+    media_urls: string[] | null
+    children: {
+      name: string | null
+      birth_date: string | null
+      profile_photo_url: string | null
+    } | null
+    milestone_type: string | null
+    created_at: string | null
+  } | null
+}
 
 /**
  * Compile a new summary from approved memories
@@ -115,44 +149,51 @@ export async function getSummaryPreview(summaryId: string): Promise<SummaryPrevi
   // Group by recipient
   const recipientMap = new Map<string, RecipientSummaryPreview>()
 
-  for (const sm of summaryMemories || []) {
+  const summaryMemoryRecords = (summaryMemories ?? []) as unknown as SummaryMemoryWithRelations[]
+
+  for (const sm of summaryMemoryRecords) {
     const recipient = sm.recipients
     if (!recipient) continue
+
+    const narrative = (sm.narrative_data as unknown as SummaryNarrative | null) ?? undefined
+    const renderStyle: RenderStyle = sm.render_style === 'gallery' ? 'gallery' : 'narrative'
+    const aiRationale = (sm.ai_rationale as unknown as AIInclusionRationale | null) ?? undefined
 
     if (!recipientMap.has(recipient.id)) {
       recipientMap.set(recipient.id, {
         recipient_id: recipient.id,
-        recipient_name: recipient.name,
-        recipient_email: recipient.email,
-        relationship: recipient.relationship,
-        frequency_preference: recipient.frequency_preference,
+        recipient_name: recipient.name ?? 'Unknown Recipient',
+        recipient_email: recipient.email ?? '',
+        relationship: recipient.relationship ?? 'Family',
+        frequency_preference: recipient.frequency_preference ?? 'every_update',
         memories: [],
-        narrative: sm.narrative_data,
-        render_style: sm.render_style || 'narrative',
+        narrative,
+        render_style: renderStyle,
         email_subject: `${summary.title} - Memory Summary`,
         email_preview_html: '',
-        ai_rationale: sm.ai_rationale?.reasoning || '',
+        ai_rationale: aiRationale?.reasoning ?? '',
         customizations_made: 0
       })
     }
 
     const preview = recipientMap.get(recipient.id)!
     const memory = sm.memories
+    if (!memory) continue
 
     preview.memories.push({
       memory_id: memory.id,
       content: memory.content || '',
-      subject: memory.subject,
-      rich_content: memory.rich_content as Record<string, unknown> | undefined,
+      subject: memory.subject ?? undefined,
+      rich_content: memory.rich_content as unknown as Record<string, unknown> | undefined,
       content_format: memory.content_format || 'plain',
-      media_urls: memory.media_urls || [],
-      child_name: memory.children?.name || '',
-      child_age: calculateAge(memory.children?.birth_date),
-      milestone_type: memory.milestone_type,
-      created_at: memory.created_at,
+      media_urls: memory.media_urls ?? [],
+      child_name: memory.children?.name ?? '',
+      child_age: calculateAge(memory.children?.birth_date ?? undefined),
+      milestone_type: memory.milestone_type ?? undefined,
+      created_at: memory.created_at ?? '',
       display_order: sm.display_order,
-      custom_caption: sm.custom_caption,
-      ai_rationale: sm.ai_rationale,
+      custom_caption: sm.custom_caption ?? undefined,
+      ai_rationale: aiRationale,
       can_edit: true,
       can_remove: true,
       can_reorder: true
@@ -160,7 +201,7 @@ export async function getSummaryPreview(summaryId: string): Promise<SummaryPrevi
   }
 
   return {
-    summary: summary as Summary,
+    summary: summary as unknown as Summary,
     recipients: Array.from(recipientMap.values())
   }
 }
@@ -242,7 +283,7 @@ export async function getSummaries(limit?: number): Promise<Summary[]> {
   const { data, error } = await query
 
   if (error) throw error
-  return (data || []) as Summary[]
+  return (data ?? []) as unknown as Summary[]
 }
 
 /**
@@ -266,7 +307,7 @@ export async function getSummaryById(summaryId: string): Promise<Summary | null>
     throw error
   }
 
-  return data as Summary
+  return data as unknown as Summary
 }
 
 /**
@@ -283,7 +324,7 @@ export async function getSummariesForAutoPublish(): Promise<Summary[]> {
     .eq('parent_id', user.id)
 
   if (error) throw error
-  return (data || []) as Summary[]
+  return (data ?? []) as unknown as Summary[]
 }
 
 /**
@@ -302,11 +343,13 @@ export async function getSummariesNeedingReminders(): Promise<AutoPublishReminde
   if (error) throw error
 
   // Transform to AutoPublishReminder format
-  return (data || []).map((item: {
+  const reminderRows = (data ?? []) as unknown as Array<{
     summary_id: string
     parent_id: string
     hours_until_auto_publish: number
-  }) => ({
+  }>
+
+  return reminderRows.map(item => ({
     summary_id: item.summary_id,
     parent_id: item.parent_id,
     hours_remaining: Math.floor(item.hours_until_auto_publish),
@@ -377,6 +420,7 @@ export async function getSummaryStats(): Promise<SummaryStats> {
     .from('summaries')
     .select('total_updates, total_recipients')
     .eq('parent_id', user.id)
+    .returns<Array<Pick<SummaryRow, 'total_updates' | 'total_recipients'>>>()
 
   const avgMemories = summaries && summaries.length > 0
     ? summaries.reduce((sum, s) => sum + (s.total_updates || 0), 0) / summaries.length
@@ -394,6 +438,7 @@ export async function getSummaryStats(): Promise<SummaryStats> {
     .eq('status', 'sent')
     .order('sent_at', { ascending: false })
     .limit(1)
+    .returns<Pick<SummaryRow, 'sent_at'>>()
     .single()
 
   return {

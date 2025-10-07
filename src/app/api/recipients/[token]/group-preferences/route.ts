@@ -5,8 +5,21 @@ import { validateRecipientTokenAccess } from '@/middleware/group-security'
 import { GroupCacheManager } from '@/lib/group-cache'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { Tables, TablesUpdate } from '@/lib/types/database.types'
 
 const logger = createLogger('GroupPreferencesAPI')
+
+type RecipientRow = Tables<'recipients'>
+type RecipientGroupRow = Tables<'recipient_groups'>
+
+type MembershipWithGroup = RecipientRow & {
+  recipient_groups: Pick<
+    RecipientGroupRow,
+    'id' | 'name' | 'default_frequency' | 'default_channels' | 'notification_settings' | 'is_default_group'
+  > | null
+}
+
+type MembershipData = Pick<RecipientRow, 'id' | 'is_active'>
 
 // Schema for group-specific preference updates
 const groupPreferencesSchema = z.object({
@@ -59,12 +72,12 @@ export async function PUT(
     })
 
     // Verify group membership
-    type MembershipData = { id: string; is_active: boolean }
     const { data: membership, error: membershipError } = await supabase
       .from('recipients')
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
+      .returns<MembershipData>()
       .single()
 
     if (membershipError || !membership) {
@@ -74,7 +87,7 @@ export async function PUT(
       )
     }
 
-    const typedMembership = membership as unknown as MembershipData
+    const typedMembership = membership
     if (!typedMembership.is_active) {
       return NextResponse.json(
         { error: 'Cannot update preferences for inactive group membership' },
@@ -83,12 +96,7 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: {
-      frequency?: typeof validatedData.frequency
-      preferred_channels?: typeof validatedData.preferred_channels
-      content_types?: typeof validatedData.content_types
-      updated_at: string
-    } = {
+    const updateData: TablesUpdate<'recipients'> = {
       updated_at: new Date().toISOString()
     }
 
@@ -107,7 +115,6 @@ export async function PUT(
     // Update group membership preferences
     const { error: updateError } = await supabase
       .from('recipients')
-      // @ts-expect-error - Supabase type inference issue
       .update(updateData)
       .eq('id', typedMembership.id)
 
@@ -201,6 +208,7 @@ export async function DELETE(
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
+      .returns<MembershipData>()
       .single()
 
     if (membershipError || !membership) {
@@ -211,16 +219,17 @@ export async function DELETE(
     }
 
     // Reset to group defaults by clearing custom settings
+    const resetData: TablesUpdate<'recipients'> = {
+      frequency: null,
+      preferred_channels: null,
+      content_types: null,
+      updated_at: new Date().toISOString()
+    }
+
     const { error: updateError } = await supabase
       .from('recipients')
-      // @ts-expect-error - Supabase type inference issue
-      .update({
-        frequency: null,
-        preferred_channels: null,
-        content_types: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', (membership as { id: string }).id)
+      .update(resetData)
+      .eq('id', membership.id)
 
     if (updateError) {
       logger.errorWithStack('Error resetting group preferences:', updateError as Error)
@@ -365,6 +374,7 @@ export async function GET(
         `)
         .eq('recipient_id', securityContext.recipient_id)
         .eq('is_active', true)
+        .returns<MembershipWithGroup[]>()
 
       if (membershipsError) {
         logger.errorWithStack('Error fetching group memberships:', membershipsError as Error)
@@ -374,30 +384,26 @@ export async function GET(
         )
       }
 
-      // Enhance with effective settings
-      type MembershipWithGroup = {
-        group_id: string
-        frequency?: string | null
-        preferred_channels?: string[] | null
-        content_types?: string[] | null
-        recipient_groups: { is_default_group?: boolean }
-      }
-
       const enhancedMemberships = await Promise.all(
-        (memberships || []).map(async (membership: MembershipWithGroup) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: effectiveSettings } = await (supabase.rpc as any)(
-            'get_effective_notification_settings',
-            {
-              p_recipient_id: securityContext.recipient_id,
-              p_group_id: membership.group_id
-            }
-          )
+        (memberships ?? []).map(async membership => {
+          let effectiveSettings: unknown = null
+
+          if (membership.group_id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data } = await (supabase.rpc as any)(
+              'get_effective_notification_settings',
+              {
+                p_recipient_id: securityContext.recipient_id,
+                p_group_id: membership.group_id
+              }
+            )
+            effectiveSettings = data
+          }
 
           return {
             ...membership,
             effective_settings: effectiveSettings,
-            has_custom_settings: !!(
+            has_custom_settings: Boolean(
               membership.frequency ||
               membership.preferred_channels ||
               membership.content_types
@@ -410,9 +416,9 @@ export async function GET(
         memberships: enhancedMemberships,
         summary: {
           total_groups: enhancedMemberships.length,
-          groups_with_custom_settings: enhancedMemberships.filter((m: { has_custom_settings: boolean }) => m.has_custom_settings).length,
-          default_groups: enhancedMemberships.filter((m: MembershipWithGroup & { has_custom_settings: boolean }) => m.recipient_groups.is_default_group).length,
-          custom_groups: enhancedMemberships.filter((m: MembershipWithGroup & { has_custom_settings: boolean }) => !m.recipient_groups.is_default_group).length
+          groups_with_custom_settings: enhancedMemberships.filter(m => m.has_custom_settings).length,
+          default_groups: enhancedMemberships.filter(m => m.recipient_groups?.is_default_group ?? false).length,
+          custom_groups: enhancedMemberships.filter(m => !(m.recipient_groups?.is_default_group ?? false)).length
         }
       })
     }
