@@ -14,7 +14,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', loading = false, leftIcon, rightIcon, children, disabled, ...props }, ref) => {
     const isDisabled = disabled || loading
 
-    const baseClasses = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden'
+    const baseClasses = 'inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative overflow-hidden'
 
     const variantClasses = {
       default: 'bg-primary-500 text-white shadow-md hover:bg-primary-600 active:bg-primary-700 hover:shadow-lg',
@@ -57,7 +57,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <>
             <svg
               className={cn(
-                'animate-spin mr-2 flex-shrink-0',
+                'animate-spin flex-shrink-0',
                 size === 'xs' || size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
               )}
               xmlns="http://www.w3.org/2000/svg"
@@ -83,13 +83,17 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         )}
         {!loading && leftIcon && (
-          <span className="mr-2 flex-shrink-0">{leftIcon}</span>
+          <span className="inline-flex items-center justify-center flex-shrink-0">
+            {leftIcon}
+          </span>
         )}
-        <span className={cn(loading && 'opacity-70')}>
+        <span className={cn('inline-flex items-center', loading && 'opacity-70')}>
           {children}
         </span>
         {!loading && rightIcon && (
-          <span className="ml-2 flex-shrink-0">{rightIcon}</span>
+          <span className="inline-flex items-center justify-center flex-shrink-0">
+            {rightIcon}
+          </span>
         )}
       </button>
     )

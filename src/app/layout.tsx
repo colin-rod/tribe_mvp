@@ -10,6 +10,8 @@ import { SkipLinks } from '@/components/accessibility/SkipLinks'
 import { LayoutProvider } from '@/contexts/LayoutContext'
 import { KeyboardShortcutsProvider } from '@/components/accessibility/KeyboardShortcutsProvider'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { Toaster } from 'sonner'
+import FeedbackButton from '@/components/feedback/FeedbackButton'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -150,6 +152,8 @@ export default function RootLayout({
           </ErrorBoundary>
         </div>
         <DevelopmentIndicator />
+        <FeedbackButton />
+        <Toaster position="top-center" richColors />
         <PerformanceProvider />
         <Analytics />
         <SpeedInsights />
