@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { RecipientProfileSelector } from '@/components/recipients/RecipientProfileSelector'
 import { getEmotionalToneLabel, getImportanceLevelLabel } from '@/lib/validation/update'
 import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Recipient } from '@/lib/recipients'
@@ -56,28 +57,6 @@ export default function AISuggestionsPanel({
 
     return 'Suggestions ready.'
   }, [analysis, globalError, hasRequestedAnalysis, isAnalyzing])
-
-  const handleRecipientToggle = (recipientId: string) => {
-    if (selectedRecipientIds.includes(recipientId)) {
-      onRecipientsChange(selectedRecipientIds.filter(id => id !== recipientId))
-    } else {
-      onRecipientsChange([...selectedRecipientIds, recipientId])
-    }
-  }
-
-  const handleSelectAll = () => {
-    onRecipientsChange(recipients.map(recipient => recipient.id))
-  }
-
-  const handleDeselectAll = () => {
-    onRecipientsChange([])
-  }
-
-  const handleApplySuggestions = () => {
-    if (suggestedRecipientIds.length > 0) {
-      onRecipientsChange(Array.from(new Set([...suggestedRecipientIds])))
-    }
-  }
 
   const recipientCount = selectedRecipientIds.length
 
@@ -174,94 +153,30 @@ export default function AISuggestionsPanel({
           </section>
 
           <section className="space-y-3 rounded-lg border border-white bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-800">Recipients</h3>
-                <p className="text-xs text-gray-500">Select who should receive this update.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {suggestedRecipientIds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleApplySuggestions}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    Apply suggestions
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleSelectAll}
-                  className="text-xs text-gray-500 hover:text-gray-400"
-                >
-                  Select all
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeselectAll}
-                  className="text-xs text-gray-500 hover:text-gray-400"
-                >
-                  Clear
-                </button>
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Recipients</h3>
+              <p className="text-xs text-gray-500">Select who should receive this update.</p>
             </div>
 
-            {recipientsLoading ? (
-              <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
-                <LoadingSpinner size="sm" />
-                <span>Loading recipients...</span>
-              </div>
-            ) : recipientsError ? (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {recipientsError}
-              </div>
-            ) : recipients.length === 0 ? (
-              <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
-                Add recipients to send this update.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {recipients.map(recipient => {
-                  const isSelected = selectedRecipientIds.includes(recipient.id)
-                  const isSuggested = suggestedRecipientIds.includes(recipient.id)
-
-                  return (
-                    <label
-                      key={recipient.id}
-                      className={`flex cursor-pointer items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm transition-colors ${
-                        isSelected
-                          ? 'border-blue-300 bg-blue-50'
-                          : isSuggested
-                          ? 'border-green-200 bg-green-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          checked={isSelected}
-                          onChange={() => handleRecipientToggle(recipient.id)}
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900">{recipient.name}</p>
-                          <p className="text-xs text-gray-500">
-                            {recipient.relationship}
-                            {recipient.group && ` • ${recipient.group.name}`}
-                            {recipient.email && ` • ${recipient.email}`}
-                          </p>
-                        </div>
-                      </div>
-                      {isSuggested && (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                          Suggested
-                        </span>
-                      )}
-                    </label>
-                  )
-                })}
-              </div>
-            )}
+            <RecipientProfileSelector
+              recipients={recipients}
+              selectedRecipientIds={selectedRecipientIds}
+              onRecipientsChange={onRecipientsChange}
+              loading={recipientsLoading}
+              error={recipientsError}
+              size="md"
+              columns={{
+                mobile: 2,
+                tablet: 3,
+                desktop: 3,
+              }}
+              placeholder="Select recipients to send this update"
+              emptyMessage="Add recipients to send this update."
+              showSelectAll
+              maxHeight="400px"
+              highlightSuggested
+              suggestedIds={suggestedRecipientIds}
+            />
 
             <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
               {recipientCount > 0 ? (

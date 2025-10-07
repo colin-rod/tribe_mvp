@@ -32,6 +32,10 @@ export {
 } from './Card'
 export { Badge, type BadgeProps } from './Badge'
 
+// Profile Selection Components
+export { ProfileIcon, type ProfileIconProps } from './ProfileIcon'
+export { ProfileSelector, type ProfileSelectorProps, type ProfileItem } from './ProfileSelector'
+
 // Feedback Components
 export { Alert, type AlertProps } from './Alert'
 

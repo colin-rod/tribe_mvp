@@ -163,7 +163,7 @@ export default function CreateUpdateWizard({
     : 'min-h-screen bg-gray-50'
 
   const contentWrapperClassName = isModal
-    ? 'flex-1 flex flex-col overflow-hidden'
+    ? 'flex-1 flex flex-col overflow-hidden px-6 py-5 gap-4'
     : 'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
 
   const headerContent = (
@@ -262,12 +262,12 @@ export default function CreateUpdateWizard({
       <div className={contentWrapperClassName}>
         {/* Minimal header for modal variant */}
         {isModal ? (
-          <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white/70 px-4 py-3">
             <h2 className="text-base font-semibold text-neutral-900">Create Update</h2>
             <button
               type="button"
               onClick={() => { reset(); onCancel() }}
-              className="inline-flex items-center px-3 py-1.5 text-sm rounded-md border border-neutral-200 hover:bg-neutral-50"
+              className="inline-flex items-center px-3.5 py-2 text-sm rounded-md border border-neutral-200 hover:bg-neutral-50"
             >
               Cancel
             </button>

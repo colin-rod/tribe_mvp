@@ -34,7 +34,7 @@ export default function SmartContextualInput({
   onMediaChange,
   onMediaRemove,
   disabled = false,
-  placeholder = "Share what's happening with your little one...",
+  placeholder,
   maxCharacters = 2000,
   maxFiles = 10
 }: SmartContextualInputProps) {
@@ -43,6 +43,8 @@ export default function SmartContextualInput({
   const [useRichText, setUseRichText] = useState(true) // Toggle between plain text and rich text
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputPlaceholder = "Share a moment... add photos or video if you like"
+  const resolvedPlaceholder = placeholder ?? inputPlaceholder
 
   // Sync mediaFiles with mediaItems
   useEffect(() => {
@@ -83,6 +85,51 @@ export default function SmartContextualInput({
     div.innerHTML = htmlOrText
     return div.textContent?.length || 0
   }
+
+  const extractPlainText = useCallback((value: string) => {
+    if (!value) return ''
+    const div = document.createElement('div')
+    div.innerHTML = value
+    return div.textContent?.trim() ?? ''
+  }, [])
+
+  const convertPlainTextToHtml = useCallback((value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    return trimmed
+      .split(/\n{2,}/)
+      .map(segment => segment.trim())
+      .filter(Boolean)
+      .map(segment => `<p>${segment.replace(/\n/g, '<br />')}</p>`)
+      .join('')
+  }, [])
+
+  const isLikelyHtml = useCallback((value: string) => {
+    return /<\/?[a-z][\s\S]*>/i.test(value)
+  }, [])
+
+  const handleEditorModeToggle = useCallback((checked: boolean) => {
+    if (checked) {
+      setUseRichText(true)
+      if (!content) return
+      if (!isLikelyHtml(content)) {
+        onContentChange(convertPlainTextToHtml(content))
+      }
+    } else {
+      setUseRichText(false)
+      const text = extractPlainText(content)
+      onContentChange(text)
+    }
+  }, [content, convertPlainTextToHtml, extractPlainText, isLikelyHtml, onContentChange])
+
+  useEffect(() => {
+    if (!useRichText) {
+      const plain = extractPlainText(content)
+      if (!plain && content !== '') {
+        onContentChange('')
+      }
+    }
+  }, [content, extractPlainText, onContentChange, useRichText])
 
   const processNewFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles)
@@ -223,7 +270,7 @@ export default function SmartContextualInput({
           <input
             type="checkbox"
             checked={useRichText}
-            onChange={(e) => setUseRichText(e.target.checked)}
+            onChange={(e) => handleEditorModeToggle(e.target.checked)}
             className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
             disabled={disabled}
           />
@@ -246,7 +293,7 @@ export default function SmartContextualInput({
           <RichTextEditor
             content={content}
             onChange={handleRichTextChange}
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             disabled={disabled}
             maxCharacters={maxCharacters}
           />
@@ -266,7 +313,7 @@ export default function SmartContextualInput({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             disabled={disabled}
             rows={8}
             className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -295,22 +342,24 @@ export default function SmartContextualInput({
       )}
 
       {/* Helper Text */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 text-xs text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleFileSelect}
             disabled={disabled || mediaFiles.length >= maxFiles}
-            className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm transition hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Add media
           </button>
-          <span>or drag & drop, paste photos/videos/audio</span>
+          <span className="text-[11px] sm:text-xs leading-snug">Drag & drop or paste photos, videos, or audio</span>
         </div>
-        <span>PNG, JPG, WebP, MP4, MP3 (max {maxFiles})</span>
+        <span className="text-[11px] sm:text-xs text-gray-400 leading-snug">
+          PNG, JPG, WebP, MP4, MP3 (max {maxFiles})
+        </span>
       </div>
 
       {/* Hidden File Input */}
@@ -371,15 +420,13 @@ export default function SmartContextualInput({
 
       {/* Tips */}
       {mediaItems.length === 0 && (
-        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-          <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">
-            💡 Pro Tip
+        <div className="rounded-lg border border-blue-100 bg-blue-50/80 p-3">
+          <p className="text-xs font-semibold text-blue-700">
+            💡 Quick tip
           </p>
-          <ul className="mt-2 space-y-1 text-sm text-blue-700">
-            <li>• Type your update first, then add media inline</li>
-            <li>• Paste images directly from clipboard (Ctrl/Cmd+V)</li>
-            <li>• Drag & drop multiple files at once</li>
-            <li>• Mix photos, videos, and audio in one update</li>
+          <ul className="mt-1 space-y-1 text-sm text-blue-700">
+            <li>• Draft your story first, then drop photos right where they fit best</li>
+            <li>• Paste images straight from your clipboard with Ctrl/Cmd+V</li>
           </ul>
         </div>
       )}

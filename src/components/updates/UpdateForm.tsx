@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import ChildSelector from '@/components/children/ChildSelector'
+import { ChildProfileSelector } from '@/components/children/ChildProfileSelector'
 import SmartContextualInput from './SmartContextualInput'
 import { milestoneTypes, getMilestoneLabel, validateUpdateContent } from '@/lib/validation/update'
 import type { UpdateFormData, MilestoneType } from '@/lib/validation/update'
@@ -36,8 +36,11 @@ export default function UpdateForm({
 }: UpdateFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)
 
+  // Note: ChildProfileSelector now handles loading children internally
   useEffect(() => {
-    loadChildren()
+    if (loadChildren) {
+      loadChildren()
+    }
   }, [loadChildren])
 
   const handleContentChange = (content: string) => {
@@ -97,12 +100,14 @@ export default function UpdateForm({
 
       {/* Child Selection */}
       <div>
-        <label className="sr-only">Select Child</label>
-        <ChildSelector
+        <label className="block text-sm font-medium text-gray-900 mb-3">
+          Who is this update about?
+        </label>
+        <ChildProfileSelector
           selectedChildId={formData.childId}
           onChildSelect={handleChildSelect}
-          placeholder="Select child"
-          required
+          placeholder="Select a child for this update"
+          size="lg"
         />
       </div>
 
@@ -117,19 +122,18 @@ export default function UpdateForm({
           onMediaChange={onMediaChange}
           onMediaRemove={onMediaRemove}
           disabled={isLoading}
-          placeholder="Share a moment… add photos or video if you like"
+          placeholder="Share a moment... add photos or video if you like"
           maxCharacters={2000}
           maxFiles={10}
         />
         {contentError && (
           <p className="mt-1 text-sm text-red-600">{contentError}</p>
         )}
-        <details className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+        <details className="mt-2 rounded-lg border border-neutral-200 bg-neutral-50 p-2">
           <summary className="text-xs font-medium text-neutral-700 cursor-pointer">Helpful tips</summary>
           <ul className="mt-2 space-y-1 text-sm text-neutral-700">
             <li>• Share what happened and why it mattered</li>
-            <li>• Include how your child felt</li>
-            <li>• Add a photo or short video if you like</li>
+            <li>• Mention how your child reacted or felt</li>
           </ul>
         </details>
       </div>
