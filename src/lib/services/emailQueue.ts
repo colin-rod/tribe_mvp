@@ -216,76 +216,22 @@ export function calculateBackoffDelay(attemptNumber: number): number {
 
 export class EmailQueueService {
   private static instance: EmailQueueService
-  private emailQueue: Queue
-  private deadLetterQueue: Queue
+  private emailQueue: Queue | null = null
+  private deadLetterQueue: Queue | null = null
   private worker: Worker | null = null
-  private queueEvents: QueueEvents
+  private queueEvents: QueueEvents | null = null
   private circuitBreaker: CircuitBreaker
-  private redisConnection: Redis
+  private redisConnection: Redis | null = null
   private isShuttingDown = false
+  private isInitialized = false
 
   private constructor() {
-    const env = getEnv()
-
-    // Create Redis connection with proper error handling
-    this.redisConnection = new Redis(env.REDIS_URL || 'redis://localhost:6379', {
-      maxRetriesPerRequest: null,
-      enableReadyCheck: false,
-      retryStrategy: (times: number) => {
-        const delay = Math.min(times * 50, 2000)
-        logger.warn(`Redis connection retry attempt ${times}, waiting ${delay}ms`)
-        return delay
-      }
-    })
-
-    this.redisConnection.on('error', (error: Error) => {
-      logger.error('Redis connection error', { error: error.message })
-    })
-
-    this.redisConnection.on('connect', () => {
-      logger.info('Redis connected successfully')
-    })
-
-    // Initialize main email queue
-    this.emailQueue = new Queue('email-queue', {
-      connection: this.redisConnection,
-      defaultJobOptions: {
-        attempts: 5, // Maximum 5 retry attempts
-        backoff: {
-          type: 'custom'
-        },
-        removeOnComplete: {
-          age: 24 * 3600, // Keep completed jobs for 24 hours
-          count: 1000
-        },
-        removeOnFail: {
-          age: 7 * 24 * 3600 // Keep failed jobs for 7 days
-        }
-      }
-    })
-
-    // Initialize dead letter queue for permanently failed emails
-    this.deadLetterQueue = new Queue('email-dead-letter-queue', {
-      connection: this.redisConnection,
-      defaultJobOptions: {
-        removeOnComplete: false, // Never remove from DLQ
-        removeOnFail: false
-      }
-    })
-
-    // Queue events for monitoring
-    this.queueEvents = new QueueEvents('email-queue', {
-      connection: this.redisConnection
-    })
-
-    // Circuit breaker for SendGrid failures
+    // Circuit breaker for SendGrid failures - can be initialized without Redis
     this.circuitBreaker = new CircuitBreaker(
       5,    // Open after 5 failures
       2,    // Close after 2 successes in half-open state
       60000 // Reset after 1 minute
     )
-
-    this.setupEventListeners()
   }
 
   static getInstance(): EmailQueueService {
@@ -295,7 +241,106 @@ export class EmailQueueService {
     return EmailQueueService.instance
   }
 
+  // Lazy initialization - only connect when actually needed
+  private async initialize() {
+    // Skip initialization during build time
+    if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
+      // We're in a server context during build, skip Redis connection
+      const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+      if (isBuildTime) {
+        logger.warn('Skipping Redis connection during build phase')
+        return
+      }
+    }
+
+    if (this.isInitialized || this.isShuttingDown) {
+      return
+    }
+
+    const env = getEnv()
+
+    // Check if Redis URL is configured
+    if (!env.REDIS_URL) {
+      logger.warn('Redis URL not configured, email queue will not be available')
+      return
+    }
+
+    try {
+      // Create Redis connection with proper error handling
+      this.redisConnection = new Redis(env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        retryStrategy: (times: number) => {
+          const delay = Math.min(times * 50, 2000)
+          logger.warn(`Redis connection retry attempt ${times}, waiting ${delay}ms`)
+          return delay
+        }
+      })
+
+      this.redisConnection.on('error', (error: Error) => {
+        logger.error('Redis connection error', { error: error.message })
+      })
+
+      this.redisConnection.on('connect', () => {
+        logger.info('Redis connected successfully')
+      })
+
+      // Initialize main email queue
+      this.emailQueue = new Queue('email-queue', {
+        connection: this.redisConnection,
+        defaultJobOptions: {
+          attempts: 5, // Maximum 5 retry attempts
+          backoff: {
+            type: 'custom'
+          },
+          removeOnComplete: {
+            age: 24 * 3600, // Keep completed jobs for 24 hours
+            count: 1000
+          },
+          removeOnFail: {
+            age: 7 * 24 * 3600 // Keep failed jobs for 7 days
+          }
+        }
+      })
+
+      // Initialize dead letter queue for permanently failed emails
+      this.deadLetterQueue = new Queue('email-dead-letter-queue', {
+        connection: this.redisConnection,
+        defaultJobOptions: {
+          removeOnComplete: false, // Never remove from DLQ
+          removeOnFail: false
+        }
+      })
+
+      // Queue events for monitoring
+      this.queueEvents = new QueueEvents('email-queue', {
+        connection: this.redisConnection
+      })
+
+      this.setupEventListeners()
+      this.isInitialized = true
+
+      logger.info('Email queue service initialized successfully')
+    } catch (error) {
+      logger.error('Failed to initialize email queue service', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      // Don't throw - allow app to continue without queue functionality
+    }
+  }
+
+  private async ensureInitialized() {
+    if (!this.isInitialized) {
+      await this.initialize()
+    }
+    if (!this.emailQueue || !this.deadLetterQueue || !this.queueEvents) {
+      throw new Error('Email queue service not available')
+    }
+  }
+
   private setupEventListeners() {
+    if (!this.queueEvents) return
+
     this.queueEvents.on('completed', ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }) => {
       logger.info('Email sent successfully', { jobId, result: returnvalue })
     })
@@ -310,7 +355,9 @@ export class EmailQueueService {
       throw new Error('Email queue is shutting down')
     }
 
-    const job = await this.emailQueue.add(
+    await this.ensureInitialized()
+
+    const job = await this.emailQueue!.add(
       'send-email',
       emailData,
       {
@@ -334,7 +381,9 @@ export class EmailQueueService {
       throw new Error('Email queue is shutting down')
     }
 
-    const jobs = await this.emailQueue.addBulk(
+    await this.ensureInitialized()
+
+    const jobs = await this.emailQueue!.addBulk(
       emails.map((email) => ({
         name: 'send-email',
         data: email,
@@ -354,6 +403,8 @@ export class EmailQueueService {
       logger.warn('Worker already started')
       return
     }
+
+    await this.ensureInitialized()
 
     this.worker = new Worker(
       'email-queue',
@@ -429,7 +480,7 @@ export class EmailQueueService {
         }
       },
       {
-        connection: this.redisConnection,
+        connection: this.redisConnection!,
         concurrency: 10, // Process up to 10 emails concurrently
         limiter: {
           max: 100, // Max 100 jobs per duration
@@ -462,6 +513,11 @@ export class EmailQueueService {
     errorCategory: EmailErrorCategory,
     errorMessage?: string
   ) {
+    if (!this.deadLetterQueue) {
+      logger.error('Dead letter queue not available')
+      return
+    }
+
     await this.deadLetterQueue.add(
       'dead-letter-email',
       {
@@ -485,15 +541,17 @@ export class EmailQueueService {
   }
 
   async getQueueMetrics() {
+    await this.ensureInitialized()
+
     const [waiting, active, completed, failed, delayed] = await Promise.all([
-      this.emailQueue.getWaitingCount(),
-      this.emailQueue.getActiveCount(),
-      this.emailQueue.getCompletedCount(),
-      this.emailQueue.getFailedCount(),
-      this.emailQueue.getDelayedCount()
+      this.emailQueue!.getWaitingCount(),
+      this.emailQueue!.getActiveCount(),
+      this.emailQueue!.getCompletedCount(),
+      this.emailQueue!.getFailedCount(),
+      this.emailQueue!.getDelayedCount()
     ])
 
-    const dlqCount = await this.deadLetterQueue.count()
+    const dlqCount = await this.deadLetterQueue!.count()
 
     return {
       emailQueue: {
@@ -513,7 +571,9 @@ export class EmailQueueService {
   }
 
   async retryDeadLetterJob(jobId: string): Promise<Job | null> {
-    const dlqJob = await this.deadLetterQueue.getJob(`dlq-${jobId}`)
+    await this.ensureInitialized()
+
+    const dlqJob = await this.deadLetterQueue!.getJob(`dlq-${jobId}`)
 
     if (!dlqJob) {
       logger.warn('Dead letter job not found', { jobId })
@@ -558,10 +618,21 @@ export class EmailQueueService {
       await this.worker.close()
     }
 
-    await this.queueEvents.close()
-    await this.emailQueue.close()
-    await this.deadLetterQueue.close()
-    await this.redisConnection.quit()
+    if (this.queueEvents) {
+      await this.queueEvents.close()
+    }
+
+    if (this.emailQueue) {
+      await this.emailQueue.close()
+    }
+
+    if (this.deadLetterQueue) {
+      await this.deadLetterQueue.close()
+    }
+
+    if (this.redisConnection) {
+      await this.redisConnection.quit()
+    }
 
     logger.info('Email queue service closed')
   }
