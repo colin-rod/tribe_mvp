@@ -478,7 +478,7 @@ serve(async (req) => {
 
     // Step 1: Create digest record
     const { data: digest, error: digestError } = await supabase
-      .from('digests')
+      .from('summaries')
       .insert({
         parent_id: requestData.parent_id,
         title: requestData.title || generateDefaultTitle(requestData.date_range_start, requestData.date_range_end),
@@ -498,7 +498,7 @@ serve(async (req) => {
 
     // Step 2: Fetch ready updates in date range
     const { data: updates, error: updatesError } = await supabase
-      .from('updates')
+      .from('memories')
       .select(`
         *,
         children:child_id (
@@ -550,7 +550,7 @@ serve(async (req) => {
 
     // Step 5: Save AI compilation data
     const { error: updateDigestError } = await supabase
-      .from('digests')
+      .from('summaries')
       .update({
         status: 'ready',
         compiled_at: new Date().toISOString(),
@@ -600,7 +600,7 @@ serve(async (req) => {
     })
 
     const { error: digestUpdatesError } = await supabase
-      .from('digest_updates')
+      .from('summary_memories')
       .insert(digestUpdates)
 
     if (digestUpdatesError) {
@@ -612,7 +612,7 @@ serve(async (req) => {
     // Step 7: Update updates to 'in_digest' status
     const updateIds = updates.map(u => u.id)
     const { error: updateStatusError } = await supabase
-      .from('updates')
+      .from('memories')
       .update({
         distribution_status: 'in_digest',
         digest_id: digest.id
@@ -636,7 +636,7 @@ serve(async (req) => {
 
       // Save parent narrative to digest
       await supabase
-        .from('digests')
+        .from('summaries')
         .update({ parent_narrative: parentNarrative })
         .eq('id', digest.id)
 
@@ -659,7 +659,7 @@ serve(async (req) => {
     // Step 9: Auto-approve if requested
     if (requestData.auto_approve) {
       const { error: approveError } = await supabase
-        .from('digests')
+        .from('summaries')
         .update({
           status: 'approved',
           approved_at: new Date().toISOString()
@@ -969,7 +969,7 @@ async function generateRecipientNarratives(
       )
 
       const { error: updateError } = await supabase
-        .from('digest_updates')
+        .from('summary_memories')
         .update({ narrative_data: narrative })
         .eq('digest_id', digestId)
         .eq('recipient_id', recipientData.recipient_id)

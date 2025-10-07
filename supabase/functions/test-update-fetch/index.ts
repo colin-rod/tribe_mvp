@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     // Test 1: Basic update fetch
     console.log('Step 1: Basic update fetch...')
     const { data: basicUpdate, error: basicError } = await supabase
-      .from('updates')
+      .from('memories')
       .select('*')
       .eq('id', update_id)
       .single()

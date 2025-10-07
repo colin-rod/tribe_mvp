@@ -55,7 +55,7 @@ export function useResponseNotifications() {
 
             // Verify this response is for user's update
             const { data: update } = await supabase
-              .from('updates')
+              .from('memories')
               .select(`
                 id,
                 parent_id,

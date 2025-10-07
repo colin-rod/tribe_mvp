@@ -45,7 +45,7 @@ export default function UpdateDetailModal({ open, updateId, onClose }: UpdateDet
         setError(null)
         const supabase = createClient()
         const { data, error } = await supabase
-          .from('updates')
+          .from('memories')
           .select(`*, children!inner ( id, name, birth_date, profile_photo_url )`)
           .eq('id', updateId)
           .single()

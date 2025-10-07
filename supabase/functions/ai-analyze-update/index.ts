@@ -117,7 +117,7 @@ serve(async (req) => {
 
     // Update database with analysis results
     const { error: updateError } = await supabase
-      .from('updates')
+      .from('memories')
       .update({
         ai_analysis: analysis,
         suggested_recipients: suggestedRecipients

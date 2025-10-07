@@ -52,7 +52,7 @@ export default function UpdatePage() {
         logger.info('Fetching update:', { updateId })
 
         const { data, error: fetchError } = await supabase
-          .from('updates')
+          .from('memories')
           .select(`
             *,
             children!inner (

@@ -89,7 +89,7 @@ export class LikesService {
 
       // Get the update with like count
       const { data: updateData, error: updateError } = await this.supabase
-        .from('updates')
+        .from('memories')
         .select('like_count')
         .eq('id', updateId)
         .eq('parent_id', user.id)
@@ -249,7 +249,7 @@ export class LikesService {
 
       // Get like counts for all updates
       const { data: updatesData, error: updatesError } = await this.supabase
-        .from('updates')
+        .from('memories')
         .select('id, like_count')
         .in('id', updateIds)
         .eq('parent_id', user.id)

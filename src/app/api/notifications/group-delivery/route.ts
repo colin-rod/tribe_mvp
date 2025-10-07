@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: updateCheck, error: updateError } = await supabase
-          .from('updates')
+          .from('memories')
           .select('id, content, milestone_type')
           .eq('id', delivery.update_id)
           .eq('parent_id', user.id)
@@ -516,7 +516,7 @@ export async function PATCH(request: NextRequest) {
       case 'cancel_pending':
         // Get jobs owned by this user
         const { data: userUpdates } = await supabase
-          .from('updates')
+          .from('memories')
           .select('id')
           .eq('parent_id', user.id)
 

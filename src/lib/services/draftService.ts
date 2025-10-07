@@ -17,7 +17,7 @@ export async function createDraft(data: DraftUpdateRequest): Promise<DraftUpdate
   logger.info('Creating new draft', { childId: data.child_id, userId: user.id })
 
   const { data: draft, error } = await supabase
-    .from('updates')
+    .from('memories')
     .insert({
       parent_id: user.id,
       child_id: data.child_id,
@@ -67,7 +67,7 @@ export async function updateDraft(draftId: string, data: Partial<DraftUpdateRequ
   if (data.milestone_type !== undefined) updateData.milestone_type = data.milestone_type
 
   const { data: draft, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update(updateData)
     .eq('id', draftId)
     .eq('parent_id', user.id)
@@ -97,7 +97,7 @@ export async function addMediaToDraft(draftId: string, newMediaUrls: string[]): 
 
   // First, get current media URLs
   const { data: currentDraft, error: fetchError } = await supabase
-    .from('updates')
+    .from('memories')
     .select('media_urls')
     .eq('id', draftId)
     .eq('parent_id', user.id)
@@ -112,7 +112,7 @@ export async function addMediaToDraft(draftId: string, newMediaUrls: string[]): 
 
   // Update with combined media URLs
   const { data: updatedDraft, error: updateError } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       media_urls: combinedMediaUrls,
       last_edited_at: new Date().toISOString()
@@ -153,7 +153,7 @@ export async function addTextToDraft(draftId: string, text: string, append: bool
   if (append) {
     // Get current content and append
     const { data: currentDraft, error: fetchError } = await supabase
-      .from('updates')
+      .from('memories')
       .select('content')
       .eq('id', draftId)
       .eq('parent_id', user.id)
@@ -168,7 +168,7 @@ export async function addTextToDraft(draftId: string, text: string, append: bool
   }
 
   const { data: updatedDraft, error: updateError } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       content: finalContent,
       last_edited_at: new Date().toISOString()
@@ -199,7 +199,7 @@ export async function markDraftAsReady(draftId: string): Promise<DraftUpdate> {
   logger.info('Marking draft as ready', { draftId, userId: user.id })
 
   const { data: draft, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       distribution_status: 'ready',
       last_edited_at: new Date().toISOString()
@@ -231,7 +231,7 @@ export async function markReadyAsDraft(updateId: string): Promise<DraftUpdate> {
   logger.info('Marking ready update as draft', { updateId, userId: user.id })
 
   const { data: draft, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       distribution_status: 'draft',
       last_edited_at: new Date().toISOString()
@@ -263,7 +263,7 @@ export async function deleteDraft(draftId: string): Promise<void> {
   logger.info('Deleting draft', { draftId, userId: user.id })
 
   const { error } = await supabase
-    .from('updates')
+    .from('memories')
     .delete()
     .eq('id', draftId)
     .eq('parent_id', user.id)
@@ -289,7 +289,7 @@ export async function getDrafts(filters?: DraftFilters): Promise<DraftUpdate[]> 
   logger.info('Fetching drafts', { userId: user.id, filters })
 
   let query = supabase
-    .from('updates')
+    .from('memories')
     .select('*')
     .eq('parent_id', user.id)
 
@@ -356,7 +356,7 @@ export async function getDraftWorkspaceSummary(): Promise<DraftWorkspaceSummary>
 
   // Get all drafts with child information
   const { data: drafts, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (
@@ -440,7 +440,7 @@ export async function getDraftById(draftId: string): Promise<DraftUpdate | null>
   logger.info('Fetching draft by ID', { draftId, userId: user.id })
 
   const { data: draft, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select('*')
     .eq('id', draftId)
     .eq('parent_id', user.id)

@@ -534,7 +534,7 @@ export class DashboardClient {
             // Verify this comment belongs to an update owned by the parent
             const commentData = comment as Record<string, unknown>
             const { data: update } = await this.supabase
-              .from('updates')
+              .from('memories')
               .select('parent_id')
               .eq('id', String(commentData.update_id || ''))
               .single<{ parent_id: string }>()

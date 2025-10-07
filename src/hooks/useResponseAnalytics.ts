@@ -74,7 +74,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
 
         // Get total updates in timeframe for response rate
         const { data: updatesData, error: updatesError } = await supabase
-          .from('updates')
+          .from('memories')
           .select('id, created_at')
           .eq('parent_id', user.id)
           .gte('created_at', startDate.toISOString())

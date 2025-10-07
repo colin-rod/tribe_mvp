@@ -13,7 +13,7 @@ export async function fetchUpdateWithDetails(
   updateId: string
 ): Promise<UpdateWithDetails | null> {
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       id,
       content,
@@ -165,7 +165,7 @@ export async function markUpdateAsSent(
   updateId: string
 ): Promise<boolean> {
   const { error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       distribution_status: 'sent',
       sent_at: new Date().toISOString()

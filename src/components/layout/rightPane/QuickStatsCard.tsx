@@ -100,7 +100,7 @@ export function QuickStatsCard({ filters, className }: QuickStatsCardProps) {
 
       // Build base query for updates
       let updatesQuery = supabase
-        .from('updates')
+        .from('memories')
         .select('id, child_id, milestone_type, created_at', { count: 'exact' })
         .eq('parent_id', user.id);
 
@@ -127,14 +127,14 @@ export function QuickStatsCard({ filters, className }: QuickStatsCardProps) {
 
       // Get updates this week
       const { count: updatesThisWeek } = await supabase
-        .from('updates')
+        .from('memories')
         .select('id', { count: 'exact' })
         .eq('parent_id', user.id)
         .gte('created_at', startOfWeek.toISOString());
 
       // Get sent digests count
       const { count: sentDigests } = await supabase
-        .from('digests')
+        .from('summaries')
         .select('id', { count: 'exact' })
         .eq('parent_id', user.id)
         .eq('status', 'sent');

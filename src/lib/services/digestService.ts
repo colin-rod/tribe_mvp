@@ -71,7 +71,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
 
   // Fetch digest
   const { data: digest, error: digestError } = await supabase
-    .from('digests')
+    .from('summaries')
     .select('*')
     .eq('id', digestId)
     .eq('parent_id', user.id)
@@ -83,7 +83,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
 
   // Fetch all digest_updates with full update and recipient data (including narratives)
   const { data: digestUpdates, error: updatesError } = await supabase
-    .from('digest_updates')
+    .from('summary_memories')
     .select(`
       *,
       narrative_data,
@@ -199,7 +199,7 @@ export async function customizeDigestForRecipient(request: CustomizeDigestReques
 
   // Verify digest ownership
   const { data: digest, error: digestError } = await supabase
-    .from('digests')
+    .from('summaries')
     .select('id')
     .eq('id', request.digest_id)
     .eq('parent_id', user.id)
@@ -221,7 +221,7 @@ export async function customizeDigestForRecipient(request: CustomizeDigestReques
     if (update.custom_subject !== undefined) updateData.custom_subject = update.custom_subject
 
     const { error } = await supabase
-      .from('digest_updates')
+      .from('summary_memories')
       .update(updateData)
       .eq('digest_id', request.digest_id)
       .eq('recipient_id', request.recipient_id)
@@ -262,7 +262,7 @@ export async function approveDigest(request: ApproveDigestRequest): Promise<void
   }
 
   const { error } = await supabase
-    .from('digests')
+    .from('summaries')
     .update(updateData)
     .eq('id', request.digest_id)
     .eq('parent_id', user.id)
@@ -294,7 +294,7 @@ async function sendDigest(digestId: string): Promise<void> {
 
   // Update status to sending
   await supabase
-    .from('digests')
+    .from('summaries')
     .update({ status: 'sending' })
     .eq('id', digestId)
 
@@ -307,7 +307,7 @@ async function sendDigest(digestId: string): Promise<void> {
 
   // For now, just mark as sent
   const { error } = await supabase
-    .from('digests')
+    .from('summaries')
     .update({
       status: 'sent',
       sent_at: new Date().toISOString()
@@ -320,7 +320,7 @@ async function sendDigest(digestId: string): Promise<void> {
 
   // Update all related updates to 'sent_in_digest'
   await supabase
-    .from('updates')
+    .from('memories')
     .update({ distribution_status: 'sent_in_digest' })
     .eq('digest_id', digestId)
 
@@ -337,7 +337,7 @@ export async function getDigestById(digestId: string): Promise<Digest | null> {
   if (!user) throw new Error('Not authenticated')
 
   const { data: digest, error } = await supabase
-    .from('digests')
+    .from('summaries')
     .select('*')
     .eq('id', digestId)
     .eq('parent_id', user.id)
@@ -363,7 +363,7 @@ export async function getDigests(): Promise<Digest[]> {
   if (!user) throw new Error('Not authenticated')
 
   const { data: digests, error } = await supabase
-    .from('digests')
+    .from('summaries')
     .select('*')
     .eq('parent_id', user.id)
     .order('created_at', { ascending: false })
@@ -385,7 +385,7 @@ export async function getDigestStats(): Promise<DigestStats> {
   if (!user) throw new Error('Not authenticated')
 
   const { data: digests, error } = await supabase
-    .from('digests')
+    .from('summaries')
     .select('*')
     .eq('parent_id', user.id)
 
@@ -437,7 +437,7 @@ export async function deleteDigest(digestId: string): Promise<void> {
 
   // Can only delete non-sent digests
   const { error } = await supabase
-    .from('digests')
+    .from('summaries')
     .delete()
     .eq('id', digestId)
     .eq('parent_id', user.id)
