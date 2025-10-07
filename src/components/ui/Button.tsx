@@ -85,7 +85,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {!loading && leftIcon && (
           <span className="mr-2 flex-shrink-0">{leftIcon}</span>
         )}
-        <span className={cn('flex-1', loading && 'opacity-70')}>
+        <span className={cn(loading && 'opacity-70')}>
           {children}
         </span>
         {!loading && rightIcon && (
