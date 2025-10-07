@@ -165,7 +165,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
             variant="default"
             size="lg"
             onClick={() => handleCreateUpdate('photo')}
-            className="w-full h-14 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full h-14 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
           >
             <CameraIcon className="w-5 h-5 mr-3" />
             Share Your First Update
