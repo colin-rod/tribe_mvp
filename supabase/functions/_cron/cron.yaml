@@ -1,0 +1,18 @@
+# Supabase Edge Functions Cron Jobs
+#
+# This file configures periodic execution of Edge Functions
+# Documentation: https://supabase.com/docs/guides/functions/schedule-functions
+
+# Auto-publish summaries that have passed their deadline
+# Runs every 15 minutes to check for summaries ready to auto-publish
+- name: "auto-publish-summaries"
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  function: "auto-publish-summaries"
+  description: "Automatically publish summaries that have passed their auto_publish_hours deadline"
+
+# Send reminder notifications to parents about upcoming auto-publish
+# Runs every hour to send 48hr and 24hr reminders
+- name: "send-summary-reminders"
+  schedule: "0 * * * *"  # Every hour at minute 0
+  function: "send-summary-reminders"
+  description: "Send reminder notifications at 48hr and 24hr before auto-publish deadline"
