@@ -111,12 +111,24 @@ function formatIssueDescription(feedback: FeedbackData): string {
     '## Feedback',
     feedback.description,
     '',
+  ]
+
+  // Add screenshots if present
+  if (feedback.screenshotUrls && feedback.screenshotUrls.length > 0) {
+    sections.push('## Screenshots')
+    feedback.screenshotUrls.forEach((url, index) => {
+      sections.push(`![Screenshot ${index + 1}](${url})`)
+    })
+    sections.push('')
+  }
+
+  sections.push(
     '## Metadata',
     `**Type:** ${feedback.type}`,
     `**Page:** ${feedback.pageUrl}`,
     `**User:** ${feedback.userEmail || 'Anonymous'}`,
     `**Timestamp:** ${feedback.timestamp}`,
-  ]
+  )
 
   return sections.join('\n')
 }

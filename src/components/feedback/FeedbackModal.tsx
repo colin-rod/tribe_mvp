@@ -30,9 +30,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
   const [formData, setFormData] = useState<FeedbackFormData>({
     type: FeedbackType.OTHER,
     description: '',
+    screenshots: [],
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([])
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   /**
    * Get current user email if authenticated
@@ -49,6 +52,87 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
       return undefined
     }
   }
+
+  /**
+   * Handle screenshot paste
+   */
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const files: File[] = []
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (file) {
+          files.push(file)
+        }
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault()
+      addScreenshots(files)
+    }
+  }
+
+  /**
+   * Add screenshots to form data
+   */
+  const addScreenshots = (files: File[]) => {
+    const currentScreenshots = formData.screenshots || []
+    const newScreenshots = [...currentScreenshots, ...files]
+
+    // Limit to 5 screenshots
+    if (newScreenshots.length > 5) {
+      toast.error('Maximum 5 screenshots allowed')
+      return
+    }
+
+    // Create preview URLs
+    const newPreviews = files.map(file => URL.createObjectURL(file))
+    setScreenshotPreviews(prev => [...prev, ...newPreviews])
+
+    setFormData({ ...formData, screenshots: newScreenshots })
+  }
+
+  /**
+   * Handle file input change
+   */
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      addScreenshots(Array.from(files))
+    }
+    // Reset input
+    e.target.value = ''
+  }
+
+  /**
+   * Remove screenshot
+   */
+  const removeScreenshot = (index: number) => {
+    const newScreenshots = formData.screenshots?.filter((_, i) => i !== index) || []
+    const newPreviews = screenshotPreviews.filter((_, i) => i !== index)
+
+    // Revoke URL to free memory
+    URL.revokeObjectURL(screenshotPreviews[index])
+
+    setFormData({ ...formData, screenshots: newScreenshots })
+    setScreenshotPreviews(newPreviews)
+  }
+
+  /**
+   * Cleanup preview URLs on unmount
+   */
+  React.useEffect(() => {
+    const previews = screenshotPreviews
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /**
    * Handle form submission
@@ -75,12 +159,35 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
       // Get user email if available
       const userEmail = await getUserEmail()
 
+      // Upload screenshots if any
+      let screenshotUrls: string[] = []
+      if (formData.screenshots && formData.screenshots.length > 0) {
+        const uploadFormData = new FormData()
+        formData.screenshots.forEach((file, index) => {
+          uploadFormData.append(`screenshot_${index}`, file)
+        })
+
+        const uploadResponse = await fetch('/api/feedback/upload-screenshots', {
+          method: 'POST',
+          body: uploadFormData,
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload screenshots')
+        }
+
+        const uploadData = await uploadResponse.json()
+        screenshotUrls = uploadData.urls || []
+      }
+
       // Prepare request payload
       const payload = {
-        ...formData,
+        type: formData.type,
+        description: formData.description,
         pageUrl: window.location.href,
         userEmail,
         timestamp: new Date().toISOString(),
+        screenshotUrls,
       }
 
       // Submit to API
@@ -111,10 +218,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
       }
 
       // Reset form and close modal
+      screenshotPreviews.forEach(url => URL.revokeObjectURL(url))
       setFormData({
         type: FeedbackType.OTHER,
         description: '',
+        screenshots: [],
       })
+      setScreenshotPreviews([])
       onOpenChange(false)
     } catch (error) {
       toast.error(
@@ -132,10 +242,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
    */
   const handleClose = () => {
     if (!isSubmitting) {
+      screenshotPreviews.forEach(url => URL.revokeObjectURL(url))
       setFormData({
         type: FeedbackType.OTHER,
         description: '',
+        screenshots: [],
       })
+      setScreenshotPreviews([])
       setErrors({})
       onOpenChange(false)
     }
@@ -192,7 +305,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
                 id="feedback-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Please describe your feedback in detail..."
+                onPaste={handlePaste}
+                placeholder="Please describe your feedback in detail... (Paste screenshots with Ctrl/Cmd+V)"
                 rows={6}
                 disabled={isSubmitting}
                 className={errors.description ? 'border-red-500' : ''}
@@ -204,6 +318,69 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
                   <p className="text-xs text-gray-500">Minimum 10 characters</p>
                 )}
                 <p className="text-xs text-gray-500">{formData.description.length} / 5000</p>
+              </div>
+            </div>
+
+            {/* Screenshots */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Screenshots (Optional)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting || (formData.screenshots?.length || 0) >= 5}
+                  className="text-sm text-primary-600 hover:text-primary-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  + Add Screenshot
+                </button>
+              </div>
+
+              {/* Screenshot Previews */}
+              {screenshotPreviews.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                  {screenshotPreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={preview}
+                        alt={`Screenshot ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeScreenshot(index)}
+                        disabled={isSubmitting}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-1 left-1 bg-gray-900/75 text-white rounded px-2 py-0.5 text-xs">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isSubmitting}
+              />
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  💡 <strong>Tip:</strong> Paste screenshots directly with Ctrl/Cmd+V or click &quot;Add Screenshot&quot; to upload. Maximum 5 screenshots.
+                </p>
               </div>
             </div>
 

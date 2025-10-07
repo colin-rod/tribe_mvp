@@ -18,6 +18,7 @@ export type FeedbackTypeValue = (typeof FeedbackType)[keyof typeof FeedbackType]
 export interface FeedbackFormData {
   type: FeedbackTypeValue
   description: string
+  screenshots?: File[]
 }
 
 /**
@@ -27,6 +28,7 @@ export interface FeedbackData extends FeedbackFormData {
   pageUrl: string
   userEmail?: string
   timestamp: string
+  screenshotUrls?: string[]
 }
 
 /**
@@ -46,6 +48,7 @@ export const feedbackRequestSchema = z.object({
   pageUrl: z.string().url('Invalid page URL'),
   userEmail: z.string().email().optional(),
   timestamp: z.string().datetime(),
+  screenshotUrls: z.array(z.string().url()).optional(),
 })
 
 /**
