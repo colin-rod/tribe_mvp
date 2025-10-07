@@ -49,7 +49,6 @@ export async function POST(
 
     const { error: updateError } = await supabase
       .from('recipients')
-      // @ts-expect-error - Supabase type inference issue with joined tables
       .update({
         frequency: group.default_frequency as string,
         preferred_channels: group.default_channels as string[],

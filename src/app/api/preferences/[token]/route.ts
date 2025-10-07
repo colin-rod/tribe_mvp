@@ -291,9 +291,8 @@ export async function PUT(
       if (preferences.content_types) legacyUpdate.content_types = preferences.content_types
       if (preferences.importance_threshold) legacyUpdate.importance_threshold = preferences.importance_threshold
 
-      const { error: legacyError } = await supabase
+      const { error: legacyError} = await supabase
         .from('recipients')
-        // @ts-expect-error - Supabase type inference issue with joined tables
         .update(legacyUpdate as {
           frequency?: string
           preferred_channels?: string[]
@@ -347,7 +346,6 @@ export async function PUT(
             // Reset to group defaults
             const { error } = await supabase
               .from('recipients')
-              // @ts-expect-error - Supabase type inference issue
               .update({
                 frequency: null,
                 preferred_channels: null,
@@ -374,7 +372,6 @@ export async function PUT(
             if (Object.keys(groupUpdate).length > 0) {
               const { error } = await supabase
                 .from('recipients')
-                // @ts-expect-error - Supabase type inference issue
                 .update(groupUpdate as {
                   frequency?: string
                   preferred_channels?: string[]
@@ -416,9 +413,8 @@ export async function PUT(
 
       const { error: notificationError } = await supabase
         .from('recipients')
-        // @ts-expect-error - Supabase type inference issue
         .update({
-          notification_preferences: updatedNotificationPrefs as Record<string, unknown>
+          digest_preferences: updatedNotificationPrefs as Record<string, unknown>
         })
         .eq('preference_token', token)
         .eq('is_active', true)

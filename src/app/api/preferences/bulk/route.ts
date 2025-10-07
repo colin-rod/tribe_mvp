@@ -67,7 +67,7 @@ type TargetRecipient = {
 }
 type OperationResult = {
   recipient_id: string
-  group_id: string
+  group_id: string | null
   success: boolean
   updates_applied?: string[]
   skipped_reason?: string | null
