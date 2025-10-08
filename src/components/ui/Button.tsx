@@ -83,7 +83,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         )}
         {!loading && leftIcon && (
-          <span className="inline-flex items-center justify-center flex-shrink-0">
+          <span className="inline-flex items-center justify-center flex-shrink-0 pr-2">
             {leftIcon}
           </span>
         )}
@@ -91,7 +91,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           {children}
         </span>
         {!loading && rightIcon && (
-          <span className="inline-flex items-center justify-center flex-shrink-0">
+          <span className="inline-flex items-center justify-center flex-shrink-0 pl-2">
             {rightIcon}
           </span>
         )}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createLogger } from '@/lib/logger'
 
@@ -72,7 +73,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Supabase Storage
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
     const uploadedUrls: string[] = []
 
     for (let i = 0; i < files.length; i++) {
