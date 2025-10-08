@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUpdateCreation } from '@/hooks/useUpdateCreation'
 import { getRecipients } from '@/lib/recipients'
 import UpdateForm from '@/components/updates/UpdateForm'
-import AISuggestionsPanel from '@/components/updates/AISuggestionsPanel'
 import UpdatePreview from '@/components/updates/UpdatePreview'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { Recipient } from '@/lib/recipients'
@@ -43,17 +42,13 @@ export default function CreateUpdateWizard({
     aiAnalysis,
     children,
     isLoading,
-    isAnalyzing,
     error,
     // uploadProgress, // Removed: unused variable
     previewUrls,
-    hasRequestedAnalysis,
     setFormData,
     setCurrentStep,
     processMediaFiles,
     removeMediaFile,
-    runAIAnalysis,
-    updateRecipients,
     createUpdateDraft,
     finalizeUpdate,
     reset,
@@ -61,8 +56,6 @@ export default function CreateUpdateWizard({
   } = useUpdateCreation()
 
   const [recipients, setRecipients] = useState<Recipient[]>([])
-  const [recipientsLoading, setRecipientsLoading] = useState(true)
-  const [recipientsError, setRecipientsError] = useState<string | null>(null)
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
 
   const isModal = variant === 'modal'
@@ -107,23 +100,15 @@ export default function CreateUpdateWizard({
   }, [reset])
 
   const loadRecipientsData = async () => {
-    setRecipientsLoading(true)
     try {
-      setRecipientsError(null)
       const recipientData = await getRecipients()
       setRecipients(recipientData)
     } catch (err) {
       logger.error('Failed to load recipients:', { error: err })
-      setRecipientsError(err instanceof Error ? err.message : 'Failed to load recipients')
     }
-    setRecipientsLoading(false)
   }
 
   const handleFormSubmit = async () => {
-    await runAIAnalysis()
-  }
-
-  const handleContinueToPreview = async () => {
     try {
       const draftId = await createUpdateDraft()
       onDraftSaved?.(draftId)
@@ -255,7 +240,7 @@ export default function CreateUpdateWizard({
     return null
   }
 
-  const showGlobalOverlay = isLoading && !(currentStep === 'create' && isAnalyzing)
+  const showGlobalOverlay = isLoading
 
   return (
     <div className={containerClassName}>
@@ -291,40 +276,18 @@ export default function CreateUpdateWizard({
 
           <div className={`p-6 ${isModal ? 'flex-1 overflow-y-auto' : ''}`}>
             {currentStep === 'create' && (
-              <div className={isModal ? 'space-y-6' : 'grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'}>
-                <div className="space-y-6">
-                  <UpdateForm
-                    formData={formData}
-                    previewUrls={previewUrls}
-                    onFormDataChange={setFormData}
-                    onMediaChange={processMediaFiles}
-                    onMediaRemove={removeMediaFile}
-                    onGenerateSuggestions={handleFormSubmit}
-                    error={error ?? undefined}
-                    loadChildren={loadChildren}
-                    isLoading={isLoading}
-                    isAnalyzing={isAnalyzing}
-                    hasRequestedAnalysis={hasRequestedAnalysis}
-                  />
-                </div>
-
-                {/* For modal, stack AI panel below form for minimal layout */}
-                <div className={isModal ? '' : ''}>
-                  <AISuggestionsPanel
-                    analysis={aiAnalysis}
-                    isAnalyzing={isAnalyzing}
-                    hasRequestedAnalysis={hasRequestedAnalysis}
-                    recipients={recipients}
-                    recipientsLoading={recipientsLoading}
-                    recipientsError={recipientsError}
-                    selectedRecipientIds={formData.confirmedRecipients || []}
-                    onRecipientsChange={updateRecipients}
-                    onRegenerate={handleFormSubmit}
-                    onContinue={handleContinueToPreview}
-                    canContinue={Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0)}
-                    globalError={error}
-                  />
-                </div>
+              <div className="space-y-6">
+                <UpdateForm
+                  formData={formData}
+                  previewUrls={previewUrls}
+                  onFormDataChange={setFormData}
+                  onMediaChange={processMediaFiles}
+                  onMediaRemove={removeMediaFile}
+                  onGenerateSuggestions={handleFormSubmit}
+                  error={error ?? undefined}
+                  loadChildren={loadChildren}
+                  isLoading={isLoading}
+                />
               </div>
             )}
 

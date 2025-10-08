@@ -72,9 +72,9 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
   const steps: UpdateCreationStep[] = [
     {
       id: 'create',
-      title: 'Create & Review',
-      description: 'Write your update and review AI suggestions',
-      isComplete: Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0),
+      title: 'Create',
+      description: 'Write your update',
+      isComplete: Boolean(formData.content && formData.childId),
       isAccessible: true
     },
     {
@@ -82,7 +82,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       title: 'Preview & Send',
       description: 'Review and send your update',
       isComplete: false,
-      isAccessible: Boolean(aiAnalysis?.success && (formData.confirmedRecipients?.length || 0) > 0)
+      isAccessible: Boolean(formData.content && formData.childId)
     }
   ]
 

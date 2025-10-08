@@ -32,21 +32,21 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({ className }) => 
 
   return (
     <>
-      {/* Floating Action Button */}
+      {/* Floating Action Button with Text */}
       <button
         onClick={handleClick}
         className={cn(
           // Base styles
           'fixed bottom-6 right-6 z-40',
-          'w-14 h-14 rounded-full',
-          'flex items-center justify-center',
+          'px-4 py-3 rounded-full',
+          'flex items-center gap-2',
           // Colors & shadows
           'bg-primary-600 hover:bg-primary-700',
           'text-white',
           'shadow-lg hover:shadow-xl',
           // Transitions
           'transition-all duration-200 ease-out',
-          'hover:scale-110 active:scale-95',
+          'hover:scale-105 active:scale-95',
           // Focus styles
           'focus:outline-none focus:ring-4 focus:ring-primary-500/50',
           // Mobile optimizations
@@ -56,7 +56,8 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({ className }) => 
         aria-label="Share feedback"
         title="Share your feedback with us"
       >
-        <MessageSquare className="w-6 h-6" aria-hidden="true" />
+        <MessageSquare className="w-5 h-5" aria-hidden="true" />
+        <span className="font-medium text-sm whitespace-nowrap">Feedback</span>
       </button>
 
       {/* Feedback Modal */}
