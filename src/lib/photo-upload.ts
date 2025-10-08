@@ -196,20 +196,25 @@ export async function compressUpdateImage(file: File): Promise<File> {
  */
 export function validateUpdateMediaFiles(files: File[]): string | null {
   if (files.length > 10) {
-    return 'Maximum 10 photos allowed per update'
+    return 'Maximum 10 media files allowed per update'
   }
 
   for (const file of files) {
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    // Check file type - support images, videos, and audio
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/webp',
+      'video/mp4', 'video/quicktime',
+      'audio/mpeg', 'audio/wav'
+    ]
     if (!allowedTypes.includes(file.type)) {
-      return 'Only JPEG, PNG, and WebP images are allowed'
+      return 'Only JPEG, PNG, WebP images, MP4 videos, and MP3/WAV audio are allowed'
     }
 
-    // Check file size (10MB limit for updates)
-    const maxSize = 10 * 1024 * 1024
+    // Check file size (50MB limit for videos, 10MB for images/audio)
+    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    const maxSizeLabel = file.type.startsWith('video/') ? '50MB' : '10MB'
     if (file.size > maxSize) {
-      return 'Each file must be less than 10MB'
+      return `Each file must be less than ${maxSizeLabel}`
     }
   }
 

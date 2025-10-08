@@ -5,9 +5,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ChildProfileSelector } from '@/components/children/ChildProfileSelector'
 import SmartContextualInput from './SmartContextualInput'
 import { validateUpdateContent } from '@/lib/validation/update'
-import { getRecipients } from '@/lib/recipients'
 import type { UpdateFormData } from '@/lib/validation/update'
-import type { Recipient } from '@/lib/recipients'
 
 interface UpdateFormProps {
   formData: Partial<UpdateFormData>
@@ -33,8 +31,6 @@ export default function UpdateForm({
   loadChildren
 }: UpdateFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)
-  const [recipients, setRecipients] = useState<Recipient[]>([])
-  const [recipientsLoading, setRecipientsLoading] = useState(true)
 
   // Note: ChildProfileSelector now handles loading children internally
   useEffect(() => {
@@ -42,19 +38,6 @@ export default function UpdateForm({
       loadChildren()
     }
   }, [loadChildren])
-
-  // Load recipients
-  useEffect(() => {
-    const loadRecipients = async () => {
-      try {
-        const data = await getRecipients()
-        setRecipients(data)
-      } finally {
-        setRecipientsLoading(false)
-      }
-    }
-    loadRecipients()
-  }, [])
 
   const handleContentChange = (content: string) => {
     onFormDataChange({ content })
@@ -66,14 +49,6 @@ export default function UpdateForm({
 
   const handleChildSelect = (childId: string) => {
     onFormDataChange({ childId })
-  }
-
-  const handleRecipientToggle = (recipientId: string) => {
-    const currentRecipients = formData.confirmedRecipients || []
-    const newRecipients = currentRecipients.includes(recipientId)
-      ? currentRecipients.filter(id => id !== recipientId)
-      : [...currentRecipients, recipientId]
-    onFormDataChange({ confirmedRecipients: newRecipients })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,8 +70,7 @@ export default function UpdateForm({
   const isFormValid = Boolean(
     formData.childId &&
     formData.content?.trim() &&
-    !contentError &&
-    (formData.confirmedRecipients?.length || 0) > 0
+    !contentError
   )
 
   return (
@@ -144,13 +118,6 @@ export default function UpdateForm({
         {contentError && (
           <p className="mt-1 text-sm text-red-600">{contentError}</p>
         )}
-        <details className="mt-2 rounded-lg border border-neutral-200 bg-neutral-50 p-2">
-          <summary className="text-xs font-medium text-neutral-700 cursor-pointer">Helpful tips</summary>
-          <ul className="mt-2 space-y-1 text-sm text-neutral-700">
-            <li>• Share what happened and why it mattered</li>
-            <li>• Mention how your child reacted or felt</li>
-          </ul>
-        </details>
       </div>
 
       {/* Milestone Selection */}
@@ -298,49 +265,6 @@ export default function UpdateForm({
         <p className="mt-2 text-xs text-gray-500">Click to select or deselect a milestone</p>
       </div>
 
-      {/* Recipient Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-3">
-          Who should receive this update? *
-        </label>
-        {recipientsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <LoadingSpinner size="sm" />
-          </div>
-        ) : recipients.length === 0 ? (
-          <div className="text-sm text-gray-500 text-center py-4">
-            No recipients found. Add recipients in your profile settings.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recipients.map((recipient) => (
-              <label
-                key={recipient.id}
-                className="flex items-center p-3 border-2 border-gray-200 rounded-lg hover:border-gray-300 cursor-pointer transition-all"
-              >
-                <input
-                  type="checkbox"
-                  checked={(formData.confirmedRecipients || []).includes(recipient.id)}
-                  onChange={() => handleRecipientToggle(recipient.id)}
-                  disabled={isLoading}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="ml-3 text-sm font-medium text-gray-900">
-                  {recipient.name}
-                  {recipient.email && (
-                    <span className="ml-2 text-xs text-gray-500">({recipient.email})</span>
-                  )}
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
-        <p className="mt-2 text-xs text-gray-500">
-          {(formData.confirmedRecipients?.length || 0) > 0
-            ? `${formData.confirmedRecipients?.length} recipient${(formData.confirmedRecipients?.length || 0) !== 1 ? 's' : ''} selected`
-            : 'Select at least one recipient'}
-        </p>
-      </div>
 
       {/* Submit Button */}
       <div className="flex items-center justify-end gap-3 pt-2">
