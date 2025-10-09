@@ -97,7 +97,7 @@ export default function DigestNarrativeView({
         <div className="mt-6 pt-6 border-t border-neutral-200">
           <div className="flex items-center justify-center space-x-2 text-xs text-neutral-500">
             <SparklesIcon className="w-4 h-4 text-orange-500" />
-            <span>This narrative was thoughtfully crafted by AI from {childName}&apos;s updates</span>
+            <span>This narrative was thoughtfully crafted by AI from {childName}&apos;s memories</span>
           </div>
         </div>
       </CardContent>

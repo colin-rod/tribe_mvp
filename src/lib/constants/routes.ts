@@ -29,7 +29,7 @@ export const NAVIGATION_ITEMS = [
   },
   {
     id: 'digests',
-    label: 'Digests',
+    label: 'Memory Book',
     icon: 'Mail',
     href: DASHBOARD_ROUTES.DIGESTS,
   },

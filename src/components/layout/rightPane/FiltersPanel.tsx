@@ -5,7 +5,7 @@
  * Provides filtering controls for the Activity feed:
  * - Date range picker
  * - Child filter (multi-select)
- * - Update type filter
+ * - Memory type filter
  * - Search input
  * - Clear all filters button
  */
@@ -118,7 +118,7 @@ export function FiltersPanel({
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
         <Input
           type="text"
-          placeholder="Search updates..."
+          placeholder="Search memories..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-8 pr-12 h-11 text-sm"
@@ -222,7 +222,7 @@ export function FiltersPanel({
         </div>
         )}
 
-        {/* Update Type Filter (advanced) */}
+        {/* Memory Type Filter (advanced) */}
         {showAdvanced && (
         <div className="relative col-span-1">
           <button
@@ -233,7 +233,7 @@ export function FiltersPanel({
               updateTypes.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
             )}
             title={updateTypes.length > 0 ? `${updateTypes.length} type(s)` : 'All types'}
-            aria-label={updateTypes.length > 0 ? `Filter by update type: ${updateTypes.length} selected` : 'Filter by update type'}
+            aria-label={updateTypes.length > 0 ? `Filter by memory type: ${updateTypes.length} selected` : 'Filter by memory type'}
           >
             <FileText className="h-4 w-4" />
           </button>

@@ -63,7 +63,7 @@ export default function RecipientDigestPreview({
                       <span className="font-medium">{recipient.relationship}</span>
                     </span>
                     <span>•</span>
-                    <span>{recipient.frequency_preference} updates</span>
+                    <span>{recipient.frequency_preference} memories</span>
                   </div>
                 </div>
               </div>
@@ -137,7 +137,7 @@ export default function RecipientDigestPreview({
                       : 'text-neutral-600 hover:text-neutral-900'
                   }`}
                 >
-                  Update List
+                  Memory List
                 </button>
               </div>
             </div>
@@ -162,10 +162,10 @@ export default function RecipientDigestPreview({
             >
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-neutral-700">
-                  Individual Updates ({recipient.updates.length})
+                  Individual Memories ({recipient.updates.length})
                 </span>
                 <span className="text-xs text-neutral-500">
-                  See the source updates for this narrative
+                  See the source memories for this narrative
                 </span>
               </div>
               {showIndividualUpdates ? (
@@ -203,7 +203,7 @@ export default function RecipientDigestPreview({
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-neutral-900">
-              Updates ({recipient.updates.length})
+              Memories ({recipient.updates.length})
             </h3>
             <span className="text-sm text-neutral-500">
               Drag to reorder
@@ -217,10 +217,10 @@ export default function RecipientDigestPreview({
                   <EnvelopeIcon className="w-8 h-8 text-neutral-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                  No Updates Selected
+                  No Memories Selected
                 </h3>
                 <p className="text-sm text-neutral-600">
-                  AI determined no updates match this recipient&apos;s preferences for this time period.
+                  AI determined no memories match this recipient&apos;s preferences for this time period.
                 </p>
               </div>
             </Card>
@@ -251,7 +251,7 @@ export default function RecipientDigestPreview({
             narrative: recipient.narrative,
             recipient_name: recipient.recipient_name,
             child_name: recipient.updates[0]?.child_name || 'your child',
-            date_range: `Updates from the past week`
+            date_range: `Memories from the past week`
           })}
           subject={recipient.email_subject}
         />

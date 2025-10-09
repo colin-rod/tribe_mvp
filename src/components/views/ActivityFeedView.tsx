@@ -1,8 +1,9 @@
 /**
  * ActivityFeedView Component
  * CRO-296: Middle Pane - Content Router
+ * Updated for Memory Book Experience
  *
- * Main activity feed view - migrated from dashboard page
+ * Main activity feed view - now shows Memories instead of Updates
  */
 
 'use client';
@@ -16,12 +17,12 @@ import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { getChildren } from '@/lib/children';
 import { getRecipientStats } from '@/lib/recipients';
 import { getGroupStats } from '@/lib/recipient-groups';
-import { getUpdates } from '@/lib/updates';
+import { getRecentMemoriesWithStats } from '@/lib/memories';
 import { needsOnboarding, getOnboardingStatus, dismissOnboarding } from '@/lib/onboarding';
 import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { UpdatesList } from '@/components/updates';
+import MemoryList from '@/components/memories/MemoryList';
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress';
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
@@ -35,10 +36,10 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   const { user } = useAuth();
   const router = useRouter();
   const [childrenCount, setChildrenCount] = useState(0);
-  const [showDigestSentAlert, setShowDigestSentAlert] = useState(false);
-  const [showDigestScheduledAlert, setShowDigestScheduledAlert] = useState(false);
+  const [showSummarySentAlert, setShowSummarySentAlert] = useState(false);
+  const [showSummaryScheduledAlert, setShowSummaryScheduledAlert] = useState(false);
   const [recipientStats, setRecipientStats] = useState({ total: 0, active: 0, groups: 0 });
-  const [updatesCreated, setUpdatesCreated] = useState(0);
+  const [memoriesCreated, setMemoriesCreated] = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingOnboarding, setLoadingOnboarding] = useState(true);
   const [showOnboardingProgress, setShowOnboardingProgress] = useState(false);
@@ -64,7 +65,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     {
       id: 'add-child',
       title: 'Add Your First Child',
-      description: 'Tell us about your little one to personalize your updates',
+      description: 'Tell us about your little one to personalize your memories',
       icon: UserPlusIcon,
       estimatedTimeMinutes: 3,
       isRequired: true,
@@ -76,7 +77,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     {
       id: 'invite-recipients',
       title: 'Invite Family & Friends',
-      description: 'Add recipients who will receive your updates',
+      description: 'Add recipients who will receive your memory summaries',
       icon: UserGroupIcon,
       estimatedTimeMinutes: 5,
       isRequired: true,
@@ -86,32 +87,32 @@ const ActivityFeedView = memo(function ActivityFeedView() {
       completedAt: recipientStats.total > 0 ? new Date() : undefined,
     },
     {
-      id: 'create-first-update',
-      title: 'Share Your First Update',
-      description: 'Create and send your first update to your family',
+      id: 'create-first-memory',
+      title: 'Share Your First Memory',
+      description: 'Create and capture your first memory to share with family',
       icon: SparklesIcon,
       estimatedTimeMinutes: 2,
       isRequired: true,
-      isCompleted: updatesCreated > 0,
+      isCompleted: memoriesCreated > 0,
       isSkipped: false,
-      isCurrent: childrenCount > 0 && recipientStats.total > 0 && updatesCreated === 0,
-      completedAt: updatesCreated > 0 ? new Date() : undefined,
+      isCurrent: childrenCount > 0 && recipientStats.total > 0 && memoriesCreated === 0,
+      completedAt: memoriesCreated > 0 ? new Date() : undefined,
     },
-  ], [childrenCount, recipientStats.total, updatesCreated]);
+  ], [childrenCount, recipientStats.total, memoriesCreated]);
 
   useEffect(() => {
-    // Check for digest success query params
+    // Check for summary success query params
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('digest_sent') === 'true') {
-        setShowDigestSentAlert(true);
+      if (urlParams.get('summary_sent') === 'true') {
+        setShowSummarySentAlert(true);
         window.history.replaceState({}, '', '/dashboard');
-        setTimeout(() => setShowDigestSentAlert(false), 5000);
+        setTimeout(() => setShowSummarySentAlert(false), 5000);
       }
-      if (urlParams.get('digest_scheduled') === 'true') {
-        setShowDigestScheduledAlert(true);
+      if (urlParams.get('summary_scheduled') === 'true') {
+        setShowSummaryScheduledAlert(true);
         window.history.replaceState({}, '', '/dashboard');
-        setTimeout(() => setShowDigestScheduledAlert(false), 5000);
+        setTimeout(() => setShowSummaryScheduledAlert(false), 5000);
       }
     }
   }, []);
@@ -145,11 +146,11 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     try {
       setLoadingStats(true);
 
-      const [children, recipientStatsData, groupStatsData, updates] = await Promise.all([
+      const [children, recipientStatsData, groupStatsData, memories] = await Promise.all([
         getChildren(),
         getRecipientStats(),
         getGroupStats(),
-        getUpdates()
+        getRecentMemoriesWithStats()
       ]);
 
       setChildrenCount(children.length);
@@ -159,8 +160,8 @@ const ActivityFeedView = memo(function ActivityFeedView() {
         groups: groupStatsData.totalGroups
       });
 
-      const totalUpdates = updates.length;
-      setUpdatesCreated(totalUpdates);
+      const totalMemories = memories.length;
+      setMemoriesCreated(totalMemories);
     } catch (error) {
       logger.errorWithStack('Error loading dashboard stats:', error as Error);
     } finally {
@@ -192,8 +193,8 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     openCreateUpdateModal(type, initialContent);
   }, [openCreateUpdateModal]);
 
-  const handleCompileDigest = useCallback(() => {
-    router.push('/dashboard/digests/compile');
+  const handleCompileSummary = useCallback(() => {
+    router.push('/dashboard/memory-book/compile');
   }, [router]);
 
   const handleOnboardingStepClick = useCallback((stepId: string) => {
@@ -204,7 +205,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
       case 'invite-recipients':
         router.push('/dashboard/recipients');
         break;
-      case 'create-first-update':
+      case 'create-first-memory':
         openCreateUpdateModal('photo');
         break;
       case 'complete':
@@ -241,13 +242,13 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   const memoizedStats = useMemo(() => ({
     children: childrenCount,
     recipients: recipientStats,
-    updates: updatesCreated,
-    hasData: childrenCount > 0 || recipientStats.total > 0 || updatesCreated > 0
-  }), [childrenCount, recipientStats, updatesCreated]);
+    memories: memoriesCreated,
+    hasData: childrenCount > 0 || recipientStats.total > 0 || memoriesCreated > 0
+  }), [childrenCount, recipientStats, memoriesCreated]);
 
   const dashboardActionsValue = useMemo(() => ({
     onCreateUpdate: handleCreateUpdate,
-    onCompileDigest: handleCompileDigest,
+    onCompileDigest: handleCompileSummary,
     activityFilters: {
       filters,
       setDateRange,
@@ -259,7 +260,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     },
   }), [
     handleCreateUpdate,
-    handleCompileDigest,
+    handleCompileSummary,
     filters,
     setDateRange,
     setChildIds,
@@ -281,7 +282,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     <DashboardActionsProvider value={dashboardActionsValue}>
     <div className="min-h-full">
       {/* Success Alerts */}
-      {showDigestSentAlert && (
+      {showSummarySentAlert && (
         <div className="bg-green-50 border-l-4 border-green-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -291,11 +292,11 @@ const ActivityFeedView = memo(function ActivityFeedView() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-green-800">
-                Digest sent successfully! Your recipients will receive their personalized updates.
+                Summary sent successfully! Your recipients will receive their personalized memory summaries.
               </p>
             </div>
             <div className="ml-auto pl-3">
-              <button onClick={() => setShowDigestSentAlert(false)} className="text-green-500 hover:text-green-600">
+              <button onClick={() => setShowSummarySentAlert(false)} className="text-green-500 hover:text-green-600">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -305,7 +306,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
         </div>
       )}
 
-      {showDigestScheduledAlert && (
+      {showSummaryScheduledAlert && (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -315,11 +316,11 @@ const ActivityFeedView = memo(function ActivityFeedView() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-blue-800">
-                Digest scheduled successfully! It will be sent at the scheduled time.
+                Summary scheduled successfully! It will be sent at the scheduled time.
               </p>
             </div>
             <div className="ml-auto pl-3">
-              <button onClick={() => setShowDigestScheduledAlert(false)} className="text-blue-500 hover:text-blue-600">
+              <button onClick={() => setShowSummaryScheduledAlert(false)} className="text-blue-500 hover:text-blue-600">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -357,7 +358,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                   </h3>
                   <div className="flex items-center space-x-4">
                     <Link
-                      href="/dashboard/updates"
+                      href="/dashboard/memories"
                       className="text-sm text-neutral-600 hover:text-neutral-700 font-medium transition-colors"
                     >
                       View all
@@ -367,17 +368,16 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
                 {/* Filters moved to Right Pane */}
 
-                {!loadingStats && memoizedStats.updates === 0 ? (
+                {!loadingStats && memoizedStats.memories === 0 ? (
                   <EmptyTimelineState
                     hasCompletedOnboarding={hasCompletedOnboarding}
                     userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
                     onCreateUpdate={handleCreateUpdate}
                   />
                 ) : (
-                  <UpdatesList
+                  <MemoryList
                     limit={5}
-                    showViewAllLink={false}
-                    onCreateUpdate={handleCreateUpdate}
+                    onCreateMemory={handleCreateUpdate}
                   />
                 )}
               </div>

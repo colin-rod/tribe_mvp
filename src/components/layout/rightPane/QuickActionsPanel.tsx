@@ -1,10 +1,11 @@
 /**
  * QuickActionsPanel Component
  * CRO-298: Right Pane - Activity View Context
+ * Updated for Memory Book Experience
  *
  * Provides quick action buttons for the activity view:
- * - Create Update button (opens modal)
- * - Compile Digest button
+ * - Create Memory button (opens modal)
+ * - Compile Summary button
  */
 
 'use client';
@@ -14,10 +15,10 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 export interface QuickActionsPanelProps {
-  /** Callback when Create Update is clicked */
-  onCreateUpdate: () => void;
-  /** Callback when Compile Digest is clicked */
-  onCompileDigest: () => void;
+  /** Callback when Create Memory is clicked */
+  onCreateUpdate: () => void;  // Keep prop name for backward compatibility
+  /** Callback when Compile Summary is clicked */
+  onCompileDigest: () => void;  // Keep prop name for backward compatibility
   /** Optional className for custom styling */
   className?: string;
 }
@@ -35,7 +36,7 @@ export function QuickActionsPanel({
         size="default"
       >
         <Plus className="h-4 w-4" />
-        Create Update
+        Create Memory
       </Button>
 
       <Button
@@ -45,7 +46,7 @@ export function QuickActionsPanel({
         size="default"
       >
         <Mail className="h-4 w-4" />
-        Compile Digest
+        Compile Summary
       </Button>
     </div>
   );

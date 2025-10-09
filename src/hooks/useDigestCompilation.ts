@@ -31,7 +31,7 @@ export function useDigestCompilation() {
   const [compilationProgress, setCompilationProgress] = useState<number>(0)
 
   /**
-   * Compile new digest from ready updates
+   * Compile new summary from ready memories
    */
   const compile = useCallback(async (
     request: Omit<CompileDigestRequest, 'parent_id'>
@@ -41,7 +41,7 @@ export function useDigestCompilation() {
     setCompilationProgress(0)
 
     try {
-      logger.info('Starting digest compilation', { request })
+      logger.info('Starting summary compilation', { request })
       setCompilationProgress(25)
 
       const response = await compileDigest(request)
@@ -56,14 +56,14 @@ export function useDigestCompilation() {
       setPreviewData(response.preview_data || null)
       setCompilationProgress(100)
 
-      logger.info('Digest compiled successfully', { digestId: response.digest?.id })
+      logger.info('Summary compiled successfully', { digestId: response.digest?.id })
 
       return {
         success: true,
         digestId: response.digest?.id
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to compile digest'
+      const message = err instanceof Error ? err.message : 'Failed to compile summary'
       setError(message)
       logger.error('Compilation failed', { error: err })
       return { success: false }
@@ -74,7 +74,7 @@ export function useDigestCompilation() {
   }, [])
 
   /**
-   * Load preview data for digest
+   * Load preview data for summary
    */
   const loadPreview = useCallback(async (digestId: string): Promise<boolean> => {
     setLoading(true)
@@ -97,7 +97,7 @@ export function useDigestCompilation() {
   }, [])
 
   /**
-   * Customize digest for specific recipient
+   * Customize summary for specific recipient
    */
   const customize = useCallback(async (request: CustomizeDigestRequest): Promise<boolean> => {
     setLoading(true)
@@ -105,7 +105,7 @@ export function useDigestCompilation() {
 
     try {
       await customizeDigestForRecipient(request)
-      logger.info('Digest customized', { digestId: request.digest_id, recipientId: request.recipient_id })
+      logger.info('Summary customized', { digestId: request.digest_id, recipientId: request.recipient_id })
 
       // Reload preview to show changes
       if (digest) {
@@ -114,7 +114,7 @@ export function useDigestCompilation() {
 
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to customize digest'
+      const message = err instanceof Error ? err.message : 'Failed to customize summary'
       setError(message)
       logger.error('Failed to customize', { error: err })
       return false
@@ -124,7 +124,7 @@ export function useDigestCompilation() {
   }, [digest, loadPreview])
 
   /**
-   * Approve and optionally send digest
+   * Approve and optionally send summary
    */
   const approve = useCallback(async (request: ApproveDigestRequest): Promise<boolean> => {
     setLoading(true)
@@ -132,9 +132,9 @@ export function useDigestCompilation() {
 
     try {
       await approveDigest(request)
-      logger.info('Digest approved', { digestId: request.digest_id, sendImmediately: request.send_immediately })
+      logger.info('Summary approved', { digestId: request.digest_id, sendImmediately: request.send_immediately })
 
-      // Reload digest to show updated status
+      // Reload summary to show updated status
       if (digest) {
         const updated = await getDigestById(request.digest_id)
         setDigest(updated)
@@ -142,7 +142,7 @@ export function useDigestCompilation() {
 
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to approve digest'
+      const message = err instanceof Error ? err.message : 'Failed to approve summary'
       setError(message)
       logger.error('Failed to approve', { error: err })
       return false
@@ -152,7 +152,7 @@ export function useDigestCompilation() {
   }, [digest])
 
   /**
-   * Load all digests
+   * Load all summaries
    */
   const loadDigests = useCallback(async (): Promise<boolean> => {
     setLoading(true)
@@ -161,12 +161,12 @@ export function useDigestCompilation() {
     try {
       const data = await getDigests()
       setDigests(data)
-      logger.info('Digests loaded', { count: data.length })
+      logger.info('Summaries loaded', { count: data.length })
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load digests'
+      const message = err instanceof Error ? err.message : 'Failed to load summaries'
       setError(message)
-      logger.error('Failed to load digests', { error: err })
+      logger.error('Failed to load summaries', { error: err })
       return false
     } finally {
       setLoading(false)
@@ -174,7 +174,7 @@ export function useDigestCompilation() {
   }, [])
 
   /**
-   * Load digest statistics
+   * Load summary statistics
    */
   const loadStats = useCallback(async (): Promise<boolean> => {
     setLoading(true)
@@ -196,7 +196,7 @@ export function useDigestCompilation() {
   }, [])
 
   /**
-   * Delete digest
+   * Delete summary
    */
   const remove = useCallback(async (digestId: string): Promise<boolean> => {
     setLoading(true)
@@ -204,14 +204,14 @@ export function useDigestCompilation() {
 
     try {
       await deleteDigest(digestId)
-      logger.info('Digest deleted', { digestId })
+      logger.info('Summary deleted', { digestId })
       await loadDigests() // Refresh list
       await loadStats() // Refresh stats
       return true
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete digest'
+      const message = err instanceof Error ? err.message : 'Failed to delete summary'
       setError(message)
-      logger.error('Failed to delete digest', { error: err })
+      logger.error('Failed to delete summary', { error: err })
       return false
     } finally {
       setLoading(false)
@@ -219,7 +219,7 @@ export function useDigestCompilation() {
   }, [loadDigests, loadStats])
 
   /**
-   * Load single digest by ID
+   * Load single summary by ID
    */
   const loadDigest = useCallback(async (digestId: string): Promise<boolean> => {
     setLoading(true)
@@ -228,12 +228,12 @@ export function useDigestCompilation() {
     try {
       const data = await getDigestById(digestId)
       setDigest(data)
-      logger.info('Digest loaded', { digestId, found: !!data })
+      logger.info('Summary loaded', { digestId, found: !!data })
       return !!data
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load digest'
+      const message = err instanceof Error ? err.message : 'Failed to load summary'
       setError(message)
-      logger.error('Failed to load digest', { error: err })
+      logger.error('Failed to load summary', { error: err })
       return false
     } finally {
       setLoading(false)

@@ -42,7 +42,7 @@ function DigestCompileContent() {
 
     const startCompilation = async () => {
       setCompilationStarted(true)
-      logger.info('Starting digest compilation')
+      logger.info('Starting summary compilation')
 
       try {
         // Get date range from query params or use defaults (last 7 days)

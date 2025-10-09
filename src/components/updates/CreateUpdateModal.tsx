@@ -8,8 +8,8 @@ export type UpdateType = 'photo' | 'text' | 'video' | 'milestone'
 interface CreateUpdateModalProps {
   open: boolean
   onClose: () => void
-  onUpdateSent?: () => void
-  onUpdateScheduled?: () => void
+  onUpdateSent?: () => void  // Keep name for backward compatibility
+  onUpdateScheduled?: () => void  // Keep name for backward compatibility
   initialType?: UpdateType
   initialContent?: string
 }

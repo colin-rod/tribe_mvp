@@ -114,7 +114,7 @@ export default function AIReview({
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">AI Analysis Results</h3>
-            <p className="text-sm text-gray-600">Our AI has analyzed your update</p>
+            <p className="text-sm text-gray-600">Our AI has analyzed your memory</p>
           </div>
         </div>
 
@@ -171,7 +171,7 @@ export default function AIReview({
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Select Recipients</h3>
             <p className="text-sm text-gray-600">
-              Choose who should receive this update
+              Choose who should receive this memory
               {aiAnalysis.suggested_recipients && aiAnalysis.suggested_recipients.length > 0 && (
                 <span className="text-blue-600"> • AI has made suggestions</span>
               )}
@@ -216,7 +216,7 @@ export default function AIReview({
         ) : recipients.length === 0 ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-center">
             <p className="text-sm text-yellow-700">
-              No recipients found. You need to add recipients before sending updates.
+              No recipients found. You need to add recipients before sending memories.
             </p>
           </div>
         ) : (
@@ -268,7 +268,7 @@ export default function AIReview({
 
                   <div className="flex items-center text-xs text-gray-500">
                     <span className="capitalize">
-                      {recipient.frequency === 'every_update' ? 'Wants every update' : recipient.frequency.replace('_', ' ')}
+                      {recipient.frequency === 'every_update' ? 'Wants every memory' : recipient.frequency.replace('_', ' ')}
                     </span>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export default function AIReview({
           {isLoading ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />
-              Creating Update...
+              Creating Memory...
             </>
           ) : (
             <>

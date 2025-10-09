@@ -52,7 +52,7 @@ export default function UpdateDetailModal({ open, updateId, onClose }: UpdateDet
         if (error) throw error
         if (!cancelled) setUpdate(data as unknown as UpdateRow)
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load update')
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load memory')
       } finally {
         if (!cancelled) setLoading(false)
       }

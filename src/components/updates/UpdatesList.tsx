@@ -319,7 +319,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
   if (error) {
     return (
       <ErrorState
-        title="Unable to Load Updates"
+        title="Unable to Load Memories"
         message={error}
         onRetry={handleRetry}
         className={className}
@@ -352,10 +352,10 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
             No Recent Activity
           </h3>
           <p className="text-sm text-gray-600 mb-6">
-            {"You haven't created any updates recently. Share your first update to get started!"}
+            {"You haven't created any memories recently. Share your first memory to get started!"}
           </p>
           <Button onClick={handleCreateUpdate}>
-            Create Your First Update
+            Create Your First Memory
           </Button>
         </div>
       </div>
@@ -409,10 +409,10 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
       {showViewAllLink && updates.length >= limit && (
         <div className="pt-4 border-t border-gray-200">
           <Link
-            href="/dashboard/updates"
+            href="/dashboard/memories"
             className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
-            View all updates
+            View all memories
             <svg
               className="ml-1 w-4 h-4"
               fill="none"

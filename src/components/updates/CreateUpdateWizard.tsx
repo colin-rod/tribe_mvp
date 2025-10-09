@@ -155,7 +155,7 @@ export default function CreateUpdateWizard({
     <div className="mb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Update</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Create Memory</h1>
           <p className="mt-2 text-gray-600">
             {"Share what's happening with your little one"}
           </p>
@@ -248,7 +248,7 @@ export default function CreateUpdateWizard({
         {/* Minimal header for modal variant */}
         {isModal ? (
           <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white/70 px-4 py-3">
-            <h2 className="text-base font-semibold text-neutral-900">Create Update</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Create Memory</h2>
             <button
               type="button"
               onClick={() => { reset(); onCancel() }}
@@ -269,7 +269,7 @@ export default function CreateUpdateWizard({
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10">
               <div className="flex flex-col items-center">
                 <LoadingSpinner size="sm" className="mb-2" />
-                <span className="text-sm text-gray-600">Processing your update...</span>
+                <span className="text-sm text-gray-600">Processing your memory...</span>
               </div>
             </div>
           )}

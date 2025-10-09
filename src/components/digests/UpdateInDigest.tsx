@@ -102,7 +102,7 @@ export default function UpdateInDigest({
             <button
               onClick={onRemove}
               className="p-2 rounded hover:bg-red-50 text-red-600 hover:text-red-700 transition-colors"
-              title="Remove from digest"
+              title="Remove from summary"
             >
               <TrashIcon className="w-5 h-5" />
             </button>

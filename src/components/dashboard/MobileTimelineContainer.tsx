@@ -279,7 +279,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
             {loading && hasMore && (
               <div className="flex items-center space-x-2 text-neutral-500">
                 <div className="w-4 h-4 border-2 border-neutral-300 border-t-primary-500 rounded-full animate-spin" />
-                <span className="text-sm">Loading more updates...</span>
+                <span className="text-sm">Loading more memories...</span>
               </div>
             )}
           </div>

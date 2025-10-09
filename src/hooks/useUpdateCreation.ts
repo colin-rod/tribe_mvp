@@ -73,14 +73,14 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
     {
       id: 'create',
       title: 'Create',
-      description: 'Write your update',
+      description: 'Write your memory',
       isComplete: Boolean(formData.content && formData.childId),
       isAccessible: true
     },
     {
       id: 'preview',
       title: 'Preview & Send',
-      description: 'Review and send your update',
+      description: 'Review and send your memory',
       isComplete: false,
       isAccessible: Boolean(formData.content && formData.childId)
     }
@@ -260,7 +260,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       setUploadProgress(100)
       return update.id
     } catch (err) {
-      throw err instanceof Error ? err : new Error('Failed to create update')
+      throw err instanceof Error ? err : new Error('Failed to create memory')
     } finally {
       setIsLoading(false)
       setUploadProgress(0)
@@ -306,7 +306,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       await markUpdateAsSent(currentUpdateId)
     } catch (err) {
       logger.error('Failed to finalize update:', { error: err })
-      setError(err instanceof Error ? err.message : 'Failed to finalize update')
+      setError(err instanceof Error ? err.message : 'Failed to finalize memory')
       throw err
     } finally {
       setIsLoading(false)

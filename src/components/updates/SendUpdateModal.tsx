@@ -124,15 +124,15 @@ export default function SendUpdateModal({
   const getStepTitle = () => {
     switch (currentStep) {
       case 'select':
-        return 'Send Update'
+        return 'Send Memory'
       case 'preview':
         return 'Preview Email'
       case 'send':
-        return 'Sending Update...'
+        return 'Sending Memory...'
       case 'sent':
-        return 'Update Sent!'
+        return 'Memory Sent!'
       default:
-        return 'Send Update'
+        return 'Send Memory'
     }
   }
 
@@ -205,7 +205,7 @@ export default function SendUpdateModal({
               ) : recipients.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-600 mb-2">No recipients with email addresses found.</p>
-                  <p className="text-sm text-gray-500">Add recipients with email addresses to send updates.</p>
+                  <p className="text-sm text-gray-500">Add recipients with email addresses to send memories.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -213,7 +213,7 @@ export default function SendUpdateModal({
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">Select Recipients</h3>
                       <p className="text-sm text-gray-600">
-                        Choose who should receive this update via email ({selectedRecipients.size} of {recipients.length} selected)
+                        Choose who should receive this memory via email ({selectedRecipients.size} of {recipients.length} selected)
                       </p>
                     </div>
                     <div className="flex space-x-2">

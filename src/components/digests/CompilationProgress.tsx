@@ -21,8 +21,8 @@ export default function CompilationProgress({
   const steps = useMemo(() => [
     {
       id: 1,
-      label: 'Analyzing Updates',
-      description: 'Reading your ready drafts...',
+      label: 'Analyzing Memories',
+      description: 'Reading your approved memories...',
       minProgress: 0,
       maxProgress: 25
     },
@@ -36,14 +36,14 @@ export default function CompilationProgress({
     {
       id: 3,
       label: 'AI Personalization',
-      description: 'Creating personalized digests...',
+      description: 'Creating personalized summaries...',
       minProgress: 40,
       maxProgress: 80
     },
     {
       id: 4,
       label: 'Processing Results',
-      description: 'Finalizing your digest...',
+      description: 'Finalizing your summary...',
       minProgress: 80,
       maxProgress: 100
     }
@@ -86,10 +86,10 @@ export default function CompilationProgress({
           </div>
 
           <h2 className="text-2xl font-bold text-neutral-900 mb-2">
-            Digest Ready!
+            Summary Ready!
           </h2>
           <p className="text-neutral-600 mb-6">
-            Your personalized digest has been compiled. Redirecting to preview...
+            Your personalized summary has been compiled. Redirecting to preview...
           </p>
 
           <div className="flex items-center justify-center space-x-2 text-sm text-neutral-500">
@@ -110,10 +110,10 @@ export default function CompilationProgress({
             <SparklesIcon className="w-8 h-8 text-orange-600 animate-pulse" />
           </div>
           <h2 className="text-2xl font-bold text-neutral-900 mb-2">
-            Compiling Your Digest
+            Compiling Your Summary
           </h2>
           <p className="text-neutral-600">
-            AI is personalizing updates for each recipient...
+            AI is personalizing memories for each recipient...
           </p>
         </div>
 

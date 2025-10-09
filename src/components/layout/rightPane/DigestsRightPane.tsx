@@ -25,11 +25,11 @@ export function DigestsRightPane() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">Digest Overview</h2>
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">Summary Overview</h2>
       </div>
 
-      {/* Current Digest Preview */}
-      <DetailCard title="Current Digest">
+      {/* Current Summary Preview */}
+      <DetailCard title="Current Summary">
         <DetailRow label="Title" value={digestData.currentDigest.title} />
         <DetailRow
           label="Status"

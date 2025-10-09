@@ -46,7 +46,7 @@ export default function DigestStats() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2 text-base">
             <SparklesIcon className="w-4 h-4 text-orange-500" />
-            <span>Digest System</span>
+            <span>Summary System</span>
           </CardTitle>
           {canCompileDigest && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -75,7 +75,7 @@ export default function DigestStats() {
             )}
           </div>
 
-          {/* Pending Digests */}
+          {/* Pending Summaries */}
           <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
             <ClockIcon className="w-6 h-6 text-blue-600 mx-auto mb-1" />
             <p className="text-xl font-bold text-neutral-900">
@@ -84,7 +84,7 @@ export default function DigestStats() {
             <p className="text-xs text-neutral-600">Pending Review</p>
           </div>
 
-          {/* Sent Digests */}
+          {/* Sent Summaries */}
           <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-100">
             <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-1" />
             <p className="text-xl font-bold text-neutral-900">
@@ -94,12 +94,12 @@ export default function DigestStats() {
           </div>
         </div>
 
-        {/* Compile Digest Action */}
+        {/* Compile Summary Action */}
         {canCompileDigest && (
-          <Link href="/dashboard/digests/compile" className="block mb-3">
+          <Link href="/dashboard/memory-book/compile" className="block mb-3">
             <Button variant="success" className="w-full" size="sm">
               <SparklesIcon className="w-4 h-4 mr-2" />
-              Compile Digest Now
+              Compile Summary Now
             </Button>
           </Link>
         )}
@@ -126,7 +126,7 @@ export default function DigestStats() {
               New Workflow Available!
             </p>
             <p className="text-xs text-neutral-600 mb-2">
-              Capture moments as drafts, then compile digests
+              Capture moments as memories, then compile summaries
             </p>
             <Link href="/dashboard/drafts">
               <Button variant="primary" size="sm" className="text-xs h-7">

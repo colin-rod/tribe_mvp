@@ -16,7 +16,7 @@ const CONTENT_TYPES = [
   {
     id: 'responses',
     label: 'Responses',
-    description: 'Family member responses to your updates',
+    description: 'Family member responses to your memories',
     key: 'include_responses' as keyof DigestPreferences
   },
   {
@@ -34,9 +34,9 @@ const CONTENT_TYPES = [
 ]
 
 const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Daily', description: 'Receive digest every day' },
-  { value: 'weekly', label: 'Weekly', description: 'Receive digest once per week' },
-  { value: 'monthly', label: 'Monthly', description: 'Receive digest once per month' }
+  { value: 'daily', label: 'Daily', description: 'Receive summary every day' },
+  { value: 'weekly', label: 'Weekly', description: 'Receive summary once per week' },
+  { value: 'monthly', label: 'Monthly', description: 'Receive summary once per month' }
 ] as const
 
 const WEEKDAYS = [

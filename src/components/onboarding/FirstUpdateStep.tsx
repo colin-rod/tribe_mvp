@@ -79,12 +79,12 @@ export function FirstUpdateStep({
 
     if (!formData.content.trim()) {
       if (!canSkip) {
-        newErrors.content = 'Update content is required'
+        newErrors.content = 'Memory content is required'
       }
     } else if (formData.content.trim().length < 5) {
-      newErrors.content = 'Update should be at least 5 characters'
+      newErrors.content = 'Memory should be at least 5 characters'
     } else if (formData.content.trim().length > 1000) {
-      newErrors.content = 'Update should be less than 1000 characters'
+      newErrors.content = 'Memory should be less than 1000 characters'
     }
 
     // Validate media files
@@ -170,14 +170,14 @@ export function FirstUpdateStep({
           <DocumentTextIcon className="h-10 w-10 text-primary-600" aria-hidden="true" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Share Your First Update
+          Share Your First Memory
         </h1>
         <p className="text-lg text-gray-600">
-          Create a practice update to see how Tribe works
+          Create a practice memory to see how Tribe works
         </p>
         {canSkip && (
           <p className="text-sm text-gray-500">
-            This step is optional - you can create your first update later
+            This step is optional - you can create your first memory later
           </p>
         )}
       </div>
@@ -316,7 +316,7 @@ export function FirstUpdateStep({
         {/* Send Options */}
         {formData.content.trim() && (
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-            <h4 className="font-medium text-primary-900 mb-3">Who should receive this update?</h4>
+            <h4 className="font-medium text-primary-900 mb-3">Who should receive this memory?</h4>
             <div className="space-y-2">
               <label className="flex items-center space-x-3">
                 <input
@@ -340,7 +340,7 @@ export function FirstUpdateStep({
               </label>
             </div>
             <p className="text-xs text-primary-700 mt-2">
-              Don&apos;t worry - this is just for testing. The update won&apos;t actually be sent during onboarding.
+              Don&apos;t worry - this is just for testing. The memory won&apos;t actually be sent during onboarding.
             </p>
           </div>
         )}
@@ -355,10 +355,10 @@ export function FirstUpdateStep({
               <div>
                 <h4 className="font-medium text-blue-900 mb-2">AI Analysis Preview</h4>
                 <p className="text-sm text-blue-800 mb-2">
-                  In a real update, our AI would analyze your content and suggest:
+                  In a real memory, our AI would analyze your content and suggest:
                 </p>
                 <div className="text-xs text-blue-700 space-y-1">
-                  <div>• Which recipients would most appreciate this update</div>
+                  <div>• Which recipients would most appreciate this memory</div>
                   <div>• The best time to send based on recipient preferences</div>
                   <div>• Content tags and milestone detection</div>
                   <div>• Personalized message variations for different recipients</div>
@@ -378,7 +378,7 @@ export function FirstUpdateStep({
               <h4 className="font-medium text-gray-900 mb-1">Practice Mode</h4>
               <p className="text-sm text-gray-700">{privacyMessage}</p>
               <p className="text-xs text-gray-600 mt-1">
-                This practice update won&apos;t be sent to anyone. It&apos;s just to show you how the process works.
+                This practice memory won&apos;t be sent to anyone. It&apos;s just to show you how the process works.
               </p>
             </div>
           </div>
@@ -418,10 +418,10 @@ export function FirstUpdateStep({
       {/* Help Text */}
       <div className="text-center space-y-2">
         <p className="text-sm text-gray-500">
-          Remember: This is just practice! No updates will be sent during setup.
+          Remember: This is just practice! No memories will be sent during setup.
         </p>
         <div className="text-xs text-gray-400">
-          You&apos;ll create and send real updates from your dashboard after completing onboarding
+          You&apos;ll create and send real memories from your dashboard after completing onboarding
         </div>
       </div>
     </div>
@@ -467,8 +467,8 @@ export function FirstUpdateStepCompact({
         <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
           <DocumentTextIcon className="h-7 w-7 text-primary-600" aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Practice Update</h1>
-        <p className="text-sm text-gray-600">Try creating your first update</p>
+        <h1 className="text-2xl font-bold text-gray-900">Practice Memory</h1>
+        <p className="text-sm text-gray-600">Try creating your first memory</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

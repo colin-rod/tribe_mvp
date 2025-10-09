@@ -95,14 +95,14 @@ export default function UpdateForm({
         <ChildProfileSelector
           selectedChildId={formData.childId}
           onChildSelect={handleChildSelect}
-          placeholder="Select a child for this update"
+          placeholder="Select a child for this memory"
           size="lg"
         />
       </div>
 
       {/* Smart Contextual Input - combines text and media */}
       <div>
-        <label htmlFor="content" className="sr-only">Update Content</label>
+        <label htmlFor="content" className="sr-only">Memory Content</label>
         <SmartContextualInput
           content={formData.content || ''}
           mediaFiles={formData.mediaFiles || []}

@@ -38,7 +38,7 @@ export function formatChildInfo(child: DashboardUpdate['children']): UpdateChild
 }
 
 /**
- * Transform database update to display-ready card data
+ * Transform database memory to display-ready card data
  */
 export function transformToCardData(update: DashboardUpdate, _currentUserId?: string): UpdateCardData {
   const createdAt = new Date(update.created_at || new Date())
@@ -79,7 +79,7 @@ export function transformToCardData(update: DashboardUpdate, _currentUserId?: st
 }
 
 /**
- * Sort updates by creation date (newest first)
+ * Sort memories by creation date (newest first)
  */
 export function sortUpdatesByDate(updates: DashboardUpdate[]): DashboardUpdate[] {
   return [...updates].sort((a, b) => {
@@ -90,7 +90,7 @@ export function sortUpdatesByDate(updates: DashboardUpdate[]): DashboardUpdate[]
 }
 
 /**
- * Filter updates by status
+ * Filter memories by status
  */
 export function filterUpdatesByStatus(
   updates: DashboardUpdate[],

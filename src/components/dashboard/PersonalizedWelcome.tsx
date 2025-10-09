@@ -99,7 +99,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
         id: 'frequency_gentle',
         type: 'frequency',
         title: 'Missing precious moments?',
-        message: `It's been ${daysSinceLastUpdate} days since your last update. What has ${userName === 'there' ? 'your little one' : 'been'} been up to?`,
+        message: `It's been ${daysSinceLastUpdate} days since your last memory. What has ${userName === 'there' ? 'your little one' : 'been'} been up to?`,
         action: { label: 'Share a moment', type: insights.favoriteUpdateType },
         priority: 'low',
         dismissible: true
@@ -110,7 +110,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
         type: 'frequency',
         title: 'Your family misses you!',
         message: 'It\'s been over a week. Even a quick photo would brighten everyone\'s day.',
-        action: { label: 'Quick update', type: 'photo' },
+        action: { label: 'Quick memory', type: 'photo' },
         priority: 'medium',
         dismissible: true
       })
@@ -122,8 +122,8 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
         id: 'milestone_close',
         type: 'milestone',
         title: 'Almost there!',
-        message: `Just ${insights.nextMilestone.remaining} more updates to unlock "${insights.nextMilestone.type}"`,
-        action: { label: 'Add update', type: 'milestone' },
+        message: `Just ${insights.nextMilestone.remaining} more memories to unlock "${insights.nextMilestone.type}"`,
+        action: { label: 'Add memory', type: 'milestone' },
         priority: 'medium',
         dismissible: false
       })
@@ -164,7 +164,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
       reminders.push({
         id: 'engagement_high',
         type: 'engagement',
-        title: 'Your family loves your updates!',
+        title: 'Your family loves your memories!',
         message: `${Math.round(insights.totalEngagement)} total responses! They're waiting for more.`,
         action: { label: 'Share joy', type: insights.favoriteUpdateType },
         priority: 'medium',
@@ -285,11 +285,11 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
         </div>
       )}
 
-      {/* Last update info */}
+      {/* Last memory info */}
       {lastUpdateAt && (
         <div className="flex items-center justify-between text-xs text-neutral-500 mb-4">
           <span>
-            Last update: {
+            Last memory: {
               new Date().getTime() - lastUpdateAt.getTime() < 24 * 60 * 60 * 1000
                 ? 'Today'
                 : lastUpdateAt.toLocaleDateString()

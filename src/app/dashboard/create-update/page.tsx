@@ -10,7 +10,7 @@ export default function CreateUpdatePage() {
     <CreateUpdateWizard
       variant="page"
       onCancel={() => router.push('/dashboard')}
-      onSent={() => router.push('/dashboard?updated=true')}
+      onSent={() => router.push('/dashboard?memory_sent=true')}
       onScheduled={() => router.push('/dashboard?scheduled=true')}
     />
   )

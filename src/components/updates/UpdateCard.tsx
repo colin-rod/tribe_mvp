@@ -46,7 +46,7 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`View update about ${update.child.name}: ${update.contentPreview}`}
+      aria-label={`View memory about ${update.child.name}: ${update.contentPreview}`}
     >
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary-50/0 via-primary-50/20 to-primary-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

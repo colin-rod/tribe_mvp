@@ -4,9 +4,9 @@
  * CRO-303: Performance Optimization & Code Splitting
  *
  * Main right pane content for the Activity view, integrating:
- * - Digest System stats
+ * - Summary System stats
  * - AI suggestions panel
- * - Quick actions (Create Update, Compile Digest)
+ * - Quick actions (Create Memory, Compile Summary)
  *
  * Performance optimizations:
  * - React.memo to prevent unnecessary re-renders
@@ -29,9 +29,9 @@ const DigestStats = dynamic(() => import('@/components/digests/DigestStats'), {
 });
 
 export interface ActivityRightPaneProps {
-  /** Callback when Create Update is clicked */
+  /** Callback when Create Memory is clicked */
   onCreateUpdate?: () => void;
-  /** Callback when Compile Digest is clicked */
+  /** Callback when Compile Summary is clicked */
   onCompileDigest?: () => void;
   /** Callback when an AI prompt is selected */
   onSelectAIPrompt?: (prompt: AIPromptSuggestion) => void;
@@ -51,14 +51,14 @@ const ActivityRightPaneComponent = ({
 }: ActivityRightPaneProps) => {
   const { activityFilters } = useDashboardActions();
 
-  // Handle Create Update action
+  // Handle Create Memory action
   const handleCreateUpdate = useCallback(() => {
     if (onCreateUpdate) {
       onCreateUpdate();
     }
   }, [onCreateUpdate]);
 
-  // Handle Compile Digest action
+  // Handle Compile Summary action
   const handleCompileDigest = useCallback(() => {
     if (onCompileDigest) {
       onCompileDigest();
@@ -71,7 +71,7 @@ const ActivityRightPaneComponent = ({
       if (onSelectAIPrompt) {
         onSelectAIPrompt(prompt);
       } else {
-        // Default behavior: Open create update modal with prompt
+        // Default behavior: Open create memory modal with prompt
         handleCreateUpdate();
       }
     },
@@ -109,9 +109,9 @@ const ActivityRightPaneComponent = ({
         />
       </div>
 
-      {/* Digest System Stats */}
+      {/* Summary System Stats */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-neutral-900">Digest Overview</h3>
+        <h3 className="text-sm font-semibold text-neutral-900">Summary Overview</h3>
         <div className="border border-neutral-200 rounded-md p-3">
           <DigestStats />
         </div>

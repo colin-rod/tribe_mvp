@@ -40,7 +40,7 @@ export default function AISuggestionsPanel({
 
   const statusLabel = useMemo(() => {
     if (isAnalyzing) {
-      return 'Analyzing your update...'
+      return 'Analyzing your memory...'
     }
 
     if (!hasRequestedAnalysis) {

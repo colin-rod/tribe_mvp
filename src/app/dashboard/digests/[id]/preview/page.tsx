@@ -81,8 +81,8 @@ export default function DigestPreviewPage() {
       })
 
       if (success) {
-        logger.info('Digest approved and sent', { digestId: digest.id })
-        router.push('/dashboard?digest_sent=true')
+        logger.info('Summary approved and sent', { digestId: digest.id })
+        router.push('/dashboard?summary_sent=true')
       }
     } catch (err) {
       logger.error('Failed to approve and send digest', { error: err })
@@ -107,8 +107,8 @@ export default function DigestPreviewPage() {
       })
 
       if (success) {
-        logger.info('Digest scheduled', { digestId: digest.id, scheduledFor })
-        router.push('/dashboard?digest_scheduled=true')
+        logger.info('Summary scheduled', { digestId: digest.id, scheduledFor })
+        router.push('/dashboard?summary_scheduled=true')
       }
     } catch (err) {
       logger.error('Failed to schedule digest', { error: err })
@@ -165,10 +165,10 @@ export default function DigestPreviewPage() {
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Card className="p-12 text-center">
             <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-              Digest Not Found
+              Summary Not Found
             </h2>
             <p className="text-neutral-600 mb-6">
-              {error || 'The digest you are looking for does not exist or could not be loaded.'}
+              {error || 'The summary you are looking for does not exist or could not be loaded.'}
             </p>
             <Button onClick={handleBack} variant="outline">
               <ArrowLeftIcon className="w-5 h-5 mr-2" />
@@ -201,7 +201,7 @@ export default function DigestPreviewPage() {
 
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-neutral-500">
-                  {digest.total_updates} update{digest.total_updates > 1 ? 's' : ''} • {' '}
+                  {digest.total_updates} memor{digest.total_updates > 1 ? 'ies' : 'y'} • {' '}
                   {digest.total_recipients} recipient{digest.total_recipients > 1 ? 's' : ''}
                 </span>
               </div>
@@ -209,7 +209,7 @@ export default function DigestPreviewPage() {
           </div>
         </div>
 
-        {/* Digest Info */}
+        {/* Summary Info */}
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-start justify-between">
@@ -337,10 +337,10 @@ export default function DigestPreviewPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-              Schedule Digest
+              Schedule Summary
             </h3>
             <p className="text-sm text-neutral-600 mb-4">
-              Choose when to send this digest to your recipients.
+              Choose when to send this summary to your recipients.
             </p>
             {/* Simplified schedule UI - in real implementation would use a date/time picker */}
             <div className="space-y-4">

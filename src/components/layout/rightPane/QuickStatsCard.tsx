@@ -3,10 +3,10 @@
  * CRO-298: Right Pane - Activity View Context
  *
  * Displays quick statistics for the activity feed:
- * - Total updates count
- * - Sent digests count
+ * - Total memories count
+ * - Sent summaries count
  * - Active recipients count
- * - Updates this week
+ * - Memories this week
  */
 
 'use client';
@@ -40,14 +40,14 @@ export interface QuickStatsCardProps {
 const STAT_ITEMS = [
   {
     key: 'totalUpdates' as const,
-    label: 'Total Updates',
+    label: 'Total Memories',
     icon: TrendingUp,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
   },
   {
     key: 'sentDigests' as const,
-    label: 'Sent Digests',
+    label: 'Sent Summaries',
     icon: Send,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
@@ -98,7 +98,7 @@ export function QuickStatsCard({ filters, className }: QuickStatsCardProps) {
       startOfWeek.setDate(now.getDate() - now.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
 
-      // Build base query for updates
+      // Build base query for memories
       let updatesQuery = supabase
         .from('memories')
         .select('id, child_id, milestone_type, created_at', { count: 'exact' })
@@ -122,17 +122,17 @@ export function QuickStatsCard({ filters, className }: QuickStatsCardProps) {
         }
       }
 
-      // Get total updates with filters
+      // Get total memories with filters
       const { count: totalUpdates } = await updatesQuery;
 
-      // Get updates this week
+      // Get memories this week
       const { count: updatesThisWeek } = await supabase
         .from('memories')
         .select('id', { count: 'exact' })
         .eq('parent_id', user.id)
         .gte('created_at', startOfWeek.toISOString());
 
-      // Get sent digests count
+      // Get sent summaries count
       const { count: sentDigests } = await supabase
         .from('summaries')
         .select('id', { count: 'exact' })

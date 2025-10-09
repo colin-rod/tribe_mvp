@@ -76,7 +76,7 @@ export default function UpdatePreview({
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Update Preview</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Memory Preview</h2>
                 <p className="text-sm text-gray-600">Review before sending</p>
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function UpdatePreview({
                   <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                     <Image
                       src={url}
-                      alt={`Update photo ${index + 1}`}
+                      alt={`Memory photo ${index + 1}`}
                       width={300}
                       height={300}
                       className="w-full h-full object-cover"

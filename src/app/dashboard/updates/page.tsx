@@ -1,5 +1,5 @@
 /**
- * Updates Page
+ * Memories Page
  * CRO-304: Component Migration & Comprehensive Testing
  *
  * Uses new 3-pane layout - redirects to activity view

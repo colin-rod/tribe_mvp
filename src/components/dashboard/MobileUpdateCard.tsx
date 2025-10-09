@@ -130,7 +130,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
           handleCardClick()
         }
       }}
-      aria-label={`Update about ${update.child.name}: ${update.contentPreview}`}
+      aria-label={`Memory about ${update.child.name}: ${update.contentPreview}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-3">
@@ -211,7 +211,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
             {!isVideo && isImageAvailable ? (
               <Image
                 src={primaryMediaUrl}
-                alt={`Photo from ${update.child.name}'s update`}
+                alt={`Photo from ${update.child.name}'s memory`}
                 fill
                 className="object-cover"
                 sizes="100vw"
@@ -277,7 +277,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
                 'hover:bg-neutral-100 active:scale-95',
                 update.isLiked ? 'text-red-500' : 'text-neutral-500 hover:text-red-500'
               )}
-              aria-label={update.isLiked ? 'Unlike update' : 'Like update'}
+              aria-label={update.isLiked ? 'Unlike memory' : 'Like memory'}
             >
               {update.isLiked ? (
                 <HeartSolidIcon className="w-4 h-4" />
@@ -297,7 +297,7 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
             <button
               onClick={handleShare}
               className="p-2 rounded-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 transition-all duration-200 active:scale-95"
-              aria-label="Share update"
+              aria-label="Share memory"
             >
               <ShareIcon className="w-4 h-4" />
             </button>

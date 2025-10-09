@@ -30,7 +30,7 @@ export default function DigestsView() {
   return (
     <div className="min-h-full p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-6">Digests</h1>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-6">Memory Book</h1>
         <DigestStats />
       </div>
     </div>

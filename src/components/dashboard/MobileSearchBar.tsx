@@ -71,7 +71,7 @@ export const MobileSearchBar: React.FC<MobileSearchBarProps> = ({
   onFilterChange,
   activeFilter = 'all',
   showFilters = true,
-  placeholder = 'Search updates...',
+  placeholder = 'Search memories...',
   className,
   quickFilters = DEFAULT_QUICK_FILTERS
 }) => {
