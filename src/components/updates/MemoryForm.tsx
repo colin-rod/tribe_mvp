@@ -7,7 +7,7 @@ import SmartContextualInput from './SmartContextualInput'
 import { validateUpdateContent } from '@/lib/validation/update'
 import type { UpdateFormData } from '@/lib/validation/update'
 
-interface UpdateFormProps {
+interface MemoryFormProps {
   formData: Partial<UpdateFormData>
   previewUrls: string[]
   onFormDataChange: (data: Partial<UpdateFormData>) => void
@@ -19,7 +19,7 @@ interface UpdateFormProps {
   loadChildren: () => Promise<void>
 }
 
-export default function UpdateForm({
+export default function MemoryForm({
   formData,
   previewUrls,
   onFormDataChange,
@@ -29,7 +29,7 @@ export default function UpdateForm({
   isLoading = false,
   error,
   loadChildren
-}: UpdateFormProps) {
+}: MemoryFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)
 
   // Note: ChildProfileSelector now handles loading children internally
@@ -90,7 +90,7 @@ export default function UpdateForm({
       {/* Child Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-3">
-          Who is this update about?
+          Who is this memory about?
         </label>
         <ChildProfileSelector
           selectedChildId={formData.childId}

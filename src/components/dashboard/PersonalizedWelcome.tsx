@@ -17,7 +17,7 @@ interface PersonalizedWelcomeProps {
   lastUpdateAt?: Date
   updateCount: number
   daysSinceStart: number
-  onCreateUpdate: (type: UpdateType) => void
+  onCreateMemory: (type: UpdateType) => void
   onDismissReminder?: (reminderId: string) => void
   className?: string
 }
@@ -56,7 +56,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
   lastUpdateAt,
   updateCount: _updateCount,
   daysSinceStart: _daysSinceStart,
-  onCreateUpdate,
+  onCreateMemory,
   onDismissReminder,
   className
 }) => {
@@ -274,7 +274,7 @@ export const PersonalizedWelcome: React.FC<PersonalizedWelcomeProps> = ({
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => onCreateUpdate(activeReminder.action!.type)}
+                  onClick={() => onCreateMemory(activeReminder.action!.type)}
                   className="text-sm"
                 >
                   {activeReminder.action.label}

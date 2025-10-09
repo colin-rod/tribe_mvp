@@ -10,7 +10,7 @@ import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep'
 import { ProfileSetupStep, ProfileSetupStepCompact } from '@/components/onboarding/ProfileSetupStep'
 import { ChildSetupStep, ChildSetupStepCompact } from '@/components/onboarding/ChildSetupStep'
-import { FirstUpdateStep, FirstUpdateStepCompact } from '@/components/onboarding/FirstUpdateStep'
+import { FirstMemoryStep, FirstMemoryStepCompact } from '@/components/onboarding/FirstMemoryStep'
 import { CompletionStep } from '@/components/onboarding/CompletionStep'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import { ExclamationTriangleIcon, LockClosedIcon } from '@heroicons/react/24/outline'
@@ -132,7 +132,7 @@ export default function OnboardingPage() {
 
       case 'first-update':
         return isMobile ? (
-          <FirstUpdateStepCompact
+          <FirstMemoryStepCompact
             data={data.firstUpdate || {}}
             onUpdate={updateFirstUpdateData}
             onNext={nextStep}
@@ -143,7 +143,7 @@ export default function OnboardingPage() {
             {...commonProps}
           />
         ) : (
-          <FirstUpdateStep
+          <FirstMemoryStep
             data={data.firstUpdate || {}}
             onUpdate={updateFirstUpdateData}
             onNext={nextStep}

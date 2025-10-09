@@ -2,7 +2,7 @@
 
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('UseUpdateCreation')
+const logger = createLogger('UseMemoryCreation')
 
 import { useState, useCallback } from 'react'
 import { uploadUpdatePhotos, validateUpdateMediaFiles, generatePreviewUrls, cleanupPreviewUrls } from '@/lib/photo-upload'
@@ -15,7 +15,7 @@ import type { UpdateFormData } from '@/lib/validation/update'
 import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Child } from '@/lib/children'
 
-export interface UpdateCreationStep {
+export interface MemoryCreationStep {
   id: 'create' | 'preview'
   title: string
   description: string
@@ -23,10 +23,10 @@ export interface UpdateCreationStep {
   isAccessible: boolean
 }
 
-export interface UseUpdateCreationReturn {
+export interface UseMemoryCreationReturn {
   // State
-  currentStep: UpdateCreationStep['id']
-  steps: UpdateCreationStep[]
+  currentStep: MemoryCreationStep['id']
+  steps: MemoryCreationStep[]
   formData: Partial<UpdateFormData>
   aiAnalysis: AIAnalysisResponse | null
   children: Child[]
@@ -39,7 +39,7 @@ export interface UseUpdateCreationReturn {
 
   // Actions
   setFormData: (data: Partial<UpdateFormData>) => void
-  setCurrentStep: (step: UpdateCreationStep['id']) => void
+  setCurrentStep: (step: MemoryCreationStep['id']) => void
   processMediaFiles: (files: File[]) => Promise<void>
   removeMediaFile: (index: number) => void
   runAIAnalysis: () => Promise<void>
@@ -50,9 +50,9 @@ export interface UseUpdateCreationReturn {
   loadChildren: () => Promise<void>
 }
 
-export function useUpdateCreation(): UseUpdateCreationReturn {
+export function useMemoryCreation(): UseMemoryCreationReturn {
   // State
-  const [currentStep, setCurrentStep] = useState<UpdateCreationStep['id']>('create')
+  const [currentStep, setCurrentStep] = useState<MemoryCreationStep['id']>('create')
   const [formData, setFormDataState] = useState<Partial<UpdateFormData>>({
     content: '',
     mediaFiles: [],
@@ -69,7 +69,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
   const [hasRequestedAnalysis, setHasRequestedAnalysis] = useState(false)
 
   // Steps configuration
-  const steps: UpdateCreationStep[] = [
+  const steps: MemoryCreationStep[] = [
     {
       id: 'create',
       title: 'Create',
@@ -269,7 +269,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
 
   const finalizeUpdate = useCallback(async () => {
     if (!currentUpdateId) {
-      throw new Error('No update ID available')
+      throw new Error('No memory ID available')
     }
 
     if (!formData.confirmedRecipients || formData.confirmedRecipients.length === 0) {
@@ -305,7 +305,7 @@ export function useUpdateCreation(): UseUpdateCreationReturn {
       // Mark update as sent
       await markUpdateAsSent(currentUpdateId)
     } catch (err) {
-      logger.error('Failed to finalize update:', { error: err })
+      logger.error('Failed to finalize memory:', { error: err })
       setError(err instanceof Error ? err.message : 'Failed to finalize memory')
       throw err
     } finally {

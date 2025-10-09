@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
 
-interface DigestSettingsProps {
+interface SummarySettingsProps {
   digestPrefs: DigestPreferences
   onUpdate: (prefs: DigestPreferences) => void
   loading?: boolean
@@ -45,7 +45,7 @@ const WEEKDAYS = [
 
 const MONTH_DAYS = Array.from({ length: 28 }, (_, i) => i + 1)
 
-export default function DigestSettings({ digestPrefs, onUpdate, loading = false }: DigestSettingsProps) {
+export default function SummarySettings({ digestPrefs, onUpdate, loading = false }: SummarySettingsProps) {
   const [showPreview, setShowPreview] = useState(false)
 
   const handleFrequencyChange = (frequency: DigestPreferences['frequency']) => {
@@ -125,18 +125,18 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900">Digest Settings</h3>
+        <h3 className="text-lg font-medium text-gray-900">Summary Settings</h3>
         <p className="mt-1 text-sm text-gray-600">
-          Configure when and what content to include in your email digests.
+          Configure when and what content to include in your email summaries.
         </p>
       </div>
 
       {/* Enable/Disable Toggle */}
       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
         <div>
-          <h4 className="text-sm font-medium text-gray-900">Email Digests</h4>
+          <h4 className="text-sm font-medium text-gray-900">Email Summaries</h4>
           <p className="text-sm text-gray-600">
-            Receive summarized updates via email
+            Receive summarized memories via email
           </p>
         </div>
         <div className="flex items-center">
@@ -280,9 +280,9 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
                 </svg>
               </div>
               <div className="ml-3">
-                <h4 className="text-sm font-medium text-blue-900">Next Digest</h4>
+                <h4 className="text-sm font-medium text-blue-900">Next Summary</h4>
                 <p className="text-sm text-blue-700">
-                  Your next {digestPrefs.frequency} digest will be delivered {getNextDeliveryText()}
+                  Your next {digestPrefs.frequency} summary will be delivered {getNextDeliveryText()}
                 </p>
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h5 className="text-sm font-medium text-gray-900">
-                      Your {digestPrefs.frequency.charAt(0).toUpperCase() + digestPrefs.frequency.slice(1)} Digest
+                      Your {digestPrefs.frequency.charAt(0).toUpperCase() + digestPrefs.frequency.slice(1)} Summary
                     </h5>
                     <span className="text-xs text-gray-500">
                       {new Date().toLocaleDateString()}
@@ -333,7 +333,7 @@ export default function DigestSettings({ digestPrefs, onUpdate, loading = false 
                   {generatePreviewContent().length > 0 && (
                     <div className="mt-4 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-500">
-                        This is a preview of your digest content. Actual content will vary based on your family&apos;s activity.
+                        This is a preview of your summary content. Actual content will vary based on your family&apos;s activity.
                       </p>
                     </div>
                   )}

@@ -27,11 +27,11 @@ export interface FiltersPanelProps {
   searchQuery: string;
   dateRange: DateRange | null;
   childIds: string[];
-  updateTypes: UpdateType[];
+  memoryTypes: UpdateType[];
   onSearchChange: (query: string) => void;
   onDateRangeChange: (range: DateRange | null) => void;
   onChildIdsChange: (ids: string[]) => void;
-  onUpdateTypesChange: (types: UpdateType[]) => void;
+  onMemoryTypesChange: (types: UpdateType[]) => void;
   onClearFilters: () => void;
   activeFilterCount: number;
 }
@@ -47,11 +47,11 @@ export function FiltersPanel({
   searchQuery,
   dateRange,
   childIds,
-  updateTypes,
+  memoryTypes,
   onSearchChange,
   onDateRangeChange,
   onChildIdsChange,
-  onUpdateTypesChange,
+  onMemoryTypesChange,
   onClearFilters,
   activeFilterCount,
 }: FiltersPanelProps) {
@@ -91,10 +91,10 @@ export function FiltersPanel({
 
   // Toggle update type selection
   const toggleUpdateType = (type: UpdateType) => {
-    if (updateTypes.includes(type)) {
-      onUpdateTypesChange(updateTypes.filter((t) => t !== type));
+    if (memoryTypes.includes(type)) {
+      onMemoryTypesChange(memoryTypes.filter((t) => t !== type));
     } else {
-      onUpdateTypesChange([...updateTypes, type]);
+      onMemoryTypesChange([...memoryTypes, type]);
     }
   };
 
@@ -230,10 +230,10 @@ export function FiltersPanel({
             className={cn(
               'w-full flex items-center justify-center min-h-[44px] min-w-[44px] px-3 py-3 text-xs border rounded',
               'hover:bg-neutral-50 transition-colors',
-              updateTypes.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
+              memoryTypes.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
             )}
-            title={updateTypes.length > 0 ? `${updateTypes.length} type(s)` : 'All types'}
-            aria-label={updateTypes.length > 0 ? `Filter by memory type: ${updateTypes.length} selected` : 'Filter by memory type'}
+            title={memoryTypes.length > 0 ? `${memoryTypes.length} type(s)` : 'All types'}
+            aria-label={memoryTypes.length > 0 ? `Filter by memory type: ${memoryTypes.length} selected` : 'Filter by memory type'}
           >
             <FileText className="h-4 w-4" />
           </button>
@@ -249,12 +249,12 @@ export function FiltersPanel({
                     className={cn(
                       'w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded',
                       'hover:bg-neutral-50 transition-colors text-left',
-                      updateTypes.includes(value) && 'bg-blue-50 text-blue-700'
+                      memoryTypes.includes(value) && 'bg-blue-50 text-blue-700'
                     )}
                   >
                     <input
                       type="checkbox"
-                      checked={updateTypes.includes(value)}
+                      checked={memoryTypes.includes(value)}
                       onChange={() => toggleUpdateType(value)}
                       className="rounded border-neutral-300"
                     />
@@ -281,7 +281,7 @@ export function FiltersPanel({
       </div>
 
       {/* Active Filters Display */}
-      {(childIds.length > 0 || updateTypes.length > 0 || dateRange) && (
+      {(childIds.length > 0 || memoryTypes.length > 0 || dateRange) && (
         <div className="flex flex-wrap gap-1.5">
           {childIds.length > 0 &&
             children
@@ -303,7 +303,7 @@ export function FiltersPanel({
                 </Badge>
               ))}
 
-          {updateTypes.map((type) => (
+          {memoryTypes.map((type) => (
             <Badge key={type} variant="secondary" className="flex items-center gap-1.5 text-xs px-2 py-1">
               {type}
               <button

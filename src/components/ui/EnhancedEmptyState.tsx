@@ -195,7 +195,7 @@ export const EnhancedEmptyState: React.FC<EnhancedEmptyStateProps> = ({
           icon: CameraIcon,
           title: title || 'Your timeline is waiting',
           description: description || 'Share your first precious moment to start building your family\'s story.',
-          actionLabel: actionLabel || 'Create your first update',
+          actionLabel: actionLabel || 'Create your first memory',
           suggestions: [
             'Start with a simple photo',
             'Share what made you smile today',

@@ -40,7 +40,7 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
       setIsMobileMenuOpen(false)
       setIsUserMenuOpen(false)
     } else {
-      router.push('/dashboard/create-update')
+      router.push('/dashboard/create-memory')
     }
   }
 
@@ -130,7 +130,7 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                     onClick={() => triggerCreateUpdate('photo')}
                     className="bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
-                    Create Update
+                    Create Memory
                   </button>
                 )}
               </div>
@@ -313,7 +313,7 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                   <svg className="mr-3 h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Create Update
+                  Create Memory
                 </button>
               )}
             </div>

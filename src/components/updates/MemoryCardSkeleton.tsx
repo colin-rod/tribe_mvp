@@ -2,14 +2,14 @@
 
 import { cn } from '@/lib/utils'
 
-interface UpdateCardSkeletonProps {
+interface MemoryCardSkeletonProps {
   className?: string
 }
 
 /**
- * Enhanced loading skeleton for UpdateCard component with shimmer effect
+ * Enhanced loading skeleton for MemoryCard component with shimmer effect
  */
-export default function UpdateCardSkeleton({ className }: UpdateCardSkeletonProps) {
+export default function MemoryCardSkeleton({ className }: MemoryCardSkeletonProps) {
   return (
     <div
       className={cn(

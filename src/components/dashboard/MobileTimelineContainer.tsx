@@ -4,8 +4,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { VariableSizeList as List } from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns'
-import MobileUpdateCard from './MobileUpdateCard'
-import UpdateCardSkeleton from '@/components/updates/UpdateCardSkeleton'
+import MobileMemoryCard from './MobileMemoryCard'
+import MemoryCardSkeleton from '@/components/updates/MemoryCardSkeleton'
 import EmptyTimelineState, { NoSearchResultsState } from './EmptyTimelineState'
 
 interface Update {
@@ -204,7 +204,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
     if (item.update) {
       return (
         <div style={style}>
-          <MobileUpdateCard
+          <MobileMemoryCard
             update={item.update}
             onClick={onUpdateClick}
             onLike={onUpdateLike}
@@ -250,7 +250,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       {loading && updates.length === 0 && (
         <div className="space-y-4 p-4">
           {[...Array(5)].map((_, i) => (
-            <UpdateCardSkeleton key={i} />
+            <MemoryCardSkeleton key={i} />
           ))}
         </div>
       )}
@@ -289,7 +289,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       {/* Infinite scroll loading indicator */}
       {loading && updates.length > 0 && (
         <div className="p-4 bg-white border-t border-neutral-200">
-          <UpdateCardSkeleton />
+          <MemoryCardSkeleton />
         </div>
       )}
     </div>

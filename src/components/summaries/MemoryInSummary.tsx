@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import type { UpdateInDigest as UpdateInDigestType } from '@/lib/types/digest'
 
-interface UpdateInDigestProps {
+interface MemoryInSummaryProps {
   update: UpdateInDigestType
   index: number
   totalUpdates: number
@@ -22,14 +22,14 @@ interface UpdateInDigestProps {
   onEditCaption: (newCaption: string) => void
 }
 
-export default function UpdateInDigest({
+export default function MemoryInSummary({
   update,
   index,
   totalUpdates,
   onRemove,
   onReorder,
   onEditCaption
-}: UpdateInDigestProps) {
+}: MemoryInSummaryProps) {
   const [isEditingCaption, setIsEditingCaption] = useState(false)
   const [editedCaption, setEditedCaption] = useState(update.custom_caption || update.content)
   const [showAIRationale, setShowAIRationale] = useState(false)

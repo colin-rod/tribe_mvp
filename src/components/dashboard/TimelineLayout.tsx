@@ -15,8 +15,8 @@ export interface UpdateForDisplay extends Update {
 
 interface TimelineLayoutProps {
   updates: UpdateForDisplay[]
-  onLike?: (updateId: string) => void
-  onComment?: (updateId: string) => void
+  onLike?: (memoryId: string) => void
+  onComment?: (memoryId: string) => void
 }
 
 export default function TimelineLayout({
@@ -26,7 +26,7 @@ export default function TimelineLayout({
 }: TimelineLayoutProps) {
   const [likedUpdates, setLikedUpdates] = useState<Set<string>>(new Set())
 
-  // Group updates by date
+  // Group memories by date
   const groupedUpdates = updates.reduce((acc, update) => {
     const date = new Date(update.created_at).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -70,7 +70,7 @@ export default function TimelineLayout({
               </div>
             </div>
 
-            {/* Updates for this date - alternate left/right on desktop */}
+            {/* Memories for this date - alternate left/right on desktop */}
             <div className="space-y-12 md:space-y-16">
               {dateUpdates.map((update, updateIndex) => {
                 const isLeft = updateIndex % 2 === 0

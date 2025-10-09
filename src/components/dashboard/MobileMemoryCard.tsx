@@ -30,7 +30,7 @@ interface Update {
   likeCount?: number
 }
 
-interface MobileUpdateCardProps {
+interface MobileMemoryCardProps {
   update: Update
   onClick: (updateId: string) => void
   onLike?: (updateId: string) => void
@@ -63,7 +63,7 @@ const STATUS_CONFIG = {
   }
 }
 
-export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
+export const MobileMemoryCard: React.FC<MobileMemoryCardProps> = ({
   update,
   onClick,
   onLike,
@@ -311,4 +311,4 @@ export const MobileUpdateCard: React.FC<MobileUpdateCardProps> = ({
   )
 }
 
-export default MobileUpdateCard
+export default MobileMemoryCard

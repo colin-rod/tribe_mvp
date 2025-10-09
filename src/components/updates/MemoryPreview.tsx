@@ -11,7 +11,7 @@ import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Child } from '@/lib/children'
 import type { Recipient } from '@/lib/recipients'
 
-interface UpdatePreviewProps {
+interface MemoryPreviewProps {
   formData: Partial<UpdateFormData>
   aiAnalysis: AIAnalysisResponse | null
   child: Child | null
@@ -23,7 +23,7 @@ interface UpdatePreviewProps {
   error?: string | null
 }
 
-export default function UpdatePreview({
+export default function MemoryPreview({
   formData,
   aiAnalysis,
   child,
@@ -33,7 +33,7 @@ export default function UpdatePreview({
   onSchedule,
   isLoading = false,
   error
-}: UpdatePreviewProps) {
+}: MemoryPreviewProps) {
   const [isScheduling, setIsScheduling] = useState(false)
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
@@ -63,7 +63,7 @@ export default function UpdatePreview({
         </div>
       )}
 
-      {/* Update Preview Card */}
+      {/* Memory Preview Card */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         {/* Header */}
         <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -86,7 +86,7 @@ export default function UpdatePreview({
           </div>
         </div>
 
-        {/* Update Content */}
+        {/* Memory Content */}
         <div className="p-6">
           {/* Child Info */}
           {child && (
@@ -114,7 +114,7 @@ export default function UpdatePreview({
             </div>
           )}
 
-          {/* Update Text */}
+          {/* Memory Text */}
           <div className="mb-6">
             <div className="prose max-w-none">
               <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
@@ -234,7 +234,7 @@ export default function UpdatePreview({
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Updates can be scheduled at least 15 minutes from now
+                Memories can be scheduled at least 15 minutes from now
               </p>
             </div>
           )}
@@ -272,7 +272,7 @@ export default function UpdatePreview({
                   <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Schedule Update
+                  Schedule Memory
                 </>
               )}
             </button>
@@ -287,14 +287,14 @@ export default function UpdatePreview({
             {isLoading ? (
               <>
                 <LoadingSpinner size="sm" className="mr-2" />
-                Sending Update...
+                Sending Memory...
               </>
             ) : (
               <>
                 <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-                Send Update Now
+                Send Memory Now
               </>
             )}
           </button>
@@ -309,7 +309,7 @@ export default function UpdatePreview({
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p className="text-sm text-yellow-700">
-              Please select at least one recipient to send this update.
+              Please select at least one recipient to send this memory.
             </p>
           </div>
         </div>

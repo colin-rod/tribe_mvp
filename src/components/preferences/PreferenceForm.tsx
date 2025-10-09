@@ -160,7 +160,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         </p>
 
         <fieldset className="mt-4">
-          <legend className="sr-only">Update frequency</legend>
+          <legend className="sr-only">Memory frequency</legend>
           <div className="space-y-3">
             {options.frequencies.map((option) => {
               const isGroupDefault = recipient.group && recipient.group.default_frequency === option.value
@@ -215,7 +215,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         </p>
 
         <fieldset className="mt-4">
-          <legend className="sr-only">Update importance threshold</legend>
+          <legend className="sr-only">Memory importance threshold</legend>
           <div className="space-y-3">
             {options.importanceThresholds.map((option) => (
               <div key={option.value} className="flex items-start p-1">

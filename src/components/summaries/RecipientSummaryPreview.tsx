@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import UpdateInDigest from '@/components/digests/UpdateInDigest'
-import DigestNarrativeView from '@/components/digests/DigestNarrativeView'
-import EmailPreview from '@/components/digests/EmailPreview'
+import MemoryInSummary from '@/components/summaries/MemoryInSummary'
+import SummaryNarrativeView from '@/components/summaries/SummaryNarrativeView'
+import EmailPreview from '@/components/summaries/EmailPreview'
 import { SparklesIcon, UserIcon, EnvelopeIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { renderRecipientDigestEmail } from '@/lib/utils/emailTemplates'
 import type { RecipientDigestPreview } from '@/lib/types/digest'
 
-interface RecipientDigestPreviewProps {
+interface RecipientSummaryPreviewProps {
   recipient: RecipientDigestPreview
   onCustomize: (
     updateId: string,
@@ -21,10 +21,10 @@ interface RecipientDigestPreviewProps {
   ) => void
 }
 
-export default function RecipientDigestPreview({
+export default function RecipientSummaryPreview({
   recipient,
   onCustomize
-}: RecipientDigestPreviewProps) {
+}: RecipientSummaryPreviewProps) {
   const [showAIRationale, setShowAIRationale] = useState(false)
   const [showIndividualUpdates, setShowIndividualUpdates] = useState(false)
   const [viewMode, setViewMode] = useState<'narrative' | 'list'>('narrative')
@@ -148,7 +148,7 @@ export default function RecipientDigestPreview({
       {/* Narrative View */}
       {viewMode === 'narrative' && recipient.narrative && (
         <div className="space-y-6">
-          <DigestNarrativeView
+          <SummaryNarrativeView
             narrative={recipient.narrative}
             recipientName={recipient.recipient_name}
             childName={recipient.updates[0]?.child_name || 'your child'}
@@ -181,7 +181,7 @@ export default function RecipientDigestPreview({
                   {recipient.updates
                     .sort((a, b) => a.display_order - b.display_order)
                     .map((update, index) => (
-                      <UpdateInDigest
+                      <MemoryInSummary
                         key={update.update_id}
                         update={update}
                         index={index}
@@ -229,7 +229,7 @@ export default function RecipientDigestPreview({
               {recipient.updates
                 .sort((a, b) => a.display_order - b.display_order)
                 .map((update, index) => (
-                  <UpdateInDigest
+                  <MemoryInSummary
                     key={update.update_id}
                     update={update}
                     index={index}

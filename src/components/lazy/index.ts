@@ -18,10 +18,13 @@ export const MediaGallery = dynamic(() => import('@/components/media/MediaGaller
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
 
-// Updates components - can be heavy with many updates
-export const VirtualizedUpdatesList = dynamic(() => import('@/components/updates/VirtualizedUpdatesList'), {
+// Memories components - can be heavy with many memories
+export const VirtualizedMemoriesList = dynamic(() => import('@/components/updates/VirtualizedMemoriesList'), {
   loading: () => React.createElement(LoadingSpinner, { size: 'md' })
 })
+
+// Legacy export for backward compatibility
+export const VirtualizedUpdatesList = VirtualizedMemoriesList
 
 // AI Prompts - complex with real-time features
 export const PromptFeed = dynamic(() => import('@/components/prompts/PromptFeed').then(mod => ({ default: mod.PromptFeed })), {
@@ -48,7 +51,8 @@ const lazyComponents = {
   AdminPanel,
   ProfileSettings,
   MediaGallery,
-  VirtualizedUpdatesList,
+  VirtualizedMemoriesList,
+  VirtualizedUpdatesList, // Legacy
   PromptFeed,
   ConversationView,
   OnboardingWizard,

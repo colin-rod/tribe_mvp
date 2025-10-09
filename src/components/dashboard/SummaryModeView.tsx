@@ -5,12 +5,12 @@ import { Card } from '@/components/ui/Card'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import type { UpdateForDisplay } from './TimelineLayout'
 
-interface DigestModeViewProps {
+interface SummaryModeViewProps {
   updates: UpdateForDisplay[]
 }
 
-export default function DigestModeView({ updates }: DigestModeViewProps) {
-  // Group updates by day
+export default function SummaryModeView({ updates }: SummaryModeViewProps) {
+  // Group memories by day
   const groupedByDay = updates.reduce((acc, update) => {
     const day = new Date(update.created_at).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -55,7 +55,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-orange-600">{totalUpdates}</p>
-              <p className="text-xs text-neutral-600">updates</p>
+              <p className="text-xs text-neutral-600">memories</p>
             </div>
           </div>
 
@@ -63,7 +63,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-neutral-200">
             <p className="text-sm text-neutral-700 leading-relaxed">
               <span className="font-semibold text-primary-700">AI Summary:</span>{' '}
-              {totalUpdates} new update{totalUpdates > 1 ? 's' : ''} from{' '}
+              {totalUpdates} new {totalUpdates === 1 ? 'memory' : 'memories'} from{' '}
               {uniqueChildren} child{uniqueChildren > 1 ? 'ren' : ''} this week
               {milestones > 0 && (
                 <>, including {milestones} milestone{milestones > 1 ? 's' : ''} 🎉</>
@@ -80,7 +80,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-neutral-900">{day}</h3>
               <span className="text-xs text-neutral-500">
-                {dayUpdates.length} update{dayUpdates.length > 1 ? 's' : ''}
+                {dayUpdates.length} {dayUpdates.length === 1 ? 'memory' : 'memories'}
               </span>
             </div>
           </div>
@@ -94,7 +94,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
                     <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-neutral-100 relative">
                       <Image
                         src={update.media_urls[0]}
-                        alt={update.content || 'Update'}
+                        alt={update.content || 'Memory'}
                         fill
                         className="object-cover"
                       />
@@ -155,7 +155,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
       {/* Footer note */}
       <div className="text-center p-4">
         <p className="text-xs text-neutral-500 italic">
-          This is how your updates would appear in a weekly digest
+          This is how your memories would appear in a weekly summary
         </p>
       </div>
 
@@ -163,7 +163,7 @@ export default function DigestModeView({ updates }: DigestModeViewProps) {
       {updates.length === 0 && (
         <Card className="p-12 text-center">
           <SparklesIcon className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-          <p className="text-neutral-500">No updates this week</p>
+          <p className="text-neutral-500">No memories this week</p>
         </Card>
       )}
     </div>

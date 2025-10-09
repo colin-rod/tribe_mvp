@@ -37,7 +37,7 @@ export async function fetchSearchableContent(
           content: update.content || '',
           url: isDraft
             ? `/dashboard/drafts/${update.id}/edit`
-            : `/dashboard/updates/${update.id}`,
+            : `/dashboard/memories/${update.id}`,
           metadata: {
             childId: update.child_id,
             status: update.distribution_status,

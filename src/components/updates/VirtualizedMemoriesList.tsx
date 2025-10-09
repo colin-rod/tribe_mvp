@@ -10,12 +10,12 @@ import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/ty
 import { getRecentUpdatesWithStats } from '@/lib/updates'
 import { transformToCardData } from '@/lib/utils/update-formatting'
 import UpdateCard from './UpdateCard'
-import UpdateCardSkeleton from './UpdateCardSkeleton'
+import MemoryCardSkeleton from './MemoryCardSkeleton'
 import { Button } from '@/components/ui/Button'
 
-const logger = createLogger('VirtualizedUpdatesList')
+const logger = createLogger('VirtualizedMemoriesList')
 
-interface VirtualizedUpdatesListProps extends Omit<UpdatesListProps, 'limit'> {
+interface VirtualizedMemoriesListProps extends Omit<UpdatesListProps, 'limit'> {
   height?: number
   itemHeight?: number
   overscanCount?: number
@@ -38,7 +38,7 @@ const ListItem = memo<ListItemProps>(({ index, style, data }) => {
   if (!update) {
     return (
       <div style={style}>
-        <UpdateCardSkeleton />
+        <MemoryCardSkeleton />
       </div>
     )
   }
@@ -57,10 +57,10 @@ const ListItem = memo<ListItemProps>(({ index, style, data }) => {
 ListItem.displayName = 'ListItem'
 
 /**
- * VirtualizedUpdatesList component for efficiently displaying large lists of updates
- * Uses react-window for performance optimization when dealing with many updates
+ * VirtualizedMemoriesList component for efficiently displaying large lists of memories
+ * Uses react-window for performance optimization when dealing with many memories
  */
-const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function VirtualizedUpdatesList({
+const VirtualizedMemoriesList = memo<VirtualizedMemoriesListProps>(function VirtualizedMemoriesList({
   showViewAllLink = true,
   className,
   height = 600,
@@ -86,8 +86,8 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
 
       setUpdates(transformedUpdates)
     } catch (err) {
-      logger.error('Error loading updates:', { error: err })
-      setError('Failed to load recent updates')
+      logger.error('Error loading memories:', { error: err })
+      setError('Failed to load recent memories')
     } finally {
       setLoading(false)
     }
@@ -98,7 +98,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
   }, [loadUpdates])
 
   const handleUpdateClick = useCallback((updateId: string) => {
-    router.push(`/dashboard/updates/${updateId}`)
+    router.push(`/dashboard/memories/${updateId}`)
   }, [router])
 
   const handleRetry = useCallback(() => {
@@ -109,7 +109,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
     if (onCreateUpdate) {
       onCreateUpdate('photo')
     } else {
-      router.push('/dashboard/create-update')
+      router.push('/dashboard/create-memory')
     }
   }, [onCreateUpdate, router])
 
@@ -123,7 +123,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
     return (
       <div className={cn('space-y-4', className)}>
         {Array.from({ length: 5 }, (_, index) => (
-          <UpdateCardSkeleton key={index} />
+          <MemoryCardSkeleton key={index} />
         ))}
       </div>
     )
@@ -151,7 +151,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
             </svg>
           </div>
           <h3 className="text-lg font-medium text-red-900 mb-2">
-            Unable to Load Updates
+            Unable to Load Memories
           </h3>
           <p className="text-sm text-red-700 mb-4">
             {error}
@@ -203,7 +203,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
     )
   }
 
-  // Success state with virtualized updates list
+  // Success state with virtualized memories list
   return (
     <div className={cn('space-y-4', className)}>
       <List
@@ -213,7 +213,7 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
         itemSize={itemHeight}
         itemData={itemData()}
         overscanCount={overscanCount}
-        className="virtualized-updates-list"
+        className="virtualized-memories-list"
       >
         {ListItem}
       </List>
@@ -247,6 +247,6 @@ const VirtualizedUpdatesList = memo<VirtualizedUpdatesListProps>(function Virtua
   )
 })
 
-VirtualizedUpdatesList.displayName = 'VirtualizedUpdatesList'
+VirtualizedMemoriesList.displayName = 'VirtualizedMemoriesList'
 
-export default VirtualizedUpdatesList
+export default VirtualizedMemoriesList

@@ -23,16 +23,16 @@ import { cn } from '@/lib/utils';
 import { FiltersPanel } from './FiltersPanel';
 import { useDashboardActions } from '@/contexts/DashboardActionsContext';
 
-// Lazy load DigestStats component
-const DigestStats = dynamic(() => import('@/components/digests/DigestStats'), {
+// Lazy load SummaryStats component
+const SummaryStats = dynamic(() => import('@/components/summaries/SummaryStats'), {
   loading: () => <div className="h-40 bg-neutral-100 animate-pulse rounded-lg" />,
 });
 
 export interface ActivityRightPaneProps {
   /** Callback when Create Memory is clicked */
-  onCreateUpdate?: () => void;
+  onCreateMemory?: () => void;
   /** Callback when Compile Summary is clicked */
-  onCompileDigest?: () => void;
+  onCompileSummary?: () => void;
   /** Callback when an AI prompt is selected */
   onSelectAIPrompt?: (prompt: AIPromptSuggestion) => void;
   /** Optional className for custom styling */
@@ -44,26 +44,26 @@ export interface ActivityRightPaneProps {
  * Provides contextual AI suggestions and quick actions
  */
 const ActivityRightPaneComponent = ({
-  onCreateUpdate,
-  onCompileDigest,
+  onCreateMemory,
+  onCompileSummary,
   onSelectAIPrompt,
   className,
 }: ActivityRightPaneProps) => {
   const { activityFilters } = useDashboardActions();
 
   // Handle Create Memory action
-  const handleCreateUpdate = useCallback(() => {
-    if (onCreateUpdate) {
-      onCreateUpdate();
+  const handleCreateMemory = useCallback(() => {
+    if (onCreateMemory) {
+      onCreateMemory();
     }
-  }, [onCreateUpdate]);
+  }, [onCreateMemory]);
 
   // Handle Compile Summary action
-  const handleCompileDigest = useCallback(() => {
-    if (onCompileDigest) {
-      onCompileDigest();
+  const handleCompileSummary = useCallback(() => {
+    if (onCompileSummary) {
+      onCompileSummary();
     }
-  }, [onCompileDigest]);
+  }, [onCompileSummary]);
 
   // Handle AI prompt selection
   const handleSelectPrompt = useCallback(
@@ -72,10 +72,10 @@ const ActivityRightPaneComponent = ({
         onSelectAIPrompt(prompt);
       } else {
         // Default behavior: Open create memory modal with prompt
-        handleCreateUpdate();
+        handleCreateMemory();
       }
     },
-    [onSelectAIPrompt, handleCreateUpdate]
+    [onSelectAIPrompt, handleCreateMemory]
   );
 
   return (
@@ -88,11 +88,11 @@ const ActivityRightPaneComponent = ({
             searchQuery={activityFilters.filters.searchQuery}
             dateRange={activityFilters.filters.dateRange}
             childIds={activityFilters.filters.childIds}
-            updateTypes={activityFilters.filters.updateTypes as ('text' | 'photo' | 'milestone' | 'video')[]}
+            memoryTypes={activityFilters.filters.updateTypes as ('text' | 'photo' | 'milestone' | 'video')[]}
             onSearchChange={activityFilters.setSearchQuery}
             onDateRangeChange={activityFilters.setDateRange}
             onChildIdsChange={activityFilters.setChildIds}
-            onUpdateTypesChange={activityFilters.setUpdateTypes as (types: ('text' | 'photo' | 'milestone' | 'video')[]) => void}
+            onMemoryTypesChange={activityFilters.setUpdateTypes as (types: ('text' | 'photo' | 'milestone' | 'video')[]) => void}
             onClearFilters={activityFilters.clearFilters}
             activeFilterCount={activityFilters.activeFilterCount}
           />
@@ -103,8 +103,8 @@ const ActivityRightPaneComponent = ({
       <div className="sticky top-[36px] z-10 bg-white/95 backdrop-blur pb-2">
         <h3 className="text-sm font-semibold text-neutral-900 mb-2">Quick Actions</h3>
         <QuickActionsPanel
-          onCreateUpdate={handleCreateUpdate}
-          onCompileDigest={handleCompileDigest}
+          onCreateMemory={handleCreateMemory}
+          onCompileSummary={handleCompileSummary}
           className="border border-neutral-200 rounded-md p-3"
         />
       </div>
@@ -113,7 +113,7 @@ const ActivityRightPaneComponent = ({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-neutral-900">Summary Overview</h3>
         <div className="border border-neutral-200 rounded-md p-3">
-          <DigestStats />
+          <SummaryStats />
         </div>
       </div>
 

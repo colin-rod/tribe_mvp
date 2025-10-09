@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useDigestCompilation } from '@/hooks/useDigestCompilation'
+import { useSummaryCompilation } from '@/hooks/useSummaryCompilation'
 import Navigation from '@/components/layout/Navigation'
-import RecipientDigestPreview from '@/components/digests/RecipientDigestPreview'
+import RecipientSummaryPreview from '@/components/summaries/RecipientSummaryPreview'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -34,7 +34,7 @@ export default function DigestPreviewPage() {
     loadPreview,
     approve,
     customize
-  } = useDigestCompilation()
+  } = useSummaryCompilation()
 
   const [selectedRecipientIndex, setSelectedRecipientIndex] = useState(0)
   const [approving, setApproving] = useState(false)
@@ -285,7 +285,7 @@ export default function DigestPreviewPage() {
             {/* Preview Content */}
             <div className="lg:col-span-9">
               {selectedRecipient && (
-                <RecipientDigestPreview
+                <RecipientSummaryPreview
                   recipient={selectedRecipient}
                   onCustomize={(updateId, customization) =>
                     handleCustomize(selectedRecipient.recipient_id, updateId, customization)

@@ -2,7 +2,7 @@
 
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('SendUpdateModal')
+const logger = createLogger('SendMemoryModal')
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -13,7 +13,7 @@ import DeliveryStatus from './DeliveryStatus'
 import EmailPreview from './EmailPreview'
 import { CheckIcon } from '@heroicons/react/24/outline'
 
-interface SendUpdateModalProps {
+interface SendMemoryModalProps {
   updateId: string
   updateContent?: string | null
   milestoneType?: string | null
@@ -25,7 +25,7 @@ interface SendUpdateModalProps {
   onSent?: () => void
 }
 
-export default function SendUpdateModal({
+export default function SendMemoryModal({
   updateId,
   updateContent,
   milestoneType,
@@ -35,7 +35,7 @@ export default function SendUpdateModal({
   childPhotoUrl,
   onClose,
   onSent
-}: SendUpdateModalProps) {
+}: SendMemoryModalProps) {
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [selectedRecipients, setSelectedRecipients] = useState<Set<string>>(new Set())
   const [loadingRecipients, setLoadingRecipients] = useState(true)
@@ -291,7 +291,7 @@ export default function SendUpdateModal({
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <LoadingSpinner size="lg" className="mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Sending your update...</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Sending your memory...</h3>
                 <p className="text-sm text-gray-600">
                   Sending to {selectedRecipients.size} recipient{selectedRecipients.size !== 1 ? 's' : ''}
                 </p>
@@ -307,9 +307,9 @@ export default function SendUpdateModal({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Update sent successfully!</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Memory sent successfully!</h3>
                 <p className="text-sm text-gray-600">
-                  Your update has been sent to {selectedRecipients.size} recipient{selectedRecipients.size !== 1 ? 's' : ''}
+                  Your memory has been sent to {selectedRecipients.size} recipient{selectedRecipients.size !== 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -371,7 +371,7 @@ export default function SendUpdateModal({
                       onClick={handleSendUpdate}
                       disabled={selectedRecipients.size === 0 || sendingEmail}
                     >
-                      Send Update
+                      Send Memory
                     </Button>
                   )}
                 </>

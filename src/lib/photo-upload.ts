@@ -124,7 +124,7 @@ export function getChildPhotoUrl(photoUrl?: string, name?: string): string {
 }
 
 /**
- * Upload multiple photos for an update
+ * Upload multiple photos for a memory
  */
 export async function uploadUpdatePhotos(files: File[], updateId: string): Promise<string[]> {
   const supabase = createClient()
@@ -133,7 +133,7 @@ export async function uploadUpdatePhotos(files: File[], updateId: string): Promi
   if (!user) throw new Error('Not authenticated')
 
   const uploadPromises = files.map(async (file, index) => {
-    // Process image with higher quality for updates
+    // Process image with higher quality for memories
     const processedFile = await processImage(file, { maxWidth: 1920, quality: 0.85 })
 
     const fileExtension = file.type === 'image/png' ? 'png' : 'jpg'
@@ -162,7 +162,7 @@ export async function uploadUpdatePhotos(files: File[], updateId: string): Promi
 }
 
 /**
- * Delete update photos
+ * Delete memory photos
  */
 export async function deleteUpdatePhotos(updateId: string, photoUrls: string[]): Promise<void> {
   const supabase = createClient()
@@ -185,18 +185,18 @@ export async function deleteUpdatePhotos(updateId: string, photoUrls: string[]):
 }
 
 /**
- * Compress and resize image specifically for updates
+ * Compress and resize image specifically for memories
  */
 export async function compressUpdateImage(file: File): Promise<File> {
   return processImage(file, { maxWidth: 1920, quality: 0.85 })
 }
 
 /**
- * Validate update media files
+ * Validate memory media files
  */
-export function validateUpdateMediaFiles(files: File[]): string | null {
+export function validateMemoryMediaFiles(files: File[]): string | null {
   if (files.length > 10) {
-    return 'Maximum 10 media files allowed per update'
+    return 'Maximum 10 media files allowed per memory'
   }
 
   for (const file of files) {
@@ -220,6 +220,9 @@ export function validateUpdateMediaFiles(files: File[]): string | null {
 
   return null
 }
+
+// Legacy export for backward compatibility
+export const validateUpdateMediaFiles = validateMemoryMediaFiles
 
 /**
  * Generate preview URLs for files before upload

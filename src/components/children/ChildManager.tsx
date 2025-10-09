@@ -118,7 +118,7 @@ export default function ChildManager() {
           </div>
           <h3 className="text-base font-medium text-gray-900 mb-1">No children yet</h3>
           <p className="text-sm text-gray-600 mb-6">
-            Add your first child to start sharing updates with your circle.
+            Add your first child to start sharing memories with your circle.
           </p>
           {!showAddForm && (
             <Button variant="primary" onClick={() => setShowAddForm(true)}>

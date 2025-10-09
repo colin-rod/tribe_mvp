@@ -2,37 +2,37 @@
 
 import { createLogger } from '@/lib/logger'
 
-const logger = createLogger('CreateUpdateWizard')
+const logger = createLogger('CreateMemoryWizard')
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useUpdateCreation } from '@/hooks/useUpdateCreation'
+import { useMemoryCreation } from '@/hooks/useMemoryCreation'
 import { getRecipients } from '@/lib/recipients'
-import UpdateForm from '@/components/updates/UpdateForm'
-import UpdatePreview from '@/components/updates/UpdatePreview'
+import MemoryForm from '@/components/updates/MemoryForm'
+import MemoryPreview from '@/components/updates/MemoryPreview'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { Recipient } from '@/lib/recipients'
 import type { Child } from '@/lib/children'
 
-export type CreateUpdateWizardVariant = 'page' | 'modal'
+export type CreateMemoryWizardVariant = 'page' | 'modal'
 
-export interface CreateUpdateWizardProps {
+export interface CreateMemoryWizardProps {
   onCancel: () => void
-  onSent?: () => void
-  onScheduled?: () => void
-  onDraftSaved?: (updateId: string) => void
-  variant?: CreateUpdateWizardVariant
+  onMemorySent?: () => void
+  onMemoryScheduled?: () => void
+  onDraftSaved?: (memoryId: string) => void
+  variant?: CreateMemoryWizardVariant
   initialContent?: string
 }
 
-export default function CreateUpdateWizard({
+export default function CreateMemoryWizard({
   onCancel,
-  onSent,
-  onScheduled,
+  onMemorySent,
+  onMemoryScheduled,
   onDraftSaved,
   variant = 'page',
   initialContent
-}: CreateUpdateWizardProps) {
+}: CreateMemoryWizardProps) {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const {
@@ -53,7 +53,7 @@ export default function CreateUpdateWizard({
     finalizeUpdate,
     reset,
     loadChildren
-  } = useUpdateCreation()
+  } = useMemoryCreation()
 
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
@@ -114,28 +114,28 @@ export default function CreateUpdateWizard({
       onDraftSaved?.(draftId)
       setCurrentStep('preview')
     } catch (err) {
-      logger.error('Failed to create update draft:', { error: err })
+      logger.error('Failed to create memory draft:', { error: err })
     }
   }
 
-  const handleSendUpdate = async () => {
+  const handleSendMemory = async () => {
     try {
       await finalizeUpdate()
-      onSent?.()
+      onMemorySent?.()
       reset()
     } catch (err) {
-      logger.error('Failed to send update:', { error: err })
+      logger.error('Failed to send memory:', { error: err })
     }
   }
 
-  const handleScheduleUpdate = async (scheduledFor: Date) => {
+  const handleScheduleMemory = async (scheduledFor: Date) => {
     try {
       setFormData({ scheduledFor })
       await finalizeUpdate()
-      onScheduled?.()
+      onMemoryScheduled?.()
       reset()
     } catch (err) {
-      logger.error('Failed to schedule update:', { error: err })
+      logger.error('Failed to schedule memory:', { error: err })
     }
   }
 
@@ -277,7 +277,7 @@ export default function CreateUpdateWizard({
           <div className={`p-6 ${isModal ? 'flex-1 overflow-y-auto' : ''}`}>
             {currentStep === 'create' && (
               <div className="space-y-6">
-                <UpdateForm
+                <MemoryForm
                   formData={formData}
                   previewUrls={previewUrls}
                   onFormDataChange={setFormData}
@@ -292,14 +292,14 @@ export default function CreateUpdateWizard({
             )}
 
             {currentStep === 'preview' && (
-              <UpdatePreview
+              <MemoryPreview
                 formData={formData}
                 aiAnalysis={aiAnalysis}
                 child={selectedChild}
                 recipients={recipients}
                 previewUrls={previewUrls}
-                onSend={handleSendUpdate}
-                onSchedule={handleScheduleUpdate}
+                onSend={handleSendMemory}
+                onSchedule={handleScheduleMemory}
                 isLoading={isLoading}
               />
             )}

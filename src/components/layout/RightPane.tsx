@@ -35,7 +35,7 @@ export function RightPane({ children, className }: RightPaneProps) {
 
   const titleMap: Record<string, string> = {
     activity: 'Tools & Insights',
-    digests: 'Digest Tools',
+    digests: 'Summary Tools',
     children: 'Child Tools',
     recipients: 'Recipient Tools',
     groups: 'Group Tools',

@@ -594,7 +594,7 @@ export class GroupDigestProcessor {
       text += `${groupName} (${updates.length} updates):\n`
 
       for (const update of updates) {
-        const updateContent = update.content || 'New update'
+        const updateContent = update.content || 'New memory'
         html += `
           <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
             <p>${updateContent}</p>

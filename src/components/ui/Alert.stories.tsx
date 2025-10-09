@@ -164,8 +164,8 @@ export const DismissibleVariants: Story = {
       <Alert variant="info" dismissible title="New Feature">
         Check out our latest update sharing features.
       </Alert>
-      <Alert variant="success" dismissible title="Update Sent">
-        Your update was shared successfully.
+      <Alert variant="success" dismissible title="Memory Sent">
+        Your memory was shared successfully.
       </Alert>
       <Alert variant="warning" dismissible title="Storage Warning">
         You&apos;re running low on storage space.
@@ -201,7 +201,7 @@ export const CustomIconVariants: Story = {
         You have 3 new notifications
       </Alert>
       <Alert variant="success" icon={<HeartIcon className="w-5 h-5" />} title="Liked">
-        Your update received 5 likes
+        Your memory received 5 likes
       </Alert>
       <Alert variant="warning" icon={<BellIcon className="w-5 h-5" />} title="Reminder">
         Don&apos;t forget to share today&apos;s milestone
@@ -283,7 +283,7 @@ export const LongContent: Story = {
     variant: 'info',
     title: 'Privacy Update',
     dismissible: true,
-    children: 'We&apos;ve updated our privacy policy to better protect your family&apos;s data. The changes include enhanced encryption for photos and videos, improved control over who can see your updates, and new options for automatically deleting old content. Please review the changes in your account settings.',
+    children: 'We&apos;ve updated our privacy policy to better protect your family&apos;s data. The changes include enhanced encryption for photos and videos, improved control over who can see your memories, and new options for automatically deleting old content. Please review the changes in your account settings.',
   },
 }
 

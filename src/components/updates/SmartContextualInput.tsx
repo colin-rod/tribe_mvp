@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
-import { validateUpdateMediaFiles } from '@/lib/photo-upload'
+import { validateMemoryMediaFiles } from '@/lib/photo-upload'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 
 interface MediaItem {
@@ -140,7 +140,7 @@ export default function SmartContextualInput({
     setValidationError(null)
 
     // Validate files
-    const error = validateUpdateMediaFiles(combinedFiles)
+    const error = validateMemoryMediaFiles(combinedFiles)
     if (error) {
       setValidationError(error)
       // Auto-clear error after 5 seconds

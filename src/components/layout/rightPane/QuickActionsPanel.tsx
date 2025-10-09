@@ -16,22 +16,22 @@ import { cn } from '@/lib/utils';
 
 export interface QuickActionsPanelProps {
   /** Callback when Create Memory is clicked */
-  onCreateUpdate: () => void;  // Keep prop name for backward compatibility
+  onCreateMemory: () => void;
   /** Callback when Compile Summary is clicked */
-  onCompileDigest: () => void;  // Keep prop name for backward compatibility
+  onCompileSummary: () => void;
   /** Optional className for custom styling */
   className?: string;
 }
 
 export function QuickActionsPanel({
-  onCreateUpdate,
-  onCompileDigest,
+  onCreateMemory,
+  onCompileSummary,
   className,
 }: QuickActionsPanelProps) {
   return (
     <div className={cn('space-y-3', className)}>
       <Button
-        onClick={onCreateUpdate}
+        onClick={onCreateMemory}
         className="w-full justify-start gap-2"
         size="default"
       >
@@ -40,7 +40,7 @@ export function QuickActionsPanel({
       </Button>
 
       <Button
-        onClick={onCompileDigest}
+        onClick={onCompileSummary}
         variant="outline"
         className="w-full justify-start gap-2"
         size="default"

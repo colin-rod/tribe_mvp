@@ -237,7 +237,7 @@ export const InlineSpinner: Story = {
   render: () => (
     <div className="max-w-md space-y-4">
       <p className="text-gray-700">
-        Your update is being processed{' '}
+        Your memory is being processed{' '}
         <LoadingSpinner size="sm" className="inline-block ml-2" />
       </p>
       <p className="text-gray-700 flex items-center">

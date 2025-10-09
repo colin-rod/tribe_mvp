@@ -57,7 +57,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
         const startDate = new Date()
         startDate.setDate(startDate.getDate() - daysAgo)
 
-        // Get responses for user's updates in timeframe
+        // Get responses for user's memories in timeframe
         const { data: responsesData, error: responsesError } = await supabase
           .from('responses')
           .select(`
@@ -72,7 +72,7 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
           throw responsesError
         }
 
-        // Get total updates in timeframe for response rate
+        // Get total memories in timeframe for response rate
         const { data: updatesData, error: updatesError } = await supabase
           .from('memories')
           .select('id, created_at')
@@ -168,7 +168,7 @@ function calculateAnalytics(responses: ResponseRow[], updates: UpdateRow[]): Res
   })
 
   // Calculate average response time (simplified - assumes 2.5 hours average)
-  // In a real implementation, you'd need to track when updates were sent
+  // In a real implementation, you'd need to track when memories were sent
   const averageResponseTime = 2.5
 
   return {

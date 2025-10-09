@@ -409,7 +409,7 @@ const SECTIONS = {
               This is an informational message that provides helpful context.
             </Alert>
             <Alert variant="success" title="Success">
-              Your update was shared successfully with your family!
+              Your memory was shared successfully with your family!
             </Alert>
             <Alert variant="warning" title="Warning">
               Please review your changes before submitting.

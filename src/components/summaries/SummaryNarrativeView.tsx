@@ -4,17 +4,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { SparklesIcon, PhotoIcon, VideoCameraIcon, MusicalNoteIcon } from '@heroicons/react/24/outline'
 import type { DigestNarrative } from '@/lib/types/digest'
 
-interface DigestNarrativeViewProps {
+interface SummaryNarrativeViewProps {
   narrative: DigestNarrative
   recipientName: string
   childName: string
 }
 
-export default function DigestNarrativeView({
+export default function SummaryNarrativeView({
   narrative,
   recipientName,
   childName
-}: DigestNarrativeViewProps) {
+}: SummaryNarrativeViewProps) {
   const getMediaIcon = (type: 'photo' | 'video' | 'audio') => {
     switch (type) {
       case 'photo':

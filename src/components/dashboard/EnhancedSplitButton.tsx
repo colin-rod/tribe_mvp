@@ -95,7 +95,7 @@ export const EnhancedSplitButton: React.FC<EnhancedSplitButtonProps> = ({
   className,
   options: propOptions,
   primaryAction,
-  buttonText = 'Create Update',
+  buttonText = 'Create Memory',
   buttonIcon: ButtonIcon = PlusIcon,
   disabled = false,
   loading = false,

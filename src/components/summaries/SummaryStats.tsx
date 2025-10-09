@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { useDigestCompilation } from '@/hooks/useDigestCompilation'
+import { useSummaryCompilation } from '@/hooks/useSummaryCompilation'
 import { useDraftManagement } from '@/hooks/useDraftManagement'
 import {
   SparklesIcon,
@@ -15,8 +15,8 @@ import {
   PencilSquareIcon
 } from '@heroicons/react/24/outline'
 
-export default function DigestStats() {
-  const { stats, loading: digestLoading, loadStats } = useDigestCompilation()
+export default function SummaryStats() {
+  const { stats, loading: summaryLoading, loadStats } = useSummaryCompilation()
   const { summary, loading: draftLoading, loadSummary } = useDraftManagement()
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function DigestStats() {
     loadSummary()
   }, [loadStats, loadSummary])
 
-  const isLoading = digestLoading || draftLoading
+  const isLoading = summaryLoading || draftLoading
 
   if (isLoading) {
     return (
@@ -36,9 +36,9 @@ export default function DigestStats() {
     )
   }
 
-  const canCompileDigest = summary?.can_compile_digest || false
+  const canCompileSummary = summary?.can_compile_digest || false
   const hasDrafts = (summary?.total_drafts || 0) > 0
-  const hasSentDigests = (stats?.total_digests || 0) > 0
+  const hasSentSummaries = (stats?.total_digests || 0) > 0
 
   return (
     <Card className="overflow-hidden">
@@ -48,7 +48,7 @@ export default function DigestStats() {
             <SparklesIcon className="w-4 h-4 text-orange-500" />
             <span>Summary System</span>
           </CardTitle>
-          {canCompileDigest && (
+          {canCompileSummary && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
               Ready to compile
             </span>
@@ -105,7 +105,7 @@ export default function DigestStats() {
         )}
 
         {/* Additional Info */}
-        {!canCompileDigest && hasDrafts && (
+        {!canCompileSummary && hasDrafts && (
           <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 text-center mb-3">
             <p className="text-xs text-neutral-600 mb-2">
               Mark drafts as ready to compile
@@ -119,7 +119,7 @@ export default function DigestStats() {
           </div>
         )}
 
-        {!canCompileDigest && !hasDrafts && (
+        {!canCompileSummary && !hasDrafts && (
           <div className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100 text-center mb-3">
             <SparklesIcon className="w-6 h-6 text-orange-500 mx-auto mb-1.5" />
             <p className="text-xs font-medium text-neutral-900 mb-1">
@@ -138,7 +138,7 @@ export default function DigestStats() {
         )}
 
         {/* Last Sent Info */}
-        {hasSentDigests && stats?.last_sent_at && (
+        {hasSentSummaries && stats?.last_sent_at && (
           <p className="text-xs text-neutral-500 text-center">
             Last sent: {new Date(stats.last_sent_at).toLocaleDateString()}
           </p>

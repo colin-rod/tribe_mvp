@@ -19,7 +19,7 @@ import { withErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeToggle'
 import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
 import StreamLayout from '@/components/dashboard/StreamLayout'
-import DigestModeView from '@/components/dashboard/DigestModeView'
+import SummaryModeView from '@/components/dashboard/SummaryModeView'
 
 /**
  * UpdatesList component for displaying recent updates on the dashboard
@@ -278,7 +278,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
     if (onCreateUpdate) {
       onCreateUpdate('photo')
     } else {
-      router.push('/dashboard/create-update')
+      router.push('/dashboard/create-memory')
     }
   }, [onCreateUpdate, router])
 
@@ -389,7 +389,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
         <TimelineLayout
           updates={updatesForLayout}
           onLike={(updateId) => logger.info('Like clicked', { updateId })}
-          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
+          onComment={(updateId) => router.push(`/dashboard/memories/${updateId}`)}
         />
       )}
 
@@ -397,12 +397,12 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
         <StreamLayout
           updates={updatesForLayout}
           onLike={(updateId) => logger.info('Like clicked', { updateId })}
-          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
+          onComment={(updateId) => router.push(`/dashboard/memories/${updateId}`)}
         />
       )}
 
       {viewMode === 'digest' && (
-        <DigestModeView updates={updatesForLayout} />
+        <SummaryModeView updates={updatesForLayout} />
       )}
 
       {/* View all link */}

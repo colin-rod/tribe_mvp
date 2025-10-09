@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import { useNotificationManager } from '@/hooks/useNotificationManager'
 import { withErrorBoundary } from '@/components/ui/ErrorBoundary'
 import QuietHoursConfig from './QuietHoursConfig'
-import DigestSettings from './DigestSettings'
+import SummarySettings from './SummarySettings'
 import NotificationTesting from './NotificationTesting'
 import type { NotificationPreferences, DigestPreferences } from '@/lib/types/profile'
 import {
@@ -72,7 +72,7 @@ interface BrowserPermissionStatus {
 const RESPONSE_TIMING_OPTIONS = [
   { value: 'immediate', label: 'Immediate', description: 'Get notified right away' },
   { value: 'hourly', label: 'Hourly', description: 'Bundle notifications every hour' },
-  { value: 'daily_digest', label: 'Daily Digest', description: 'Include in daily digest only' },
+  { value: 'daily_digest', label: 'Daily Summary', description: 'Include in daily summary only' },
   { value: 'off', label: 'Off', description: 'No response notifications' }
 ] as const
 
@@ -456,8 +456,8 @@ function NotificationSectionComponent({ user: _user }: NotificationSectionProps)
           {/* Quiet Hours Section */}
           <QuietHoursConfig onSuccess={() => {}} />
 
-          {/* Digests Section */}
-          <DigestSettings
+          {/* Summaries Section */}
+          <SummarySettings
             digestPrefs={{
               enabled: preferences.weekly_digest,
               frequency: 'weekly',
@@ -635,7 +635,7 @@ function NotificationSectionComponent({ user: _user }: NotificationSectionProps)
                         Delivery Confirmations
                       </label>
                       <p className="text-sm text-gray-600">
-                        Confirmations when your updates are successfully sent to family
+                        Confirmations when your memories are successfully sent to family
                       </p>
                     </div>
                   </div>

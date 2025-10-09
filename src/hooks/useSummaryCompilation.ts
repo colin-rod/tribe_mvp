@@ -19,9 +19,9 @@ import {
   deleteDigest
 } from '@/lib/services/digestService'
 
-const logger = createLogger('useDigestCompilation')
+const logger = createLogger('useSummaryCompilation')
 
-export function useDigestCompilation() {
+export function useSummaryCompilation() {
   const [digest, setDigest] = useState<Digest | null>(null)
   const [previewData, setPreviewData] = useState<DigestPreviewData | null>(null)
   const [digests, setDigests] = useState<Digest[]>([])

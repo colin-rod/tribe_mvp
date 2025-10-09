@@ -15,7 +15,7 @@ import {
 interface DashboardHeroProps {
   userName?: string
   hasUnreadNotifications?: boolean
-  onCreateUpdate: (type: UpdateType) => void
+  onCreateMemory: (type: UpdateType) => void
   showReminder?: boolean
   onDismissReminder?: () => void
   className?: string
@@ -33,7 +33,7 @@ const UPDATE_OPTIONS = [
 export const DashboardHero: React.FC<DashboardHeroProps> = ({
   userName = 'there',
   hasUnreadNotifications = false,
-  onCreateUpdate,
+  onCreateMemory,
   showReminder = false,
   onDismissReminder,
   className
@@ -75,14 +75,14 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
   const handleMainButtonClick = () => {
     // Analytics tracking
     if (typeof window !== 'undefined') {
-      // Track the main create update button click
+      // Track the main create memory button click
       window.gtag?.('event', 'dashboard_hero_create_click', {
         event_category: 'engagement',
         event_label: 'photo_default',
         value: 1
       })
     }
-    onCreateUpdate('photo') // Default to photo update
+    onCreateMemory('photo') // Default to photo memory
   }
 
   const handleDropdownToggle = (e: React.MouseEvent) => {
@@ -112,7 +112,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
       })
     }
 
-    onCreateUpdate(type)
+    onCreateMemory(type)
   }
 
   const getGreeting = () => {
@@ -214,7 +214,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
               'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               isDropdownOpen && 'bg-primary-700'
             )}
-            aria-label="More update options"
+            aria-label="More memory options"
             aria-expanded={isDropdownOpen}
             aria-haspopup="menu"
             aria-controls={isDropdownOpen ? 'update-options-menu' : undefined}

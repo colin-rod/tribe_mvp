@@ -130,7 +130,7 @@ export function AIPromptCard({
         type: prompt.prompt_type
       })
 
-      router.push(`/dashboard/create-update?${params.toString()}`)
+      router.push(`/dashboard/create-memory?${params.toString()}`)
     } catch (error) {
       logger.error('Failed to act on prompt', { error, promptId: prompt.id })
     } finally {
@@ -259,7 +259,7 @@ export function AIPromptCard({
         ) : (
           <CameraIcon className="h-4 w-4" />
         )}
-        {isActing ? 'Creating...' : 'Create Update'}
+        {isActing ? 'Creating...' : 'Create Memory'}
       </Button>
 
       <Button

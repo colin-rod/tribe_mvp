@@ -1,20 +1,32 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import CreateUpdateModal, { type UpdateType } from '@/components/updates/CreateUpdateModal'
+import CreateMemoryModal, { type MemoryType } from '@/components/updates/CreateMemoryModal'
 
 interface UseCreateUpdateModalOptions {
+  onMemorySent?: () => void
+  onMemoryScheduled?: () => void
+  // Legacy support
   onUpdateSent?: () => void
   onUpdateScheduled?: () => void
 }
 
 export function useCreateUpdateModal(options: UseCreateUpdateModalOptions = {}) {
-  const { onUpdateSent, onUpdateScheduled } = options
+  const {
+    onMemorySent,
+    onMemoryScheduled,
+    onUpdateSent,
+    onUpdateScheduled
+  } = options
+
+  // Support both new and legacy callback names
+  const handleSent = onMemorySent || onUpdateSent
+  const handleScheduled = onMemoryScheduled || onUpdateScheduled
   const [open, setOpen] = useState(false)
-  const [requestedType, setRequestedType] = useState<UpdateType>('photo')
+  const [requestedType, setRequestedType] = useState<MemoryType>('photo')
   const [initialContent, setInitialContent] = useState<string | undefined>(undefined)
 
-  const openModal = useCallback((type: UpdateType = 'photo', content?: string) => {
+  const openModal = useCallback((type: MemoryType = 'photo', content?: string) => {
     setRequestedType(type)
     setInitialContent(content)
     setOpen(true)
@@ -25,15 +37,15 @@ export function useCreateUpdateModal(options: UseCreateUpdateModalOptions = {}) 
   }, [])
 
   const modal = useMemo(() => (
-    <CreateUpdateModal
+    <CreateMemoryModal
       open={open}
       onClose={closeModal}
-      onUpdateSent={onUpdateSent}
-      onUpdateScheduled={onUpdateScheduled}
+      onUpdateSent={handleSent}
+      onUpdateScheduled={handleScheduled}
       initialType={requestedType}
       initialContent={initialContent}
     />
-  ), [open, closeModal, onUpdateSent, onUpdateScheduled, requestedType, initialContent])
+  ), [open, closeModal, handleSent, handleScheduled, requestedType, initialContent])
 
   return {
     openCreateUpdateModal: openModal,

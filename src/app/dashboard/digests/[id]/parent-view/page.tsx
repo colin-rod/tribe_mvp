@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useDigestCompilation } from '@/hooks/useDigestCompilation'
+import { useSummaryCompilation } from '@/hooks/useSummaryCompilation'
 import Navigation from '@/components/layout/Navigation'
-import ParentNarrativeView from '@/components/digests/ParentNarrativeView'
+import ParentNarrativeView from '@/components/summaries/ParentNarrativeView'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -25,7 +25,7 @@ export default function ParentViewPage() {
     loading,
     error,
     loadDigest
-  } = useDigestCompilation()
+  } = useSummaryCompilation()
 
   const [childName, setChildName] = useState<string>('')
   const [dateRange, setDateRange] = useState<string>('')

@@ -28,8 +28,8 @@ export type InteractionType =
   | 'scroll'
   | 'search'
   | 'filter'
-  | 'create_update'
-  | 'view_update'
+  | 'create_memory'
+  | 'view_memory'
   | 'timeline_navigation'
   | 'preset_usage'
   | 'bulk_action'
@@ -171,7 +171,7 @@ class DashboardAnalyticsManager {
     // Extract section from pathname or DOM
     const pathname = window.location.pathname
     if (pathname.includes('/timeline')) return 'timeline'
-    if (pathname.includes('/updates')) return 'updates'
+    if (pathname.includes('/memories')) return 'memories'
     if (pathname.includes('/dashboard')) return 'dashboard'
     return 'unknown'
   }
@@ -643,7 +643,7 @@ class DashboardAnalyticsManager {
 
   private calculateConversionRate(): number {
     const conversions = this.interactions.filter(i =>
-      i.type === 'create_update' || i.element.includes('send-update')
+      i.type === 'create_memory' || i.element.includes('send-memory')
     ).length
     return this.interactions.length > 0 ? conversions / this.interactions.length : 0
   }

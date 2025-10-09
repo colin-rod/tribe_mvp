@@ -14,7 +14,7 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 
-interface FirstUpdateStepProps {
+interface FirstMemoryStepProps {
   data: Partial<FirstUpdateData>
   onUpdate: (data: Partial<FirstUpdateData>) => void
   onNext: () => void
@@ -25,7 +25,7 @@ interface FirstUpdateStepProps {
   className?: string
 }
 
-export function FirstUpdateStep({
+export function FirstMemoryStep({
   data,
   onUpdate,
   onNext,
@@ -34,7 +34,7 @@ export function FirstUpdateStep({
   canSkip,
   childName = 'your child',
   className
-}: FirstUpdateStepProps) {
+}: FirstMemoryStepProps) {
   const [formData, setFormData] = useState<FirstUpdateData>({
     content: data.content || '',
     mediaFiles: data.mediaFiles || [],
@@ -429,7 +429,7 @@ export function FirstUpdateStep({
 }
 
 // Compact version for mobile
-interface FirstUpdateStepCompactProps {
+interface FirstMemoryStepCompactProps {
   data: Partial<FirstUpdateData>
   onUpdate: (data: Partial<FirstUpdateData>) => void
   onNext: () => void
@@ -440,7 +440,7 @@ interface FirstUpdateStepCompactProps {
   className?: string
 }
 
-export function FirstUpdateStepCompact({
+export function FirstMemoryStepCompact({
   data,
   onUpdate,
   onNext,
@@ -449,7 +449,7 @@ export function FirstUpdateStepCompact({
   canSkip,
   childName = 'your child',
   className
-}: FirstUpdateStepCompactProps) {
+}: FirstMemoryStepCompactProps) {
   const [content, setContent] = useState(data.content || '')
 
   useEffect(() => {

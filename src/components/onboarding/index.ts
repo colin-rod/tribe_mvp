@@ -4,7 +4,7 @@ export { WelcomeStep, WelcomeStepCompact } from './WelcomeStep'
 export { ProfileSetupStep, ProfileSetupStepCompact } from './ProfileSetupStep'
 export { ChildSetupStep, ChildSetupStepCompact } from './ChildSetupStep'
 export { RecipientSetupStep } from './RecipientSetupStep'
-export { FirstUpdateStep, FirstUpdateStepCompact } from './FirstUpdateStep'
+export { FirstMemoryStep, FirstMemoryStepCompact } from './FirstMemoryStep'
 export { CompletionStep, CompletionStepCompact } from './CompletionStep'
 
 // Re-export types for convenience

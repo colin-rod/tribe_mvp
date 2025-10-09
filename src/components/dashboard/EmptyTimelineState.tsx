@@ -17,7 +17,7 @@ import {
 interface EmptyTimelineStateProps {
   hasCompletedOnboarding?: boolean
   userName?: string
-  onCreateUpdate?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
+  onCreateMemory?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
   onViewExamples?: () => void
   className?: string
 }
@@ -61,7 +61,7 @@ const EXAMPLE_UPDATES = [
 export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
   hasCompletedOnboarding = false,
   userName,
-  onCreateUpdate,
+  onCreateMemory,
   onViewExamples,
   className
 }) => {
@@ -81,7 +81,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
     setIsVisible(true)
   }, [])
 
-  const handleCreateUpdate = (type: 'photo' | 'text' | 'video' | 'milestone' = 'photo') => {
+  const handleCreateMemory = (type: 'photo' | 'text' | 'video' | 'milestone' = 'photo') => {
     // Analytics tracking
     if (typeof window !== 'undefined') {
       window.gtag?.('event', 'empty_timeline_create_click', {
@@ -90,7 +90,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
         value: 1
       })
     }
-    onCreateUpdate?.(type)
+    onCreateMemory?.(type)
   }
 
   return (
@@ -164,7 +164,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
           <Button
             variant="default"
             size="lg"
-            onClick={() => handleCreateUpdate('photo')}
+            onClick={() => handleCreateMemory('photo')}
             className="w-full h-14 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
           >
             <CameraIcon className="w-5 h-5 mr-3" />
@@ -175,7 +175,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
           <div className="flex space-x-3">
             <Button
               variant="outline"
-              onClick={() => handleCreateUpdate('text')}
+              onClick={() => handleCreateMemory('text')}
               className="flex-1 h-12"
             >
               <PencilIcon className="w-4 h-4 mr-2" />
@@ -183,7 +183,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleCreateUpdate('milestone')}
+              onClick={() => handleCreateMemory('milestone')}
               className="flex-1 h-12"
             >
               <SparklesIcon className="w-4 h-4 mr-2" />
