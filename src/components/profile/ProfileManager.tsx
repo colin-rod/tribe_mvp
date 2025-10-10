@@ -22,13 +22,13 @@ const PROFILE_TABS: ProfileTab[] = [
   {
     id: 'account',
     label: 'Account',
-    description: 'Email, timezone, and basic settings',
+    description: 'Manage your sign-in email',
     icon: 'cog'
   },
   {
     id: 'security',
     label: 'Security',
-    description: 'Password and authentication settings',
+    description: 'Update your password',
     icon: 'shield'
   },
   {

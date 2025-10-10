@@ -10,23 +10,17 @@ export interface ProfileFormData {
   lastName: string
   bio?: string
   timezone: string
-  language: string
-  dateFormat: string
   avatar?: string
 }
 
 export interface AccountFormData {
   email: string
-  timezone: string
-  autoSave: boolean
-  emailDigest: boolean
 }
 
 export interface SecurityFormData {
   currentPassword: string
   newPassword: string
   confirmPassword: string
-  twoFactorEnabled: boolean
 }
 
 export interface NotificationFormData {
