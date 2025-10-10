@@ -48,7 +48,7 @@ const faqItems: FAQItem[] = [
   {
     id: 'photo-sharing-limits',
     question: 'Are there limits on photos and storage?',
-    answer: 'Tribe offers generous storage for your family photos and videos. You can share unlimited updates with your family circle, and all content is automatically backed up securely in the cloud. Your memories are safe and accessible whenever you need them.'
+    answer: 'Tribe offers generous storage for your family photos. You can share unlimited updates with your family circle, and all content is automatically backed up securely in the cloud. Your memories are safe and accessible whenever you need them.'
   },
   {
     id: 'group-communication',
