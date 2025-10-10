@@ -401,7 +401,7 @@ export default function MemoryForm({
           )}
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          We'll suggest a milestone automatically when your memory sounds like one, or you can pick it manually.
+          We&apos;ll suggest a milestone automatically when your memory sounds like one, or you can pick it manually.
         </p>
       </div>
       {/* Submit Button */}
