@@ -9,7 +9,11 @@ import { validateParentGroupAccess } from '@/middleware/group-security'
 
 // Mock dependencies
 jest.mock('@/lib/supabase/server')
-jest.mock('@/lib/recipient-groups')
+jest.mock('@/lib/recipient-groups', () => ({
+  ...jest.requireActual('@/lib/recipient-groups'),
+  getUserGroups: jest.fn(),
+  createGroup: jest.fn()
+}))
 jest.mock('@/lib/group-management')
 jest.mock('@/lib/group-cache')
 jest.mock('@/middleware/group-security')
@@ -126,8 +130,8 @@ describe('Groups API Integration Tests', () => {
         { id: 'group-1', name: 'Family', is_default_group: true }
       ]
       const newGroupData = {
-        name: 'Close Friends',
-        default_frequency: 'immediate',
+        name: 'Close-Friends',
+        default_frequency: 'every_update',
         default_channels: ['email']
       }
       const createdGroup = {
@@ -164,7 +168,7 @@ describe('Groups API Integration Tests', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'family', // Case-insensitive match
-          default_frequency: 'immediate',
+          default_frequency: 'every_update',
           default_channels: ['email']
         })
       })
@@ -189,7 +193,7 @@ describe('Groups API Integration Tests', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'New Group',
-          default_frequency: 'immediate',
+          default_frequency: 'every_update',
           default_channels: ['email']
         })
       })
@@ -290,11 +294,11 @@ describe('Groups API Integration Tests', () => {
     })
 
     it('should add recipients to group successfully', async () => {
-      const recipientIds = ['recipient-1', 'recipient-2']
+      const recipientIds = ['a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f', 'b2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f']
       const mockGroup = { id: groupId, name: 'Family', member_count: 3 }
       const mockRecipients = [
-        { id: 'recipient-1', name: 'Alice' },
-        { id: 'recipient-2', name: 'Bob' }
+        { id: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f', name: 'Alice' },
+        { id: 'b2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f', name: 'Bob' }
       ]
       const mockNewMemberships = [
         { id: 'membership-1', group_id: groupId, recipient_id: 'recipient-1' },
@@ -307,27 +311,10 @@ describe('Groups API Integration Tests', () => {
         group: mockGroup
       } as never)
 
-      mockGetGroupWithMembers.mockResolvedValue(mockGroup as never)
+      mockGetGroupWithMembers.mockResolvedValue({ ...mockGroup, members: [] } as never)
 
-      // Mock recipient verification
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        in: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({
-          data: mockRecipients,
-          error: null
-        })
-      } as never)
-
-      // Mock existing memberships check
-      mockSupabase.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        in: jest.fn().mockReturnThis(),
-        mockResolvedValue: { data: [], error: null }
-      } as never)
-
-      mockAddRecipientsToGroup.mockResolvedValue(mockNewMemberships as never)
+      const addRecipientsToGroupMock = jest.spyOn(require('@/lib/group-management'), 'addRecipientsToGroup')
+      addRecipientsToGroupMock.mockResolvedValue(mockNewMemberships as never)
 
       const request = new NextRequest(`http://localhost:3000/api/groups/${groupId}/members`, {
         method: 'POST',
@@ -344,7 +331,7 @@ describe('Groups API Integration Tests', () => {
     })
 
     it('should enforce group size limit', async () => {
-      const recipientIds = Array.from({ length: 50 }, (_, i) => `recipient-${i}`)
+      const recipientIds = Array.from({ length: 50 }, (_, i) => `a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e${i.toString().padStart(2, '0')}`)
       const mockGroup = { id: groupId, name: 'Family', member_count: 60 }
 
       mockValidateParentGroupAccess.mockResolvedValue({
@@ -353,7 +340,7 @@ describe('Groups API Integration Tests', () => {
         group: mockGroup
       } as never)
 
-      mockGetGroupWithMembers.mockResolvedValue(mockGroup as never)
+      mockGetGroupWithMembers.mockResolvedValue({ ...mockGroup, members: Array.from({ length: 60 }) } as never)
 
       const request = new NextRequest(`http://localhost:3000/api/groups/${groupId}/members`, {
         method: 'POST',

@@ -1,5 +1,5 @@
 import { POST, GET } from '@/app/api/notifications/send-email/route'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
 import { checkRateLimit, RateLimitConfigs } from '@/lib/middleware/rateLimiting'
@@ -79,10 +79,10 @@ describe('Email Notification System Tests', () => {
     })
 
     it('should enforce authentication', async () => {
-      mockRequireAuth.mockResolvedValue({
-        json: () => ({ error: 'Unauthorized' }),
-        status: 401
-      } as never)
+      mockRequireAuth.mockResolvedValue(new NextResponse(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401 }
+      ))
 
       const request = new NextRequest('http://localhost:3000/api/notifications/send-email', {
         method: 'POST',
@@ -100,11 +100,24 @@ describe('Email Notification System Tests', () => {
     it('should enforce rate limiting', async () => {
       mockCheckRateLimit.mockReturnValue({
         allowed: false,
-        info: {
-          total: 100,
-          remaining: 0,
-          resetTime: Date.now() + 3600000
-        }
+        response: new NextResponse(
+          JSON.stringify({
+            error: 'Rate limit exceeded',
+            details: {
+              limit: 100,
+              remaining: 0,
+              resetTime: Date.now() + 3600000
+            }
+          }),
+          {
+            status: 429,
+            headers: {
+              'X-RateLimit-Limit': '100',
+              'X-RateLimit-Remaining': '0',
+              'Retry-After': '3600'
+            }
+          }
+        )
       })
 
       const request = new NextRequest('http://localhost:3000/api/notifications/send-email', {
@@ -361,11 +374,18 @@ describe('Email Notification System Tests', () => {
 
       mockCheckRateLimit.mockReturnValue({
         allowed: false,
-        info: {
-          total: 50,
-          remaining: 0,
-          resetTime
-        }
+        response: new NextResponse(
+          JSON.stringify({
+            error: 'Rate limit exceeded',
+            details: {
+              limit: 50,
+              remaining: 0,
+              resetTime,
+              retryAfter: 120
+            }
+          }),
+          { status: 429 }
+        )
       })
 
       const request = new NextRequest('http://localhost:3000/api/notifications/send-email', {
