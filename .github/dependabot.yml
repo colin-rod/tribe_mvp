@@ -3,9 +3,10 @@
 
 version: 2
 updates:
-  # Enable version updates for npm dependencies
+  # Enable version updates for npm dependencies on the development branch
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "development"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -59,7 +60,6 @@ updates:
           - "minor"
     # Ignore specific dependencies or versions
     ignore:
-      # Pin major versions that require migration work
       - dependency-name: "next"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react"
@@ -77,9 +77,10 @@ updates:
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
 
-  # Enable version updates for GitHub Actions
+  # Enable version updates for GitHub Actions on the development branch
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "development"
     schedule:
       interval: "weekly"
       day: "monday"
