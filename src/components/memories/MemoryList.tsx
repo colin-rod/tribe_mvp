@@ -75,24 +75,23 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
           id: memory.child_id,
           name: memory.children?.name || 'Unknown',
           age: calculateAge(memory.children?.birth_date),
-          avatar: memory.children?.profile_photo_url
+          avatar: memory.children?.profile_photo_url ?? undefined
         },
         content: memory.content || '',
-        subject: memory.subject,
-        rich_content: memory.rich_content as Record<string, unknown> | undefined,
-        content_format: memory.content_format,
+        subject: memory.subject ?? null,
+        rich_content: (memory.rich_content as Record<string, unknown> | null) ?? null,
+        content_format: memory.content_format ?? null,
         contentPreview: getContentPreview(memory.content, memory.subject),
-        media_urls: memory.media_urls || [],
-        distributionStatus: memory.distribution_status,
-        isNew: memory.is_new,
-        captureChannel: memory.capture_channel,
+        media_urls: memory.media_urls ?? [],
+        distributionStatus: (memory.distribution_status ?? 'new') as MemoryCardData['distributionStatus'],
+        isNew: Boolean(memory.is_new),
+        captureChannel: (memory.capture_channel ?? 'web') as MemoryCardData['captureChannel'],
         timeAgo: formatTimeAgo(memory.created_at),
-        createdAt: memory.created_at || '',
-        responseCount: memory.response_count || 0,
-        hasUnreadResponses: memory.has_unread_responses || false,
-        likeCount: memory.like_count || 0,
-        commentCount: memory.comment_count || 0,
-        isLiked: memory.isLiked || false
+        responseCount: memory.response_count ?? 0,
+        hasUnreadResponses: memory.has_unread_responses ?? false,
+        likeCount: memory.like_count ?? 0,
+        commentCount: memory.comment_count ?? 0,
+        isLiked: memory.isLiked ?? false
       }))
 
       // Apply search query filter
@@ -164,7 +163,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
     return (
       <ErrorState
         message={error}
-        retry={loadMemories}
+        onRetry={loadMemories}
         className={className}
       />
     )
@@ -293,7 +292,12 @@ function formatTimeAgo(dateString: string | null): string {
 }
 
 const MemoryList = withErrorBoundary(MemoryListComponent, {
-  fallback: <ErrorState message="Failed to load memory list" />,
+  fallback: ({ retry }) => (
+    <ErrorState
+      message="Failed to load memory list"
+      onRetry={retry}
+    />
+  ),
 })
 
 export default MemoryList

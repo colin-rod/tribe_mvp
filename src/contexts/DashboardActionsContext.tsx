@@ -8,7 +8,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
-import type { UpdateType } from '@/components/updates/CreateUpdateModal';
+import type { UpdateType } from '@/hooks/useActivityFilters';
 
 export interface DashboardActionsContextType {
   /** Open the create memory modal with optional type and initial content */

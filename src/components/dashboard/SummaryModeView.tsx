@@ -12,7 +12,8 @@ interface SummaryModeViewProps {
 export default function SummaryModeView({ updates }: SummaryModeViewProps) {
   // Group memories by day
   const groupedByDay = updates.reduce((acc, update) => {
-    const day = update.created_at ? new Date(update.created_at).toLocaleDateString('en-US', {
+    const createdAtDate = update.created_at ? new Date(update.created_at) : null
+    const day = createdAtDate ? createdAtDate.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric'
@@ -30,6 +31,19 @@ export default function SummaryModeView({ updates }: SummaryModeViewProps) {
   const uniqueChildren = new Set(updates.map(u => u.child_name)).size
   const milestones = updates.filter(u => u.milestone_type).length
 
+  const sortedDates = updates
+    .map(update => update.created_at ? new Date(update.created_at) : null)
+    .filter((date): date is Date => date !== null)
+    .sort((a, b) => a.getTime() - b.getTime())
+
+  const formatRangeDate = (date: Date | undefined) =>
+    date
+      ? date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+      : undefined
+
+  const rangeStart = formatRangeDate(sortedDates[0])
+  const rangeEnd = formatRangeDate(sortedDates[sortedDates.length - 1])
+
   return (
     <div className="space-y-6">
       {/* Digest Header - refined styling */}
@@ -43,15 +57,11 @@ export default function SummaryModeView({ updates }: SummaryModeViewProps) {
                   This Week&apos;s Highlights
                 </h2>
               </div>
-              <p className="text-sm text-neutral-600">
-                {updates[updates.length - 1]?.created_at && new Date(updates[updates.length - 1].created_at).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric'
-                })} - {updates[0]?.created_at && new Date(updates[0].created_at).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
+              {(rangeStart || rangeEnd) && (
+                <p className="text-sm text-neutral-600">
+                  {rangeStart || rangeEnd} - {rangeEnd || rangeStart}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-orange-600">{totalUpdates}</p>
@@ -126,10 +136,12 @@ export default function SummaryModeView({ updates }: SummaryModeViewProps) {
                       </span>
                       <span className="text-xs text-neutral-400">•</span>
                       <span className="text-xs text-neutral-500">
-                        {update.created_at && new Date(update.created_at).toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        })}
+                        {update.created_at
+                          ? new Date(update.created_at).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })
+                          : 'Time unknown'}
                       </span>
                     </div>
 

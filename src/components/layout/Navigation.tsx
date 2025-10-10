@@ -19,7 +19,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { getInitials } from '@/lib/utils'
-import type { UpdateType } from '@/components/updates/CreateUpdateModal'
+import type { UpdateType } from '@/hooks/useActivityFilters'
 
 interface NavigationProps {
   onCreateUpdate?: (type?: UpdateType) => void

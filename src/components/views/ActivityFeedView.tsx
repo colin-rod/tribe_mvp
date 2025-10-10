@@ -26,9 +26,8 @@ import MemoryList from '@/components/memories/MemoryList';
 import EnhancedOnboardingProgress from '@/components/dashboard/EnhancedOnboardingProgress';
 import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
-import { useActivityFilters } from '@/hooks/useActivityFilters';
+import { useActivityFilters, type UpdateType } from '@/hooks/useActivityFilters';
 import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext';
-import type { UpdateType } from '@/components/updates/CreateUpdateModal';
 
 const logger = createLogger('ActivityFeedView');
 

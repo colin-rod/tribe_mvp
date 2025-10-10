@@ -80,8 +80,7 @@ export async function PUT(
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
-      .returns<MembershipData>()
-      .single()
+      .single<MembershipData>()
 
     if (membershipError || !membership) {
       return NextResponse.json(
@@ -210,8 +209,7 @@ export async function DELETE(
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
-      .returns<MembershipData>()
-      .single()
+      .single<MembershipData>()
 
     if (membershipError || !membership) {
       return NextResponse.json(

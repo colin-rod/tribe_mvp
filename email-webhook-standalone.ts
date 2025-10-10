@@ -911,8 +911,9 @@ Deno.serve(async (req) => {
           }
         )
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
         return new Response(
-          JSON.stringify({ test: 'database connection', error: err.message }),
+          JSON.stringify({ test: 'database connection', error: message }),
           {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -980,11 +981,12 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Unexpected error in email webhook handler:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
       JSON.stringify({
         success: false,
         error: 'Internal server error',
-        details: error.message
+        details: message
       }),
       {
         status: 500,

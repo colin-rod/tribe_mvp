@@ -42,7 +42,7 @@ interface MobileTimelineContainerProps {
   onClearSearch?: () => void
   hasCompletedOnboarding?: boolean
   userName?: string
-  onCreateUpdate?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
+  onCreateMemory?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
   className?: string
 }
 
@@ -71,7 +71,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
   onClearSearch,
   hasCompletedOnboarding = false,
   userName,
-  onCreateUpdate,
+  onCreateMemory,
   className
 }) => {
   const [containerHeight, setContainerHeight] = useState(600)
@@ -235,7 +235,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       <EmptyTimelineState
         hasCompletedOnboarding={hasCompletedOnboarding}
         userName={userName}
-        onCreateUpdate={onCreateUpdate}
+        onCreateMemory={onCreateMemory}
         className={className}
       />
     )
