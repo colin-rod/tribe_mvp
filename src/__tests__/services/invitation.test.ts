@@ -53,7 +53,7 @@ describe('Invitation System Tests', () => {
         invitationType: 'single_use',
         email: 'grandma@example.com',
         channel: 'email',
-        groupId: 'group-123',
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f',
         customMessage: 'Join our family updates!',
         expiresInDays: 30
       }
@@ -86,7 +86,7 @@ describe('Invitation System Tests', () => {
         email: 'grandma@example.com',
         phone: undefined,
         channel: 'email',
-        groupId: 'group-123',
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f',
         customMessage: 'Join our family updates!',
         expiresInDays: 30
       })
@@ -97,7 +97,7 @@ describe('Invitation System Tests', () => {
         invitationType: 'single_use',
         phone: '+1234567890',
         channel: 'sms',
-        groupId: 'group-123'
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f'
       }
 
       const mockInvitation = {
@@ -177,7 +177,7 @@ describe('Invitation System Tests', () => {
     it('should create reusable link successfully', async () => {
       const linkData = {
         invitationType: 'reusable',
-        groupId: 'group-123',
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f',
         customMessage: 'Join our updates',
         qrCodeSettings: {
           enabled: true,
@@ -210,18 +210,21 @@ describe('Invitation System Tests', () => {
       expect(data.invitation.type).toBe('reusable')
       expect(mockCreateReusableLink).toHaveBeenCalledWith({
         parentId: 'user-123',
-        groupId: 'group-123',
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f',
         customMessage: 'Join our updates',
         qrCodeSettings: {
-          enabled: true,
-          size: 256
+          size: 256,
+          backgroundColor: '#FFFFFF',
+          errorCorrectionLevel: 'M',
+          foregroundColor: '#000000',
+          margin: 4
         }
       })
     })
 
     it('should default to reusable when no contact info provided', async () => {
       const linkData = {
-        groupId: 'group-123'
+        groupId: 'a2a9a3f2-3e4d-4b1a-9e6a-1a2b3c4d5e6f'
         // No invitationType specified, no email/phone
       }
 

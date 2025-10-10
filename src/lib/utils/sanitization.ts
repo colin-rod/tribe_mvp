@@ -94,7 +94,7 @@ function getSanitizeConfig(): DOMPurify.Config {
     ],
 
     // Only allow safe URL schemes (block data: URIs entirely)
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/|#)/i,
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/|#|\.\.?\/)/i,
 
     // Additional security settings
     SANITIZE_DOM: true,
@@ -196,8 +196,8 @@ export function sanitizeUrl(url: string): string {
     return ''
   }
 
-  // Allow only http, https, mailto, tel
-  if (!/^(https?:|mailto:|tel:|\/|#)/i.test(trimmedUrl)) {
+  // Allow only http, https, mailto, tel, and relative paths
+  if (!/^(?:https?:|mailto:|tel:|\/|#|\.\.?\/)/i.test(trimmedUrl)) {
     return ''
   }
 

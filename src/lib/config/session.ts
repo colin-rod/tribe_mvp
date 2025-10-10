@@ -115,7 +115,7 @@ export function calculateSessionExpiry(
     case 'absolute':
       return new Date(now.getTime() + SESSION_TIMEOUTS.ABSOLUTE_TIMEOUT)
     case 'jwt':
-      return new Date(now.getTime() + JWT_CONFIG.JWT_EXPIRY)
+      return new Date(now.getTime() + SESSION_TIMEOUTS.REFRESH_BUFFER)
     default:
       return new Date(now.getTime() + SESSION_TIMEOUTS.IDLE_TIMEOUT)
   }

@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3000'
 import { TextEncoder, TextDecoder } from 'util'
 
 // Polyfill TextEncoder/TextDecoder for jsdom

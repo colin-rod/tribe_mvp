@@ -3,7 +3,7 @@
  * CRO-99: Missing Authentication Session Management
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from '@jest/globals'
 import {
   SessionState,
   SessionMetadata,
