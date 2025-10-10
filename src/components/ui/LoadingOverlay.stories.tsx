@@ -1,4 +1,4 @@
-import type { Meta, StoryFn, StoryObj } from '@storybook/react'
+import type { Meta, StoryFn, StoryObj } from '@storybook/nextjs-vite'
 import { LoadingOverlay, InlineLoadingOverlay } from './LoadingOverlay'
 
 const meta: Meta<typeof LoadingOverlay> = {

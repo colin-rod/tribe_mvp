@@ -1,0 +1,383 @@
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Design System/Style Guide" />
+
+# Style Guide
+
+This style guide defines the core design tokens, visual language, and design principles that form the foundation of the Tribe MVP design system.
+
+## Design Tokens
+
+Design tokens are the atomic design decisions that define the visual language of Tribe MVP. They ensure consistency across the entire application.
+
+### Color System
+
+#### Primary Colors
+Our primary color palette reflects warmth, trust, and family connection.
+
+```css
+/* Primary Blue - Trust & Reliability */
+--primary-50: #eff6ff
+--primary-100: #dbeafe
+--primary-200: #bfdbfe
+--primary-300: #93c5fd
+--primary-400: #60a5fa
+--primary-500: #3b82f6  /* Primary */
+--primary-600: #2563eb
+--primary-700: #1d4ed8
+--primary-800: #1e40af
+--primary-900: #1e3a8a
+
+/* Success Green - Positive Feedback */
+--success-50: #f0fdf4
+--success-500: #22c55e  /* Success */
+--success-700: #15803d
+
+/* Warning Orange - Caution */
+--warning-50: #fff7ed
+--warning-500: #f59e0b  /* Warning */
+--warning-700: #c2410c
+
+/* Error Red - Critical Actions */
+--error-50: #fef2f2
+--error-500: #ef4444  /* Error */
+--error-700: #b91c1c
+
+/* Info Blue - Informational */
+--info-50: #f0f9ff
+--info-500: #0ea5e9  /* Info */
+--info-700: #0369a1
+```
+
+#### Neutral Colors
+Neutrals provide structure and hierarchy throughout the interface.
+
+```css
+/* Gray Scale */
+--gray-50: #f9fafb   /* Backgrounds */
+--gray-100: #f3f4f6  /* Subtle backgrounds */
+--gray-200: #e5e7eb  /* Borders */
+--gray-300: #d1d5db  /* Disabled states */
+--gray-400: #9ca3af  /* Placeholder text */
+--gray-500: #6b7280  /* Secondary text */
+--gray-600: #4b5563  /* Body text */
+--gray-700: #374151  /* Emphasis text */
+--gray-800: #1f2937  /* Headings */
+--gray-900: #111827  /* Primary text */
+```
+
+#### Color Usage Guidelines
+
+**Primary Blue**
+- Primary actions (Submit, Save, Send)
+- Links and interactive elements
+- Active states and selection
+- Brand elements
+
+**Success Green**
+- Confirmation messages
+- Successful operations
+- Positive status indicators
+- Growth and progress
+
+**Warning Orange**
+- Caution messages
+- Pending states
+- Actions requiring attention
+- Temporary issues
+
+**Error Red**
+- Error messages and states
+- Destructive actions (Delete, Remove)
+- Critical warnings
+- Validation errors
+
+**Neutral Gray**
+- Text and typography
+- Borders and dividers
+- Backgrounds and surfaces
+- Disabled states
+
+### Typography
+
+#### Font Family
+```css
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+             'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+             'Helvetica Neue', sans-serif;
+```
+
+System fonts ensure fast loading and native feel across all platforms.
+
+#### Type Scale
+```css
+/* Display - Hero sections */
+--text-6xl: 3.75rem / 60px  (line-height: 1)
+--text-5xl: 3rem / 48px     (line-height: 1)
+--text-4xl: 2.25rem / 36px  (line-height: 1.1)
+
+/* Headings */
+--text-3xl: 1.875rem / 30px (line-height: 1.2)
+--text-2xl: 1.5rem / 24px   (line-height: 1.333)
+--text-xl:  1.25rem / 20px  (line-height: 1.4)
+--text-lg:  1.125rem / 18px (line-height: 1.5)
+
+/* Body */
+--text-base: 1rem / 16px    (line-height: 1.5)
+--text-sm:   0.875rem / 14px (line-height: 1.5)
+--text-xs:   0.75rem / 12px  (line-height: 1.5)
+```
+
+#### Font Weights
+```css
+--font-light: 300      /* Subtle text */
+--font-normal: 400     /* Body text */
+--font-medium: 500     /* Emphasis */
+--font-semibold: 600   /* Subheadings */
+--font-bold: 700       /* Headings */
+--font-extrabold: 800  /* High emphasis */
+```
+
+#### Typography Guidelines
+
+**Headings**
+- Use semantic HTML (h1-h6)
+- Maintain clear hierarchy
+- Limit h1 to one per page
+- Scale down on mobile devices
+
+**Body Text**
+- Use 16px minimum for body text
+- Line height of 1.5 for readability
+- Limit line length to 65-75 characters
+- Ensure sufficient color contrast (4.5:1 minimum)
+
+**Links**
+- Underline or clearly distinguish from body text
+- Provide visible hover and focus states
+- Use meaningful link text (avoid "click here")
+
+### Spacing System
+
+Consistent spacing creates visual harmony and predictable layouts.
+
+```css
+/* Spacing Scale (Tailwind default) */
+--space-0:   0
+--space-1:   0.25rem  /* 4px */
+--space-2:   0.5rem   /* 8px */
+--space-3:   0.75rem  /* 12px */
+--space-4:   1rem     /* 16px */
+--space-5:   1.25rem  /* 20px */
+--space-6:   1.5rem   /* 24px */
+--space-8:   2rem     /* 32px */
+--space-10:  2.5rem   /* 40px */
+--space-12:  3rem     /* 48px */
+--space-16:  4rem     /* 64px */
+--space-20:  5rem     /* 80px */
+--space-24:  6rem     /* 96px */
+```
+
+#### Spacing Guidelines
+
+**Component Spacing**
+- Internal padding: 4px, 8px, 12px, 16px
+- Component margins: 16px, 24px, 32px
+- Section spacing: 48px, 64px, 96px
+
+**Layout Spacing**
+- Mobile: 16px side margins
+- Tablet: 24px side margins
+- Desktop: 32px+ side margins
+- Maximum content width: 1280px
+
+### Border Radius
+
+Rounded corners soften the interface and create a friendly feel.
+
+```css
+--radius-none: 0
+--radius-sm:   0.125rem  /* 2px */
+--radius-md:   0.375rem  /* 6px */
+--radius-lg:   0.5rem    /* 8px */
+--radius-xl:   0.75rem   /* 12px */
+--radius-2xl:  1rem      /* 16px */
+--radius-3xl:  1.5rem    /* 24px */
+--radius-full: 9999px    /* Fully rounded */
+```
+
+**Usage**
+- Buttons: 6px (md)
+- Cards: 8px (lg)
+- Inputs: 6px (md)
+- Modals: 12px (xl)
+- Images: 8px-12px (lg-xl)
+- Avatars: full (circular)
+
+### Shadows
+
+Shadows provide depth and hierarchy.
+
+```css
+--shadow-sm:   0 1px 2px 0 rgb(0 0 0 / 0.05)
+--shadow-md:   0 4px 6px -1px rgb(0 0 0 / 0.1)
+--shadow-lg:   0 10px 15px -3px rgb(0 0 0 / 0.1)
+--shadow-xl:   0 20px 25px -5px rgb(0 0 0 / 0.1)
+--shadow-2xl:  0 25px 50px -12px rgb(0 0 0 / 0.25)
+```
+
+**Usage**
+- Cards: sm-md
+- Dropdowns: md-lg
+- Modals: xl-2xl
+- Floating action buttons: lg
+- Hover states: Increase shadow by one level
+
+### Breakpoints
+
+Responsive breakpoints ensure optimal layouts across devices.
+
+```css
+--screen-sm:  640px   /* Small tablets and large phones */
+--screen-md:  768px   /* Tablets */
+--screen-lg:  1024px  /* Small desktops */
+--screen-xl:  1280px  /* Large desktops */
+--screen-2xl: 1536px  /* Extra large screens */
+```
+
+**Mobile-First Approach**
+- Start with mobile layout
+- Add complexity at larger breakpoints
+- Test at actual device sizes
+- Consider touch targets on mobile (minimum 44x44px)
+
+## Component Patterns
+
+### Buttons
+
+**Variants**
+- **Default**: Primary actions, high emphasis
+- **Primary**: Alternative primary color
+- **Outline**: Secondary actions, lower emphasis
+- **Ghost**: Tertiary actions, minimal visual weight
+- **Destructive**: Delete, remove, critical actions
+- **Link**: Text links with minimal chrome
+
+**Sizes**
+- **xs**: 24px height - Compact spaces
+- **sm**: 32px height - Tight layouts
+- **default**: 40px height - Standard use
+- **lg**: 48px height - Prominent actions
+- **xl**: 56px height - Hero sections
+
+**States**
+- Default, Hover, Active, Focus, Disabled, Loading
+
+### Forms
+
+**Input Fields**
+- Clear labels above inputs
+- Placeholder text for examples only
+- Error messages below fields
+- Required field indicators
+- Character counts for limited inputs
+- Password strength indicators
+
+**Validation**
+- Inline validation on blur
+- Clear error messages
+- Success states for confirmation
+- Accessible error announcements
+
+### Cards
+
+**Structure**
+- Optional header with title and description
+- Content area with flexible layout
+- Optional footer for actions
+- Consistent padding and spacing
+
+**Usage**
+- Group related information
+- Create visual hierarchy
+- Provide clear boundaries
+- Support various content types
+
+## Animation & Motion
+
+### Principles
+- **Purposeful**: Every animation serves a function
+- **Quick**: Duration of 150-300ms for most transitions
+- **Smooth**: Use ease-in-out for natural feel
+- **Respectful**: Honor prefers-reduced-motion
+
+### Transitions
+```css
+/* Durations */
+--duration-75:  75ms
+--duration-150: 150ms
+--duration-200: 200ms
+--duration-300: 300ms
+--duration-500: 500ms
+
+/* Timing Functions */
+--ease-in:     cubic-bezier(0.4, 0, 1, 1)
+--ease-out:    cubic-bezier(0, 0, 0.2, 1)
+--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1)
+```
+
+### Common Animations
+- **Fade**: Opacity transitions for appearing/disappearing
+- **Slide**: Position changes for drawers and modals
+- **Scale**: Size changes for emphasis and feedback
+- **Spin**: Rotation for loading states
+
+## Icons
+
+### Icon Library
+- **Primary**: Heroicons (outline for default, solid for emphasis)
+- **Secondary**: Lucide React for specialized icons
+
+### Guidelines
+- **Size**: 16px (sm), 20px (default), 24px (lg)
+- **Color**: Inherit from text color
+- **Spacing**: 8px gap between icon and text
+- **Accessibility**: Include aria-label for icon-only buttons
+- **Consistency**: Use same icon for same action throughout app
+
+## Best Practices
+
+### Consistency
+- Use design tokens consistently
+- Follow established patterns
+- Maintain visual hierarchy
+- Create predictable experiences
+
+### Accessibility
+- Meet WCAG 2.1 Level AA standards
+- Provide sufficient color contrast
+- Support keyboard navigation
+- Include proper ARIA labels
+
+### Performance
+- Optimize images and assets
+- Use system fonts when possible
+- Minimize animation complexity
+- Lazy load off-screen content
+
+### Responsive Design
+- Design mobile-first
+- Test at all breakpoints
+- Adapt layouts appropriately
+- Consider touch targets
+
+## Resources
+
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Heroicons](https://heroicons.com/)
+- [Color Contrast Checker](https://webaim.org/resources/contrastchecker/)
+- [Type Scale Calculator](https://typescale.com/)
+
+---
+
+This style guide is a living document. As the design system evolves, this guide will be updated to reflect the latest decisions and best practices.
