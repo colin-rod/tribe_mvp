@@ -1,8 +1,6 @@
 'use client'
 
 import { useLayout } from '@/contexts/LayoutContext'
-import { NavigationProvider } from '@/contexts/NavigationContext'
-import { ViewSelectionProvider } from '@/contexts/ViewSelectionContext'
 import { TopBar } from './TopBar'
 import { RightPane } from './RightPane'
 import { LAYOUT_DIMENSIONS, LAYOUT_Z_INDEX } from '@/types/layout'
@@ -35,76 +33,68 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
   // On mobile, show single column layout
   if (isMobile) {
     return (
-      <NavigationProvider>
-        <ViewSelectionProvider>
-          <div className="h-screen flex flex-col">
-            <TopBar />
-            <main
-              className="flex-1 overflow-auto bg-white"
-              style={{
-                paddingTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-              }}
-            >
-              {children}
-            </main>
-          </div>
-        </ViewSelectionProvider>
-      </NavigationProvider>
+      <div className="h-screen flex flex-col">
+        <TopBar />
+        <main
+          className="flex-1 overflow-auto bg-white"
+          style={{
+            paddingTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
+          }}
+        >
+          {children}
+        </main>
+      </div>
     )
   }
 
   // Desktop 3-pane layout
   return (
-    <NavigationProvider>
-      <ViewSelectionProvider>
-        <div className="h-screen flex flex-col">
-          <TopBar />
+    <div className="h-screen flex flex-col">
+      <TopBar />
 
-          <div
-            className="flex-1 grid overflow-hidden"
+      <div
+        className="flex-1 grid overflow-hidden"
+        style={{
+          paddingTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
+          gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr auto`,
+          gridTemplateAreas: '"nav main sidebar"',
+        }}
+      >
+        {/* Left Navigation */}
+        {!leftNavCollapsed && leftNav && (
+          <aside
+            className="border-r border-neutral-200 bg-white overflow-y-auto"
             style={{
-              paddingTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-              gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr auto`,
-              gridTemplateAreas: '"nav main sidebar"',
+              gridArea: 'nav',
+              zIndex: LAYOUT_Z_INDEX.LEFT_NAV,
             }}
           >
-            {/* Left Navigation */}
-            {!leftNavCollapsed && leftNav && (
-              <aside
-                className="border-r border-neutral-200 bg-white overflow-y-auto"
-                style={{
-                  gridArea: 'nav',
-                  zIndex: LAYOUT_Z_INDEX.LEFT_NAV,
-                }}
-              >
-                {leftNav}
-              </aside>
-            )}
+            {leftNav}
+          </aside>
+        )}
 
-            {/* Main Content */}
-            <main
-              className="overflow-y-auto bg-neutral-50"
-              style={{
-                gridArea: 'main',
-              }}
-            >
-              {children}
-            </main>
+        {/* Main Content */}
+        <main
+          className="overflow-y-auto bg-neutral-50"
+          style={{
+            gridArea: 'main',
+          }}
+        >
+          {children}
+        </main>
 
-            {/* Right Sidebar */}
-            {rightPane && (
-              <div
-                style={{
-                  gridArea: 'sidebar',
-                  zIndex: LAYOUT_Z_INDEX.RIGHT_PANE,
-                }}
-              >
-                <RightPane>{rightPane}</RightPane>
-              </div>
-            )}
+        {/* Right Sidebar */}
+        {rightPane && (
+          <div
+            style={{
+              gridArea: 'sidebar',
+              zIndex: LAYOUT_Z_INDEX.RIGHT_PANE,
+            }}
+          >
+            <RightPane>{rightPane}</RightPane>
           </div>
-        </div>
-      </ViewSelectionProvider>
-    </NavigationProvider>
+        )}
+      </div>
+    </div>
   )
 }

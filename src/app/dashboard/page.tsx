@@ -20,6 +20,8 @@ import { LeftNavigation } from '@/components/layout/LeftNavigation'
 import { MiddlePane } from '@/components/layout/MiddlePane'
 import { RightPaneContent } from '@/components/layout/rightPane/RightPaneContent'
 import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext'
+import { NavigationProvider } from '@/contexts/NavigationContext'
+import { ViewSelectionProvider } from '@/contexts/ViewSelectionContext'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
 import type { MemoryType } from '@/components/updates/CreateMemoryModal'
 
@@ -64,20 +66,24 @@ function DashboardPage() {
   }
 
   return (
-    <DashboardActionsProvider
-      value={{
-        onCreateUpdate: handleCreateUpdate,
-        onCompileDigest: handleCompileDigest,
-      }}
-    >
-      <DashboardShell
-        leftNav={<LeftNavigation />}
-        rightPane={<RightPaneContent />}
-      >
-        <MiddlePane />
-      </DashboardShell>
-      {createUpdateModal}
-    </DashboardActionsProvider>
+    <NavigationProvider>
+      <ViewSelectionProvider>
+        <DashboardActionsProvider
+          value={{
+            onCreateUpdate: handleCreateUpdate,
+            onCompileDigest: handleCompileDigest,
+          }}
+        >
+          <DashboardShell
+            leftNav={<LeftNavigation />}
+            rightPane={<RightPaneContent />}
+          >
+            <MiddlePane />
+          </DashboardShell>
+          {createUpdateModal}
+        </DashboardActionsProvider>
+      </ViewSelectionProvider>
+    </NavigationProvider>
   )
 }
 
