@@ -1,9 +1,10 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-import { useState, useEffect, useCallback, memo } from 'react'
+import { useState, useEffect, useCallback, memo, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
-import { FixedSizeList as List } from 'react-window'
+import { List, type RowComponentProps } from 'react-window'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { UpdatesListProps, DashboardUpdate, UpdateCardData } from '@/lib/types/dashboard'
@@ -24,7 +25,7 @@ interface VirtualizedMemoriesListProps extends Omit<UpdatesListProps, 'limit'> {
 
 interface ListItemProps {
   index: number
-  style: React.CSSProperties
+  style: CSSProperties
   data: {
     updates: UpdateCardData[]
     onUpdateClick: (updateId: string) => void
@@ -55,6 +56,14 @@ const ListItem = memo<ListItemProps>(({ index, style, data }) => {
 })
 
 ListItem.displayName = 'ListItem'
+
+type VirtualizedRowProps = {
+  itemData: ListItemProps['data']
+}
+
+const VirtualizedRow = ({ index, style, itemData }: RowComponentProps<VirtualizedRowProps>) => (
+  <ListItem index={index} style={style} data={itemData} />
+)
 
 /**
  * VirtualizedMemoriesList component for efficiently displaying large lists of memories
@@ -113,10 +122,15 @@ const VirtualizedMemoriesList = memo<VirtualizedMemoriesListProps>(function Virt
     }
   }, [onCreateUpdate, router])
 
-  const itemData = useCallback(() => ({
-    updates,
-    onUpdateClick: handleUpdateClick
-  }), [updates, handleUpdateClick])
+  const listData = useMemo(
+    () => ({
+      updates,
+      onUpdateClick: handleUpdateClick
+    }),
+    [updates, handleUpdateClick]
+  )
+
+  const rowProps = useMemo(() => ({ itemData: listData }), [listData])
 
   // Loading state
   if (loading) {
@@ -207,16 +221,15 @@ const VirtualizedMemoriesList = memo<VirtualizedMemoriesListProps>(function Virt
   return (
     <div className={cn('space-y-4', className)}>
       <List
-        height={height}
-        width="100%"
-        itemCount={updates.length}
-        itemSize={itemHeight}
-        itemData={itemData()}
+        defaultHeight={height}
+        rowCount={updates.length}
+        rowHeight={itemHeight}
+        rowComponent={VirtualizedRow}
+        rowProps={rowProps}
         overscanCount={overscanCount}
         className="virtualized-memories-list"
-      >
-        {ListItem}
-      </List>
+        style={{ height, width: '100%' }}
+      />
 
       {/* View all link */}
       {showViewAllLink && (

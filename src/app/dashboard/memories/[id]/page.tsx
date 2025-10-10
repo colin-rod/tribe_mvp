@@ -11,35 +11,13 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 
-interface ConfirmedRecipient {
-  id: string
-  name?: string
-  email?: string
-}
-
-interface Update {
-  id: string
-  content: string
-  subject?: string
-  rich_content?: Record<string, unknown>
-  content_format?: 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp'
-  created_at: string
-  child_id: string
-  parent_id: string
-  media_urls: string[]
-  confirmed_recipients?: ConfirmedRecipient[]
-  children: {
-    id: string
-    name: string
-    birth_date: string
-    profile_photo_url: string | null
-  }
-}
+type ConversationViewProps = React.ComponentProps<typeof ConversationView>
+type ConversationUpdate = ConversationViewProps['update']
 
 export default function UpdatePage() {
   const params = useParams()
   const updateId = params?.id as string
-  const [update, setUpdate] = useState<Update | null>(null)
+  const [update, setUpdate] = useState<ConversationUpdate | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,8 +74,57 @@ export default function UpdatePage() {
           mediaCount: data.media_urls?.length || 0
         })
 
-        // Type assertion to ensure content is non-null for ConversationView
-        setUpdate(data as unknown as Update)
+        const normalizedRecipients = Array.isArray(data.confirmed_recipients)
+          ? data.confirmed_recipients.map((recipient) => {
+              if (typeof recipient === 'string') {
+                return recipient
+              }
+
+              if (recipient && typeof recipient === 'object') {
+                const candidate =
+                  (recipient as { email?: string }).email ??
+                  (recipient as { name?: string }).name ??
+                  (recipient as { id?: string }).id
+
+                return candidate ?? ''
+              }
+
+              return ''
+            }).filter(Boolean)
+          : null
+
+        const richContent =
+          data.rich_content && typeof data.rich_content === 'object'
+            ? (data.rich_content as Record<string, unknown>)
+            : undefined
+
+        const contentFormat = (['plain', 'rich', 'email', 'sms', 'whatsapp'] as const).find(
+          format => format === data.content_format
+        )
+
+        const createdAt = data.created_at ?? new Date().toISOString()
+
+        const normalizedUpdate: ConversationUpdate = {
+          id: data.id,
+          content: data.content,
+          subject: data.subject ?? undefined,
+          rich_content: richContent,
+          content_format: contentFormat,
+          created_at: createdAt,
+          child_id: data.child_id,
+          parent_id: data.parent_id,
+          media_urls: Array.isArray(data.media_urls) ? data.media_urls : data.media_urls ?? null,
+          confirmed_recipients:
+            normalizedRecipients && normalizedRecipients.length > 0 ? normalizedRecipients : null,
+          children: {
+            id: data.children.id,
+            name: data.children.name,
+            birth_date: data.children.birth_date,
+            profile_photo_url: data.children.profile_photo_url
+          }
+        }
+
+        setUpdate(normalizedUpdate)
       } catch (err) {
         logger.error('Unexpected error:', {
           error: err,
