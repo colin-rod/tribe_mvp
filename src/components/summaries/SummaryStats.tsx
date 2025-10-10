@@ -95,7 +95,7 @@ export default function SummaryStats() {
         </div>
 
         {/* Compile Summary Action */}
-        {canCompileDigest && (
+        {canCompileSummary && (
           <Link href="/dashboard/memory-book/compile" className="block mb-3">
             <Button variant="success" className="w-full" size="sm">
               <SparklesIcon className="w-4 h-4 mr-2" />
