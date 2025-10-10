@@ -1,11 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useId } from 'react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ChildProfileSelector } from '@/components/children/ChildProfileSelector'
 import SmartContextualInput from './SmartContextualInput'
-import { validateUpdateContent } from '@/lib/validation/update'
-import type { UpdateFormData } from '@/lib/validation/update'
+import { validateUpdateContent, getMilestoneLabel, milestoneTypes } from '@/lib/validation/update'
+import type { UpdateFormData, MilestoneType } from '@/lib/validation/update'
+import { detectMilestone, type MilestoneCandidate } from '@/lib/milestones/detectMilestone'
+
+interface MilestoneOption {
+  value: MilestoneType
+  label: string
+  emoji: string
+}
+
+const milestoneEmojis: Record<MilestoneType, string> = {
+  first_smile: '😊',
+  rolling: '🔄',
+  sitting: '🧘',
+  crawling: '🐾',
+  first_steps: '👣',
+  first_words: '🗣️',
+  first_tooth: '🦷',
+  walking: '🚶',
+  potty_training: '🚽',
+  first_day_school: '🎒',
+  birthday: '🎂',
+  other: '✨'
+}
+
+const milestoneOptions: MilestoneOption[] = milestoneTypes.map((type) => ({
+  value: type,
+  label: getMilestoneLabel(type),
+  emoji: milestoneEmojis[type] ?? '✨'
+}))
 
 interface MemoryFormProps {
   formData: Partial<UpdateFormData>
@@ -31,6 +59,69 @@ export default function MemoryForm({
   loadChildren
 }: MemoryFormProps) {
   const [contentError, setContentError] = useState<string | null>(null)
+  const [suggestedMilestone, setSuggestedMilestone] = useState<MilestoneCandidate | null>(null)
+  const [autoAppliedMilestone, setAutoAppliedMilestone] = useState<MilestoneType | null>(null)
+  const [dismissedMilestoneType, setDismissedMilestoneType] = useState<MilestoneType | null>(null)
+  const [isMilestonePickerOpen, setIsMilestonePickerOpen] = useState(false)
+  const rawPickerId = useId()
+  const milestonePickerId = `milestone-picker-${rawPickerId.replace(/:/g, '')}`
+
+  const evaluateMilestoneSuggestion = useCallback((content: string) => {
+    const trimmed = content.trim()
+
+    if (!trimmed) {
+      setSuggestedMilestone(null)
+      if (dismissedMilestoneType) {
+        setDismissedMilestoneType(null)
+      }
+      if (autoAppliedMilestone && formData.milestoneType === autoAppliedMilestone) {
+        onFormDataChange({ milestoneType: undefined })
+      }
+      if (autoAppliedMilestone !== null) {
+        setAutoAppliedMilestone(null)
+      }
+      return
+    }
+
+    const detection = detectMilestone(trimmed)
+    const candidate = detection.bestMatch
+
+    if (!candidate || candidate.confidence !== 'high') {
+      setSuggestedMilestone(null)
+      if (autoAppliedMilestone && formData.milestoneType === autoAppliedMilestone) {
+        onFormDataChange({ milestoneType: undefined })
+        setAutoAppliedMilestone(null)
+      }
+      return
+    }
+
+    if (dismissedMilestoneType && dismissedMilestoneType !== candidate.type) {
+      setDismissedMilestoneType(null)
+    }
+
+    const manualSelectionActive = Boolean(
+      formData.milestoneType && formData.milestoneType !== autoAppliedMilestone
+    )
+
+    if (manualSelectionActive || dismissedMilestoneType === candidate.type) {
+      setSuggestedMilestone(null)
+      return
+    }
+
+    setSuggestedMilestone(prev =>
+      prev?.type === candidate.type && prev.confidence === candidate.confidence
+        ? prev
+        : candidate
+    )
+
+    if (formData.milestoneType !== candidate.type) {
+      onFormDataChange({ milestoneType: candidate.type })
+    }
+
+    if (autoAppliedMilestone !== candidate.type) {
+      setAutoAppliedMilestone(candidate.type)
+    }
+  }, [autoAppliedMilestone, dismissedMilestoneType, formData.milestoneType, onFormDataChange])
 
   // Note: ChildProfileSelector now handles loading children internally
   useEffect(() => {
@@ -39,12 +130,52 @@ export default function MemoryForm({
     }
   }, [loadChildren])
 
+  useEffect(() => {
+    evaluateMilestoneSuggestion(formData.content || '')
+  }, [formData.content, evaluateMilestoneSuggestion])
+
   const handleContentChange = (content: string) => {
     onFormDataChange({ content })
 
     // Real-time validation
     const error = validateUpdateContent(content)
     setContentError(error)
+    evaluateMilestoneSuggestion(content)
+  }
+
+  const handleMilestoneOptionSelect = (milestone: MilestoneType) => {
+    setSuggestedMilestone(null)
+    setAutoAppliedMilestone(null)
+    setDismissedMilestoneType(null)
+
+    if (formData.milestoneType === milestone) {
+      onFormDataChange({ milestoneType: undefined })
+    } else {
+      onFormDataChange({ milestoneType: milestone })
+    }
+  }
+
+  const handleClearMilestone = () => {
+    setSuggestedMilestone(null)
+    setAutoAppliedMilestone(null)
+    setDismissedMilestoneType(null)
+    onFormDataChange({ milestoneType: undefined })
+  }
+
+  const handleDismissSuggestion = () => {
+    if (!suggestedMilestone) {
+      return
+    }
+
+    setDismissedMilestoneType(suggestedMilestone.type)
+    setSuggestedMilestone(null)
+    setAutoAppliedMilestone(null)
+
+    if (formData.milestoneType === suggestedMilestone.type) {
+      onFormDataChange({ milestoneType: undefined })
+    }
+
+    setIsMilestonePickerOpen(false)
   }
 
   const handleChildSelect = (childId: string) => {
@@ -72,6 +203,16 @@ export default function MemoryForm({
     formData.content?.trim() &&
     !contentError
   )
+
+  const selectedMilestoneLabel = formData.milestoneType
+    ? getMilestoneLabel(formData.milestoneType)
+    : null
+  const selectedMilestoneEmoji = formData.milestoneType
+    ? milestoneEmojis[formData.milestoneType] ?? '✨'
+    : null
+  const suggestionLabel = suggestedMilestone
+    ? getMilestoneLabel(suggestedMilestone.type)
+    : null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,147 +266,144 @@ export default function MemoryForm({
         <label className="block text-sm font-medium text-gray-900 mb-3">
           Is this a milestone? (Optional)
         </label>
-        <div className="grid grid-cols-4 gap-3">
-          {/* First Smile */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'first_smile' ? undefined : 'first_smile' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'first_smile'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-xs text-center font-medium">First Smile</span>
-          </button>
+        <div className="space-y-3">
+          {suggestedMilestone && suggestionLabel ? (
+            <div className="flex flex-wrap items-center gap-3" role="status" aria-live="polite">
+              <div className="inline-flex flex-col gap-1 rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm text-primary-700 sm:flex-row sm:items-center sm:gap-2">
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <span aria-hidden="true">🎉</span>
+                  <span>Detected milestone:</span>
+                  <span className="font-semibold">{suggestionLabel}</span>
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-primary-600">
+                  High confidence
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMilestonePickerOpen(prev => !prev)}
+                  className="inline-flex items-center rounded-md border border-primary-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 shadow-sm transition hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-expanded={isMilestonePickerOpen}
+                  aria-controls={milestonePickerId}
+                  disabled={isLoading}
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissSuggestion}
+                  className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ) : selectedMilestoneLabel ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700">
+                {selectedMilestoneEmoji && (
+                  <span aria-hidden="true" className="text-lg">
+                    {selectedMilestoneEmoji}
+                  </span>
+                )}
+                <span>Selected milestone:</span>
+                <span className="font-semibold">{selectedMilestoneLabel}</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMilestonePickerOpen(prev => !prev)}
+                  className="inline-flex items-center rounded-md border border-primary-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 shadow-sm transition hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-expanded={isMilestonePickerOpen}
+                  aria-controls={milestonePickerId}
+                  disabled={isLoading}
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearMilestone}
+                  className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-gray-600">No milestone selected yet.</span>
+              <button
+                type="button"
+                onClick={() => setIsMilestonePickerOpen(true)}
+                className="inline-flex items-center rounded-md border border-primary-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 shadow-sm transition hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-expanded={isMilestonePickerOpen}
+                aria-controls={milestonePickerId}
+                disabled={isLoading}
+              >
+                Choose milestone
+              </button>
+            </div>
+          )}
 
-          {/* First Steps */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'first_steps' ? undefined : 'first_steps' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'first_steps'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <span className="text-xs text-center font-medium">First Steps</span>
-          </button>
-
-          {/* First Words */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'first_words' ? undefined : 'first_words' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'first_words'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            <span className="text-xs text-center font-medium">First Words</span>
-          </button>
-
-          {/* First Tooth */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'first_tooth' ? undefined : 'first_tooth' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'first_tooth'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-xs text-center font-medium">First Tooth</span>
-          </button>
-
-          {/* Crawling */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'crawling' ? undefined : 'crawling' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'crawling'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span className="text-xs text-center font-medium">Crawling</span>
-          </button>
-
-          {/* Walking */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'walking' ? undefined : 'walking' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'walking'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-            <span className="text-xs text-center font-medium">Walking</span>
-          </button>
-
-          {/* Birthday */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'birthday' ? undefined : 'birthday' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'birthday'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-            </svg>
-            <span className="text-xs text-center font-medium">Birthday</span>
-          </button>
-
-          {/* First Day School */}
-          <button
-            type="button"
-            onClick={() => onFormDataChange({ milestoneType: formData.milestoneType === 'first_day_school' ? undefined : 'first_day_school' })}
-            disabled={isLoading}
-            className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-              formData.milestoneType === 'first_day_school'
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            <span className="text-xs text-center font-medium">School</span>
-          </button>
+          {isMilestonePickerOpen && (
+            <div
+              id={milestonePickerId}
+              className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
+            >
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {milestoneOptions.map((option) => {
+                  const isSelected = formData.milestoneType === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleMilestoneOptionSelect(option.value)}
+                      className={`flex h-full flex-col items-center justify-center rounded-lg border-2 p-3 text-center transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSelected
+                          ? 'border-primary-600 bg-primary-50 text-primary-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                      aria-pressed={isSelected}
+                      disabled={isLoading}
+                    >
+                      <span className="text-xl" aria-hidden="true">
+                        {option.emoji}
+                      </span>
+                      <span className="mt-1 text-xs font-medium">{option.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {formData.milestoneType && (
+                  <button
+                    type="button"
+                    onClick={handleClearMilestone}
+                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    Clear selection
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsMilestonePickerOpen(false)}
+                  className="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-        <p className="mt-2 text-xs text-gray-500">Click to select or deselect a milestone</p>
+        <p className="mt-2 text-xs text-gray-500">
+          We'll suggest a milestone automatically when your memory sounds like one, or you can pick it manually.
+        </p>
       </div>
-
-
       {/* Submit Button */}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button
