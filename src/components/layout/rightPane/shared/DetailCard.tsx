@@ -1,13 +1,15 @@
+import { cn } from '@/lib/utils'
+
 export interface DetailCardProps {
   title: string
   children: React.ReactNode
   className?: string
 }
 
-export function DetailCard({ title, children, className = '' }: DetailCardProps) {
+export function DetailCard({ title, children, className }: DetailCardProps) {
   return (
-    <div className={`rounded-lg border border-neutral-200 p-4 ${className}`}>
-      <h3 className="text-sm font-semibold text-neutral-900 mb-3">{title}</h3>
+    <div className={cn('right-pane-card right-pane-card--bordered space-y-3', className)}>
+      <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
       <div className="space-y-2">{children}</div>
     </div>
   )

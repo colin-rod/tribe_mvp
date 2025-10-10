@@ -29,20 +29,23 @@ export function GroupsRightPane() {
 
   if (!selectedGroup) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <p className="text-sm text-neutral-500">Select a group to view details</p>
+      <div className="right-pane-section">
+        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/80">
+          <p className="text-sm text-neutral-600">Select a group to view details</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{selectedGroup.name}</h2>
+    <div className="right-pane-section">
+      <header className="space-y-2">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Active Group</p>
+          <h2 className="text-lg font-semibold text-neutral-900">{selectedGroup.name}</h2>
+        </div>
         <p className="text-sm text-neutral-600">{selectedGroup.description}</p>
-      </div>
+      </header>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-3">

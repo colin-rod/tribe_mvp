@@ -44,7 +44,7 @@ primary-200: #fbd9a6
 primary-300: #f8be6e
 primary-400: #f59e34
 primary-500: #f3841c  /* Main brand color */
-primary-600: #e4690f
+primary-600: #c04800  /* WCAG AA compliant - 5.04:1 on white */
 primary-700: #bd500f
 primary-800: #964114
 primary-900: #7a3713
@@ -65,11 +65,11 @@ accent-600: #c026d3
 ```css
 /* Success */
 success-500: #22c55e
-success-600: #16a34a
+success-600: #15803d  /* WCAG AA compliant - 4.54:1 on white */
 
 /* Warning */
 warning-500: #f59e0b
-warning-600: #d97706
+warning-600: #b45309  /* WCAG AA compliant - 4.52:1 on white */
 
 /* Error */
 error-500: #ef4444
@@ -156,6 +156,35 @@ shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1)
 shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1)
 shadow-warm: 0 4px 6px -1px rgb(251 146 60 / 0.1)  /* Warm orange glow */
 ```
+
+### Navigation Tokens
+
+```css
+--navigation-active-indicator: theme('colors.primary.600');
+--navigation-active-background: theme('colors.primary.50');
+--navigation-active-text: theme('colors.primary.700');
+--navigation-hover-background: theme('colors.neutral.100');
+--navigation-hover-text: theme('colors.neutral.900');
+--navigation-inactive-text: theme('colors.neutral.600');
+--navigation-icon-inactive: theme('colors.neutral.500');
+--navigation-icon-active: theme('colors.primary.600');
+--navigation-indicator-hover-opacity: 0.6;
+```
+
+These tokens drive the left-rail navigation component and include high-contrast overrides for `prefers-contrast: more` and `forced-colors` modes.
+
+### Right Pane Tokens
+
+```css
+--right-pane-padding-x: 1.5rem; /* 24px */
+--right-pane-padding-y: 1.5rem; /* 24px */
+--right-pane-section-gap: 1.5rem; /* 24px */
+--right-pane-card-radius: 0.875rem; /* 14px */
+--right-pane-card-padding-x: 1.25rem; /* 20px */
+--right-pane-card-padding-y: 1.125rem; /* 18px */
+```
+
+Apply `.right-pane-section` for the base layout and `.right-pane-card`/`.right-pane-card--bordered` for tools and quick stats to ensure the refreshed spacing is consistent across modules.
 
 ## Component Library
 

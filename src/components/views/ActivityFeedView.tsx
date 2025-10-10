@@ -20,6 +20,7 @@ import { getGroupStats } from '@/lib/recipient-groups';
 import { getRecentMemoriesWithStats } from '@/lib/memories';
 import { needsOnboarding, getOnboardingStatus, dismissOnboarding } from '@/lib/onboarding';
 import { Card } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import MemoryList from '@/components/memories/MemoryList';
@@ -279,114 +280,92 @@ const ActivityFeedView = memo(function ActivityFeedView() {
 
   return (
     <DashboardActionsProvider value={dashboardActionsValue}>
-    <div className="min-h-full">
-      {/* Success Alerts */}
-      {showSummarySentAlert && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-green-800">
-                Summary sent successfully! Your recipients will receive their personalized memory summaries.
-              </p>
-            </div>
-            <div className="ml-auto pl-3">
-              <button onClick={() => setShowSummarySentAlert(false)} className="text-green-500 hover:text-green-600">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+      <div className="min-h-full">
+        {/* Success Alerts */}
+        {showSummarySentAlert && (
+          <div className="mx-4 mt-4 sm:mx-6 lg:mx-8">
+            <Alert
+              variant="success"
+              dismissible
+              onDismiss={() => setShowSummarySentAlert(false)}
+              title="Summary sent successfully"
+            >
+              Your recipients will receive their personalized memory summaries.
+            </Alert>
           </div>
-        </div>
-      )}
+        )}
 
-      {showSummaryScheduledAlert && (
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mx-4 sm:mx-6 lg:mx-8 mt-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800">
-                Summary scheduled successfully! It will be sent at the scheduled time.
-              </p>
-            </div>
-            <div className="ml-auto pl-3">
-              <button onClick={() => setShowSummaryScheduledAlert(false)} className="text-blue-500 hover:text-blue-600">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
+        {showSummaryScheduledAlert && (
+          <div className="mx-4 mt-4 sm:mx-6 lg:mx-8">
+            <Alert
+              variant="info"
+              dismissible
+              onDismiss={() => setShowSummaryScheduledAlert(false)}
+              title="Summary scheduled"
+            >
+              The summary will be sent automatically at the scheduled time.
+            </Alert>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Main content container */}
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Onboarding Progress */}
-          {!loadingOnboarding && showOnboardingProgress && !hasCompletedOnboarding && !onboardingDismissed && (
-            <div className="mb-6 -mt-4 relative z-10">
-              <EnhancedOnboardingProgress
-                steps={onboardingSteps}
-                currentStepIndex={onboardingSteps.findIndex(step => step.isCurrent)}
-                totalSteps={onboardingSteps.length}
-                onStepClick={handleOnboardingStepClick}
-                onCollapse={handleCollapseOnboarding}
-                onDismiss={handleDismissOnboarding}
-                showCelebration={hasCompletedOnboarding}
-              />
-            </div>
-          )}
-
-          {/* Activity Card with Filters */}
-          <div className="mb-8">
-            <Card variant="elevated" className="overflow-hidden">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-neutral-900">
-                    Recent Activity
-                  </h3>
-                  <div className="flex items-center space-x-4">
-                    <Link
-                      href="/dashboard/memories"
-                      className="text-sm text-neutral-600 hover:text-neutral-700 font-medium transition-colors"
-                    >
-                      View all
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Filters moved to Right Pane */}
-
-                {!loadingStats && memoizedStats.memories === 0 ? (
-                  <EmptyTimelineState
-                    hasCompletedOnboarding={hasCompletedOnboarding}
-                    userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
-                    onCreateMemory={handleCreateUpdate}
-                  />
-                ) : (
-                  <MemoryList
-                    limit={5}
-                    onCreateMemory={handleCreateUpdate}
-                  />
-                )}
+        {/* Main content container */}
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            {/* Onboarding Progress */}
+            {!loadingOnboarding && showOnboardingProgress && !hasCompletedOnboarding && !onboardingDismissed && (
+              <div className="relative -mt-4 mb-6 z-10">
+                <EnhancedOnboardingProgress
+                  steps={onboardingSteps}
+                  currentStepIndex={onboardingSteps.findIndex(step => step.isCurrent)}
+                  totalSteps={onboardingSteps.length}
+                  onStepClick={handleOnboardingStepClick}
+                  onCollapse={handleCollapseOnboarding}
+                  onDismiss={handleDismissOnboarding}
+                  showCelebration={hasCompletedOnboarding}
+                />
               </div>
-            </Card>
+            )}
+
+            {/* Activity Card with Filters */}
+            <div className="mb-8">
+              <Card variant="elevated" className="overflow-hidden">
+                <div className="px-4 py-5 sm:p-6">
+                  <div className="mb-6 flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-neutral-900">
+                      Recent Activity
+                    </h3>
+                    <div className="flex items-center space-x-4">
+                      <Link
+                        href="/dashboard/memories"
+                        className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-700"
+                      >
+                        View all
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Filters moved to Right Pane */}
+
+                  {!loadingStats && memoizedStats.memories === 0 ? (
+                    <EmptyTimelineState
+                      hasCompletedOnboarding={hasCompletedOnboarding}
+                      userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
+                      onCreateMemory={handleCreateUpdate}
+                    />
+                  ) : (
+                    <MemoryList
+                      limit={5}
+                      onCreateMemory={handleCreateUpdate}
+                    />
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
 
-      {createUpdateModal}
-    </div>
+        {createUpdateModal}
+      </div>
     </DashboardActionsProvider>
   );
 });

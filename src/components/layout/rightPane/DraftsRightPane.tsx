@@ -30,19 +30,20 @@ export function DraftsRightPane() {
 
   if (!selectedDraft) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <p className="text-sm text-neutral-500">Select a draft to view details</p>
+      <div className="right-pane-section">
+        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/80">
+          <p className="text-sm text-neutral-600">Select a draft to view details</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{selectedDraft.title}</h2>
-      </div>
+    <div className="right-pane-section">
+      <header className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Current Draft</p>
+        <h2 className="text-lg font-semibold text-neutral-900">{selectedDraft.title}</h2>
+      </header>
 
       {/* Draft Metadata */}
       <DetailCard title="Draft Information">
@@ -66,7 +67,7 @@ export function DraftsRightPane() {
       {selectedDraft.scheduledTime && (
         <DetailCard title="Schedule">
           <DetailRow label="Send Time" value={selectedDraft.scheduledTime} />
-          <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+          <div className="mt-2 rounded-md border border-blue-100 bg-blue-50/70 px-3 py-2 text-xs text-blue-700">
             Scheduled to send in 2 days
           </div>
         </DetailCard>

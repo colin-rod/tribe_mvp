@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Alert } from '@/components/ui/Alert'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
 import { getPrivacyMessageForStep } from '@/lib/onboarding'
@@ -252,34 +253,34 @@ export function RecipientSetupStep({
       )}
 
       {/* Privacy Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <div className="text-blue-600">
-            <LockClosedIcon className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <div>
-            <h4 className="font-medium text-blue-900 mb-1">Recipient Privacy</h4>
-            <p className="text-sm text-blue-800">{privacyMessage}</p>
-            <div className="mt-2 text-xs text-blue-700">
-              • Recipients can set their own preferences<br/>
-              • They can unsubscribe anytime<br/>
-              • You control what content they see
-            </div>
-          </div>
-        </div>
-      </div>
+      <Alert
+        variant="info"
+        title="Recipient privacy"
+        icon={<LockClosedIcon className="h-5 w-5" aria-hidden="true" />}
+        className="text-left"
+      >
+        <p className="text-sm">{privacyMessage}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>Recipients can set their own preferences</li>
+          <li>They can unsubscribe anytime</li>
+          <li>You control what content they see</li>
+        </ul>
+      </Alert>
 
       {/* Benefits */}
       {recipients.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h4 className="font-medium text-green-900 mb-2">Great! Here&apos;s what happens next:</h4>
-          <div className="text-sm text-green-800 space-y-1">
-            <div>• Recipients will get a welcome email with their preference link</div>
-            <div>• They can customize what updates they want to receive</div>
-            <div>• Our AI will suggest who should get each update based on content</div>
-            <div>• You always have final control over who sees what</div>
-          </div>
-        </div>
+        <Alert
+          variant="success"
+          title="Great! Here&apos;s what happens next"
+          className="text-left"
+        >
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+            <li>Recipients will get a welcome email with their preference link</li>
+            <li>They can customize what updates they want to receive</li>
+            <li>Our AI will suggest who should get each update based on content</li>
+            <li>You always have final control over who sees what</li>
+          </ul>
+        </Alert>
       )}
 
       {/* Navigation Buttons */}

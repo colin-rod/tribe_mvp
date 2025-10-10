@@ -191,6 +191,26 @@ describe('Color Contrast - WCAG AA Compliance', () => {
       expect(result.ratio).toBeGreaterThanOrEqual(4.5)
     })
   })
+
+  describe('Navigation Tokens', () => {
+    it('✅ active nav text on active background meets AA', () => {
+      const result = meetsWCAGStandard(colors.primary[700], colors.primary[50], false)
+      expect(result.passes).toBe(true)
+      expect(result.ratio).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('✅ hover nav text on hover background meets AA', () => {
+      const result = meetsWCAGStandard(colors.neutral[900], colors.neutral[100], false)
+      expect(result.passes).toBe(true)
+      expect(result.ratio).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it('✅ nav indicator on white exceeds 3:1 contrast', () => {
+      const result = meetsWCAGStandard(colors.primary[600], '#ffffff', true)
+      expect(result.passes).toBe(true)
+      expect(result.ratio).toBeGreaterThanOrEqual(3)
+    })
+  })
 })
 
 /**

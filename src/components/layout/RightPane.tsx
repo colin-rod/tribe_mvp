@@ -120,9 +120,9 @@ export function RightPane({ children, className }: RightPaneProps) {
           {/* Expanded (full content) view */}
           <div className="flex-1 overflow-y-auto">
             {/* Sticky header inside pane */}
-            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-neutral-200">
-              <div className="px-4 py-1">
-                <h2 className="text-sm font-semibold text-neutral-900">{paneTitle}</h2>
+            <div className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 backdrop-blur transition-shadow supports-[backdrop-filter]:bg-white/80 shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+              <div className="px-6 py-3">
+                <h2 className="text-sm font-semibold tracking-tight text-neutral-900">{paneTitle}</h2>
               </div>
             </div>
             {children || (
