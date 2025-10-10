@@ -61,6 +61,3 @@ export { DeliveryStatusBadge } from './DeliveryStatusBadge'
 export { default as ChildImage } from './ChildImage'
 export { PasswordStrengthIndicator } from './PasswordStrengthIndicator'
 export { DevelopmentBanner, DevelopmentIndicator } from './DevelopmentBanner'
-
-// Legacy export for backward compatibility
-export { default as DateInputDemo } from './DateInputDemo'
