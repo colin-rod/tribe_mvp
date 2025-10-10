@@ -79,10 +79,10 @@ const ActivityRightPaneComponent = ({
   );
 
   return (
-    <div className={cn('p-4 space-y-4', className)}>
+    <div className={cn('right-pane-section', className)}>
       {/* Filters (moved from main pane) */}
       {activityFilters && (
-        <div className="space-y-2">
+        <section className="space-y-3">
           <h3 className="text-sm font-semibold text-neutral-900">Filters</h3>
           <FiltersPanel
             searchQuery={activityFilters.filters.searchQuery}
@@ -96,31 +96,31 @@ const ActivityRightPaneComponent = ({
             onClearFilters={activityFilters.clearFilters}
             activeFilterCount={activityFilters.activeFilterCount}
           />
-        </div>
+        </section>
       )}
 
       {/* Quick Actions - sticky within pane (below pane header) */}
-      <div className="sticky top-[36px] z-10 bg-white/95 backdrop-blur pb-2">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-2">Quick Actions</h3>
+      <section className="sticky top-[64px] z-10 -mx-6 px-6 pb-4 pt-3 backdrop-blur bg-white/95 supports-[backdrop-filter]:bg-white/80 border-b border-neutral-200 shadow-[0_1px_0_rgba(15,23,42,0.08)]">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-3">Quick Actions</h3>
         <QuickActionsPanel
           onCreateMemory={handleCreateMemory}
           onCompileSummary={handleCompileSummary}
-          className="border border-neutral-200 rounded-md p-3"
+          className="right-pane-card right-pane-card--bordered shadow-none"
         />
-      </div>
+      </section>
 
       {/* Summary System Stats */}
-      <div className="space-y-3">
+      <section className="space-y-3">
         <h3 className="text-sm font-semibold text-neutral-900">Summary Overview</h3>
-        <div className="border border-neutral-200 rounded-md p-3">
+        <div className="right-pane-card right-pane-card--bordered">
           <SummaryStats />
         </div>
-      </div>
+      </section>
 
       {/* AI Suggestions Panel */}
-      <div className="space-y-3">
-        <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} className="border border-neutral-200" />
-      </div>
+      <section className="space-y-3">
+        <AISuggestionsPanel onSelectPrompt={handleSelectPrompt} />
+      </section>
     </div>
   );
 };

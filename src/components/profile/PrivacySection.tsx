@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { User } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/Button'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -465,21 +465,25 @@ export function PrivacySection({ user }: PrivacySectionProps) {
 
       {/* Form Messages */}
       {formState.success && (
-        <FormMessage
-          type="success"
-          message="Privacy settings updated successfully!"
-          details={formState.lastSaved ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
+        <Alert
+          variant="success"
           className="mt-6"
-        />
+          title="Privacy settings updated"
+        >
+          {formState.lastSaved
+            ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}`
+            : 'Your privacy preferences are up to date.'}
+        </Alert>
       )}
 
       {formState.error && (
-        <FormMessage
-          type="error"
-          message="Failed to update privacy settings"
-          details={formState.error}
+        <Alert
+          variant="error"
           className="mt-6"
-        />
+          title="Couldn’t update privacy settings"
+        >
+          {formState.error}
+        </Alert>
       )}
 
       {/* Data Export Confirmation Dialog */}

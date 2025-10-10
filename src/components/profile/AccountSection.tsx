@@ -7,7 +7,7 @@ import { EnvelopeIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -377,21 +377,25 @@ export function AccountSection({ user }: AccountSectionProps) {
 
       {/* Form Messages */}
       {formState.success && (
-        <FormMessage
-          type="success"
-          message="Account settings updated successfully!"
-          details={formState.lastSaved ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
+        <Alert
+          variant="success"
           className="mt-6"
-        />
+          title="Account settings updated"
+        >
+          {formState.lastSaved
+            ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}`
+            : 'Your account preferences are up to date.'}
+        </Alert>
       )}
 
       {formState.error && (
-        <FormMessage
-          type="error"
-          message="Failed to update account settings"
-          details={formState.error}
+        <Alert
+          variant="error"
           className="mt-6"
-        />
+          title="Couldn’t update account settings"
+        >
+          {formState.error}
+        </Alert>
       )}
 
       {/* Delete Account Confirmation Dialog */}

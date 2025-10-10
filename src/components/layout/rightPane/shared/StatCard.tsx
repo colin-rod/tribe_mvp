@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+
 export interface StatCardProps {
   label: string
   value: string | number
@@ -9,25 +11,30 @@ export interface StatCardProps {
   className?: string
 }
 
-export function StatCard({ label, value, icon, trend, className = '' }: StatCardProps) {
+export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
   return (
-    <div className={`rounded-lg border border-neutral-200 p-4 ${className}`}>
-      <div className="flex items-center justify-between">
+    <div className={cn('right-pane-card right-pane-card--bordered', className)}>
+      <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
-          <p className="text-sm text-neutral-600 mb-1">{label}</p>
-          <p className="text-2xl font-semibold text-neutral-900">{value}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">{value}</p>
           {trend && (
-            <p className={`text-xs mt-1 ${
-              trend.direction === 'up' ? 'text-green-600' :
-              trend.direction === 'down' ? 'text-red-600' :
-              'text-neutral-600'
-            }`}>
+            <p
+              className={cn(
+                'mt-1 text-xs font-medium',
+                trend.direction === 'up'
+                  ? 'text-success-600'
+                  : trend.direction === 'down'
+                    ? 'text-error-600'
+                    : 'text-neutral-600'
+              )}
+            >
               {trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'} {trend.value}
             </p>
           )}
         </div>
         {icon && (
-          <div className="text-neutral-400">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
             {icon}
           </div>
         )}

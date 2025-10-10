@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -482,21 +482,25 @@ export function SecuritySection({ user }: SecuritySectionProps) {
 
       {/* Form Messages */}
       {formState.success && (
-        <FormMessage
-          type="success"
-          message="Security settings updated successfully!"
-          details={formState.lastSaved ? `Last updated at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
+        <Alert
+          variant="success"
           className="mt-6"
-        />
+          title="Security settings updated"
+        >
+          {formState.lastSaved
+            ? `Last updated at ${formState.lastSaved.toLocaleTimeString()}`
+            : 'Your security preferences are up to date.'}
+        </Alert>
       )}
 
       {formState.error && (
-        <FormMessage
-          type="error"
-          message="Security update failed"
-          details={formState.error}
+        <Alert
+          variant="error"
           className="mt-6"
-        />
+          title="Security update failed"
+        >
+          {formState.error}
+        </Alert>
       )}
 
       {/* Two-Factor Disable Confirmation Dialog */}

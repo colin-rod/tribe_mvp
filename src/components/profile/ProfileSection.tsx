@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
@@ -332,19 +332,23 @@ export function ProfileSection({ user }: ProfileSectionProps) {
 
         {/* Form Messages */}
         {formState.success && (
-          <FormMessage
-            type="success"
-            message="Profile updated successfully!"
-            details={formState.lastSaved ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
-          />
+          <Alert
+            variant="success"
+            title="Profile updated"
+          >
+            {formState.lastSaved
+              ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}`
+              : 'Your profile details are up to date.'}
+          </Alert>
         )}
 
         {formState.error && (
-          <FormMessage
-            type="error"
-            message="Failed to update profile"
-            details={formState.error}
-          />
+          <Alert
+            variant="error"
+            title="Failed to update profile"
+          >
+            {formState.error}
+          </Alert>
         )}
 
         {/* Submit Button */}

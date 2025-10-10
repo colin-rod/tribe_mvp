@@ -9,6 +9,7 @@
 
 'use client';
 
+import type { MouseEvent } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { cn } from '@/lib/utils';
 import { useNavigationState } from '@/hooks/useNavigationState';
@@ -25,7 +26,7 @@ export function NavItem({ item, isCollapsed }: NavItemProps) {
   const itemIsActive = isActive(item.href);
   const Icon = item.icon;
 
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     navigate(item.href as DashboardRoute);
   };
@@ -34,29 +35,21 @@ export function NavItem({ item, isCollapsed }: NavItemProps) {
     <a
       href={item.href}
       onClick={handleClick}
+      data-active={itemIsActive ? 'true' : undefined}
       className={cn(
-        'flex items-center gap-3 rounded-lg transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset',
-        'cursor-pointer',
-        isCollapsed ? 'px-3 py-3 justify-center' : 'px-3 py-2',
-        itemIsActive && [
-          'bg-primary-50 text-primary-700 border-l-4 border-primary-600',
-          isCollapsed ? 'border-l-0 border-b-4' : '',
-        ],
-        !itemIsActive && 'text-neutral-700 hover:bg-neutral-100'
+        'nav-item',
+        isCollapsed ? 'justify-center px-3 py-3' : 'px-3 py-2'
       )}
       aria-label={item.label}
       aria-current={itemIsActive ? 'page' : undefined}
     >
-      <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+      <span aria-hidden="true" className="nav-item__indicator" />
+      <Icon className="nav-item__icon" aria-hidden="true" />
       {!isCollapsed && (
-        <span className="text-sm font-medium truncate">{item.label}</span>
+        <span className="z-10 truncate text-sm font-medium">{item.label}</span>
       )}
       {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
-        <span
-          className="ml-auto bg-primary-600 text-white text-xs font-semibold rounded-full px-2 py-0.5 min-w-[20px] text-center"
-          aria-label={`${item.badge} notifications`}
-        >
+        <span className="nav-item__badge" aria-label={`${item.badge} notifications`}>
           {item.badge > 99 ? '99+' : item.badge}
         </span>
       )}

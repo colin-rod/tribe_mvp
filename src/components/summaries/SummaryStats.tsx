@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { Alert } from '@/components/ui/Alert'
+import { cn } from '@/lib/utils'
 import { useSummaryCompilation } from '@/hooks/useSummaryCompilation'
 import { useDraftManagement } from '@/hooks/useDraftManagement'
 import {
@@ -15,7 +17,11 @@ import {
   PencilSquareIcon
 } from '@heroicons/react/24/outline'
 
-export default function SummaryStats() {
+interface SummaryStatsProps {
+  className?: string
+}
+
+export default function SummaryStats({ className }: SummaryStatsProps = {}) {
   const { stats, loading: summaryLoading, loadStats } = useSummaryCompilation()
   const { summary, loading: draftLoading, loadSummary } = useDraftManagement()
 
@@ -41,24 +47,32 @@ export default function SummaryStats() {
   const hasSentSummaries = (stats?.total_digests || 0) > 0
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2 text-base">
-            <SparklesIcon className="w-4 h-4 text-orange-500" />
-            <span>Summary System</span>
+    <Card
+      padding="none"
+      className={cn('right-pane-card right-pane-card--bordered overflow-hidden', className)}
+    >
+      <CardHeader className="border-b border-neutral-100 px-5 pb-3 pt-4">
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="h-4 w-4 text-primary-600" />
+          <CardTitle className="text-sm font-semibold leading-6 text-neutral-900">
+            Summary System
           </CardTitle>
-          {canCompileSummary && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-              Ready to compile
-            </span>
-          )}
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="px-5 pb-5 pt-4 space-y-4">
+        {canCompileSummary && (
+          <Alert
+            variant="success"
+            className="border rounded-lg border-success-200"
+            title="Ready to compile"
+          >
+            Your latest draft has enough approved memories to send a personalized summary.
+          </Alert>
+        )}
+
         {/* Compact Stats Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-3">
           {/* Drafts Count */}
           <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100">
             <DocumentTextIcon className="w-6 h-6 text-orange-600 mx-auto mb-1" />
@@ -96,7 +110,7 @@ export default function SummaryStats() {
 
         {/* Compile Summary Action */}
         {canCompileSummary && (
-          <Link href="/dashboard/digests/compile" className="block mb-3">
+          <Link href="/dashboard/digests/compile" className="block">
             <Button variant="success" className="w-full" size="sm">
               <SparklesIcon className="w-4 h-4 mr-2" />
               Compile Summary Now
@@ -106,35 +120,38 @@ export default function SummaryStats() {
 
         {/* Additional Info */}
         {!canCompileSummary && hasDrafts && (
-          <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 text-center mb-3">
-            <p className="text-xs text-neutral-600 mb-2">
-              Mark drafts as ready to compile
-            </p>
-            <Link href="/dashboard/drafts">
-              <Button variant="outline" size="sm" className="text-xs h-7">
-                <PencilSquareIcon className="w-3.5 h-3.5 mr-1.5" />
-                View Drafts
-              </Button>
-            </Link>
-          </div>
+          <Alert
+            variant="info"
+            className="border rounded-lg border-info-200"
+            title="Mark drafts as ready"
+          >
+            <p>Approve the remaining drafts so your summary can be compiled.</p>
+            <div className="mt-3 flex justify-center">
+              <Link href="/dashboard/drafts">
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <PencilSquareIcon className="mr-1.5 h-3.5 w-3.5" />
+                  View Drafts
+                </Button>
+              </Link>
+            </div>
+          </Alert>
         )}
 
         {!canCompileSummary && !hasDrafts && (
-          <div className="p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-100 text-center mb-3">
-            <SparklesIcon className="w-6 h-6 text-orange-500 mx-auto mb-1.5" />
-            <p className="text-xs font-medium text-neutral-900 mb-1">
-              New Workflow Available!
-            </p>
-            <p className="text-xs text-neutral-600 mb-2">
-              Capture moments as memories, then compile summaries
-            </p>
-            <Link href="/dashboard/drafts">
-              <Button variant="primary" size="sm" className="text-xs h-7">
-                <PencilSquareIcon className="w-3.5 h-3.5 mr-1.5" />
-                Start Creating
-              </Button>
-            </Link>
-          </div>
+          <Alert
+            className="border rounded-lg border-neutral-200"
+            title="Capture memories to get started"
+          >
+            <p>Save a few updates as drafts and we&apos;ll guide you through the compilation flow.</p>
+            <div className="mt-3 flex justify-center">
+              <Link href="/dashboard/drafts">
+                <Button variant="primary" size="sm" className="h-8 text-xs">
+                  <PencilSquareIcon className="mr-1.5 h-3.5 w-3.5" />
+                  Start Creating
+                </Button>
+              </Link>
+            </div>
+          </Alert>
         )}
 
         {/* Last Sent Info */}
