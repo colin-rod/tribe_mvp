@@ -10,6 +10,8 @@
     "build": "rm -rf .next && next build",
     "build:fast": "next build",
     "start": "next start",
+    "worker": "tsx src/workers/start-worker.ts",
+    "worker:dev": "tsx watch src/workers/start-worker.ts",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",

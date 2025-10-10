@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import { Bug, Sparkles, Palette, MessageSquare } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   FeedbackType,
   feedbackFormSchema,
@@ -25,6 +27,14 @@ interface FeedbackModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+// Feedback type options with icons
+const FEEDBACK_TYPE_OPTIONS = [
+  { value: FeedbackType.BUG, label: 'Bug Report', icon: Bug },
+  { value: FeedbackType.FEATURE_REQUEST, label: 'Feature Request', icon: Sparkles },
+  { value: FeedbackType.UX_ISSUE, label: 'UX Issue', icon: Palette },
+  { value: FeedbackType.OTHER, label: 'General Feedback', icon: MessageSquare },
+] as const
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange }) => {
   const [formData, setFormData] = useState<FeedbackFormData>({
@@ -270,27 +280,34 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onOpenChange
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Feedback Type */}
             <div>
-              <label
-                htmlFor="feedback-type"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 What type of feedback would you like to share?
               </label>
-              <select
-                id="feedback-type"
-                value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value as typeof formData.type })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                disabled={isSubmitting}
-              >
-                <option value={FeedbackType.BUG}>🐛 Bug Report</option>
-                <option value={FeedbackType.FEATURE_REQUEST}>✨ Feature Request</option>
-                <option value={FeedbackType.UX_ISSUE}>🎨 UX Issue</option>
-                <option value={FeedbackType.OTHER}>💬 General Feedback</option>
-              </select>
-              {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type}</p>}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {FEEDBACK_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: value })}
+                    disabled={isSubmitting}
+                    className={cn(
+                      'flex flex-col items-center justify-center min-h-[80px] px-3 py-3 text-xs border rounded-lg',
+                      'hover:bg-gray-50 transition-all duration-200',
+                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
+                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                      formData.type === value
+                        ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm'
+                        : 'border-gray-300 text-gray-700'
+                    )}
+                    aria-label={`Select ${label}`}
+                    aria-pressed={formData.type === value}
+                  >
+                    <Icon className="h-6 w-6 mb-2" />
+                    <span className="font-medium text-center leading-tight">{label}</span>
+                  </button>
+                ))}
+              </div>
+              {errors.type && <p className="mt-2 text-sm text-red-600">{errors.type}</p>}
             </div>
 
             {/* Description */}
