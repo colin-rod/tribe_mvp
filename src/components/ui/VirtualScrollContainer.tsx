@@ -1,8 +1,8 @@
 'use client'
 
 import { memo, forwardRef, useCallback, useMemo, useRef, useEffect } from 'react'
-import type { MutableRefObject } from 'react'
-import { FixedSizeList as List, VariableSizeList as VariableList, areEqual } from 'react-window'
+import type { MutableRefObject, ComponentType, CSSProperties } from 'react'
+import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
 import { useInView } from 'react-intersection-observer'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
@@ -18,10 +18,10 @@ interface VirtualScrollContainerProps {
   onLoadMore?: () => void
   hasNextPage?: boolean
   isLoading?: boolean
-  loadingComponent?: React.ComponentType
+  loadingComponent?: ComponentType
   children: (props: {
     index: number
-    style: React.CSSProperties
+    style: CSSProperties
     data: unknown
   }) => React.ReactNode
   overscan?: number
@@ -33,13 +33,13 @@ interface VirtualScrollContainerProps {
 
 interface ItemRendererProps {
   index: number
-  style: React.CSSProperties
+  style: CSSProperties
   data: {
     items: unknown[]
     children: VirtualScrollContainerProps['children']
     hasNextPage?: boolean
     isLoading?: boolean
-    loadingComponent?: React.ComponentType
+    loadingComponent?: ComponentType
     onLoadMore?: () => void
     threshold?: number
     memoryOptimization?: boolean
@@ -119,15 +119,23 @@ const ItemRenderer = memo(({ index, style, data }: ItemRendererProps) => {
       {children({ index, style, data: optimizedItemData })}
     </div>
   )
-}, areEqual)
+})
 
 ItemRenderer.displayName = 'ItemRenderer'
+
+type VirtualRowProps = {
+  itemData: ItemRendererProps['data']
+}
+
+const VirtualRow = ({ index, style, itemData }: RowComponentProps<VirtualRowProps>) => (
+  <ItemRenderer index={index} style={style} data={itemData} />
+)
 
 /**
  * High-performance virtual scrolling container that handles large datasets efficiently
  * Supports both fixed and variable item heights, infinite loading, and intersection observer
  */
-const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
+const VirtualScrollContainer = forwardRef<ListImperativeAPI | null, VirtualScrollContainerProps>(
   ({
     items,
     itemHeight = 100,
@@ -155,7 +163,7 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
       averageRenderTime: 0
     })
 
-    const listRef = useRef<unknown>(null)
+    const listRef = useRef<ListImperativeAPI | null>(null)
 
     // Track rendering performance
     useEffect(() => {
@@ -230,6 +238,14 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
       itemSizeCache.current.clear()
     }, [items.length])
 
+    useEffect(() => {
+      if (direction === 'horizontal') {
+        logger.warn(
+          'VirtualScrollContainer currently supports vertical scrolling only. Falling back to vertical mode.'
+        )
+      }
+    }, [direction])
+
     // Scroll performance optimization
     const handleScroll = useCallback(() => {
       if (enablePerformanceTracking) {
@@ -242,48 +258,47 @@ const VirtualScrollContainer = forwardRef<unknown, VirtualScrollContainerProps>(
       }
     }, [enablePerformanceTracking])
 
-    const listProps = {
-      ref: (node: unknown) => {
-        listRef.current = node
+    const setListRef = useCallback(
+      (instance: ListImperativeAPI | null) => {
+        listRef.current = instance
+
         if (typeof ref === 'function') {
-          ref(node)
+          ref(instance)
         } else if (ref && 'current' in ref) {
-          (ref as MutableRefObject<unknown>).current = node
+          ;(ref as MutableRefObject<ListImperativeAPI | null>).current = instance
         }
       },
+      [ref]
+    )
+
+    const computedRowHeight = isFixedHeight
+      ? (itemHeight as number)
+      : (index: number, _rowProps: VirtualRowProps) => getItemSize(index)
+
+    const containerStyle: CSSProperties = {
       height,
-      width: width || '100%',
-      itemCount: totalItemCount,
-      itemData,
-      overscanCount: Math.min(overscan, 10), // Limit overscan for performance
-      className: cn(
-        'focus:outline-none',
-        memoryOptimization && 'will-change-transform', // CSS optimization hint
-        className
-      ),
-      direction: direction === 'horizontal' ? 'horizontal' as const : 'vertical' as const,
-      onScroll: handleScroll
+      width: typeof width === 'number' ? `${width}px` : width ?? '100%'
     }
 
-    if (isFixedHeight) {
-      return (
-        <List
-          {...listProps}
-          itemSize={itemHeight as number}
-        >
-          {ItemRenderer}
-        </List>
-      )
-    }
+    const rowProps = useMemo(() => ({ itemData }), [itemData])
 
     return (
-      <VariableList
-        {...listProps}
-        itemSize={getItemSize}
-        estimatedItemSize={typeof itemHeight === 'number' ? itemHeight : 100}
-      >
-        {ItemRenderer}
-      </VariableList>
+      <List
+        listRef={setListRef}
+        defaultHeight={typeof height === 'number' ? height : undefined}
+        rowCount={totalItemCount}
+        rowHeight={computedRowHeight}
+        rowComponent={VirtualRow}
+        rowProps={rowProps}
+        overscanCount={Math.min(overscan, 10)}
+        className={cn(
+          'focus:outline-none',
+          memoryOptimization && 'will-change-transform',
+          className
+        )}
+        style={containerStyle}
+        onScroll={handleScroll}
+      />
     )
   }
 )
