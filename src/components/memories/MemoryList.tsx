@@ -38,6 +38,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [error, setError] = useState<string | null>(null)
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
   const [newMemoriesCount, setNewMemoriesCount] = useState(0)
+  const [showingNewOnly, setShowingNewOnly] = useState(false)
 
   const loadMemories = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -143,6 +144,22 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
     loadMemories()
   }, [loadMemories])
 
+  useEffect(() => {
+    if (newMemoriesCount === 0 && showingNewOnly) {
+      setShowingNewOnly(false)
+    }
+  }, [newMemoriesCount, showingNewOnly])
+
+  const handleNewBadgeClick = useCallback(() => {
+    if (newMemoriesCount > 0) {
+      setShowingNewOnly(true)
+    }
+  }, [newMemoriesCount])
+
+  const handleClearFilter = useCallback(() => {
+    setShowingNewOnly(false)
+  }, [])
+
   // Handle memory click - open detail modal
   const handleMemoryClick = useCallback((memoryId: string) => {
     setActiveMemoryId(memoryId)
@@ -206,35 +223,79 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
     )
   }
 
+  const filteredMemories = showingNewOnly
+    ? memories.filter(memory => memory.isNew)
+    : memories
+
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header with new memories count */}
       {newMemoriesCount > 0 && (
-        <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <button
+          type="button"
+          onClick={handleNewBadgeClick}
+          className={cn(
+            'flex w-full items-center justify-between p-4 border rounded-lg transition-colors',
+            showingNewOnly
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100 focus:bg-blue-100'
+          )}
+          aria-pressed={showingNewOnly}
+          aria-label="Show only new memories"
+        >
           <div className="flex items-center space-x-3">
             <MemoryCountBadge count={newMemoriesCount} />
-            <div>
-              <p className="text-sm font-medium text-blue-900">
+            <div className="text-left">
+              <p className="text-sm font-medium">
                 {newMemoriesCount === 1 ? '1 new memory' : `${newMemoriesCount} new memories`}
               </p>
-              <p className="text-xs text-blue-700">
+              <p className="text-xs">
                 Review and mark as ready for compilation
               </p>
             </div>
           </div>
+          <span className="text-xs font-semibold underline">
+            {showingNewOnly ? 'Filter active' : 'Show only new'}
+          </span>
+        </button>
+      )}
+
+      {showingNewOnly && (
+        <div className="flex items-center justify-between p-3 bg-blue-100 border border-blue-200 rounded-lg text-blue-900">
+          <span className="text-sm font-medium">Showing only new memories</span>
+          <button
+            type="button"
+            onClick={handleClearFilter}
+            className="text-xs font-semibold underline hover:text-blue-800"
+          >
+            Show all activity
+          </button>
         </div>
       )}
 
       {/* Memory cards */}
-      <div className="space-y-4">
-        {memories.map((memory) => (
-          <MemoryCard
-            key={memory.id}
-            memory={memory}
-            onClick={handleMemoryClick}
-          />
-        ))}
-      </div>
+      {filteredMemories.length === 0 ? (
+        <div className="text-center py-8 border border-dashed border-blue-200 rounded-lg bg-blue-50 text-blue-700">
+          <p className="text-sm font-medium">All caught up! No new memories to review.</p>
+          <button
+            type="button"
+            onClick={handleClearFilter}
+            className="mt-2 text-xs font-semibold underline"
+          >
+            Show all activity
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredMemories.map((memory) => (
+            <MemoryCard
+              key={memory.id}
+              memory={memory}
+              onClick={handleMemoryClick}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Detail modal */}
       {activeMemoryId && (
