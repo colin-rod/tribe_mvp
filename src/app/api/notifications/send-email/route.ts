@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send the email
+    // Send the email (queued for background delivery)
     const result = await serverEmailService.sendTemplatedEmail(
       validatedData.to,
       validatedData.type,
@@ -91,16 +91,28 @@ export async function POST(request: NextRequest) {
     )
 
     if (!result.success) {
+      // Queue unavailable - return 503
+      const statusCode = result.statusCode || 500
       return NextResponse.json(
-        { error: result.error || 'Failed to send email' },
-        { status: 500 }
+        {
+          error: result.error || 'Failed to send email',
+          statusCode,
+          retryable: statusCode === 503
+        },
+        { status: statusCode }
       )
     }
 
+    // Email queued successfully - return job info
     return NextResponse.json({
       success: true,
       messageId: result.messageId,
-      statusCode: result.statusCode
+      jobId: result.messageId, // Job ID is the same as message ID
+      status: result.statusCode === 202 ? 'queued' : 'sent',
+      statusCode: result.statusCode,
+      message: result.statusCode === 202
+        ? 'Email queued for delivery'
+        : 'Email sent successfully'
     })
 
   } catch (error) {

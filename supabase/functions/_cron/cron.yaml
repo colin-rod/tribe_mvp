@@ -16,3 +16,10 @@
   schedule: "0 * * * *"  # Every hour at minute 0
   function: "send-summary-reminders"
   description: "Send reminder notifications at 48hr and 24hr before auto-publish deadline"
+
+# Process recurring digest schedules (CRO-102 Phase 4)
+# Runs daily at 9am to check for daily/weekly digest schedules that are due
+- name: "process-digest-schedules"
+  schedule: "0 9 * * *"  # Daily at 9:00 AM UTC
+  function: "process-digest-schedules"
+  description: "Check for due digest schedules and create notification jobs for recipients with daily/weekly preferences"

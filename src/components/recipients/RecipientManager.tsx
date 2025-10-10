@@ -16,6 +16,7 @@ import {
 import { RecipientGroup, getUserGroups } from '@/lib/recipient-groups'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { LoadingState } from '@/components/ui/LoadingState'
 import AddRecipientForm from './AddRecipientForm'
 import RecipientCard from './RecipientCard'
 import RecipientSearch from './RecipientSearch'
@@ -420,8 +421,12 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
 
       {/* Recipients List */}
       {loading ? (
-        <div className="flex items-center justify-center p-12">
-          <LoadingSpinner size="lg" />
+        <div className="p-6" aria-busy="true" aria-live="polite">
+          <LoadingState
+            type="skeleton"
+            variant="grid"
+            skeletonOptions={{ columns: 3, count: 6, aspectRatio: 'portrait' }}
+          />
         </div>
       ) : recipients.length === 0 ? (
         <div className="text-center p-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
