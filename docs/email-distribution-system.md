@@ -138,7 +138,7 @@ X-Twilio-Email-Event-Webhook-Timestamp: {timestamp}
 - Responsive HTML design
 - Personalized greetings based on relationship
 - Milestone celebration badges
-- Media galleries for photos/videos
+- Media galleries for photos (video support deferred post-MVP)
 - Reply-to instructions
 - Mobile-optimized layout
 

@@ -141,7 +141,7 @@ Recipient AI (GPT-4o-mini):
 - **Warm**: Emotional, engaging tone
 - **Concise**: 2-4 paragraphs for email digestibility
 - **Channel-Friendly**: Works for email, SMS, WhatsApp
-- **Selective Media**: Only highlights most relevant photos/videos
+- **Selective Media**: Only highlights the most relevant photos
 
 ---
 
@@ -386,9 +386,9 @@ curl -X POST http://localhost:54321/functions/v1/compile-digest \
    - Detect recipient language preference
    - Generate narratives in Spanish, French, etc.
 
-3. **Voice Narratives**
-   - Use text-to-speech for audio digests
-   - Grandparents can listen instead of reading
+3. ~~**Voice Narratives**~~ (Removed from MVP scope)
+   - ~~Use text-to-speech for audio digests~~
+   - ~~Grandparents can listen instead of reading~~
 
 4. **Regeneration**
    - "Regenerate with AI" button in UI
