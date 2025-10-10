@@ -21,7 +21,7 @@ import { MiddlePane } from '@/components/layout/MiddlePane'
 import { RightPaneContent } from '@/components/layout/rightPane/RightPaneContent'
 import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
-import type { UpdateType } from '@/components/updates/CreateUpdateModal'
+import type { MemoryType } from '@/components/updates/CreateMemoryModal'
 
 function DashboardPage() {
   const { user, loading } = useAuth()
@@ -31,7 +31,7 @@ function DashboardPage() {
   const { openCreateUpdateModal, createUpdateModal } = useCreateUpdateModal()
 
   // Dashboard action handlers
-  const handleCreateUpdate = useCallback((type: UpdateType = 'photo', initialContent?: string) => {
+  const handleCreateUpdate = useCallback((type: MemoryType = 'photo', initialContent?: string) => {
     openCreateUpdateModal(type, initialContent)
   }, [openCreateUpdateModal])
 

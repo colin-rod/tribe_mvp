@@ -419,7 +419,7 @@ export async function PUT(
       const { error: notificationError } = await supabase
         .from('recipients')
         .update({
-          notification_preferences: updatedNotificationPrefs
+          digest_preferences: updatedNotificationPrefs
         })
         .eq('preference_token', token)
         .eq('is_active', true)
