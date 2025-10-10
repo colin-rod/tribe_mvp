@@ -7,6 +7,7 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
+  setupFiles: ['dotenv/config'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
   moduleNameMapper: {
@@ -17,6 +18,9 @@ const customJestConfig = {
     '<rootDir>/node_modules/',
     '<rootDir>/supabase/functions/',
     '<rootDir>/src/__tests__/setup/',
+  ],
+  transformIgnorePatterns: [
+    '/node_modules/(?!bullmq|msgpackr)',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

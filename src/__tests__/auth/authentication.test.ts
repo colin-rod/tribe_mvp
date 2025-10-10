@@ -27,7 +27,7 @@ describe('Authentication Flow Tests', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.clearAllMocks();
 
     mockSupabase = {
       auth: {
@@ -63,7 +63,10 @@ describe('Authentication Flow Tests', () => {
         email: 'newuser@example.com',
         password: 'SecurePass123',
         options: {
-          emailRedirectTo: expect.stringContaining('/auth/callback')
+          data: {
+            name: '',
+          },
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
         }
       })
 
