@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
 import { Alert } from '@/components/ui/Alert'
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator'
-import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { SecurityFormData, FormState, FormValidationResult, PasswordStrength } from '@/lib/types/profile'
-import { ShieldCheckIcon, KeyIcon, DevicePhoneMobileIcon } from '@heroicons/react/24/outline'
+import { KeyIcon } from '@heroicons/react/24/outline'
 
 interface SecuritySectionProps {
   user: User
@@ -64,12 +63,11 @@ const calculatePasswordStrength = (password: string): PasswordStrength => {
   }
 }
 
-export function SecuritySection({ user }: SecuritySectionProps) {
+export function SecuritySection({ user: _user }: SecuritySectionProps) {
   const [formData, setFormData] = useState<SecurityFormData>({
     currentPassword: '',
     newPassword: '',
-    confirmPassword: '',
-    twoFactorEnabled: user.user_metadata?.twoFactorEnabled || false
+    confirmPassword: ''
   })
 
   const [formState, setFormState] = useState<FormState>({
@@ -89,7 +87,6 @@ export function SecuritySection({ user }: SecuritySectionProps) {
   })
 
   const [showPasswordFields, setShowPasswordFields] = useState(false)
-  const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false)
 
   // Calculate password strength when new password changes
   useEffect(() => {
@@ -188,113 +185,11 @@ export function SecuritySection({ user }: SecuritySectionProps) {
     }
   }
 
-  const handleTwoFactorToggle = () => {
-    if (formData.twoFactorEnabled) {
-      // Show confirmation dialog for disabling 2FA
-      setShowTwoFactorDialog(true)
-    } else {
-      // Enable 2FA directly
-      enableTwoFactor()
-    }
-  }
-
-  const enableTwoFactor = async () => {
-    setFormState({ loading: true, success: false, error: null })
-
-    try {
-      // Enable MFA using Supabase Auth
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp'
-      })
-
-      if (error) {
-        throw new Error(error.message)
-      }
-
-      // Store the QR code URL and secret for user setup
-      if (data) {
-        setFormData(prev => ({
-          ...prev,
-          twoFactorEnabled: true,
-          qrCode: data.totp?.qr_code,
-          secret: data.totp?.secret
-        }))
-      }
-
-      setFormState({
-        loading: false,
-        success: true,
-        error: null
-      })
-
-      setTimeout(() => {
-        setFormState(prev => ({ ...prev, success: false }))
-      }, 3000)
-    } catch {
-      setFormState({
-        loading: false,
-        success: false,
-        error: 'Failed to enable two-factor authentication'
-      })
-    }
-  }
-
-  const disableTwoFactor = async () => {
-    setFormState({ loading: true, success: false, error: null })
-
-    try {
-      // Get the user's enrolled factors
-      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
-
-      if (factorsError) {
-        throw new Error(factorsError.message)
-      }
-
-      // Unenroll all TOTP factors
-      if (factors?.totp && factors.totp.length > 0) {
-        for (const factor of factors.totp) {
-          const { error: unenrollError } = await supabase.auth.mfa.unenroll({
-            factorId: factor.id
-          })
-          if (unenrollError) {
-            throw new Error(unenrollError.message)
-          }
-        }
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        twoFactorEnabled: false,
-        qrCode: undefined,
-        secret: undefined
-      }))
-      setFormState({
-        loading: false,
-        success: true,
-        error: null
-      })
-
-      setTimeout(() => {
-        setFormState(prev => ({ ...prev, success: false }))
-      }, 3000)
-    } catch {
-      setFormState({
-        loading: false,
-        success: false,
-        error: 'Failed to disable two-factor authentication'
-      })
-    }
-
-    setShowTwoFactorDialog(false)
-  }
-
   return (
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Security Settings</h2>
-        <p className="text-sm text-gray-600">
-          Manage your password and account security options.
-        </p>
+        <p className="text-sm text-gray-600">Manage your password to keep your account secure.</p>
       </div>
 
       <div className="space-y-8">
@@ -400,84 +295,6 @@ export function SecuritySection({ user }: SecuritySectionProps) {
           )}
         </div>
 
-        {/* Two-Factor Authentication Section */}
-        <div className="border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <ShieldCheckIcon className="w-5 h-5 text-gray-400 mr-3" aria-hidden="true" />
-              <div>
-                <h3 className="text-base font-medium text-gray-900">Two-Factor Authentication</h3>
-                <p className="text-sm text-gray-600">
-                  Add an extra layer of security to your account
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={handleTwoFactorToggle}
-                disabled={formState.loading}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-                  'focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2',
-                  formData.twoFactorEnabled ? 'bg-primary-600' : 'bg-gray-200',
-                  formState.loading && 'opacity-50 cursor-not-allowed'
-                )}
-                role="switch"
-                aria-checked={formData.twoFactorEnabled}
-                aria-label="Toggle two-factor authentication"
-              >
-                <span
-                  className={cn(
-                    'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition duration-200 ease-in-out',
-                    formData.twoFactorEnabled ? 'translate-x-5' : 'translate-x-0'
-                  )}
-                />
-              </button>
-            </div>
-          </div>
-
-          {formData.twoFactorEnabled && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <div className="flex items-center">
-                <ShieldCheckIcon className="w-4 h-4 text-green-400 mr-2" aria-hidden="true" />
-                <p className="text-sm text-green-800">
-                  Two-factor authentication is enabled. Your account is more secure.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Login Sessions Section */}
-        <div className="border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center mb-4">
-            <DevicePhoneMobileIcon className="w-5 h-5 text-gray-400 mr-3" aria-hidden="true" />
-            <div>
-              <h3 className="text-base font-medium text-gray-900">Active Sessions</h3>
-              <p className="text-sm text-gray-600">Manage devices that have access to your account</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Current Session</p>
-                <p className="text-xs text-gray-500">
-                  {navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Browser'} •
-                  {' '}Last active now
-                </p>
-              </div>
-              <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                Current
-              </span>
-            </div>
-          </div>
-
-          <Button variant="outline" className="mt-4" size="sm">
-            View All Sessions
-          </Button>
-        </div>
       </div>
 
       {/* Form Messages */}
@@ -503,18 +320,6 @@ export function SecuritySection({ user }: SecuritySectionProps) {
         </Alert>
       )}
 
-      {/* Two-Factor Disable Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showTwoFactorDialog}
-        onClose={() => setShowTwoFactorDialog(false)}
-        onConfirm={disableTwoFactor}
-        title="Disable Two-Factor Authentication"
-        description="Are you sure you want to disable two-factor authentication? This will make your account less secure."
-        confirmText="Disable 2FA"
-        cancelText="Keep 2FA"
-        variant="destructive"
-        loading={formState.loading}
-      />
     </div>
   )
 }

@@ -20,6 +20,7 @@ import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeTo
 import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
 import StreamLayout from '@/components/dashboard/StreamLayout'
 import SummaryModeView from '@/components/dashboard/SummaryModeView'
+import type { Json } from '@/lib/types/database'
 
 /**
  * UpdatesList component for displaying recent updates on the dashboard
@@ -289,7 +290,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
     child_id: cardData.child_id,
     content: cardData.content,
     subject: cardData.subject,
-    rich_content: cardData.rich_content || undefined,
+    rich_content: cardData.rich_content ? (cardData.rich_content as Json) : undefined,
     content_format: cardData.content_format as 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | undefined,
     media_urls: cardData.media_urls,
     milestone_type: cardData.milestone_type as 'first_smile' | 'rolling' | 'sitting' | 'crawling' | 'first_steps' | 'first_words' | 'first_tooth' | 'walking' | 'potty_training' | 'first_day_school' | 'birthday' | 'other' | undefined,

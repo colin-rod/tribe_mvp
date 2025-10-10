@@ -334,7 +334,11 @@ const Timeline = memo<TimelineProps>(function Timeline({
   // Loading state
   if (loading && filteredGroups.length === 0) {
     return (
-      <div className={cn('space-y-6', className)}>
+      <div
+        className={cn('space-y-6', className)}
+        aria-busy="true"
+        aria-live="polite"
+      >
         {showSearch && (
           <TimelineSearch
             query={query}
@@ -348,9 +352,13 @@ const Timeline = memo<TimelineProps>(function Timeline({
         )}
 
         <LoadingState
-          type="spinner"
-          message="Loading timeline..."
-          size="lg"
+          type="skeleton"
+          variant="timeline"
+          skeletonOptions={{
+            count: pageSize,
+            compact
+          }}
+          className="mt-4"
         />
       </div>
     )

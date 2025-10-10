@@ -37,7 +37,27 @@ export async function POST(request: NextRequest) {
     // Check rate limiting with enhanced system
     const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
     if (!rateLimitResult.allowed) {
-      return rateLimitResult.response
+      const { info } = rateLimitResult
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          details: {
+            limit: info.total,
+            remaining: info.remaining,
+            resetTime: new Date(info.resetTime).toISOString(),
+            retryAfter: Math.ceil((info.resetTime - Date.now()) / 1000)
+          }
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': info.total.toString(),
+            'X-RateLimit-Remaining': info.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(info.resetTime / 1000).toString(),
+            'Retry-After': Math.ceil((info.resetTime - Date.now()) / 1000).toString()
+          }
+        }
+      )
     }
 
     // Verify user can send email to this recipient
@@ -62,7 +82,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send the email
+    // Send the email (queued for background delivery)
     const result = await serverEmailService.sendTemplatedEmail(
       validatedData.to,
       validatedData.type,
@@ -71,16 +91,28 @@ export async function POST(request: NextRequest) {
     )
 
     if (!result.success) {
+      // Queue unavailable - return 503
+      const statusCode = result.statusCode || 500
       return NextResponse.json(
-        { error: result.error || 'Failed to send email' },
-        { status: 500 }
+        {
+          error: result.error || 'Failed to send email',
+          statusCode,
+          retryable: statusCode === 503
+        },
+        { status: statusCode }
       )
     }
 
+    // Email queued successfully - return job info
     return NextResponse.json({
       success: true,
       messageId: result.messageId,
-      statusCode: result.statusCode
+      jobId: result.messageId, // Job ID is the same as message ID
+      status: result.statusCode === 202 ? 'queued' : 'sent',
+      statusCode: result.statusCode,
+      message: result.statusCode === 202
+        ? 'Email queued for delivery'
+        : 'Email sent successfully'
     })
 
   } catch (error) {
