@@ -63,9 +63,9 @@ export function useResponseAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
           .select(`
             *,
             recipients!inner (name, relationship),
-            updates!inner (parent_id, created_at)
+            memories!inner (parent_id, created_at)
           `)
-          .eq('updates.parent_id', user.id)
+          .eq('memories.parent_id', user.id)
           .gte('received_at', startDate.toISOString())
 
         if (responsesError) {

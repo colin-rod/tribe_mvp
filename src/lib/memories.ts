@@ -563,15 +563,15 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Mem
   // Get user's likes for these memories in a single query
   const { data: userLikes } = await supabase
     .from('likes')
-    .select('memory_id')
+    .select('update_id')
     .eq('parent_id', user.id)
-    .in('memory_id', memoryIds)
+    .in('update_id', memoryIds)
 
   type UserLike = {
-    memory_id: string
+    update_id: string
   }
 
-  const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.memory_id) || [])
+  const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
   // Get response counts and engagement data for each memory
   const memoriesWithStats = await Promise.all(
@@ -581,13 +581,13 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Mem
         const { count } = await supabase
           .from('responses')
           .select('*', { count: 'exact', head: true })
-          .eq('memory_id', memory.id)
+          .eq('update_id', memory.id)
 
         // Get last response
         const { data: lastResponseData } = await supabase
           .from('responses')
           .select('received_at')
-          .eq('memory_id', memory.id)
+          .eq('update_id', memory.id)
           .order('received_at', { ascending: false })
           .limit(1)
 
