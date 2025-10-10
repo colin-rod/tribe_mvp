@@ -29,7 +29,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Get user's preferences
-    const { data: profile, error: profileError } = await supabase
+    const { error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', user.id)
