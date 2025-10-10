@@ -18,11 +18,14 @@ export const Skeleton = memo<SkeletonProps>(function Skeleton({
   return (
     <div
       className={cn(
-        'bg-neutral-200 rounded',
-        animate && 'animate-pulse',
+        'relative overflow-hidden rounded-md bg-neutral-100',
+        animate &&
+          'motion-safe:bg-[linear-gradient(110deg,#f5f5f4_8%,#e7e5e4_18%,#f5f5f4_33%)] motion-safe:bg-[length:200%_100%] motion-safe:animate-[shimmer_1.8s_linear_infinite] motion-reduce:bg-neutral-200 motion-reduce:animate-none',
+        !animate && 'bg-neutral-200',
         className
       )}
       aria-hidden="true"
+      role="presentation"
     />
   )
 })
