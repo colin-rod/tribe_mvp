@@ -371,7 +371,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                   <EmptyTimelineState
                     hasCompletedOnboarding={hasCompletedOnboarding}
                     userName={user?.user_metadata?.name || user?.email?.split('@')[0]}
-                    onCreateUpdate={handleCreateUpdate}
+                    onCreateMemory={handleCreateUpdate}
                   />
                 ) : (
                   <MemoryList

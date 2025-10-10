@@ -30,6 +30,7 @@ export type InteractionType =
   | 'filter'
   | 'create_memory'
   | 'view_memory'
+  | 'view_update'
   | 'timeline_navigation'
   | 'preset_usage'
   | 'bulk_action'

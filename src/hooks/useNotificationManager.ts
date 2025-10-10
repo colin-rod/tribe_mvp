@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { NotificationPreferences } from '@/lib/types/profile'
 
+const isNotificationPreferences = (value: unknown): value is NotificationPreferences => {
+  if (!value || typeof value !== 'object') return false
+  return 'response_notifications' in value && 'quiet_hours' in value
+}
+
 export function useNotificationManager() {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
   const [loading, setLoading] = useState(true)
@@ -37,7 +42,11 @@ export function useNotificationManager() {
 
       if (error) throw error
 
-      setPreferences(data || getDefaultPreferences())
+      if (isNotificationPreferences(data)) {
+        setPreferences(data)
+      } else {
+        setPreferences(getDefaultPreferences())
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load preferences')
       // Set default preferences even on error so UI can still function

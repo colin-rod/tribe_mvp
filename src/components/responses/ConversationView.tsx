@@ -10,12 +10,6 @@ import { ChatBubbleLeftIcon, ArrowTrendingUpIcon, UsersIcon, CalendarDaysIcon, P
 import ChildImage from '@/components/ui/ChildImage'
 import RichTextRenderer from '@/components/ui/RichTextRenderer'
 
-interface ConfirmedRecipient {
-  id: string
-  name?: string
-  email?: string
-}
-
 interface Update {
   id: string
   content: string
@@ -25,8 +19,8 @@ interface Update {
   created_at: string
   child_id: string
   parent_id: string
-  media_urls: string[]
-  confirmed_recipients?: ConfirmedRecipient[]
+  media_urls: string[] | null
+  confirmed_recipients?: string[] | null
   children: {
     id: string
     name: string
@@ -151,7 +145,7 @@ export function ConversationView({
                       </h4>
                     </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {update.media_urls.map((url, index) => (
+                          {update.media_urls?.map((url, index) => (
                             <div
                               key={index}
                               className="relative aspect-square rounded-lg bg-gray-100"

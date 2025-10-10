@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/nextjs'
+import type { Meta, StoryFn, StoryObj } from '@storybook/react'
 import { LoadingOverlay, InlineLoadingOverlay } from './LoadingOverlay'
 
 const meta: Meta<typeof LoadingOverlay> = {
   title: 'UI/LoadingOverlay',
   component: LoadingOverlay,
+  subcomponents: { InlineLoadingOverlay },
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen'
@@ -36,7 +37,7 @@ const meta: Meta<typeof LoadingOverlay> = {
     }
   },
   decorators: [
-    (Story) => (
+    (Story: StoryFn) => (
       <div style={{ height: '400px', position: 'relative' }}>
         <div style={{ padding: '2rem' }}>
           <h2>Sample Content</h2>
@@ -121,45 +122,41 @@ export const UploadingFiles: Story = {
   }
 }
 
-// Inline Loading Overlay Stories
-const inlineMeta: Meta<typeof InlineLoadingOverlay> = {
-  title: 'UI/InlineLoadingOverlay',
-  component: InlineLoadingOverlay,
-  tags: ['autodocs'],
-  decorators: [
-    (Story) => (
-      <div style={{
-        position: 'relative',
-        height: '300px',
-        padding: '2rem',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px'
-      }}>
-        <h3>Container Content</h3>
-        <p>This content will be overlaid when loading.</p>
-        <Story />
-      </div>
-    )
-  ]
-}
+type InlineStory = StoryObj<typeof InlineLoadingOverlay>
 
-export const InlineDefault: StoryObj<typeof InlineLoadingOverlay> = {
-  ...inlineMeta,
+const renderInline: InlineStory['render'] = (args) => (
+  <div
+    style={{
+      position: 'relative',
+      height: '300px',
+      padding: '2rem',
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px'
+    }}
+  >
+    <h3>Container Content</h3>
+    <p>This content will be overlaid when loading.</p>
+    <InlineLoadingOverlay {...args} />
+  </div>
+)
+
+export const InlineDefault: InlineStory = {
+  render: renderInline,
   args: {
     visible: true
   }
 }
 
-export const InlineWithMessage: StoryObj<typeof InlineLoadingOverlay> = {
-  ...inlineMeta,
+export const InlineWithMessage: InlineStory = {
+  render: renderInline,
   args: {
     visible: true,
     message: 'Loading content...'
   }
 }
 
-export const InlineLarge: StoryObj<typeof InlineLoadingOverlay> = {
-  ...inlineMeta,
+export const InlineLarge: InlineStory = {
+  render: renderInline,
   args: {
     visible: true,
     message: 'Processing...',

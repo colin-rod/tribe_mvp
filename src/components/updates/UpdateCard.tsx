@@ -12,7 +12,7 @@ import { getStatusDisplayText, getStatusColorClass } from '@/lib/utils/update-fo
  * Enhanced UpdateCard component for displaying update previews with timeline styling
  */
 const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
-  const isEditable = update.distributionStatus === 'draft' || update.distributionStatus === 'ready'
+  const isEditable = update.distributionStatus === 'draft' || update.distributionStatus === 'scheduled'
 
   const handleClick = () => {
     // Analytics tracking

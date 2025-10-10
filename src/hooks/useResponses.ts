@@ -2,15 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
+import type { Database } from '@/lib/types/database'
 
-export interface Response {
-  id: string
-  update_id: string
-  recipient_id: string
-  channel: string
-  content: string | null
-  media_urls: string[]
-  received_at: string
+type ResponseRow = Database['public']['Tables']['responses']['Row']
+
+export type Response = ResponseRow & {
   recipients: {
     id: string
     name: string
@@ -18,8 +14,6 @@ export interface Response {
     email: string | null
   }
 }
-
-type ResponseRow = Omit<Response, 'recipients'>
 
 export function useResponses(updateId: string) {
   const loggerRef = useRef(createLogger('UseResponses'))
@@ -57,7 +51,8 @@ export function useResponses(updateId: string) {
         }
 
         if (mounted) {
-          setResponses(data || [])
+          const responsesData = (data ?? []) as Response[]
+          setResponses(responsesData)
           setLoading(false)
         }
       } catch (err) {
@@ -86,7 +81,8 @@ export function useResponses(updateId: string) {
         .single()
 
       if (data && mounted) {
-        setResponses(prev => [...prev, data])
+        const response = data as Response
+        setResponses(prev => [...prev, response])
       }
     }
 

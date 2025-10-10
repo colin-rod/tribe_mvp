@@ -76,7 +76,7 @@ export default function UpdateDetailModal({ open, updateId, onClose }: UpdateDet
 
   if (!open) return null
 
-  const isEditable = update?.distribution_status === 'draft' || update?.distribution_status === 'ready'
+  const isEditable = update?.distribution_status === 'draft' || update?.distribution_status === 'scheduled'
 
   const handleEditSuccess = () => {
     // Refetch the update after successful edit
@@ -155,4 +155,3 @@ export default function UpdateDetailModal({ open, updateId, onClose }: UpdateDet
     </>
   )
 }
-

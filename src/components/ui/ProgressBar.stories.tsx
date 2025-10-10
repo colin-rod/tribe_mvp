@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/nextjs'
+import type { Meta, StoryFn, StoryObj } from '@storybook/react'
 import { ProgressBar, CircularProgress } from './ProgressBar'
 
 const meta: Meta<typeof ProgressBar> = {
   title: 'UI/ProgressBar',
   component: ProgressBar,
+  subcomponents: { CircularProgress },
   tags: ['autodocs'],
   argTypes: {
     value: {
@@ -28,7 +29,14 @@ const meta: Meta<typeof ProgressBar> = {
       control: 'boolean',
       description: 'Show percentage label'
     }
-  }
+  },
+  decorators: [
+    (Story: StoryFn) => (
+      <div style={{ maxWidth: 480, padding: '2rem' }}>
+        <Story />
+      </div>
+    )
+  ]
 }
 
 export default meta
@@ -111,43 +119,23 @@ export const UploadProgress: Story = {
   }
 }
 
-// Circular Progress Stories
-const circularMeta: Meta<typeof CircularProgress> = {
-  title: 'UI/CircularProgress',
-  component: CircularProgress,
-  tags: ['autodocs'],
-  argTypes: {
-    value: {
-      control: { type: 'range', min: 0, max: 100, step: 1 }
-    },
-    indeterminate: {
-      control: 'boolean'
-    },
-    size: {
-      control: { type: 'number', min: 20, max: 200, step: 10 }
-    },
-    strokeWidth: {
-      control: { type: 'number', min: 1, max: 10, step: 1 }
-    },
-    variant: {
-      control: 'select',
-      options: ['primary', 'success', 'warning', 'error']
-    },
-    showLabel: {
-      control: 'boolean'
-    }
-  }
-}
+type CircularStory = StoryObj<typeof CircularProgress>
 
-export const CircularDefault: StoryObj<typeof CircularProgress> = {
-  ...circularMeta,
+const renderCircular: CircularStory['render'] = (args) => (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+    <CircularProgress {...args} />
+  </div>
+)
+
+export const CircularDefault: CircularStory = {
+  render: renderCircular,
   args: {
     value: 50
   }
 }
 
-export const CircularWithLabel: StoryObj<typeof CircularProgress> = {
-  ...circularMeta,
+export const CircularWithLabel: CircularStory = {
+  render: renderCircular,
   args: {
     value: 75,
     showLabel: true,
@@ -155,16 +143,16 @@ export const CircularWithLabel: StoryObj<typeof CircularProgress> = {
   }
 }
 
-export const CircularIndeterminate: StoryObj<typeof CircularProgress> = {
-  ...circularMeta,
+export const CircularIndeterminate: CircularStory = {
+  render: renderCircular,
   args: {
     indeterminate: true,
     size: 48
   }
 }
 
-export const CircularSuccess: StoryObj<typeof CircularProgress> = {
-  ...circularMeta,
+export const CircularSuccess: CircularStory = {
+  render: renderCircular,
   args: {
     value: 100,
     variant: 'success',
