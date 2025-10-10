@@ -19,9 +19,6 @@ const customJestConfig = {
     '<rootDir>/supabase/functions/',
     '<rootDir>/src/__tests__/setup/',
   ],
-  transformIgnorePatterns: [
-    '/node_modules/(?!bullmq|msgpackr)',
-  ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
@@ -49,4 +46,7 @@ const customJestConfig = {
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig)
+module.exports = async () => ({
+  ...(await createJestConfig(customJestConfig)()),
+  transformIgnorePatterns: ['node_modules/(?!bullmq|msgpackr|undici-types)/'],
+})

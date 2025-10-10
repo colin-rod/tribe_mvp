@@ -37,26 +37,7 @@ export async function POST(request: NextRequest) {
     // Check rate limiting with enhanced system
     const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        {
-          error: 'Rate limit exceeded. Please try again later.',
-          details: {
-            limit: rateLimitResult.info.total,
-            remaining: rateLimitResult.info.remaining,
-            resetTime: new Date(rateLimitResult.info.resetTime).toISOString(),
-            retryAfter: Math.ceil((rateLimitResult.info.resetTime - Date.now()) / 1000)
-          }
-        },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitResult.info.total.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.info.remaining.toString(),
-            'X-RateLimit-Reset': Math.ceil(rateLimitResult.info.resetTime / 1000).toString(),
-            'Retry-After': Math.ceil((rateLimitResult.info.resetTime - Date.now()) / 1000).toString()
-          }
-        }
-      )
+      return rateLimitResult.response
     }
 
     // Verify user can send email to this recipient
