@@ -6,6 +6,7 @@ import { RecipientFilters } from '@/lib/recipients'
 import { RELATIONSHIP_OPTIONS } from '@/lib/validation/recipients'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Skeleton } from '@/components/ui/SkeletonLoader'
 
 interface RecipientSearchProps {
   groups: RecipientGroup[]
@@ -100,8 +101,43 @@ export default function RecipientSearch({
     filters.is_active !== undefined ? 'status' : null
   ].filter(Boolean).length
 
+  const showInitialLoading = loading && groups.length === 0
+
+  if (showInitialLoading) {
+    return (
+      <div
+        className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-4"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <Skeleton className="h-6 w-48" />
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-8 w-20 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-28 rounded-full" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-32" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-9 w-28 rounded-md" />
+            ))}
+          </div>
+        </div>
+        <Skeleton className="h-9 w-28 rounded-md" />
+      </div>
+    )
+  }
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-4">
+    <div
+      className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-4"
+      aria-busy={loading}
+      aria-live="polite"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-gray-900">Search & Filter Recipients</h3>
         {hasActiveFilters && (
