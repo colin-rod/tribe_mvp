@@ -305,7 +305,7 @@ async function buildPromptContext(child: any, user: any, supabase: SupabaseClien
 
   // Get last update for this child
   const { data: lastUpdate } = await supabase
-    .from('updates')
+    .from('memories')
     .select('type, created_at, content')
     .eq('child_id', child.id)
     .order('created_at', { ascending: false })

@@ -123,6 +123,12 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
   // Set default preferences based on relationship (no groups)
   const relationshipDefaults = getDefaultPreferences(recipientData.relationship as RecipientRelationship)
 
+  // Auto-detect preferred channels based on provided contact methods
+  // This ensures recipients can actually receive notifications via the selected channels
+  const autoChannels: ('email' | 'sms' | 'whatsapp')[] = []
+  if (recipientData.email) autoChannels.push('email')
+  if (recipientData.phone) autoChannels.push('sms')
+
   // Group assignment is now optional and deprecated
   // We keep group_id for backward compatibility but it's no longer required
   const groupId = recipientData.group_id || null
@@ -138,7 +144,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     relationship: recipientData.relationship,
     group_id: groupId, // Optional, kept for backward compatibility
     frequency: recipientData.frequency || relationshipDefaults.frequency,
-    preferred_channels: recipientData.preferred_channels || relationshipDefaults.channels,
+    preferred_channels: recipientData.preferred_channels || (autoChannels.length > 0 ? autoChannels : relationshipDefaults.channels),
     content_types: recipientData.content_types || ['photos', 'text', 'milestones'],
     importance_threshold: relationshipDefaults.importance_threshold, // New field
     preference_token: preferenceToken

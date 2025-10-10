@@ -67,7 +67,7 @@ export async function exportUserData(userId: string): Promise<void> {
 
       // Updates
       supabase
-        .from('updates')
+        .from('memories')
         .select('*')
         .eq('parent_id', userId)
         .order('created_at', { ascending: false }),
@@ -168,7 +168,7 @@ export async function exportCSV(
 
       case 'updates': {
         const { data: updates, error } = await supabase
-          .from('updates')
+          .from('memories')
           .select(`
             *,
             children(name)
@@ -316,7 +316,7 @@ export async function getExportStats(userId: string): Promise<{
         .eq('parent_id', userId),
 
       supabase
-        .from('updates')
+        .from('memories')
         .select('id', { count: 'exact', head: true })
         .eq('parent_id', userId),
 

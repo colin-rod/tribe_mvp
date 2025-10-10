@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
-import { validateUpdateMediaFiles } from '@/lib/photo-upload'
+import { validateMemoryMediaFiles } from '@/lib/photo-upload'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 
 interface MediaItem {
@@ -41,6 +41,7 @@ export default function SmartContextualInput({
   const [isDragOver, setIsDragOver] = useState(false)
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [useRichText, setUseRichText] = useState(true) // Toggle between plain text and rich text
+  const [validationError, setValidationError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputPlaceholder = "Share a moment... add photos or video if you like"
@@ -135,15 +136,22 @@ export default function SmartContextualInput({
     const fileArray = Array.from(newFiles)
     const combinedFiles = [...mediaFiles, ...fileArray]
 
+    // Clear previous validation error
+    setValidationError(null)
+
     // Validate files
-    const validationError = validateUpdateMediaFiles(combinedFiles)
-    if (validationError) {
-      // TODO: Show error to user via proper error handling
+    const error = validateMemoryMediaFiles(combinedFiles)
+    if (error) {
+      setValidationError(error)
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setValidationError(null), 5000)
       return
     }
 
     if (combinedFiles.length > maxFiles) {
-      // TODO: Show max files error to user
+      const error = `Maximum ${maxFiles} files allowed`
+      setValidationError(error)
+      setTimeout(() => setValidationError(null), 5000)
       return
     }
 
@@ -264,6 +272,16 @@ export default function SmartContextualInput({
 
   return (
     <div className="space-y-4">
+      {/* Validation Error Display */}
+      {validationError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+          <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <p className="text-sm text-red-700">{validationError}</p>
+        </div>
+      )}
+
       {/* Editor Mode Toggle */}
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer">
@@ -315,8 +333,8 @@ export default function SmartContextualInput({
             onDragLeave={handleDragLeave}
             placeholder={resolvedPlaceholder}
             disabled={disabled}
-            rows={8}
-            className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+            rows={12}
+            className="w-full px-4 py-3 bg-transparent border-none resize-none focus:outline-none focus:ring-0 text-base placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
 
           {/* Character Count */}

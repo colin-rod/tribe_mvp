@@ -19,7 +19,7 @@ import { withErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ViewModeToggle, { type ViewMode } from '@/components/dashboard/ViewModeToggle'
 import TimelineLayout, { type UpdateForDisplay } from '@/components/dashboard/TimelineLayout'
 import StreamLayout from '@/components/dashboard/StreamLayout'
-import DigestModeView from '@/components/dashboard/DigestModeView'
+import SummaryModeView from '@/components/dashboard/SummaryModeView'
 
 /**
  * UpdatesList component for displaying recent updates on the dashboard
@@ -278,7 +278,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
     if (onCreateUpdate) {
       onCreateUpdate('photo')
     } else {
-      router.push('/dashboard/create-update')
+      router.push('/dashboard/create-memory')
     }
   }, [onCreateUpdate, router])
 
@@ -293,9 +293,9 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
     content_format: cardData.content_format as 'plain' | 'rich' | 'email' | 'sms' | 'whatsapp' | undefined,
     media_urls: cardData.media_urls,
     milestone_type: cardData.milestone_type as 'first_smile' | 'rolling' | 'sitting' | 'crawling' | 'first_steps' | 'first_words' | 'first_tooth' | 'walking' | 'potty_training' | 'first_day_school' | 'birthday' | 'other' | undefined,
-    ai_analysis: {},
-    suggested_recipients: [],
-    confirmed_recipients: [],
+    ai_analysis: null,
+    suggested_recipients: null,
+    confirmed_recipients: null,
     distribution_status: 'sent' as const,
     created_at: new Date(cardData.createdAt).toISOString(),
     child_name: cardData.child.name,
@@ -319,7 +319,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
   if (error) {
     return (
       <ErrorState
-        title="Unable to Load Updates"
+        title="Unable to Load Memories"
         message={error}
         onRetry={handleRetry}
         className={className}
@@ -352,10 +352,10 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
             No Recent Activity
           </h3>
           <p className="text-sm text-gray-600 mb-6">
-            {"You haven't created any updates recently. Share your first update to get started!"}
+            {"You haven't created any memories recently. Share your first memory to get started!"}
           </p>
           <Button onClick={handleCreateUpdate}>
-            Create Your First Update
+            Create Your First Memory
           </Button>
         </div>
       </div>
@@ -389,7 +389,7 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
         <TimelineLayout
           updates={updatesForLayout}
           onLike={(updateId) => logger.info('Like clicked', { updateId })}
-          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
+          onComment={(updateId) => router.push(`/dashboard/memories/${updateId}`)}
         />
       )}
 
@@ -397,22 +397,22 @@ const UpdatesListComponent = memo<UpdatesListProps>(function UpdatesListComponen
         <StreamLayout
           updates={updatesForLayout}
           onLike={(updateId) => logger.info('Like clicked', { updateId })}
-          onComment={(updateId) => router.push(`/dashboard/updates/${updateId}`)}
+          onComment={(updateId) => router.push(`/dashboard/memories/${updateId}`)}
         />
       )}
 
       {viewMode === 'digest' && (
-        <DigestModeView updates={updatesForLayout} />
+        <SummaryModeView updates={updatesForLayout} />
       )}
 
       {/* View all link */}
       {showViewAllLink && updates.length >= limit && (
         <div className="pt-4 border-t border-gray-200">
           <Link
-            href="/dashboard/updates"
+            href="/dashboard/memories"
             className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
-            View all updates
+            View all memories
             <svg
               className="ml-1 w-4 h-4"
               fill="none"

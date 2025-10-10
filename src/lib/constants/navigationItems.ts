@@ -1,11 +1,12 @@
 /**
  * Navigation Items Configuration
  * CRO-294: Left Navigation Panel - Structure & Toggle
+ * Updated for Memory Book Experience (Updates → Memories, Digests → Summaries)
  */
 
 import {
   RectangleStackIcon,
-  EnvelopeIcon,
+  BookOpenIcon,
   UsersIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
@@ -26,10 +27,10 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/activity',
   },
   {
-    id: 'digests',
-    label: 'Digests',
-    icon: EnvelopeIcon,
-    href: '/dashboard/digests',
+    id: 'memory-book',
+    label: 'Memory Book',
+    icon: BookOpenIcon,
+    href: '/dashboard/memory-book',
   },
   {
     id: 'recipients',

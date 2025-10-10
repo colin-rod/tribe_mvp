@@ -28,7 +28,7 @@ export function useResponseNotifications() {
 
     const supabase = createClient()
 
-    // Subscribe to new responses for user's updates
+    // Subscribe to new responses for user's memories
     const channel = supabase
       .channel('user_responses')
       .on(
@@ -53,9 +53,9 @@ export function useResponseNotifications() {
               return
             }
 
-            // Verify this response is for user's update
+            // Verify this response is for user's memory
             const { data: update } = await supabase
-              .from('updates')
+              .from('memories')
               .select(`
                 id,
                 parent_id,
@@ -106,7 +106,7 @@ function showResponseNotification(data: NotificationData) {
   // Check if browser notifications are supported and permitted
   if ('Notification' in window && Notification.permission === 'granted') {
     const notification = new Notification(
-      `${data.recipientName} responded to ${data.childName}'s update`,
+      `${data.recipientName} responded to ${data.childName}'s memory`,
       {
         body: data.content.substring(0, 100) + (data.content.length > 100 ? '...' : ''),
         icon: '/favicon.ico',
@@ -118,8 +118,8 @@ function showResponseNotification(data: NotificationData) {
 
     notification.onclick = () => {
       window.focus()
-      // Navigate to the update page - adjust URL as needed based on your routing
-      window.location.href = `/dashboard/updates/${data.updateId}`
+      // Navigate to the memory page - adjust URL as needed based on your routing
+      window.location.href = `/dashboard/memories/${data.updateId}`
       notification.close()
     }
 

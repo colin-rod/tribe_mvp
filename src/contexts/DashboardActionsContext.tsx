@@ -8,12 +8,12 @@
 'use client';
 
 import { createContext, useContext, ReactNode } from 'react';
-import type { UpdateType } from '@/components/updates/CreateUpdateModal';
+import type { UpdateType } from '@/hooks/useActivityFilters';
 
 export interface DashboardActionsContextType {
-  /** Open the create update modal with optional type and initial content */
+  /** Open the create memory modal with optional type and initial content */
   onCreateUpdate?: (type?: UpdateType, initialContent?: string) => void;
-  /** Navigate to digest compilation */
+  /** Navigate to summary compilation */
   onCompileDigest?: () => void;
   /** Optional activity filters for right pane */
   activityFilters?: {

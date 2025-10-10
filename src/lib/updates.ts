@@ -54,7 +54,7 @@ async function performDiagnosticChecks(supabase: ReturnType<typeof createClient>
 
     // Check if we can access the updates table with a simpler query
     const { data: simpleQuery, error: simpleError } = await supabase
-      .from('updates')
+      .from('memories')
       .select('id')
       .eq('parent_id', user.id)
       .limit(1)
@@ -145,7 +145,7 @@ export async function createUpdate(updateData: CreateUpdateRequest): Promise<Upd
   if (!user) throw new Error('Not authenticated')
 
   const { data, error} = await supabase
-    .from('updates')
+    .from('memories')
     .insert({
       parent_id: user.id,
       child_id: updateData.child_id,
@@ -178,7 +178,7 @@ export async function getUpdates(limit?: number): Promise<Update[]> {
   if (!user) throw new Error('Not authenticated')
 
   let query = supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (
@@ -210,7 +210,7 @@ export async function getUpdateById(updateId: string): Promise<Update | null> {
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (
@@ -243,7 +243,7 @@ export async function updateUpdate(
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update(updates)
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -265,7 +265,7 @@ export async function deleteUpdate(updateId: string): Promise<void> {
 
   // First get the update to check for media files
   const { data: update, error: fetchError } = await supabase
-    .from('updates')
+    .from('memories')
     .select('media_urls')
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -279,7 +279,7 @@ export async function deleteUpdate(updateId: string): Promise<void> {
 
   // Delete the update from database
   const { error } = await supabase
-    .from('updates')
+    .from('memories')
     .delete()
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -321,7 +321,7 @@ export async function markUpdateAsSent(updateId: string): Promise<Update> {
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       distribution_status: 'sent',
       sent_at: new Date().toISOString()
@@ -349,7 +349,7 @@ export async function updateUpdateRecipients(
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       suggested_recipients: suggestedRecipients,
       confirmed_recipients: confirmedRecipients
@@ -376,7 +376,7 @@ export async function updateUpdateAIAnalysis(
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       ai_analysis: aiAnalysis as Json
     })
@@ -402,7 +402,7 @@ export async function updateUpdateMediaUrls(
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       media_urls: mediaUrls
     })
@@ -425,7 +425,7 @@ export async function getUpdatesByChild(childId: string): Promise<Update[]> {
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select('*')
     .eq('parent_id', user.id)
     .eq('child_id', childId)
@@ -448,7 +448,7 @@ export async function getRecentUpdates(): Promise<Update[]> {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (
@@ -478,7 +478,7 @@ export async function scheduleUpdate(
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       scheduled_for: scheduledFor.toISOString(),
       distribution_status: 'scheduled'
@@ -502,7 +502,7 @@ export async function getDraftUpdates(): Promise<Update[]> {
   if (!user) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (
@@ -541,7 +541,7 @@ export async function updateUpdateContent(
   if (contentFormat !== undefined) updateData.content_format = contentFormat
 
   const { data, error } = await supabase
-    .from('updates')
+    .from('memories')
     .update(updateData)
     .eq('id', updateId)
     .eq('parent_id', user.id)
@@ -672,7 +672,7 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
   })
 
   const { data: updates, error } = await supabase
-    .from('updates')
+    .from('memories')
     .select(`
       *,
       children:child_id (

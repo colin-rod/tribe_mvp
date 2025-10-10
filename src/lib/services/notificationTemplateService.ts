@@ -103,13 +103,13 @@ export class NotificationTemplateService {
     const groupText = group_name ? ` in ${group_name}` : ''
 
     return {
-      subject: `New update${babyText} from ${sender_name}`,
-      message: `Hi ${recipient_name}! ${sender_name} shared a new update${babyText}${groupText}: "${update_content}". View on Tribe: https://${app_domain}`,
+      subject: `New memory${babyText} from ${sender_name}`,
+      message: `Hi ${recipient_name}! ${sender_name} shared a new memory${babyText}${groupText}: "${update_content}". View on Tribe: https://${app_domain}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>New Update${babyText}</h2>
+          <h2>New Memory${babyText}</h2>
           <p>Hi ${recipient_name}!</p>
-          <p><strong>${sender_name}</strong> shared a new update${groupText}:</p>
+          <p><strong>${sender_name}</strong> shared a new memory${groupText}:</p>
           <blockquote style="border-left: 4px solid #6366f1; padding-left: 16px; margin: 16px 0;">
             "${update_content}"
           </blockquote>
@@ -179,14 +179,14 @@ export class NotificationTemplateService {
     } = data
 
     return {
-      subject: 'New update from Tribe',
-      message: `Hi ${recipient_name}! You have a new update on Tribe: https://${app_domain}`,
+      subject: 'New memory from Tribe',
+      message: `Hi ${recipient_name}! You have a new memory on Tribe: https://${app_domain}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>New Update</h2>
+          <h2>New Memory</h2>
           <p>Hi ${recipient_name}!</p>
-          <p>You have a new update on Tribe.</p>
-          <p><a href="https://${app_domain}" style="color: #6366f1;">View Update</a></p>
+          <p>You have a new memory on Tribe.</p>
+          <p><a href="https://${app_domain}" style="color: #6366f1;">View Memory</a></p>
         </div>
       `
     }
@@ -252,7 +252,7 @@ export class NotificationTemplateService {
     } = data
 
     return {
-      message: `Hi ${recipient_name}! New update on Tribe: https://${app_domain}`
+      message: `Hi ${recipient_name}! New memory on Tribe: https://${app_domain}`
     }
   }
 

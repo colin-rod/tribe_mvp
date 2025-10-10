@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createLogger } from '@/lib/logger'
 import type { PrivacyFormData } from '@/lib/types/profile'
 
 const logger = createLogger('privacy-api')
+
+type AnySupabaseClient = SupabaseClient<any, any, any>
+
+function getClient(): AnySupabaseClient {
+  return createClient() as unknown as AnySupabaseClient
+}
 
 export interface PrivacySettings {
   id: string
@@ -68,7 +75,7 @@ export class PrivacyAPIError extends Error {
  * Get current user's privacy settings
  */
 export async function getPrivacySettings(): Promise<PrivacySettings | null> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -90,7 +97,7 @@ export async function getPrivacySettings(): Promise<PrivacySettings | null> {
       throw new PrivacyAPIError('Failed to fetch privacy settings', 'FETCH_ERROR', error)
     }
 
-    return data
+    return data as PrivacySettings
   } catch (error) {
     if (error instanceof PrivacyAPIError) {
       throw error
@@ -104,7 +111,7 @@ export async function getPrivacySettings(): Promise<PrivacySettings | null> {
  * Create default privacy settings for current user
  */
 export async function createDefaultPrivacySettings(): Promise<PrivacySettings> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -139,7 +146,7 @@ export async function createDefaultPrivacySettings(): Promise<PrivacySettings> {
  * Update privacy settings
  */
 export async function updatePrivacySettings(settings: Partial<PrivacyFormData>): Promise<PrivacySettings> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -189,7 +196,7 @@ export async function updatePrivacySettings(settings: Partial<PrivacyFormData>):
  * Request data export
  */
 export async function requestDataExport(exportType: 'full' | 'minimal' | 'media_only' = 'full'): Promise<Blob> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -246,7 +253,7 @@ export async function requestDataDeletion(
   deletionType: 'user_requested' | 'inactivity_cleanup' | 'gdpr_compliance' | 'account_closure' = 'user_requested',
   confirmDeletion: boolean = false
 ): Promise<DataDeletionAudit> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -297,7 +304,7 @@ export async function requestDataDeletion(
       details: result.details
     })
 
-    return result.details
+    return result.details as DataDeletionAudit
   } catch (error) {
     if (error instanceof PrivacyAPIError) {
       throw error
@@ -311,7 +318,7 @@ export async function requestDataDeletion(
  * Get user's data export history
  */
 export async function getDataExportHistory(): Promise<DataExportJob[]> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -329,7 +336,7 @@ export async function getDataExportHistory(): Promise<DataExportJob[]> {
       throw new PrivacyAPIError('Failed to fetch export history', 'FETCH_ERROR', error)
     }
 
-    return data || []
+    return (data ?? []) as DataExportJob[]
   } catch (error) {
     if (error instanceof PrivacyAPIError) {
       throw error
@@ -343,7 +350,7 @@ export async function getDataExportHistory(): Promise<DataExportJob[]> {
  * Get user's data deletion audit history
  */
 export async function getDataDeletionHistory(): Promise<DataDeletionAudit[]> {
-  const supabase = createClient()
+  const supabase = getClient()
 
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -361,7 +368,7 @@ export async function getDataDeletionHistory(): Promise<DataDeletionAudit[]> {
       throw new PrivacyAPIError('Failed to fetch deletion history', 'FETCH_ERROR', error)
     }
 
-    return data || []
+    return (data ?? []) as DataDeletionAudit[]
   } catch (error) {
     if (error instanceof PrivacyAPIError) {
       throw error

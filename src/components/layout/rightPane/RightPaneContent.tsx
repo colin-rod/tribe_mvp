@@ -24,8 +24,8 @@ const ActivityRightPane = dynamic(
   { loading: () => <RightPaneSkeleton /> }
 )
 
-const DigestsRightPane = dynamic(
-  () => import('./DigestsRightPane').then(mod => ({ default: mod.DigestsRightPane })),
+const SummaryRightPane = dynamic(
+  () => import('./SummaryRightPane').then(mod => ({ default: mod.SummaryRightPane })),
   { loading: () => <RightPaneSkeleton /> }
 )
 
@@ -74,7 +74,7 @@ export function RightPaneContent() {
   const { onCreateUpdate, onCompileDigest } = useDashboardActions()
 
   const handleSelectAIPrompt = (prompt: { id: string; prompt: string; category: string }) => {
-    // Open create update modal prefilled with prompt text
+    // Open create memory modal prefilled with prompt text
     onCreateUpdate?.(undefined, prompt.prompt)
   }
 
@@ -82,13 +82,13 @@ export function RightPaneContent() {
     case 'activity':
       return (
         <ActivityRightPane
-          onCreateUpdate={onCreateUpdate}
-          onCompileDigest={onCompileDigest}
+          onCreateMemory={onCreateUpdate}
+          onCompileSummary={onCompileDigest}
           onSelectAIPrompt={handleSelectAIPrompt}
         />
       )
     case 'digests':
-      return <DigestsRightPane />
+      return <SummaryRightPane />
     case 'children':
       return <ChildrenRightPane />
     case 'recipients':

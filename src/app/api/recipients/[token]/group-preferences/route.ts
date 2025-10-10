@@ -15,11 +15,14 @@ type RecipientGroupRow = Tables<'recipient_groups'>
 type MembershipWithGroup = RecipientRow & {
   recipient_groups: Pick<
     RecipientGroupRow,
-    'id' | 'name' | 'default_frequency' | 'default_channels' | 'notification_settings' | 'is_default_group'
+    'id' | 'name' | 'default_frequency' | 'default_channels' | 'is_default_group'
   > | null
 }
 
-type MembershipData = Pick<RecipientRow, 'id' | 'is_active'>
+type MembershipData = {
+  id: string
+  is_active: boolean
+}
 
 // Schema for group-specific preference updates
 const groupPreferencesSchema = z.object({
@@ -77,8 +80,7 @@ export async function PUT(
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
-      .returns<MembershipData>()
-      .single()
+      .single<MembershipData>()
 
     if (membershipError || !membership) {
       return NextResponse.json(
@@ -87,8 +89,7 @@ export async function PUT(
       )
     }
 
-    const typedMembership = membership
-    if (!typedMembership.is_active) {
+    if (!membership.is_active) {
       return NextResponse.json(
         { error: 'Cannot update preferences for inactive group membership' },
         { status: 403 }
@@ -116,7 +117,7 @@ export async function PUT(
     const { error: updateError } = await supabase
       .from('recipients')
       .update(updateData)
-      .eq('id', typedMembership.id)
+      .eq('id', membership.id)
 
     if (updateError) {
       logger.errorWithStack('Error updating group preferences:', updateError as Error)
@@ -208,8 +209,7 @@ export async function DELETE(
       .select('id, is_active')
       .eq('recipient_id', securityContext.recipient_id)
       .eq('group_id', validatedData.group_id)
-      .returns<MembershipData>()
-      .single()
+      .single<MembershipData>()
 
     if (membershipError || !membership) {
       return NextResponse.json(
@@ -317,8 +317,7 @@ export async function GET(
             id,
             name,
             default_frequency,
-            default_channels,
-            notification_settings
+            default_channels
           )
         `)
         .eq('recipient_id', securityContext.recipient_id)
@@ -368,7 +367,6 @@ export async function GET(
             name,
             default_frequency,
             default_channels,
-            notification_settings,
             is_default_group
           )
         `)

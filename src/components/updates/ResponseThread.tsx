@@ -47,7 +47,7 @@ export function ResponseThread({
         <ChatBubbleLeftIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">No responses yet</h3>
         <p className="text-gray-600 max-w-md mx-auto">
-          Recipients can reply via email to share their thoughts and reactions to this update.
+          Recipients can reply via email to share their thoughts and reactions to this memory.
         </p>
       </div>
     )

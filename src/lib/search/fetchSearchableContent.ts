@@ -19,7 +19,7 @@ export async function fetchSearchableContent(
   try {
     // Fetch updates (both drafts and sent)
     const { data: updates, error: updatesError } = await supabase
-      .from('updates')
+      .from('memories')
       .select('id, subject, content, distribution_status, child_id, created_at')
       .eq('parent_id', parentId)
       .order('created_at', { ascending: false })
@@ -37,7 +37,7 @@ export async function fetchSearchableContent(
           content: update.content || '',
           url: isDraft
             ? `/dashboard/drafts/${update.id}/edit`
-            : `/dashboard/updates/${update.id}`,
+            : `/dashboard/memories/${update.id}`,
           metadata: {
             childId: update.child_id,
             status: update.distribution_status,

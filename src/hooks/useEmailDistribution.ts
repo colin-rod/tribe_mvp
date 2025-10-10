@@ -52,11 +52,11 @@ export function useEmailDistribution() {
       })
 
       if (error) {
-        throw new Error(error.message || 'Failed to distribute email')
+        throw new Error(error.message || 'Failed to distribute memory')
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Email distribution failed')
+        throw new Error(data.error || 'Memory distribution failed')
       }
 
       const response: DistributeEmailResponse = {
@@ -74,7 +74,7 @@ export function useEmailDistribution() {
       return response
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to distribute email'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to distribute memory'
 
       setState(prev => ({
         ...prev,

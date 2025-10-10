@@ -124,7 +124,7 @@ export function getChildPhotoUrl(photoUrl?: string, name?: string): string {
 }
 
 /**
- * Upload multiple photos for an update
+ * Upload multiple photos for a memory
  */
 export async function uploadUpdatePhotos(files: File[], updateId: string): Promise<string[]> {
   const supabase = createClient()
@@ -133,7 +133,7 @@ export async function uploadUpdatePhotos(files: File[], updateId: string): Promi
   if (!user) throw new Error('Not authenticated')
 
   const uploadPromises = files.map(async (file, index) => {
-    // Process image with higher quality for updates
+    // Process image with higher quality for memories
     const processedFile = await processImage(file, { maxWidth: 1920, quality: 0.85 })
 
     const fileExtension = file.type === 'image/png' ? 'png' : 'jpg'
@@ -162,7 +162,7 @@ export async function uploadUpdatePhotos(files: File[], updateId: string): Promi
 }
 
 /**
- * Delete update photos
+ * Delete memory photos
  */
 export async function deleteUpdatePhotos(updateId: string, photoUrls: string[]): Promise<void> {
   const supabase = createClient()
@@ -185,36 +185,44 @@ export async function deleteUpdatePhotos(updateId: string, photoUrls: string[]):
 }
 
 /**
- * Compress and resize image specifically for updates
+ * Compress and resize image specifically for memories
  */
 export async function compressUpdateImage(file: File): Promise<File> {
   return processImage(file, { maxWidth: 1920, quality: 0.85 })
 }
 
 /**
- * Validate update media files
+ * Validate memory media files
  */
-export function validateUpdateMediaFiles(files: File[]): string | null {
+export function validateMemoryMediaFiles(files: File[]): string | null {
   if (files.length > 10) {
-    return 'Maximum 10 photos allowed per update'
+    return 'Maximum 10 media files allowed per memory'
   }
 
   for (const file of files) {
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    // Check file type - support images, videos, and audio
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/webp',
+      'video/mp4', 'video/quicktime',
+      'audio/mpeg', 'audio/wav'
+    ]
     if (!allowedTypes.includes(file.type)) {
-      return 'Only JPEG, PNG, and WebP images are allowed'
+      return 'Only JPEG, PNG, WebP images, MP4 videos, and MP3/WAV audio are allowed'
     }
 
-    // Check file size (10MB limit for updates)
-    const maxSize = 10 * 1024 * 1024
+    // Check file size (50MB limit for videos, 10MB for images/audio)
+    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    const maxSizeLabel = file.type.startsWith('video/') ? '50MB' : '10MB'
     if (file.size > maxSize) {
-      return 'Each file must be less than 10MB'
+      return `Each file must be less than ${maxSizeLabel}`
     }
   }
 
   return null
 }
+
+// Legacy export for backward compatibility
+export const validateUpdateMediaFiles = validateMemoryMediaFiles
 
 /**
  * Generate preview URLs for files before upload

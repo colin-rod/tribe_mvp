@@ -484,7 +484,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (action === 'view' && data?.updateId) {
     event.waitUntil(
-      clients.openWindow(`/dashboard/updates/${data.updateId}`)
+      clients.openWindow(`/dashboard/memories/${data.updateId}`)
     )
   } else if (!action) {
     event.waitUntil(

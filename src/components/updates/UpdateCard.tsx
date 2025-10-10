@@ -12,6 +12,8 @@ import { getStatusDisplayText, getStatusColorClass } from '@/lib/utils/update-fo
  * Enhanced UpdateCard component for displaying update previews with timeline styling
  */
 const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
+  const isEditable = update.distributionStatus === 'draft' || update.distributionStatus === 'scheduled'
+
   const handleClick = () => {
     // Analytics tracking
     if (typeof window !== 'undefined') {
@@ -31,6 +33,12 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
     }
   }
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    // The edit button will be handled by the parent component through onClick
+    onClick(update.id)
+  }
+
   return (
     <div
       className={cn(
@@ -46,7 +54,7 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`View update about ${update.child.name}: ${update.contentPreview}`}
+      aria-label={`View memory about ${update.child.name}: ${update.contentPreview}`}
     >
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary-50/0 via-primary-50/20 to-primary-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -82,8 +90,8 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
           <p className="text-sm text-neutral-500 font-medium">
             {update.timeAgo}
           </p>
-          {update.distributionStatus !== 'sent' && (
-            <div>
+          <div className="flex items-center justify-end space-x-2">
+            {update.distributionStatus !== 'sent' && (
               <span
                 className={cn(
                   'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
@@ -93,8 +101,20 @@ const UpdateCard = memo<UpdateCardProps>(({ update, onClick, className }) => {
               >
                 {getStatusDisplayText(update.distributionStatus)}
               </span>
-            </div>
-          )}
+            )}
+            {isEditable && (
+              <button
+                onClick={handleEditClick}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 transition-all duration-200 shadow-sm"
+                aria-label="Edit memory"
+                title="Edit this memory"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

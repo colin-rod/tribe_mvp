@@ -31,7 +31,7 @@ export function useLiveRegion(options: LiveRegionOptions = {}) {
   } = options
 
   const liveRegionRef = useRef<HTMLDivElement | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Create live region on mount
   useEffect(() => {
@@ -53,6 +53,7 @@ export function useLiveRegion(options: LiveRegionOptions = {}) {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
       }
       if (region && region.parentNode) {
         region.parentNode.removeChild(region)
@@ -78,6 +79,7 @@ export function useLiveRegion(options: LiveRegionOptions = {}) {
     // Clear any pending announcements
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
     }
 
     // Announce after delay
@@ -94,6 +96,7 @@ export function useLiveRegion(options: LiveRegionOptions = {}) {
     }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
     }
   }, [])
 

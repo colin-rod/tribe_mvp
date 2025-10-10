@@ -363,11 +363,11 @@ export class NotificationService {
   private getNotificationTitle(type: string, data: NotificationData): string {
     switch (type) {
       case 'response':
-        return `${data.senderName || 'Someone'} responded to your update${data.babyName ? ` about ${data.babyName}` : ''}`
+        return `${data.senderName || 'Someone'} responded to your memory${data.babyName ? ` about ${data.babyName}` : ''}`
       case 'prompt':
-        return `Update request${data.babyName ? ` about ${data.babyName}` : ''}`
+        return `Memory request${data.babyName ? ` about ${data.babyName}` : ''}`
       case 'digest':
-        return `Your ${data.period || 'daily'} update digest (${data.unreadCount || 0} new updates)`
+        return `Your ${data.period || 'daily'} summary (${data.unreadCount || 0} new memories)`
       case 'system':
         return data.title || 'System Notification'
       default:
@@ -381,9 +381,9 @@ export class NotificationService {
       case 'response':
         return `${data.senderName || 'Someone'} responded: "${data.updateContent || ''}"`
       case 'prompt':
-        return data.promptText || 'Someone would love to hear an update!'
+        return data.promptText || 'Someone would love to hear a memory!'
       case 'digest':
-        return `You have ${data.unreadCount || 0} new updates from your family and friends.`
+        return `You have ${data.unreadCount || 0} new memories from your family and friends.`
       case 'system':
         return data.content || 'System notification'
       default:

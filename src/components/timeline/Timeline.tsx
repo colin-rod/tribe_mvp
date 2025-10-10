@@ -416,7 +416,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
           <p className="text-sm text-neutral-600 mb-6 max-w-sm mx-auto">
             {isFiltered
               ? 'Try adjusting your search criteria or clear the current filters.'
-              : 'Start sharing updates to build your family timeline.'
+              : 'Start sharing memories to build your family timeline.'
             }
           </p>
           {isFiltered ? (
@@ -425,7 +425,7 @@ const Timeline = memo<TimelineProps>(function Timeline({
             </Button>
           ) : (
             <Button onClick={() => onUpdateClick?.('new')} variant="primary">
-              Create Your First Update
+              Create Your First Memory
             </Button>
           )}
         </div>

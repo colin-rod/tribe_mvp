@@ -15,8 +15,8 @@ export interface UpdateForDisplay extends Update {
 
 interface TimelineLayoutProps {
   updates: UpdateForDisplay[]
-  onLike?: (updateId: string) => void
-  onComment?: (updateId: string) => void
+  onLike?: (memoryId: string) => void
+  onComment?: (memoryId: string) => void
 }
 
 export default function TimelineLayout({
@@ -26,18 +26,19 @@ export default function TimelineLayout({
 }: TimelineLayoutProps) {
   const [likedUpdates, setLikedUpdates] = useState<Set<string>>(new Set())
 
-  // Group updates by date
+  // Group memories by date
   const groupedUpdates = updates.reduce((acc, update) => {
-    const date = new Date(update.created_at).toLocaleDateString('en-US', {
+    const createdAtDate = update.created_at ? new Date(update.created_at) : null
+    const dateLabel = createdAtDate ? createdAtDate.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    })
+    }) : 'Unknown Date'
 
-    if (!acc[date]) {
-      acc[date] = []
+    if (!acc[dateLabel]) {
+      acc[dateLabel] = []
     }
-    acc[date].push(update)
+    acc[dateLabel].push(update)
     return acc
   }, {} as Record<string, UpdateForDisplay[]>)
 
@@ -61,16 +62,16 @@ export default function TimelineLayout({
 
       {/* Timeline items */}
       <div className="space-y-12 md:space-y-16">
-        {Object.entries(groupedUpdates).map(([date, dateUpdates]) => (
-          <div key={date} className="relative">
+        {Object.entries(groupedUpdates).map(([dateLabel, dateUpdates]) => (
+          <div key={dateLabel} className="relative">
             {/* Date marker on timeline - refined styling */}
             <div className="flex items-center justify-center mb-8">
               <div className="relative z-10 px-6 py-2 bg-white rounded-full border border-neutral-200">
-                <span className="text-sm font-semibold text-neutral-800">{date}</span>
+                <span className="text-sm font-semibold text-neutral-800">{dateLabel}</span>
               </div>
             </div>
 
-            {/* Updates for this date - alternate left/right on desktop */}
+            {/* Memories for this date - alternate left/right on desktop */}
             <div className="space-y-12 md:space-y-16">
               {dateUpdates.map((update, updateIndex) => {
                 const isLeft = updateIndex % 2 === 0
@@ -133,10 +134,12 @@ export default function TimelineLayout({
                               {update.child_name}
                             </p>
                             <p className="text-xs text-neutral-500">
-                              {new Date(update.created_at).toLocaleTimeString('en-US', {
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })}
+                              {(update.created_at
+                                ? new Date(update.created_at).toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit'
+                                })
+                                : 'Time unknown')}
                             </p>
                           </div>
                         </div>

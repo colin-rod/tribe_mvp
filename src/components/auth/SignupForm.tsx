@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { signUp, getAuthErrorMessage, isValidEmail, isValidPassword, getPasswordStrength } from '@/lib/supabase/auth'
+import { signUp, signInWithProvider, getAuthErrorMessage, isValidEmail, isValidPassword, getPasswordStrength } from '@/lib/supabase/auth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
@@ -14,6 +14,7 @@ export default function SignupForm() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<null | 'google'>(null)
 
   const passwordStrength = getPasswordStrength(password)
 
@@ -22,6 +23,28 @@ export default function SignupForm() {
       case 'weak': return 'text-red-600'
       case 'medium': return 'text-yellow-600'
       case 'strong': return 'text-green-600'
+    }
+  }
+
+  const handleProviderSignUp = async () => {
+    setError('')
+    setOauthLoading('google')
+
+    try {
+      const { data, error } = await signInWithProvider('google', { nextPath: '/dashboard' })
+
+      if (error) {
+        setError(getAuthErrorMessage(error))
+        return
+      }
+
+      if (data?.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setOauthLoading(null)
     }
   }
 
@@ -93,6 +116,29 @@ export default function SignupForm() {
         </p>
       </div>
 
+      <div className="space-y-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleProviderSignUp}
+          loading={oauthLoading === 'google'}
+        >
+          Continue with Google
+        </Button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <span className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500">
+              or continue with email
+            </span>
+          </div>
+        </div>
+      </div>
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         {error && (
           <div className="rounded-md bg-red-50 p-4">
@@ -106,7 +152,7 @@ export default function SignupForm() {
           </div>
         )}
 
-        <fieldset disabled={loading}>
+        <fieldset disabled={loading || oauthLoading !== null}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Full Name

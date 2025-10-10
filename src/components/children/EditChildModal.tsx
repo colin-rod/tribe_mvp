@@ -121,7 +121,7 @@ export default function EditChildModal({ child, onChildUpdated, onClose }: EditC
       }
 
       const updatedChild = await updateChild(child.id, updates)
-      onChildUpdated(updatedChild)
+      onChildUpdated(updatedChild as Child)
     } catch (error) {
       logger.errorWithStack('Error updating child:', error as Error)
       setErrors({

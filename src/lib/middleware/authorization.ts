@@ -112,7 +112,7 @@ export async function verifyResourceOwnership(
 
     switch (resourceType) {
       case 'update':
-        query = supabase.from('updates').select('parent_id').eq('id', resourceId)
+        query = supabase.from('memories').select('parent_id').eq('id', resourceId)
         userField = 'parent_id'
         break
 

@@ -39,8 +39,8 @@ export type ContentFormat = typeof contentFormats[number]
 export const updateFormSchema = z.object({
   childId: z.string().uuid('Please select a child'),
   content: z.string()
-    .min(1, 'Update content is required')
-    .max(2000, 'Update content must be less than 2000 characters'),
+    .min(1, 'Memory content is required')
+    .max(2000, 'Memory content must be less than 2000 characters'),
   subject: z.string()
     .max(200, 'Subject must be less than 200 characters')
     .optional(),
@@ -91,10 +91,10 @@ export type MediaUploadData = z.infer<typeof mediaUploadSchema>
 // Helper functions for validation
 export function validateUpdateContent(content: string): string | null {
   if (!content.trim()) {
-    return 'Update content is required'
+    return 'Memory content is required'
   }
   if (content.length > 2000) {
-    return 'Update content must be less than 2000 characters'
+    return 'Memory content must be less than 2000 characters'
   }
   return null
 }

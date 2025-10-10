@@ -13,7 +13,7 @@ export { RightPaneContent } from './RightPaneContent';
 export { ActivityRightPane } from './ActivityRightPane';
 export type { ActivityRightPaneProps } from './ActivityRightPane';
 
-export { DigestsRightPane } from './DigestsRightPane';
+export { SummaryRightPane } from './SummaryRightPane';
 export { ChildrenRightPane } from './ChildrenRightPane';
 export { RecipientsRightPane } from './RecipientsRightPane';
 export { GroupsRightPane } from './GroupsRightPane';

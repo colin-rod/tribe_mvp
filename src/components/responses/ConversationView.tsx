@@ -10,12 +10,6 @@ import { ChatBubbleLeftIcon, ArrowTrendingUpIcon, UsersIcon, CalendarDaysIcon, P
 import ChildImage from '@/components/ui/ChildImage'
 import RichTextRenderer from '@/components/ui/RichTextRenderer'
 
-interface ConfirmedRecipient {
-  id: string
-  name?: string
-  email?: string
-}
-
 interface Update {
   id: string
   content: string
@@ -25,8 +19,8 @@ interface Update {
   created_at: string
   child_id: string
   parent_id: string
-  media_urls: string[]
-  confirmed_recipients?: ConfirmedRecipient[]
+  media_urls: string[] | null
+  confirmed_recipients?: string[] | null
   children: {
     id: string
     name: string
@@ -95,10 +89,10 @@ export function ConversationView({
 
       {activeTab === 'conversation' ? (
         <div className="space-y-6">
-          {/* Original Update */}
+          {/* Original Memory */}
           <div className="bg-blue-50 rounded-lg p-1">
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              {/* Update Header */}
+              {/* Memory Header */}
               <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -113,7 +107,7 @@ export function ConversationView({
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Update from {update.children.name}
+                        Memory from {update.children.name}
                       </h2>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <CalendarDaysIcon className="h-4 w-4" />
@@ -126,9 +120,9 @@ export function ConversationView({
                 </div>
               </div>
 
-              {/* Update Content */}
+              {/* Memory Content */}
               <div className="p-6">
-                {/* Update Text */}
+                {/* Memory Text */}
                 <div className="mb-6">
                   <RichTextRenderer
                     content={update.content}
@@ -141,7 +135,7 @@ export function ConversationView({
                   />
                 </div>
 
-                {/* Update Photos */}
+                {/* Memory Photos */}
                 {update.media_urls && update.media_urls.length > 0 && (
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
@@ -151,7 +145,7 @@ export function ConversationView({
                       </h4>
                     </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {update.media_urls.map((url, index) => (
+                          {update.media_urls?.map((url, index) => (
                             <div
                               key={index}
                               className="relative aspect-square rounded-lg bg-gray-100"
@@ -159,7 +153,7 @@ export function ConversationView({
                             >
                               <Image
                                 src={url}
-                                alt={`Update photo ${index + 1}`}
+                                alt={`Memory photo ${index + 1}`}
                                 fill
                                 className="cursor-pointer rounded-lg object-cover hover:opacity-90 transition-opacity"
                                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"

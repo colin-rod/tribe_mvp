@@ -153,7 +153,7 @@ export default function NotificationSettings({ onSuccess }: NotificationSettings
                 Response Notifications
               </label>
               <p className="text-sm text-gray-500">
-                Get notified when recipients respond to your updates.
+                Get notified when recipients respond to your memories.
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function NotificationSettings({ onSuccess }: NotificationSettings
             </div>
             <div className="ml-3">
               <label htmlFor="weeklyDigest" className="text-sm font-medium text-gray-700">
-                Weekly Digest
+                Weekly Summary
               </label>
               <p className="text-sm text-gray-500">
                 Receive a weekly summary of your activity and responses.

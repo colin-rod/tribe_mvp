@@ -10,7 +10,7 @@ export function DraftsRightPane() {
   // TODO: Replace with actual data from context/API
   const selectedDraft = selectedId ? {
     id: selectedId,
-    title: 'Weekly Update - Dec 3',
+    title: 'Weekly Summary - Dec 3',
     createdDate: '2025-11-30',
     lastModified: '2025-12-01 14:30',
     scheduledTime: '2025-12-03 09:00',

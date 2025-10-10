@@ -44,7 +44,7 @@ export function ResponseNotifications() {
   }
 
   const navigateToUpdate = (updateId: string) => {
-    window.location.href = `/dashboard/updates/${updateId}`
+    window.location.href = `/dashboard/memories/${updateId}`
   }
 
   if (notifications.length === 0) {

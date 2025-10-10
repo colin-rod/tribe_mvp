@@ -40,7 +40,7 @@ export default function AISuggestionsPanel({
 
   const statusLabel = useMemo(() => {
     if (isAnalyzing) {
-      return 'Analyzing your update...'
+      return 'Analyzing your memory...'
     }
 
     if (!hasRequestedAnalysis) {
@@ -102,7 +102,7 @@ export default function AISuggestionsPanel({
       {isAnalyzing ? (
         <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-white p-4 text-sm text-blue-700">
           <LoadingSpinner size="sm" />
-          <span>Analyzing your update...</span>
+          <span>Analyzing your memory...</span>
         </div>
       ) : !hasRequestedAnalysis ? (
         <div className="rounded-lg border border-dashed border-blue-200 bg-white p-4 text-sm text-blue-700">

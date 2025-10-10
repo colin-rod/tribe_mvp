@@ -17,7 +17,7 @@ import { MiddlePane } from '@/components/layout/MiddlePane'
 import { RightPaneContent } from '@/components/layout/rightPane/RightPaneContent'
 import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext'
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal'
-import type { UpdateType } from '@/components/updates/CreateUpdateModal'
+import type { MemoryType } from '@/components/updates/CreateMemoryModal'
 
 export default function ActivityPage() {
   const { user, loading } = useAuth()
@@ -51,7 +51,7 @@ export default function ActivityPage() {
   return (
     <DashboardActionsProvider
       value={{
-        onCreateUpdate: (type: UpdateType = 'photo', initialContent?: string) => openCreateUpdateModal(type, initialContent),
+        onCreateUpdate: (type: MemoryType = 'photo', initialContent?: string) => openCreateUpdateModal(type, initialContent),
         onCompileDigest: () => router.push('/dashboard/digests/compile'),
       }}
     >

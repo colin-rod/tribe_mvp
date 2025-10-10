@@ -66,6 +66,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
   // Undo snackbar + pending deletion state
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
+  const [snackbarAction, setSnackbarAction] = useState<{ label: string; handler: () => void } | null>(null)
   const pendingDeleteRef = useRef<Map<string, Recipient>>(new Map())
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -126,6 +127,23 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
 
   const handleRecipientAdded = (newRecipient: Recipient) => {
     setRecipients(prev => [newRecipient, ...prev])
+
+    // Show success message with "Add Another" action
+    const contactMethod = newRecipient.email ? 'email' : 'phone'
+    const contactValue = newRecipient.email || newRecipient.phone
+    setSnackbarMessage(
+      `✓ ${newRecipient.name} added successfully!${contactValue ? ` Magic link sent to ${contactMethod}.` : ''}`
+    )
+    setSnackbarAction({
+      label: 'Add Another',
+      handler: () => {
+        setSnackbarOpen(false)
+        setViewMode('add')
+      }
+    })
+    setSnackbarOpen(true)
+
+    // Return to list view
     setViewMode('list')
   }
 
@@ -144,6 +162,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     setSelectedRecipients(prev => { const s = new Set(prev); s.delete(recipientId); return s })
     pendingDeleteRef.current.set(recipientId, target)
     setSnackbarMessage('Recipient deleted')
+    setSnackbarAction(null) // Clear any previous action
     setSnackbarOpen(true)
     scheduleFinalizeDeletion()
   }
@@ -236,6 +255,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     setSelectedRecipients(new Set())
     toDelete.forEach(r => pendingDeleteRef.current.set(r.id, r))
     setSnackbarMessage(`${toDelete.length} recipient${toDelete.length !== 1 ? 's' : ''} deleted`)
+    setSnackbarAction(null) // Clear any previous action
     setSnackbarOpen(true)
     scheduleFinalizeDeletion()
   }
@@ -286,7 +306,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Invite Recipients</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Send Invitation Links</h1>
           <Button variant="outline" onClick={() => setViewMode('list')}>
             Back to Recipients
           </Button>
@@ -311,7 +331,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            Add Recipient
+            Add Recipient Manually
           </Button>
           <Button variant="tertiary" onClick={() => setMoreOpen(!moreOpen)} aria-expanded={moreOpen} aria-haspopup="menu">
             More
@@ -323,7 +343,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
                 className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
                 onClick={() => { setViewMode('invite'); setMoreOpen(false) }}
               >
-                Invite recipients
+                Send Invitation Link
               </button>
               <button
                 role="menuitem"
@@ -480,13 +500,21 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
         />
       )}
 
-      {/* Undo Snackbar */}
+      {/* Snackbar for success messages and undo deletion */}
       <Snackbar
         open={snackbarOpen}
         message={snackbarMessage}
-        actionLabel="Undo"
-        onAction={undoDeletion}
-        onClose={() => { if (pendingDeleteRef.current.size > 0) { /* keep timer */ setSnackbarOpen(false) } else setSnackbarOpen(false) }}
+        actionLabel={snackbarAction ? snackbarAction.label : (pendingDeleteRef.current.size > 0 ? "Undo" : undefined)}
+        onAction={snackbarAction ? snackbarAction.handler : undoDeletion}
+        onClose={() => {
+          if (pendingDeleteRef.current.size > 0) {
+            /* keep timer */
+            setSnackbarOpen(false)
+          } else {
+            setSnackbarOpen(false)
+            setSnackbarAction(null)
+          }
+        }}
         duration={5000}
         type="info"
       />

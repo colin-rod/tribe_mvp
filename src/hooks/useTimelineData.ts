@@ -55,7 +55,7 @@ const DEFAULT_CACHE_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 
 /**
  * Hook for managing timeline data with virtual scrolling, filtering, and caching
- * Groups updates by date and provides efficient data management for large datasets
+ * Groups memories by date and provides efficient data management for large datasets
  */
 export function useTimelineData({
   pageSize = 20,
@@ -75,7 +75,7 @@ export function useTimelineData({
   const maxRetries = 3
   const canRetry = retryCount < maxRetries
 
-  // Group updates by date
+  // Group memories by date
   const timelineGroups = useMemo(() => {
     const groups: { [key: string]: TimelineGroup } = {}
 
@@ -201,7 +201,7 @@ export function useTimelineData({
     }
   }, [enableCaching])
 
-  // Load updates from API with retry logic
+  // Load memories from API with retry logic
   const loadUpdates = useCallback(async (page: number, append = false) => {
     try {
       setLoading(true)

@@ -32,7 +32,7 @@ export async function fetchUpdateWithDetails(
   try {
     // First, get the update basic info
     const { data: update, error: updateError } = await supabase
-      .from('updates')
+      .from('memories')
       .select('*')
       .eq('id', updateId)
       .single()
@@ -197,7 +197,7 @@ export async function markUpdateAsSent(
   status: 'sent' | 'partially_sent' | 'failed'
 ): Promise<boolean> {
   const { error } = await supabase
-    .from('updates')
+    .from('memories')
     .update({
       distribution_status: status,
       sent_at: new Date().toISOString()

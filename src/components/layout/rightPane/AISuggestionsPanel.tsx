@@ -2,7 +2,7 @@
  * AISuggestionsPanel Component
  * CRO-298: Right Pane - Activity View Context
  *
- * Displays prompt suggestions for creating updates:
+ * Displays prompt suggestions for creating memories:
  * - Single prompt card suggestion from database
  * - Thumbnail preview
  * - One-click apply
@@ -93,7 +93,7 @@ export function AISuggestionsPanel({
       <Card className={cn('p-4', className)}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="h-4 w-4 text-purple-600" />
-          <h3 className="text-sm font-semibold text-neutral-900">Update Suggestions</h3>
+          <h3 className="text-sm font-semibold text-neutral-900">Memory Suggestions</h3>
         </div>
         <p className="text-sm text-neutral-500">No suggestions available</p>
       </Card>
@@ -104,7 +104,7 @@ export function AISuggestionsPanel({
     <Card className={cn('p-4', className)}>
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-4 w-4 text-purple-600" />
-        <h3 className="text-sm font-semibold text-neutral-900">Update Suggestions</h3>
+        <h3 className="text-sm font-semibold text-neutral-900">Memory Suggestions</h3>
       </div>
 
       <div className="space-y-3">

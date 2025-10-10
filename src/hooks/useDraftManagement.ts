@@ -175,7 +175,7 @@ export function useDraftManagement() {
   }, [loadDrafts, loadSummary])
 
   /**
-   * Mark ready update back to draft
+   * Mark ready memory back to draft
    */
   const unmarkReady = useCallback(async (updateId: string): Promise<boolean> => {
     setLoading(true)
@@ -183,7 +183,7 @@ export function useDraftManagement() {
 
     try {
       await markReadyAsDraft(updateId)
-      logger.info('Update marked as draft', { updateId })
+      logger.info('Memory marked as draft', { updateId })
       await loadDrafts() // Refresh list
       await loadSummary() // Refresh summary
       return true

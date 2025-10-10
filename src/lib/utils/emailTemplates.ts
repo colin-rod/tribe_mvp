@@ -1,6 +1,6 @@
 /**
- * Frontend Email Template Renderer for Digests
- * Mirrors the backend digest-templates.ts for preview rendering
+ * Frontend Email Template Renderer for Summaries
+ * Mirrors the backend summary-templates.ts for preview rendering
  */
 
 import type { DigestNarrative, MediaReference } from '@/lib/types/digest'
@@ -14,7 +14,7 @@ export interface DigestEmailData {
 }
 
 /**
- * Render recipient-facing digest email for preview
+ * Render recipient-facing summary email for preview
  */
 export function renderRecipientDigestEmail(data: DigestEmailData): string {
   const {
@@ -30,7 +30,7 @@ export function renderRecipientDigestEmail(data: DigestEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${child_name}'s Updates</title>
+  <title>${child_name}'s Memories</title>
   <style>
     body {
       margin: 0;
@@ -170,7 +170,7 @@ export function renderRecipientDigestEmail(data: DigestEmailData): string {
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <h1>${child_name}'s Updates</h1>
+      <h1>${child_name}'s Memories</h1>
       <p>${date_range}</p>
     </div>
 
@@ -195,8 +195,8 @@ export function renderRecipientDigestEmail(data: DigestEmailData): string {
 
       <!-- CTA Button -->
       <center>
-        <a href="https://${app_domain}/updates?ref=digest" class="cta-button">
-          View All Updates
+        <a href="https://${app_domain}/memories?ref=summary" class="cta-button">
+          View All Memories
         </a>
       </center>
     </div>

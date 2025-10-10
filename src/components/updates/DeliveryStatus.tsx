@@ -7,18 +7,12 @@ import { DeliveryStatusBadge, type DeliveryStatus } from '@/components/ui/Delive
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('DeliveryStatus')
 
-interface DeliveryJob {
-  id: string
-  recipient_id: string
-  status: DeliveryStatus
-  error_message: string | null
-  sent_at: string | null
-  delivered_at: string | null
-  created_at: string
-  updated_at: string
+type DeliveryJobRow = Database['public']['Tables']['delivery_jobs']['Row']
+type DeliveryJob = DeliveryJobRow & {
   recipients: {
     id: string
     name: string
@@ -26,8 +20,6 @@ interface DeliveryJob {
     relationship: string
   }
 }
-
-type DeliveryJobRow = Omit<DeliveryJob, 'recipients'>
 
 interface DeliveryStatusProps {
   updateId: string
@@ -66,8 +58,9 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
           throw error
         }
 
-        setJobs(data || [])
-        onStatusChange?.(data || [])
+        const jobsWithRecipients = (data ?? []) as DeliveryJob[]
+        setJobs(jobsWithRecipients)
+        onStatusChange?.(jobsWithRecipients)
       } catch (error) {
         logger.errorWithStack('Error fetching delivery jobs:', error as Error)
         setError(error instanceof Error ? error.message : 'Failed to load delivery status')
@@ -98,8 +91,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
         async (payload: RealtimePostgresChangesPayload<DeliveryJobRow>) => {
           logger.info('Delivery job update:', { data: payload })
 
-          if (payload.eventType === 'INSERT' && payload.new?.id) {
-            // Fetch the new job with recipient details
+          const fetchJob = async (id: string) => {
             const { data } = await supabase
               .from('delivery_jobs')
               .select(`
@@ -111,26 +103,32 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
                   relationship
                 )
               `)
-              .eq('id', payload.new.id)
+              .eq('id', id)
               .single()
 
-            if (data) {
+            return data as DeliveryJob | null
+          }
+
+          if (payload.eventType === 'INSERT' && payload.new?.id) {
+            const job = await fetchJob(payload.new.id)
+            if (job) {
               setJobs(prev => {
-                const updated = [...prev, data]
+                const updated = [...prev, job]
                 onStatusChange?.(updated)
                 return updated
               })
             }
           } else if (payload.eventType === 'UPDATE' && payload.new?.id) {
-            setJobs(prev => {
-              const updated = prev.map(job =>
-                job.id === payload.new!.id
-                  ? { ...job, ...payload.new }
-                  : job
-              )
-              onStatusChange?.(updated)
-              return updated
-            })
+            const job = await fetchJob(payload.new.id)
+            if (job) {
+              setJobs(prev => {
+                const updated = prev.map(existing =>
+                  existing.id === job.id ? job : existing
+                )
+                onStatusChange?.(updated)
+                return updated
+              })
+            }
           } else if (payload.eventType === 'DELETE' && payload.old?.id) {
             setJobs(prev => {
               const updated = prev.filter(job => job.id !== payload.old!.id)
@@ -179,9 +177,9 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
       case 'sent':
         return job.sent_at
       case 'failed':
-        return job.updated_at
+        return job.sent_at ?? job.queued_at
       default:
-        return job.created_at
+        return job.queued_at
     }
   }
 
@@ -217,7 +215,7 @@ export default function DeliveryStatus({ updateId, className, onStatusChange }: 
               </div>
 
               <div className="flex flex-col items-end space-y-1">
-                <DeliveryStatusBadge status={job.status} size="sm" />
+                <DeliveryStatusBadge status={(job.status ?? 'queued') as DeliveryStatus} size="sm" />
                 <span className="text-xs text-gray-500">
                   {formatTimestamp(getStatusTimestamp(job))}
                 </span>

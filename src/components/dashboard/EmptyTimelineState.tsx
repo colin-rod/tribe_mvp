@@ -17,7 +17,7 @@ import {
 interface EmptyTimelineStateProps {
   hasCompletedOnboarding?: boolean
   userName?: string
-  onCreateUpdate?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
+  onCreateMemory?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
   onViewExamples?: () => void
   className?: string
 }
@@ -61,7 +61,7 @@ const EXAMPLE_UPDATES = [
 export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
   hasCompletedOnboarding = false,
   userName,
-  onCreateUpdate,
+  onCreateMemory,
   onViewExamples,
   className
 }) => {
@@ -81,7 +81,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
     setIsVisible(true)
   }, [])
 
-  const handleCreateUpdate = (type: 'photo' | 'text' | 'video' | 'milestone' = 'photo') => {
+  const handleCreateMemory = (type: 'photo' | 'text' | 'video' | 'milestone' = 'photo') => {
     // Analytics tracking
     if (typeof window !== 'undefined') {
       window.gtag?.('event', 'empty_timeline_create_click', {
@@ -90,7 +90,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
         value: 1
       })
     }
-    onCreateUpdate?.(type)
+    onCreateMemory?.(type)
   }
 
   return (
@@ -164,18 +164,18 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
           <Button
             variant="default"
             size="lg"
-            onClick={() => handleCreateUpdate('photo')}
-            className="w-full h-14 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            onClick={() => handleCreateMemory('photo')}
+            className="w-full h-14 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
           >
             <CameraIcon className="w-5 h-5 mr-3" />
-            Share Your First Update
+            Share Your First Memory
           </Button>
 
           {/* Quick alternatives */}
           <div className="flex space-x-3">
             <Button
               variant="outline"
-              onClick={() => handleCreateUpdate('text')}
+              onClick={() => handleCreateMemory('text')}
               className="flex-1 h-12"
             >
               <PencilIcon className="w-4 h-4 mr-2" />
@@ -183,7 +183,7 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleCreateUpdate('milestone')}
+              onClick={() => handleCreateMemory('milestone')}
               className="flex-1 h-12"
             >
               <SparklesIcon className="w-4 h-4 mr-2" />
@@ -197,9 +197,9 @@ export const EmptyTimelineState: React.FC<EmptyTimelineStateProps> = ({
           <button
             onClick={onViewExamples}
             className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md px-2 py-1"
-            aria-label="View examples of different update types to get inspiration"
+            aria-label="View examples of different memory types to get inspiration"
           >
-            See example updates
+            See example memories
           </button>
         )}
       </div>
@@ -275,11 +275,11 @@ export const NoSearchResultsState: React.FC<NoSearchResultsProps> = ({
       </div>
 
       <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-        No updates found
+        No memories found
       </h3>
 
       <p className="text-sm text-neutral-600 text-center mb-6 max-w-xs">
-        We couldn&apos;t find any updates matching <span className="font-medium">&quot;{searchQuery}&quot;</span>
+        We couldn&apos;t find any memories matching <span className="font-medium">&quot;{searchQuery}&quot;</span>
       </p>
 
       <Button variant="outline" onClick={onClearSearch}>

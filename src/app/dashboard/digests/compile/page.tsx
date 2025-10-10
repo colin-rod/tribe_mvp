@@ -3,9 +3,9 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useDigestCompilation } from '@/hooks/useDigestCompilation'
+import { useSummaryCompilation } from '@/hooks/useSummaryCompilation'
 import Navigation from '@/components/layout/Navigation'
-import CompilationProgress from '@/components/digests/CompilationProgress'
+import CompilationProgress from '@/components/summaries/CompilationProgress'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -23,7 +23,7 @@ function DigestCompileContent() {
     compile,
     error,
     compilationProgress
-  } = useDigestCompilation()
+  } = useSummaryCompilation()
 
   const [compilationStarted, setCompilationStarted] = useState(false)
   const [compilationComplete, setCompilationComplete] = useState(false)
@@ -42,7 +42,7 @@ function DigestCompileContent() {
 
     const startCompilation = async () => {
       setCompilationStarted(true)
-      logger.info('Starting digest compilation')
+      logger.info('Starting summary compilation')
 
       try {
         // Get date range from query params or use defaults (last 7 days)

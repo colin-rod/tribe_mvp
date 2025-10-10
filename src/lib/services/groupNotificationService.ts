@@ -645,7 +645,7 @@ export class GroupNotificationService {
 
       const result = await serverEmailService.sendEmail({
         to: email,
-        subject: template.subject || 'New update from Tribe',
+        subject: template.subject || 'New memory from Tribe',
         html: template.html || template.message,
         text: template.message,
         categories: [`tribe-${job.notification_type}`, 'tribe-group-notification'],

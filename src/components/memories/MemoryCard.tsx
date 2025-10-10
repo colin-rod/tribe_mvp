@@ -144,9 +144,9 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
       <div className="relative z-10 mb-4">
         <RichTextRenderer
           content={memory.content}
-          subject={memory.subject}
-          richContent={memory.rich_content}
-          contentFormat={memory.content_format}
+          subject={memory.subject ?? undefined}
+          richContent={memory.rich_content ?? undefined}
+          contentFormat={memory.content_format ?? undefined}
           preview={true}
           previewLength={150}
           showSubject={true}

@@ -4,8 +4,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { VariableSizeList as List } from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns'
-import MobileUpdateCard from './MobileUpdateCard'
-import UpdateCardSkeleton from '@/components/updates/UpdateCardSkeleton'
+import MobileMemoryCard from './MobileMemoryCard'
+import MemoryCardSkeleton from '@/components/updates/MemoryCardSkeleton'
 import EmptyTimelineState, { NoSearchResultsState } from './EmptyTimelineState'
 
 interface Update {
@@ -42,7 +42,7 @@ interface MobileTimelineContainerProps {
   onClearSearch?: () => void
   hasCompletedOnboarding?: boolean
   userName?: string
-  onCreateUpdate?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
+  onCreateMemory?: (type: 'photo' | 'text' | 'video' | 'milestone') => void
   className?: string
 }
 
@@ -71,7 +71,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
   onClearSearch,
   hasCompletedOnboarding = false,
   userName,
-  onCreateUpdate,
+  onCreateMemory,
   className
 }) => {
   const [containerHeight, setContainerHeight] = useState(600)
@@ -204,7 +204,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
     if (item.update) {
       return (
         <div style={style}>
-          <MobileUpdateCard
+          <MobileMemoryCard
             update={item.update}
             onClick={onUpdateClick}
             onLike={onUpdateLike}
@@ -235,7 +235,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       <EmptyTimelineState
         hasCompletedOnboarding={hasCompletedOnboarding}
         userName={userName}
-        onCreateUpdate={onCreateUpdate}
+        onCreateMemory={onCreateMemory}
         className={className}
       />
     )
@@ -250,7 +250,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       {loading && updates.length === 0 && (
         <div className="space-y-4 p-4">
           {[...Array(5)].map((_, i) => (
-            <UpdateCardSkeleton key={i} />
+            <MemoryCardSkeleton key={i} />
           ))}
         </div>
       )}
@@ -279,7 +279,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
             {loading && hasMore && (
               <div className="flex items-center space-x-2 text-neutral-500">
                 <div className="w-4 h-4 border-2 border-neutral-300 border-t-primary-500 rounded-full animate-spin" />
-                <span className="text-sm">Loading more updates...</span>
+                <span className="text-sm">Loading more memories...</span>
               </div>
             )}
           </div>
@@ -289,7 +289,7 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       {/* Infinite scroll loading indicator */}
       {loading && updates.length > 0 && (
         <div className="p-4 bg-white border-t border-neutral-200">
-          <UpdateCardSkeleton />
+          <MemoryCardSkeleton />
         </div>
       )}
     </div>

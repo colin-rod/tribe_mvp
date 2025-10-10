@@ -153,14 +153,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
       {/* Frequency Selection */}
       <div>
         <label className="text-base font-medium text-gray-900">
-          How often would you like to receive updates?
+          How often would you like to receive memories?
         </label>
         <p className="text-sm text-gray-500 mt-1">
-          Choose how frequently you want to be notified about new updates
+          Choose how frequently you want to be notified about new memories
         </p>
 
         <fieldset className="mt-4">
-          <legend className="sr-only">Update frequency</legend>
+          <legend className="sr-only">Memory frequency</legend>
           <div className="space-y-3">
             {options.frequencies.map((option) => {
               const isGroupDefault = recipient.group && recipient.group.default_frequency === option.value
@@ -208,14 +208,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
       {/* Importance Threshold Selection - NEW FEATURE */}
       <div>
         <label className="text-base font-medium text-gray-900">
-          What types of updates do you want to receive?
+          What types of memories do you want to receive?
         </label>
         <p className="text-sm text-gray-500 mt-1">
-          Control which updates reach you based on their importance
+          Control which memories reach you based on their importance
         </p>
 
         <fieldset className="mt-4">
-          <legend className="sr-only">Update importance threshold</legend>
+          <legend className="sr-only">Memory importance threshold</legend>
           <div className="space-y-3">
             {options.importanceThresholds.map((option) => (
               <div key={option.value} className="flex items-start p-1">
@@ -253,8 +253,8 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             </div>
             <div className="ml-3">
               <p className="text-sm text-indigo-700">
-                <strong>Smart filtering:</strong> Our AI automatically categorizes each update.
-                You&apos;ll only receive updates that meet or exceed your chosen importance level.
+                <strong>Smart filtering:</strong> Our AI automatically categorizes each memory.
+                You&apos;ll only receive memories that meet or exceed your chosen importance level.
               </p>
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
       {/* Channel Selection */}
       <div>
         <label className="text-base font-medium text-gray-900">
-          How would you like to receive updates?
+          How would you like to receive memories?
         </label>
         <p className="text-sm text-gray-500 mt-1">
           Select one or more ways to receive notifications (at least one required)
@@ -322,7 +322,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           What types of content would you like to receive?
         </label>
         <p className="text-sm text-gray-500 mt-1">
-          Choose what types of updates you want to see (at least one required)
+          Choose what types of memories you want to see (at least one required)
         </p>
 
         <fieldset className="mt-4">

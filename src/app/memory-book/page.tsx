@@ -46,7 +46,7 @@ export default function MemoryBookPage() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <ErrorState message={error} retry={loadSummaries} />
+        <ErrorState message={error} onRetry={loadSummaries} />
       </div>
     )
   }

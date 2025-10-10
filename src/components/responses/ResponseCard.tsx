@@ -6,23 +6,10 @@ import { formatDistanceToNow } from 'date-fns'
 import { EnvelopeIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import { MediaGallery } from '@/components/media/MediaGallery'
 import { getDefaultAvatarUrl } from '@/lib/utils/avatar'
+import type { Response as HookResponse } from '@/hooks/useResponses'
 
 interface ResponseCardProps {
-  response: {
-    id: string
-    update_id: string
-    recipient_id: string
-    channel: string
-    content: string | null
-    media_urls: string[]
-    received_at: string
-    recipients: {
-      id: string
-      name: string
-      relationship: string
-      email: string | null
-    }
-  }
+  response: HookResponse
   showChannel?: boolean
   onMediaClick?: (mediaUrl: string, index: number) => void
 }
@@ -89,7 +76,9 @@ export function ResponseCard({ response, showChannel = true, onMediaClick }: Res
             </span>
           )}
           <span>
-            {formatDistanceToNow(new Date(response.received_at), { addSuffix: true })}
+            {response.received_at
+              ? formatDistanceToNow(new Date(response.received_at), { addSuffix: true })
+              : 'Just now'}
           </span>
         </div>
       </div>

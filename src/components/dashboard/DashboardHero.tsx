@@ -15,7 +15,7 @@ import {
 interface DashboardHeroProps {
   userName?: string
   hasUnreadNotifications?: boolean
-  onCreateUpdate: (type: UpdateType) => void
+  onCreateMemory: (type: UpdateType) => void
   showReminder?: boolean
   onDismissReminder?: () => void
   className?: string
@@ -24,16 +24,16 @@ interface DashboardHeroProps {
 type UpdateType = 'photo' | 'text' | 'video' | 'milestone'
 
 const UPDATE_OPTIONS = [
-  { id: 'photo' as UpdateType, label: 'Photo Update', icon: CameraIcon, description: 'Share a moment' },
-  { id: 'text' as UpdateType, label: 'Text Update', icon: PencilIcon, description: 'Write an update' },
-  { id: 'video' as UpdateType, label: 'Video Update', icon: VideoCameraIcon, description: 'Record a video' },
+  { id: 'photo' as UpdateType, label: 'Photo Memory', icon: CameraIcon, description: 'Share a moment' },
+  { id: 'text' as UpdateType, label: 'Text Memory', icon: PencilIcon, description: 'Write a memory' },
+  { id: 'video' as UpdateType, label: 'Video Memory', icon: VideoCameraIcon, description: 'Record a video' },
   { id: 'milestone' as UpdateType, label: 'Milestone', icon: TrophyIcon, description: 'Mark a milestone' },
 ]
 
 export const DashboardHero: React.FC<DashboardHeroProps> = ({
   userName = 'there',
   hasUnreadNotifications = false,
-  onCreateUpdate,
+  onCreateMemory,
   showReminder = false,
   onDismissReminder,
   className
@@ -75,14 +75,14 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
   const handleMainButtonClick = () => {
     // Analytics tracking
     if (typeof window !== 'undefined') {
-      // Track the main create update button click
+      // Track the main create memory button click
       window.gtag?.('event', 'dashboard_hero_create_click', {
         event_category: 'engagement',
         event_label: 'photo_default',
         value: 1
       })
     }
-    onCreateUpdate('photo') // Default to photo update
+    onCreateMemory('photo') // Default to photo memory
   }
 
   const handleDropdownToggle = (e: React.MouseEvent) => {
@@ -112,7 +112,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
       })
     }
 
-    onCreateUpdate(type)
+    onCreateMemory(type)
   }
 
   const getGreeting = () => {
@@ -197,10 +197,10 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
               'transition-all duration-200 transform active:scale-95',
               'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2'
             )}
-            aria-label="Create photo update"
+            aria-label="Create photo memory"
           >
             <CameraIcon className="w-5 h-5 mr-2" />
-            Create Update
+            Create Memory
           </button>
 
           {/* Dropdown Toggle */}
@@ -214,7 +214,7 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
               'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
               isDropdownOpen && 'bg-primary-700'
             )}
-            aria-label="More update options"
+            aria-label="More memory options"
             aria-expanded={isDropdownOpen}
             aria-haspopup="menu"
             aria-controls={isDropdownOpen ? 'update-options-menu' : undefined}
@@ -275,14 +275,14 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button className="text-xs text-neutral-600 hover:text-neutral-800 transition-colors">
-            View all updates
+            View all memories
           </button>
           <button className="text-xs text-neutral-600 hover:text-neutral-800 transition-colors">
             Manage recipients
           </button>
         </div>
         <div className="text-xs text-neutral-500">
-          Last update: 2 hours ago
+          Last memory: 2 hours ago
         </div>
       </div>
     </div>

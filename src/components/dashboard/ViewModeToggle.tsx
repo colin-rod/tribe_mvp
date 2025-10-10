@@ -46,7 +46,7 @@ export default function ViewModeToggle({
     },
     {
       id: 'digest',
-      label: 'Digest',
+      label: 'Summary',
       icon: SparklesIcon,
       description: 'Weekly summary'
     }

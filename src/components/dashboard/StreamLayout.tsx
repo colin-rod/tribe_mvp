@@ -8,8 +8,8 @@ import type { UpdateForDisplay } from './TimelineLayout'
 
 interface StreamLayoutProps {
   updates: UpdateForDisplay[]
-  onLike?: (updateId: string) => void
-  onComment?: (updateId: string) => void
+  onLike?: (memoryId: string) => void
+  onComment?: (memoryId: string) => void
 }
 
 export default function StreamLayout({
@@ -45,7 +45,7 @@ export default function StreamLayout({
               <div className="relative w-full aspect-[16/9] bg-neutral-900">
                 <Image
                   src={update.media_urls[0]}
-                  alt={update.content || 'Update image'}
+                  alt={update.content || 'Memory image'}
                   fill
                   className="object-cover"
                 />
@@ -73,7 +73,7 @@ export default function StreamLayout({
                         {update.child_name}
                       </p>
                       <p className="text-xs text-white/90 text-shadow">
-                        {new Date(update.created_at).toLocaleString('en-US', {
+                        {update.created_at && new Date(update.created_at).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           hour: 'numeric',
@@ -155,7 +155,7 @@ export default function StreamLayout({
                       {update.child_name}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      {new Date(update.created_at).toLocaleString('en-US', {
+                      {update.created_at && new Date(update.created_at).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: 'numeric',

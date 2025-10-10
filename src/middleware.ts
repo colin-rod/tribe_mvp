@@ -167,6 +167,18 @@ export async function middleware(request: NextRequest) {
       return redirectResponse
     }
 
+    // Redirect old digest routes to new memory-book routes
+    if (request.nextUrl.pathname.startsWith('/dashboard/digests')) {
+      const newPath = request.nextUrl.pathname.replace('/dashboard/digests', '/dashboard/memory-book')
+      logger.info('Redirecting from old digest route to memory-book', {
+        from: request.nextUrl.pathname,
+        to: newPath
+      })
+      const redirectResponse = NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url))
+      applySecurityHeaders(redirectResponse.headers)
+      return redirectResponse
+    }
+
     // Check onboarding completion for protected pages
     if (user && isProtectedPage && !isOnboardingPage) {
       const { data: profile } = await supabase

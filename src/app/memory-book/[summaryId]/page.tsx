@@ -60,7 +60,7 @@ export default function MemoryBookSummaryPage() {
   if (error || !summary) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <ErrorState message={error || 'Summary not found'} retry={loadSummary} />
+        <ErrorState message={error || 'Summary not found'} onRetry={loadSummary} />
       </div>
     )
   }
@@ -149,7 +149,6 @@ export default function MemoryBookSummaryPage() {
               <MediaGallery
                 mediaUrls={allMedia.slice(0, 6)}
                 className="grid-cols-2 md:grid-cols-3 gap-4"
-                aspect="video"
               />
             </div>
           )}

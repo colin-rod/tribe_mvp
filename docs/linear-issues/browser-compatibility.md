@@ -76,7 +76,7 @@ The application has primarily been developed and tested in Chrome desktop. We ne
 - [ ] Child profile management
 - [ ] Group management
 - [ ] Profile settings
-- [ ] Media upload (photos/videos)
+- [ ] Media upload (photos)
 - [ ] Email preferences
 - [ ] Response threads
 - [ ] Digest preview
@@ -107,7 +107,7 @@ The application has primarily been developed and tested in Chrome desktop. We ne
 
 ### Media Handling
 - [ ] Image upload works
-- [ ] Video upload works
+- [ ] Video upload works _(Deferred post-MVP)_
 - [ ] Image preview displays
 - [ ] Video playback works
 - [ ] File size validation

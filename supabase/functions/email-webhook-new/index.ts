@@ -654,7 +654,7 @@ async function handleMemoryEmail(emailData: InboundEmail, supabase: any): Promis
   })
 
   const { data: update, error: updateError } = await supabase
-    .from('updates')
+    .from('memories')
     .insert(insertData)
     .select('id, subject, content, content_format') // Select back the fields to verify
     .single()
@@ -716,7 +716,7 @@ async function handleUpdateResponse(emailData: InboundEmail, supabase: any): Pro
 
   // Verify update exists
   const { data: update, error: updateError } = await supabase
-    .from('updates')
+    .from('memories')
     .select('id, parent_id')
     .eq('id', updateId)
     .single()
