@@ -1,4 +1,5 @@
 import * as sgMail from '@sendgrid/mail'
+import { randomUUID } from 'crypto'
 import { createLogger } from '@/lib/logger'
 import { getEnv, getFeatureFlags } from '@/lib/env'
 import { sanitizeHtml, sanitizeText, emailSchema } from '@/lib/validation/security'
@@ -215,7 +216,7 @@ export class ServerEmailService {
   }
 
   private generateMessageId(): string {
-    return `tribe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `tribe-${Date.now()}-${randomUUID()}`
   }
 
   /**
