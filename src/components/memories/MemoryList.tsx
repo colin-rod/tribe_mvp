@@ -241,7 +241,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       {activeMemoryId && (
         <MemoryDetailModal
           memoryId={activeMemoryId}
-          isOpen={!!activeMemoryId}
+          open={!!activeMemoryId}
           onClose={handleCloseModal}
         />
       )}
