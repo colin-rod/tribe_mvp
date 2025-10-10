@@ -73,7 +73,7 @@ export default function StreamLayout({
                         {update.child_name}
                       </p>
                       <p className="text-xs text-white/90 text-shadow">
-                        {new Date(update.created_at).toLocaleString('en-US', {
+                        {update.created_at && new Date(update.created_at).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           hour: 'numeric',
@@ -155,7 +155,7 @@ export default function StreamLayout({
                       {update.child_name}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      {new Date(update.created_at).toLocaleString('en-US', {
+                      {update.created_at && new Date(update.created_at).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: 'numeric',

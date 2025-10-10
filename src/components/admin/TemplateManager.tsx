@@ -189,7 +189,6 @@ export function TemplateManager() {
 
       const { error } = await supabase
         .from('prompt_templates')
-        // @ts-expect-error - Supabase type inference issue
         .insert([{
           ...formData,
           variables,
@@ -219,7 +218,6 @@ export function TemplateManager() {
 
       const { error } = await supabase
         .from('prompt_templates')
-        // @ts-expect-error - Supabase type inference issue
         .update({
           ...formData,
           variables,

@@ -12,11 +12,11 @@ interface SummaryModeViewProps {
 export default function SummaryModeView({ updates }: SummaryModeViewProps) {
   // Group memories by day
   const groupedByDay = updates.reduce((acc, update) => {
-    const day = new Date(update.created_at).toLocaleDateString('en-US', {
+    const day = update.created_at ? new Date(update.created_at).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric'
-    })
+    }) : 'Unknown Date'
 
     if (!acc[day]) {
       acc[day] = []
@@ -44,10 +44,10 @@ export default function SummaryModeView({ updates }: SummaryModeViewProps) {
                 </h2>
               </div>
               <p className="text-sm text-neutral-600">
-                {new Date(updates[updates.length - 1]?.created_at).toLocaleDateString('en-US', {
+                {updates[updates.length - 1]?.created_at && new Date(updates[updates.length - 1].created_at).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric'
-                })} - {new Date(updates[0]?.created_at).toLocaleDateString('en-US', {
+                })} - {updates[0]?.created_at && new Date(updates[0].created_at).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric'
                 })}
@@ -126,7 +126,7 @@ export default function SummaryModeView({ updates }: SummaryModeViewProps) {
                       </span>
                       <span className="text-xs text-neutral-400">•</span>
                       <span className="text-xs text-neutral-500">
-                        {new Date(update.created_at).toLocaleTimeString('en-US', {
+                        {update.created_at && new Date(update.created_at).toLocaleTimeString('en-US', {
                           hour: 'numeric',
                           minute: '2-digit'
                         })}

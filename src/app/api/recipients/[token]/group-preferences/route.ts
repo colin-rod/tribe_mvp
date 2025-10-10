@@ -19,7 +19,10 @@ type MembershipWithGroup = RecipientRow & {
   > | null
 }
 
-type MembershipData = Pick<RecipientRow, 'id' | 'is_active'>
+type MembershipData = {
+  id: string
+  is_active: boolean
+}
 
 // Schema for group-specific preference updates
 const groupPreferencesSchema = z.object({
