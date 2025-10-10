@@ -193,7 +193,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
   }, [openCreateUpdateModal]);
 
   const handleCompileSummary = useCallback(() => {
-    router.push('/dashboard/memory-book/compile');
+    router.push('/dashboard/digests/compile');
   }, [router]);
 
   const handleOnboardingStepClick = useCallback((stepId: string) => {
