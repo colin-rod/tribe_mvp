@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { VariableSizeList as List } from 'react-window'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns'
 import MobileMemoryCard from './MobileMemoryCard'
@@ -75,9 +75,13 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
   className
 }) => {
   const [containerHeight, setContainerHeight] = useState(600)
-  const listRef = useRef<List>(null)
+  const listRef = useRef<ListImperativeAPI | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const observerRef = useRef<HTMLDivElement>(null)
+
+  const handleListRef = useCallback((instance: ListImperativeAPI | null) => {
+    listRef.current = instance
+  }, [])
 
   // Calculate container height based on viewport
   useEffect(() => {
@@ -171,14 +175,17 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
   }, [updates])
 
   // Calculate item height for virtual scrolling
-  const getItemHeight = (index: number): number => {
-    const item = groupedItems[index]
-    if (item?.type === 'date-header') return HEADER_HEIGHT
-    return ITEM_HEIGHT
-  }
+  const getItemHeight = useCallback(
+    (index: number): number => {
+      const item = groupedItems[index]
+      if (item?.type === 'date-header') return HEADER_HEIGHT
+      return ITEM_HEIGHT
+    },
+    [groupedItems]
+  )
 
   // Render individual items
-  const renderItem = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const renderItem = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
     const item = groupedItems[index]
 
     if (item.type === 'date-header') {
@@ -217,7 +224,21 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
     }
 
     return null
-  }
+  }, [
+    groupedItems,
+    onUpdateClick,
+    onUpdateLike,
+    onUpdateShare,
+    onUpdateResponse
+  ])
+
+  const TimelineRow = useCallback(
+    ({ index, style }: RowComponentProps<Record<string, never>>) =>
+      renderItem({ index, style }),
+    [renderItem]
+  )
+
+  const timelineRowProps = useMemo(() => ({} as Record<string, never>), [])
 
   // Handle empty states
   if (!loading && updates.length === 0) {
@@ -259,17 +280,16 @@ export const MobileTimelineContainer: React.FC<MobileTimelineContainerProps> = (
       {updates.length > 0 && (
         <div className="flex-1">
           <List
-            ref={listRef}
-            height={containerHeight}
-            width="100%"
-            itemCount={groupedItems.length}
-            itemSize={getItemHeight}
-            estimatedItemSize={200}
+            listRef={handleListRef}
+            defaultHeight={containerHeight}
+            rowCount={groupedItems.length}
+            rowHeight={(index: number) => getItemHeight(index)}
+            rowComponent={TimelineRow}
+            rowProps={timelineRowProps}
             overscanCount={5}
             className="scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-neutral-100"
-          >
-            {renderItem}
-          </List>
+            style={{ height: containerHeight, width: '100%' }}
+          />
 
           {/* Load more trigger */}
           <div

@@ -13,7 +13,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Calendar, X, User, FileText } from 'lucide-react';
+import { Search, Calendar, X, User, FileText, Image, Video, Type, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { Child, getChildren } from '@/lib/children';
 import { Input } from '@/components/ui/Input';
@@ -37,10 +37,10 @@ export interface FiltersPanelProps {
 }
 
 const UPDATE_TYPE_OPTIONS: { value: UpdateType; label: string; icon: typeof FileText }[] = [
-  { value: 'photo', label: 'Photo', icon: FileText },
-  { value: 'video', label: 'Video', icon: FileText },
-  { value: 'text', label: 'Text', icon: FileText },
-  { value: 'milestone', label: 'Milestone', icon: FileText },
+  { value: 'photo', label: 'Photo', icon: Image },
+  { value: 'video', label: 'Video', icon: Video },
+  { value: 'text', label: 'Text', icon: Type },
+  { value: 'milestone', label: 'Milestone', icon: Flag },
 ];
 
 export function FiltersPanel({
@@ -59,7 +59,6 @@ export function FiltersPanel({
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showChildFilter, setShowChildFilter] = useState(false);
-  const [showTypeFilter, setShowTypeFilter] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Load children on mount
@@ -132,6 +131,33 @@ export function FiltersPanel({
             <X className="h-4 w-4" />
           </button>
         )}
+      </div>
+
+      {/* Memory Type Icons - Selectable */}
+      <div>
+        <h4 className="text-xs font-medium text-neutral-700 mb-2">Memory Type</h4>
+        <div className="grid grid-cols-4 gap-2">
+          {UPDATE_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => toggleUpdateType(value)}
+              className={cn(
+                'flex flex-col items-center justify-center min-h-[60px] min-w-[44px] px-2 py-2 text-xs border rounded-lg',
+                'hover:bg-neutral-50 transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
+                memoryTypes.includes(value)
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-neutral-300 text-neutral-600'
+              )}
+              title={label}
+              aria-label={`Filter by ${label}`}
+              aria-pressed={memoryTypes.includes(value)}
+            >
+              <Icon className="h-5 w-5 mb-1" />
+              <span className="font-medium">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Quick Filters */}
@@ -222,50 +248,6 @@ export function FiltersPanel({
         </div>
         )}
 
-        {/* Memory Type Filter (advanced) */}
-        {showAdvanced && (
-        <div className="relative col-span-1">
-          <button
-            onClick={() => setShowTypeFilter(!showTypeFilter)}
-            className={cn(
-              'w-full flex items-center justify-center min-h-[44px] min-w-[44px] px-3 py-3 text-xs border rounded',
-              'hover:bg-neutral-50 transition-colors',
-              memoryTypes.length > 0 ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-neutral-300 text-neutral-600'
-            )}
-            title={memoryTypes.length > 0 ? `${memoryTypes.length} type(s)` : 'All types'}
-            aria-label={memoryTypes.length > 0 ? `Filter by memory type: ${memoryTypes.length} selected` : 'Filter by memory type'}
-          >
-            <FileText className="h-4 w-4" />
-          </button>
-
-          {/* Type Dropdown */}
-          {showTypeFilter && (
-            <div className="absolute z-10 mt-1 w-48 bg-white border border-neutral-200 rounded-md shadow-lg right-0">
-              <div className="p-2 space-y-1">
-                {UPDATE_TYPE_OPTIONS.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => toggleUpdateType(value)}
-                    className={cn(
-                      'w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded',
-                      'hover:bg-neutral-50 transition-colors text-left',
-                      memoryTypes.includes(value) && 'bg-blue-50 text-blue-700'
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={memoryTypes.includes(value)}
-                      onChange={() => toggleUpdateType(value)}
-                      className="rounded border-neutral-300"
-                    />
-                    <span className="flex-1">{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        )}
       </div>
 
       {/* Advanced toggle */}

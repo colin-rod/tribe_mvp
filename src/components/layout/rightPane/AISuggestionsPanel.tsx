@@ -80,7 +80,7 @@ export function AISuggestionsPanel({
 
   if (loading) {
     return (
-      <Card className={cn('p-4', className)}>
+      <Card padding="none" className={cn('right-pane-card right-pane-card--bordered', className)}>
         <div className="flex items-center justify-center h-32">
           <LoadingSpinner size="sm" />
         </div>
@@ -90,7 +90,7 @@ export function AISuggestionsPanel({
 
   if (!suggestion) {
     return (
-      <Card className={cn('p-4', className)}>
+      <Card padding="none" className={cn('right-pane-card right-pane-card--bordered space-y-4', className)}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="h-4 w-4 text-purple-600" />
           <h3 className="text-sm font-semibold text-neutral-900">Memory Suggestions</h3>
@@ -101,8 +101,8 @@ export function AISuggestionsPanel({
   }
 
   return (
-    <Card className={cn('p-4', className)}>
-      <div className="flex items-center gap-2 mb-4">
+    <Card padding="none" className={cn('right-pane-card right-pane-card--bordered space-y-4', className)}>
+      <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-purple-600" />
         <h3 className="text-sm font-semibold text-neutral-900">Memory Suggestions</h3>
       </div>
@@ -148,7 +148,7 @@ export function AISuggestionsPanel({
         variant="ghost"
         size="sm"
         onClick={loadSuggestion}
-        className="w-full mt-3 text-xs"
+        className="w-full text-xs"
       >
         <Sparkles className="h-3 w-3 mr-1" />
         Refresh suggestions

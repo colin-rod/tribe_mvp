@@ -35,6 +35,7 @@ export { Badge, type BadgeProps } from './Badge'
 // Profile Selection Components
 export { ProfileIcon, type ProfileIconProps } from './ProfileIcon'
 export { ProfileSelector, type ProfileSelectorProps, type ProfileItem } from './ProfileSelector'
+export { IconOptionSelector, type IconOptionSelectorProps, type IconOption } from './IconOptionSelector'
 
 // Feedback Components
 export { Alert, type AlertProps } from './Alert'
@@ -54,7 +55,6 @@ export { LoadingOverlay, InlineLoadingOverlay, type LoadingOverlayProps, type In
 
 // Form Components (re-export existing ones)
 export { FormField } from './FormField'
-export { FormMessage } from './FormMessage'
 export { default as DateInput } from './DateInput'
 export { ConfirmationDialog } from './ConfirmationDialog'
 export { DeliveryStatusBadge } from './DeliveryStatusBadge'

@@ -24,19 +24,20 @@ export function ChildrenRightPane() {
 
   if (!selectedChild) {
     return (
-      <div className="p-4">
-        <div className="text-center py-12">
-          <p className="text-sm text-neutral-500">Select a child to view details</p>
+      <div className="right-pane-section">
+        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/80">
+          <p className="text-sm text-neutral-600">Select a child to view details</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">{selectedChild.name}</h2>
-      </div>
+    <div className="right-pane-section">
+      <header className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Current Child</p>
+        <h2 className="text-lg font-semibold text-neutral-900">{selectedChild.name}</h2>
+      </header>
 
       {/* Child Details */}
       <DetailCard title="Details">

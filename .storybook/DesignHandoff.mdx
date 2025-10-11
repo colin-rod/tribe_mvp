@@ -1,0 +1,696 @@
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Design System/Design Handoff" />
+
+# Design Handoff Guide
+
+This guide establishes the process and best practices for design-to-development handoff at Tribe MVP. Following this workflow ensures smooth collaboration between designers and developers while maintaining quality and consistency.
+
+## Overview
+
+Design handoff is the process of translating design concepts into working code. A successful handoff requires clear communication, comprehensive documentation, and adherence to established design system patterns.
+
+## Design Handoff Process
+
+### 1. Design Phase
+
+**Designer Responsibilities:**
+- Create designs using design system components and tokens
+- Document interaction patterns and states
+- Define responsive behavior across breakpoints
+- Specify accessibility requirements
+- Note any deviations from design system standards
+
+**Deliverables:**
+- High-fidelity mockups (all states and breakpoints)
+- Interactive prototype (if applicable)
+- Component specifications
+- Content and copy
+- Asset files (images, icons, illustrations)
+
+### 2. Specification Phase
+
+**Designer Creates:**
+- Component specifications with measurements
+- Color values from design tokens
+- Typography specifications
+- Spacing and layout details
+- Interaction and animation specifications
+- Accessibility annotations
+
+**Tools:**
+- Figma specs and annotations
+- Design tokens reference
+- Component library reference
+- User flow diagrams
+
+### 3. Review Phase
+
+**Design Review Meeting:**
+- Designer presents designs and specifications
+- Developer reviews feasibility and technical approach
+- Discuss edge cases and error states
+- Identify new components vs. existing component usage
+- Clarify any ambiguities or questions
+- Agree on timeline and milestones
+
+**Questions to Address:**
+- What existing components can be used?
+- What components need to be created or modified?
+- What are the key user interactions?
+- What are the responsive breakpoints?
+- What are the accessibility requirements?
+- What are the edge cases and error states?
+
+### 4. Development Phase
+
+**Developer Responsibilities:**
+- Implement designs using design system components
+- Follow accessibility guidelines
+- Create responsive layouts
+- Implement all interactive states
+- Write tests for new components
+- Document any deviations or challenges
+
+**Best Practices:**
+- Start with component breakdown
+- Use design tokens consistently
+- Build mobile-first
+- Test across breakpoints
+- Validate accessibility
+- Commit code regularly
+
+### 5. QA & Feedback Phase
+
+**Review Checklist:**
+- Visual accuracy compared to designs
+- Responsive behavior across devices
+- Interactive states (hover, focus, active, disabled)
+- Accessibility compliance
+- Performance metrics
+- Cross-browser testing
+
+**Feedback Loop:**
+- Designer reviews implementation
+- Provide specific, actionable feedback
+- Developer addresses feedback
+- Iterate until approved
+
+### 6. Documentation Phase
+
+**Final Documentation:**
+- Add component to Storybook
+- Create usage examples
+- Document props and API
+- Add accessibility notes
+- Include code examples
+- Update design system documentation
+
+## Component Specifications
+
+### Anatomy Documentation
+
+For each component, specify:
+
+**Visual Properties:**
+- Dimensions (width, height)
+- Padding and margins
+- Border radius
+- Borders and dividers
+- Shadows and elevation
+- Background colors
+
+**Typography:**
+- Font family (typically system font)
+- Font size (use design token)
+- Font weight
+- Line height
+- Letter spacing
+- Text color
+
+**Colors:**
+- Use design token references (e.g., `--primary-500`)
+- Provide hex values as backup
+- Specify opacity when applicable
+- Document color for each state
+
+**Spacing:**
+- Internal padding
+- External margins
+- Gap between elements
+- Use spacing scale (4px, 8px, 12px, 16px, etc.)
+
+### States Documentation
+
+Document all component states:
+
+**Interactive States:**
+- Default / Rest
+- Hover
+- Active / Pressed
+- Focus
+- Disabled
+- Loading
+- Selected
+
+**Data States:**
+- Empty state
+- Loading state
+- Error state
+- Success state
+- Populated state
+
+**Example State Specification:**
+```
+Button - Primary Variant
+
+Default:
+- Background: --primary-500 (#3b82f6)
+- Text: white
+- Border: none
+- Shadow: sm
+
+Hover:
+- Background: --primary-600 (#2563eb)
+- Text: white
+- Shadow: md
+- Transition: 150ms ease
+
+Active:
+- Background: --primary-700 (#1d4ed8)
+- Text: white
+- Transform: scale(0.98)
+
+Focus:
+- Outline: 2px solid --primary-500
+- Outline-offset: 2px
+
+Disabled:
+- Background: --gray-300
+- Text: --gray-500
+- Cursor: not-allowed
+- Opacity: 0.6
+```
+
+## Design Tokens Reference
+
+### Using Design Tokens
+
+Always reference design tokens, not raw values:
+
+**✅ Correct:**
+```tsx
+// Use design token via Tailwind class
+<button className="bg-primary-500 text-white">
+  Click me
+</button>
+
+// Or via CSS variable
+style={{ backgroundColor: 'var(--primary-500)' }}
+```
+
+**❌ Incorrect:**
+```tsx
+// Don't use raw hex values
+<button style={{ backgroundColor: '#3b82f6' }}>
+  Click me
+</button>
+```
+
+### Common Design Tokens
+
+**Colors:**
+- Primary: `--primary-{50-900}`
+- Success: `--success-{50-900}`
+- Warning: `--warning-{50-900}`
+- Error: `--error-{50-900}`
+- Gray: `--gray-{50-900}`
+
+**Spacing:**
+- `--space-{0-24}` (0px to 96px)
+- Common values: 4px, 8px, 12px, 16px, 24px, 32px
+
+**Typography:**
+- `--text-{xs-6xl}` (12px to 60px)
+- `--font-{light-extrabold}` (300 to 800)
+
+**Border Radius:**
+- `--radius-{none-full}` (0 to full circle)
+- Common values: sm (2px), md (6px), lg (8px)
+
+## Responsive Design Specifications
+
+### Breakpoints
+
+Specify behavior at each breakpoint:
+
+**Mobile (< 640px):**
+- Single column layouts
+- Stacked components
+- Full-width elements
+- Touch-optimized (44px minimum touch targets)
+
+**Tablet (640px - 1024px):**
+- Two-column layouts where appropriate
+- Adjusted spacing
+- Optimized for both portrait and landscape
+
+**Desktop (> 1024px):**
+- Multi-column layouts
+- Maximum content width (1280px)
+- Hover interactions
+- Keyboard shortcuts
+
+**Example Specification:**
+```
+Update Card Component
+
+Mobile (< 640px):
+- Width: 100%
+- Padding: 16px
+- Image: Full width, 16:9 aspect ratio
+- Stack: Image → Content → Actions (vertical)
+
+Tablet (640px - 1024px):
+- Width: 100%
+- Padding: 20px
+- Image: 40% width, fixed aspect ratio
+- Layout: Image left, Content right
+
+Desktop (> 1024px):
+- Max width: 800px
+- Padding: 24px
+- Image: 35% width, fixed aspect ratio
+- Layout: Image left, Content right, Actions inline
+```
+
+## Accessibility Specifications
+
+### Accessibility Annotations
+
+Include in design specifications:
+
+**Semantic Structure:**
+- Heading hierarchy (h1-h6)
+- Landmark regions (nav, main, aside, footer)
+- Lists (ordered, unordered)
+- Forms and labels
+
+**Interactive Elements:**
+- Button vs. link usage
+- Tab order
+- Focus indicators
+- Keyboard shortcuts
+
+**Content:**
+- Alt text for images
+- ARIA labels for icon buttons
+- Error message content
+- Success message content
+- Loading state announcements
+
+**Example Annotation:**
+```
+Login Form
+
+Semantic Structure:
+- <main> wrapper
+- <h1> "Sign In to Tribe MVP"
+- <form> with proper labels
+
+Accessibility:
+- Email input: <label for="email">Email</label>
+- Password input: <label for="password">Password</label>
+- Error messages: role="alert", linked via aria-describedby
+- Submit button: "Sign In" (clear action)
+- Remember me: <input type="checkbox"> with <label>
+- Forgot password: <a> link with clear text
+
+Focus Order:
+1. Email input
+2. Password input
+3. Remember me checkbox
+4. Sign In button
+5. Forgot password link
+
+Keyboard Support:
+- Tab: Navigate between fields
+- Enter: Submit form
+- Space: Toggle checkbox
+```
+
+## Asset Preparation
+
+### Images
+
+**Requirements:**
+- Export at 1x and 2x resolutions (@2x for Retina)
+- Use appropriate format:
+  - PNG: illustrations, graphics with transparency
+  - JPG: photographs
+  - SVG: icons, simple graphics, logos
+  - WebP: modern, optimized format (with fallback)
+- Optimize file size (compress images)
+- Provide descriptive filenames
+
+**Naming Convention:**
+```
+[component]-[variant]-[state].[extension]
+
+Examples:
+- button-primary-default.svg
+- child-avatar-placeholder.png
+- memory-card-hero@2x.jpg
+```
+
+### Icons
+
+**Requirements:**
+- Use Heroicons or Lucide React when possible
+- Custom icons: SVG format only
+- Viewbox: 24x24 or 20x20 (match icon library)
+- Single color (currentColor for CSS control)
+- Optimized and cleaned paths
+- Descriptive names
+
+**Icon Sizes:**
+- Small: 16px (h-4 w-4)
+- Medium: 20px (h-5 w-5)
+- Large: 24px (h-6 w-6)
+
+### Illustrations
+
+**Requirements:**
+- SVG format preferred
+- PNG fallback if complex
+- Consistent style and color palette
+- Optimized file size
+- Include attribution if required
+
+## Edge Cases & Error States
+
+### Document These Scenarios
+
+**Content Variations:**
+- Empty states (no data)
+- Loading states (fetching data)
+- Error states (failed to load)
+- Very long content (text overflow)
+- Very short content (min-height)
+- Missing optional content (graceful degradation)
+
+**User Input:**
+- Valid input
+- Invalid input
+- Required field left empty
+- Maximum character limits
+- Special characters
+- Copy/paste behavior
+
+**Interaction Edge Cases:**
+- Rapid clicking (debounce)
+- Slow network (loading states)
+- Network failure (error states)
+- Disabled states
+- Permission restrictions
+
+**Example Edge Case Specifications:**
+```
+Memory Form
+
+Empty State:
+- Show "Create your first memory" message
+- Display illustration
+- Show "Create Memory" CTA button
+- Explain what memories are
+
+Loading State:
+- Skeleton loader for form fields
+- Disable submit button
+- Show spinner on submit button
+- Maintain form layout
+
+Error States:
+- Inline validation on blur
+- Error summary at top of form
+- Specific error messages per field
+- Don't lose user's input
+- Allow correction and resubmission
+
+Content Edge Cases:
+- Memory title: 5-100 characters
+- Memory content: Required, min 10 characters
+- Recipients: At least one required
+- Images: Optional, max 10MB each
+- Long titles: Truncate with ellipsis
+- No recipients: Show warning, disable submit
+```
+
+## Animation & Interaction Specifications
+
+### Motion Specifications
+
+For animated elements, specify:
+
+**Properties:**
+- What animates (opacity, transform, position)
+- Duration (150ms, 200ms, 300ms)
+- Timing function (ease, ease-in-out, cubic-bezier)
+- Delay (if applicable)
+
+**Interactions:**
+- Trigger (hover, click, scroll, page load)
+- State changes
+- Entrance/exit animations
+- Loading animations
+
+**Example Animation Spec:**
+```
+Update Card Hover Animation
+
+Trigger: Mouse hover / Focus
+Properties animated:
+- Shadow: sm → md
+- Transform: scale(1) → scale(1.01)
+- Border: transparent → primary-100
+
+Duration: 150ms
+Timing: ease-in-out
+Delay: none
+
+Exit Animation:
+- Reverse all properties
+- Duration: 150ms
+- Timing: ease-in-out
+
+Accessibility:
+- Respect prefers-reduced-motion
+- Maintain hover state without animation
+- No animation for keyboard focus (instant)
+```
+
+## Content & Copy
+
+### Microcopy Guidelines
+
+Provide all UI text:
+
+**Labels:**
+- Button text
+- Link text
+- Form labels
+- Placeholder text
+- Helper text
+
+**Messages:**
+- Success messages
+- Error messages
+- Warning messages
+- Empty states
+- Loading states
+
+**Tone & Voice:**
+- Friendly and supportive
+- Clear and concise
+- Action-oriented
+- Encouraging for parents
+
+**Example Copy Specifications:**
+```
+Create Memory Form
+
+Page Title: "Share a New Memory"
+Subtitle: "Capture and share your precious moments with family"
+
+Form Fields:
+- Title Label: "Memory Title"
+- Title Placeholder: "First steps, birthday party..."
+- Title Helper: "Choose a memorable title (5-100 characters)"
+
+- Content Label: "What happened?"
+- Content Placeholder: "Tell your story..."
+- Content Helper: "Share the details of this special moment"
+
+Buttons:
+- Primary: "Share Memory"
+- Secondary: "Save as Draft"
+- Tertiary: "Cancel"
+
+Success Message: "Memory shared! Your family will love this."
+Error Message: "We couldn't save your memory. Please try again."
+```
+
+## Development Handoff Checklist
+
+### For Designers
+
+Before handoff, ensure:
+- [ ] All designs use design system components and tokens
+- [ ] All interactive states are documented
+- [ ] Responsive behavior is specified for all breakpoints
+- [ ] Accessibility requirements are annotated
+- [ ] Edge cases and error states are designed
+- [ ] Assets are exported and optimized
+- [ ] Copy and microcopy are finalized
+- [ ] Component specifications are complete
+- [ ] Any deviations from design system are documented
+- [ ] Interactive prototype is available (if applicable)
+
+### For Developers
+
+Before starting development:
+- [ ] Review all design specifications
+- [ ] Clarify any questions or ambiguities
+- [ ] Identify reusable components
+- [ ] Plan component architecture
+- [ ] Understand accessibility requirements
+- [ ] Review edge cases and error states
+- [ ] Confirm responsive breakpoints
+- [ ] Check asset availability and quality
+- [ ] Set up development environment
+- [ ] Create implementation plan
+
+### For QA Review
+
+Before marking as complete:
+- [ ] Visual accuracy matches designs
+- [ ] All interactive states implemented
+- [ ] Responsive behavior works at all breakpoints
+- [ ] Accessibility requirements met (WCAG 2.1 AA)
+- [ ] Edge cases and error states handled
+- [ ] Cross-browser testing completed
+- [ ] Performance benchmarks met
+- [ ] Component added to Storybook
+- [ ] Documentation updated
+- [ ] Code reviewed and approved
+
+## Communication Best Practices
+
+### Effective Collaboration
+
+**Regular Touchpoints:**
+- Daily standups for progress updates
+- Weekly design reviews
+- Bi-weekly design system reviews
+- Ad-hoc pair sessions for complex features
+
+**Communication Channels:**
+- Slack/Teams: Quick questions, status updates
+- Linear: Issue tracking, detailed specifications
+- Figma: Design feedback and comments
+- GitHub: Code review and technical discussion
+- Video calls: Complex discussions, pairing sessions
+
+**Documentation:**
+- Keep Figma files organized and up-to-date
+- Document decisions in Linear issues
+- Update design system documentation
+- Maintain Storybook with latest components
+- Archive old designs and specs
+
+### Feedback Guidelines
+
+**Giving Feedback:**
+- Be specific and constructive
+- Provide reasoning and context
+- Reference design system standards
+- Suggest alternatives when possible
+- Acknowledge constraints (technical, time, etc.)
+- Be respectful and professional
+
+**Receiving Feedback:**
+- Ask clarifying questions
+- Understand the reasoning
+- Consider alternative perspectives
+- Iterate based on feedback
+- Communicate constraints
+- Follow up on implementation
+
+## Tools & Resources
+
+### Design Tools
+- **Figma**: Primary design tool
+- **FigJam**: Collaborative whiteboarding
+- **Stark**: Accessibility checking in Figma
+
+### Development Tools
+- **Storybook**: Component library and documentation
+- **Chrome DevTools**: Inspection and debugging
+- **React DevTools**: React component inspection
+- **axe DevTools**: Accessibility testing
+
+### Collaboration Tools
+- **Linear**: Project management and issue tracking
+- **GitHub**: Code repository and version control
+- **Slack**: Team communication
+- **Figma Comments**: Design feedback
+
+### Reference Materials
+- Design System Documentation (this Storybook)
+- [Tailwind CSS Docs](https://tailwindcss.com/docs)
+- [WCAG Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [React Docs](https://react.dev/)
+
+## Common Pitfalls to Avoid
+
+### Design Pitfalls
+- ❌ Not using design system components
+- ❌ Creating one-off solutions instead of reusable patterns
+- ❌ Forgetting to design all states
+- ❌ Ignoring responsive breakpoints
+- ❌ Not considering accessibility from the start
+- ❌ Unclear or inconsistent specs
+
+### Development Pitfalls
+- ❌ Not asking clarifying questions
+- ❌ Deviating from designs without discussion
+- ❌ Hardcoding values instead of using design tokens
+- ❌ Skipping accessibility implementation
+- ❌ Not testing responsive behavior
+- ❌ Missing edge cases and error states
+
+### Process Pitfalls
+- ❌ Insufficient documentation
+- ❌ Unclear expectations and timelines
+- ❌ Lack of regular communication
+- ❌ No feedback loop
+- ❌ Rushing implementation without proper review
+
+## Success Metrics
+
+A successful design handoff results in:
+- ✅ Pixel-perfect implementation matching designs
+- ✅ All interactive states working correctly
+- ✅ Full WCAG 2.1 Level AA compliance
+- ✅ Responsive behavior at all breakpoints
+- ✅ Comprehensive documentation in Storybook
+- ✅ No back-and-forth due to unclear specifications
+- ✅ On-time delivery within estimated timeline
+- ✅ Positive collaboration between design and development
+- ✅ Reusable components added to design system
+- ✅ Maintained code quality and testing standards
+
+---
+
+This design handoff guide is a living document. As our process evolves and improves, this guide will be updated to reflect our learnings and best practices.
+

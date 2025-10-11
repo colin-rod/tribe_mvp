@@ -7,9 +7,9 @@ import { EnvelopeIcon, ClockIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
-import { FormMessage } from '@/components/ui/FormMessage'
-import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
+import { Alert } from '@/components/ui/Alert'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
 import type { AccountFormData, FormState, FormValidationResult } from '@/lib/types/profile'
@@ -377,21 +377,25 @@ export function AccountSection({ user }: AccountSectionProps) {
 
       {/* Form Messages */}
       {formState.success && (
-        <FormMessage
-          type="success"
-          message="Account settings updated successfully!"
-          details={formState.lastSaved ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
+        <Alert
+          variant="success"
+          title="Account settings updated successfully!"
           className="mt-6"
-        />
+        >
+          {formState.lastSaved && (
+            <p className="text-sm">Last saved at {formState.lastSaved.toLocaleTimeString()}</p>
+          )}
+        </Alert>
       )}
 
       {formState.error && (
-        <FormMessage
-          type="error"
-          message="Failed to update account settings"
-          details={formState.error}
+        <Alert
+          variant="error"
+          title="Failed to update account settings"
           className="mt-6"
-        />
+        >
+          <p className="text-sm">{formState.error}</p>
+        </Alert>
       )}
 
       {/* Delete Account Confirmation Dialog */}

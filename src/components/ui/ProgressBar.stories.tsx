@@ -1,5 +1,11 @@
-import type { Meta, StoryFn, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj, Decorator } from '@storybook/nextjs-vite'
 import { ProgressBar, CircularProgress } from './ProgressBar'
+
+const paddedDecorator: Decorator = (Story) => (
+  <div style={{ maxWidth: 480, padding: '2rem' }}>
+    <Story />
+  </div>
+)
 
 const meta: Meta<typeof ProgressBar> = {
   title: 'UI/ProgressBar',
@@ -30,13 +36,7 @@ const meta: Meta<typeof ProgressBar> = {
       description: 'Show percentage label'
     }
   },
-  decorators: [
-    (Story: StoryFn) => (
-      <div style={{ maxWidth: 480, padding: '2rem' }}>
-        <Story />
-      </div>
-    )
-  ]
+  decorators: [paddedDecorator]
 }
 
 export default meta

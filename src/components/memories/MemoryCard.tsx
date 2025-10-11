@@ -14,6 +14,7 @@ import {
 } from '@/lib/utils/memory-formatting'
 import { approveMemory } from '@/lib/memories'
 import { toast } from 'sonner'
+import { MetadataBadge } from '@/components/metadata'
 
 /**
  * Enhanced MemoryCard component for displaying memory previews with timeline styling
@@ -154,6 +155,44 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
           className="text-sm leading-relaxed"
         />
       </div>
+
+      {/* Metadata badges */}
+      {memory.metadata && (
+        <div className="relative z-10 mb-4 flex flex-wrap gap-1.5">
+          {memory.metadata.milestones?.map((milestone) => (
+            <MetadataBadge
+              key={milestone}
+              value={milestone}
+              category="milestones"
+              size="sm"
+            />
+          ))}
+          {memory.metadata.locations?.map((location) => (
+            <MetadataBadge
+              key={location}
+              value={location}
+              category="locations"
+              size="sm"
+            />
+          ))}
+          {memory.metadata.people?.map((person) => (
+            <MetadataBadge
+              key={person}
+              value={person}
+              category="people"
+              size="sm"
+            />
+          ))}
+          {memory.metadata.dates?.map((date) => (
+            <MetadataBadge
+              key={date}
+              value={date}
+              category="dates"
+              size="sm"
+            />
+          ))}
+        </div>
+      )}
 
       {/* Media preview */}
       {memory.media_urls && memory.media_urls.length > 0 && (

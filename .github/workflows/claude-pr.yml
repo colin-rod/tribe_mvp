@@ -1,0 +1,294 @@
+name: Claude Code PR Automation
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - 'claude/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  CI: true
+  NODE_ENV: test
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDU0ODYzOTIsImV4cCI6MTk2MTA2MjM5Mn0.placeholder-test-key-for-ci-builds-only
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  SENDGRID_API_KEY: SG.placeholder-sendgrid-ci-key
+  SENDGRID_FROM_EMAIL: ci@example.com
+  SENDGRID_FROM_NAME: Tribe CI
+  SUPABASE_SERVICE_ROLE_KEY: service-role-ci-key
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+  NEXTAUTH_SECRET: 0123456789abcdefghijklmnopqrstuv
+  NEXTAUTH_URL: http://localhost:3000
+
+jobs:
+  auto-pr-check:
+    name: Claude PR Quality Checks
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/claude/')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        id: lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run type checking
+        id: typecheck
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Run unit tests
+        id: test
+        run: npm run test:ci
+        continue-on-error: true
+
+      - name: Run color contrast checks
+        id: contrast
+        run: npm run check:contrast
+        continue-on-error: true
+
+      - name: Run accessibility tests
+        id: a11y
+        run: npm run test:a11y
+        continue-on-error: true
+
+      - name: Build application
+        id: build
+        run: npm run build
+        continue-on-error: true
+
+      - name: Generate quality report
+        id: quality-report
+        run: |
+          echo "## 🤖 Claude Code Quality Report" > quality-report.md
+          echo "" >> quality-report.md
+          echo "Automated quality checks for Claude-generated code." >> quality-report.md
+          echo "" >> quality-report.md
+          echo "### Quality Checks" >> quality-report.md
+          echo "" >> quality-report.md
+
+          # Linting
+          if [ "${{ steps.lint.outcome }}" == "success" ]; then
+            echo "- ✅ **Linting**: Passed" >> quality-report.md
+          else
+            echo "- ❌ **Linting**: Failed" >> quality-report.md
+          fi
+
+          # Type Checking
+          if [ "${{ steps.typecheck.outcome }}" == "success" ]; then
+            echo "- ✅ **Type Checking**: Passed" >> quality-report.md
+          else
+            echo "- ❌ **Type Checking**: Failed" >> quality-report.md
+          fi
+
+          # Tests
+          if [ "${{ steps.test.outcome }}" == "success" ]; then
+            echo "- ✅ **Unit Tests**: Passed" >> quality-report.md
+          else
+            echo "- ❌ **Unit Tests**: Failed" >> quality-report.md
+          fi
+
+          # Color Contrast
+          if [ "${{ steps.contrast.outcome }}" == "success" ]; then
+            echo "- ✅ **Color Contrast**: Passed" >> quality-report.md
+          else
+            echo "- ⚠️ **Color Contrast**: Failed" >> quality-report.md
+          fi
+
+          # Accessibility
+          if [ "${{ steps.a11y.outcome }}" == "success" ]; then
+            echo "- ✅ **Accessibility Tests**: Passed" >> quality-report.md
+          else
+            echo "- ⚠️ **Accessibility Tests**: Failed" >> quality-report.md
+          fi
+
+          # Build
+          if [ "${{ steps.build.outcome }}" == "success" ]; then
+            echo "- ✅ **Build**: Passed" >> quality-report.md
+          else
+            echo "- ❌ **Build**: Failed" >> quality-report.md
+          fi
+
+          echo "" >> quality-report.md
+          echo "### Next Steps" >> quality-report.md
+          echo "" >> quality-report.md
+
+          # Check if any critical checks failed
+          if [ "${{ steps.lint.outcome }}" != "success" ] || [ "${{ steps.typecheck.outcome }}" != "success" ] || [ "${{ steps.test.outcome }}" != "success" ] || [ "${{ steps.build.outcome }}" != "success" ]; then
+            echo "⚠️ **Critical checks failed.** Please review and fix the issues before merging." >> quality-report.md
+            echo "" >> quality-report.md
+            echo "Required checks:" >> quality-report.md
+            echo "- Linting must pass" >> quality-report.md
+            echo "- Type checking must pass" >> quality-report.md
+            echo "- Unit tests must pass" >> quality-report.md
+            echo "- Build must succeed" >> quality-report.md
+            echo "CHECKS_FAILED=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ **All critical checks passed!** This PR is ready for review." >> quality-report.md
+            echo "" >> quality-report.md
+            echo "Optional checks:" >> quality-report.md
+            echo "- Color contrast and accessibility tests are recommended but not blocking" >> quality-report.md
+            echo "CHECKS_FAILED=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "" >> quality-report.md
+          echo "---" >> quality-report.md
+          echo "*Generated by Claude Code PR Automation*" >> quality-report.md
+
+      - name: Find existing comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Claude Code Quality Report'
+
+      - name: Create or update PR comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: quality-report.md
+          edit-mode: replace
+
+      - name: Add labels
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = ['claude-generated', 'needs-review'];
+
+            // Add claude-generated label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels
+            });
+
+            // If checks failed, add failing-checks label
+            if ('${{ steps.quality-report.outputs.CHECKS_FAILED }}' === 'true') {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['failing-checks']
+              });
+            }
+
+      - name: Fail workflow if critical checks failed
+        if: steps.quality-report.outputs.CHECKS_FAILED == 'true'
+        run: |
+          echo "❌ Critical quality checks failed"
+          exit 1
+
+  auto-create-pr:
+    name: Auto-create PR if missing
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/claude/')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Check if PR exists
+        id: check-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          PR_COUNT=$(gh pr list --head "${BRANCH_NAME}" --json number --jq 'length')
+
+          if [ "$PR_COUNT" -eq "0" ]; then
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract issue ID from branch name
+        if: steps.check-pr.outputs.pr_exists == 'false'
+        id: extract-issue
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          # Extract CRO-XXX from branch name if present
+          if [[ "$BRANCH_NAME" =~ claude/(CRO-[0-9]+) ]]; then
+            ISSUE_ID="${BASH_REMATCH[1]}"
+            echo "issue_id=${ISSUE_ID}" >> $GITHUB_OUTPUT
+            echo "has_issue=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issue=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Extract description
+          DESCRIPTION=$(echo "$BRANCH_NAME" | sed 's/claude\///' | sed 's/CRO-[0-9]*-//')
+          TITLE=$(echo "$DESCRIPTION" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          echo "title=feat: ${TITLE}" >> $GITHUB_OUTPUT
+
+      - name: Create PR automatically
+        if: steps.check-pr.outputs.pr_exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          BASE_BRANCH="development"
+
+          # Check if development branch exists, otherwise use main
+          if ! git ls-remote --heads origin development | grep -q development; then
+            BASE_BRANCH="main"
+          fi
+
+          # Construct PR body
+          PR_BODY="## Summary
+
+Automated PR created for Claude Code branch: \`${BRANCH_NAME}\`
+
+"
+
+          if [ "${{ steps.extract-issue.outputs.has_issue }}" == "true" ]; then
+            PR_BODY+="## Linear Issue
+
+${{ steps.extract-issue.outputs.issue_id }}
+
+"
+          fi
+
+          PR_BODY+="## Changes
+
+Please review the changes in this branch.
+
+## Test Plan
+
+- Quality checks will run automatically via CI/CD
+- Manual testing and review required
+
+---
+
+🤖 Automatically created by [Claude Code](https://claude.com/claude-code)"
+
+          gh pr create \
+            --title "${{ steps.extract-issue.outputs.title }}" \
+            --body "${PR_BODY}" \
+            --base "${BASE_BRANCH}" \
+            --head "${BRANCH_NAME}"

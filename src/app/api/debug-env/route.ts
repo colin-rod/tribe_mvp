@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEnv, getClientEnv, checkEnvironmentHealth, getFeatureFlags } from '@/lib/env'
 import { withSecurity, SecurityConfigs } from '@/lib/middleware/security'
+import { createLogger } from '@/lib/logger'
 
 type RawEnvironmentSummary = {
   nodeEnv: string | undefined
@@ -107,7 +108,11 @@ type DebugReport = {
  *
  * GET /api/debug-env - Returns comprehensive environment debug information
  */
-export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequest) => {
+const logger = createLogger('DebugEnvironmentAPI')
+
+export const GET = withSecurity(SecurityConfigs.debug)(async (request: NextRequest) => {
+  const requestId = crypto.randomUUID()
+
   try {
     const timestamp = new Date().toISOString()
     const rawEnvironment: RawEnvironmentSummary = {
@@ -243,12 +248,16 @@ export const GET = withSecurity(SecurityConfigs.debug)(async (_request: NextRequ
     })
 
   } catch (error) {
+    logger.errorWithStack('Failed to generate debug environment report', error as Error, {
+      requestId,
+      path: request.nextUrl.pathname,
+      method: request.method
+    })
+
     return NextResponse.json({
-      message: 'Error generating environment debug report',
       status: 'error',
-      error: (error as Error).message,
-      stack: (error as Error).stack?.substring(0, 500),
-      timestamp: new Date().toISOString()
+      message: 'Unable to generate debug report',
+      requestId
     }, { status: 500 })
   }
 })

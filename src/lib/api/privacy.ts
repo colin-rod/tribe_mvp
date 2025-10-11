@@ -5,6 +5,7 @@ import type { PrivacyFormData } from '@/lib/types/profile'
 
 const logger = createLogger('privacy-api')
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>
 
 function getClient(): AnySupabaseClient {

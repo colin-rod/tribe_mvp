@@ -102,6 +102,7 @@ export async function createMemory(memoryData: CreateMemoryRequest): Promise<Mem
       rich_content: memoryData.rich_content as Json | undefined,
       content_format: memoryData.content_format || 'plain',
       milestone_type: memoryData.milestone_type,
+      metadata: memoryData.metadata as Json | undefined,
       media_urls: memoryData.media_urls || [],
       ai_analysis: (memoryData.ai_analysis as Json | undefined) || {},
       suggested_recipients: memoryData.suggested_recipients || [],

@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { cn } from '@/lib/utils'
 import { testTemplateSubstitution } from '@/lib/prompt-context'
 import {
@@ -599,12 +599,13 @@ export function TemplateManager() {
 
   if (error) {
     return (
-      <FormMessage
-        type="error"
-        message="Failed to load templates"
-        details={error}
+      <Alert
+        variant="error"
         className="m-4"
-      />
+        title="Failed to load templates"
+      >
+        {error}
+      </Alert>
     )
   }
 

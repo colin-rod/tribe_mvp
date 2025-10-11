@@ -4,51 +4,51 @@ import { createClient } from '@/lib/supabase/server'
 import { GroupCacheManager } from '@/lib/group-cache'
 
 // Mock dependencies
-jest.mock('@/lib/supabase/server')
-jest.mock('@/lib/group-cache')
+jest.mock('@/lib/supabase/server');
+jest.mock('@/lib/group-cache');
 jest.mock('next/headers', () => ({
   cookies: jest.fn().mockResolvedValue({})
-}))
+}));
 
-const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
+const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
 describe('Bulk Preferences API Tests', () => {
   let mockSupabase: {
-    auth: { getUser: jest.Mock }
-    from: jest.Mock
-  }
+    auth: { getUser: jest.Mock };
+    from: jest.Mock;
+  };
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.clearAllMocks();
 
     mockSupabase = {
       auth: {
-        getUser: jest.fn()
+        getUser: jest.fn(),
       },
-      from: jest.fn()
-    }
+      from: jest.fn(),
+    };
 
-    mockCreateClient.mockReturnValue(mockSupabase as never)
+    mockCreateClient.mockReturnValue(mockSupabase as never);
 
-    GroupCacheManager.invalidateUserCache = jest.fn()
-    GroupCacheManager.invalidateRecipientCache = jest.fn()
-  })
+    GroupCacheManager.invalidateUserCache = jest.fn();
+    GroupCacheManager.invalidateRecipientCache = jest.fn();
+  });
 
   describe('GET /api/preferences/bulk', () => {
-    const mockUser = { id: 'user-123' }
+    const mockUser = { id: 'user-123' };
 
     beforeEach(() => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
-        error: null
-      })
-    })
+        error: null,
+      });
+    });
 
     it('should fetch bulk preferences with groups and members', async () => {
       const mockGroups = [
         { id: 'group-1', name: 'Family', is_default_group: true },
-        { id: 'group-2', name: 'Friends', is_default_group: false }
-      ]
+        { id: 'group-2', name: 'Friends', is_default_group: false },
+      ];
 
       const mockMemberships = [
         {
@@ -59,21 +59,21 @@ describe('Bulk Preferences API Tests', () => {
           content_types: ['photos', 'text'],
           role: 'member',
           is_active: true,
-          recipients: { id: 'recipient-1', name: 'Grandma', email: 'grandma@example.com', relationship: 'grandparent', is_active: true }
-        }
-      ]
+          recipients: { id: 'recipient-1', name: 'Grandma', email: 'grandma@example.com', relationship: 'grandparent', is_active: true },
+        },
+      ];
 
-      mockSupabase.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        in: jest.fn().mockResolvedValue({ data: mockGroups, error: null })
-      })
-
-      mockSupabase.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnThis(),
-        in: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: mockMemberships, error: null })
-      })
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: mockGroups, error: null }),
+        })
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: mockMemberships, error: null }),
+        });
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk')
       const response = await GET(request)

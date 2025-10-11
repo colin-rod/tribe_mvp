@@ -36,6 +36,14 @@ export const contentFormats = [
 
 export type ContentFormat = typeof contentFormats[number]
 
+export const metadataSchema = z.object({
+  milestones: z.array(z.string().max(50)).max(10).default([]),
+  locations: z.array(z.string().max(50)).max(10).default([]),
+  dates: z.array(z.string()).max(10).default([]),
+  people: z.array(z.string().max(50)).max(10).default([]),
+  custom: z.record(z.any()).default({}),
+})
+
 export const updateFormSchema = z.object({
   childId: z.string().uuid('Please select a child'),
   content: z.string()
@@ -47,6 +55,7 @@ export const updateFormSchema = z.object({
   richContent: z.record(z.any()).optional(),
   contentFormat: z.enum(contentFormats).default('plain'),
   milestoneType: z.enum(milestoneTypes).optional(),
+  metadata: metadataSchema.optional(),
   mediaFiles: z.array(z.instanceof(File)).max(10, 'Maximum 10 photos allowed'),
   scheduledFor: z.date().optional(),
   confirmedRecipients: z.array(z.string().uuid()).default([])

@@ -1,4 +1,5 @@
 import * as sgMail from '@sendgrid/mail'
+import { randomUUID } from 'crypto'
 import { createLogger } from '@/lib/logger'
 import { getEnv, getFeatureFlags } from '@/lib/env'
 import { sanitizeHtml, sanitizeText, emailSchema } from '@/lib/validation/security'
@@ -149,11 +150,18 @@ export class ServerEmailService {
         throw new Error('Email service not properly configured - SENDGRID_API_KEY is required')
       }
 
+      // Redis is now required for production environments
+      const isProduction = process.env.NEXT_PUBLIC_APP_ENV === 'production'
+      if (isProduction && !env.REDIS_URL) {
+        throw new Error('Redis is required for production - REDIS_URL must be configured')
+      }
+
       this.logger.debug('Initializing SendGrid with API key', {
         hasApiKey: !!env.SENDGRID_API_KEY,
         fromEmail: env.SENDGRID_FROM_EMAIL,
         fromName: env.SENDGRID_FROM_NAME,
-        hasRedis: !!env.REDIS_URL
+        hasRedis: !!env.REDIS_URL,
+        environment: process.env.NEXT_PUBLIC_APP_ENV
       })
 
       sgMail.setApiKey(env.SENDGRID_API_KEY)
@@ -166,6 +174,9 @@ export class ServerEmailService {
 
         // Initialize queue worker
         this.initializeQueueWorker()
+      } else {
+        // Development mode without Redis - warn but allow
+        this.logger.warn('Redis not configured - emails will send synchronously (development only)')
       }
 
       this.logger.info('ServerEmailService initialized successfully', {
@@ -215,7 +226,7 @@ export class ServerEmailService {
   }
 
   private generateMessageId(): string {
-    return `tribe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `tribe-${Date.now()}-${randomUUID()}`
   }
 
   /**
@@ -365,17 +376,24 @@ export class ServerEmailService {
           statusCode: 202 // Accepted for processing
         }
       } catch (error) {
-        this.logger.error('Failed to queue email, falling back to direct send', {
+        this.logger.error('Failed to queue email', {
           error: error instanceof Error ? error.message : String(error),
           to: options.to
         })
 
-        // Fall back to direct send if queue fails
-        return await this.sendEmailDirect(options)
+        return {
+          success: false,
+          error: 'Email queue unavailable. Please try again later.',
+          statusCode: 503 // Service Unavailable
+        }
       }
     }
 
-    // Send directly if queue not available
+    // Development mode without queue - send directly but warn
+    this.logger.warn('Sending email directly without queue (development only)', {
+      to: options.to,
+      subject: options.subject
+    })
     return await this.sendEmailDirect(options)
   }
 
@@ -486,16 +504,24 @@ export class ServerEmailService {
           statusCode: 202 // Accepted for processing
         }))
       } catch (error) {
-        this.logger.error('Failed to queue bulk emails, falling back to direct send', {
+        this.logger.error('Failed to queue bulk emails', {
           error: error instanceof Error ? error.message : String(error),
           count: emails.length
         })
 
-        // Fall back to direct send if queue fails
+        return emails.map(() => ({
+          success: false,
+          error: 'Email queue unavailable. Please try again later.',
+          statusCode: 503 // Service Unavailable
+        }))
       }
     }
 
-    // Send directly if queue not available
+    // Development mode without queue - send directly but warn
+    this.logger.warn('Sending bulk emails directly without queue (development only)', {
+      count: emails.length
+    })
+
     const results: EmailDeliveryResult[] = []
 
     // SendGrid recommends sending up to 1000 emails in a single request

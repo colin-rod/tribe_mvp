@@ -6,7 +6,7 @@ const logger = createLogger('Page')
 import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { PasswordStrengthIndicator, PasswordStrengthCompact } from '@/components/ui/PasswordStrengthIndicator'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog'
 import { FormField } from '@/components/ui/FormField'
 import { Input } from '@/components/ui/Input'
@@ -133,29 +133,21 @@ export default function ProfileDemoPage() {
           <section className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-6">Form Messages & Feedback</h2>
             <div className="space-y-4">
-              <FormMessage
-                type="success"
-                message="Profile updated successfully!"
-                details="All changes have been saved to your account."
-              />
+              <Alert variant="success" title="Profile updated successfully!">
+                All changes have been saved to your account.
+              </Alert>
 
-              <FormMessage
-                type="error"
-                message="Failed to update profile"
-                details="Please check your internet connection and try again."
-              />
+              <Alert variant="error" title="Failed to update profile">
+                Please check your internet connection and try again.
+              </Alert>
 
-              <FormMessage
-                type="warning"
-                message="Your password will expire soon"
-                details="Consider updating your password for better security."
-              />
+              <Alert variant="warning" title="Your password will expire soon">
+                Consider updating your password for better security.
+              </Alert>
 
-              <FormMessage
-                type="info"
-                message="Two-factor authentication recommended"
-                details="Enable 2FA to add an extra layer of security to your account."
-              />
+              <Alert variant="info" title="Two-factor authentication recommended">
+                Enable 2FA to add an extra layer of security to your account.
+              </Alert>
             </div>
           </section>
 

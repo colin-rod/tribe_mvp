@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { IconOptionSelector, type IconOption } from '@/components/ui/IconOptionSelector'
 import {
   updateRecipientPreferences,
   resetToGroupDefaults,
@@ -14,6 +15,49 @@ import {
 } from '@/lib/preference-links'
 import { updatePreferencesSchema } from '@/lib/validation/recipients'
 import { z } from 'zod'
+
+// Icon components for preferences
+const BoltIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+  </svg>
+)
+
+const CalendarDayIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
+
+const CalendarWeekIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
+
+const CalendarMonthIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
+
+const EmailIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+)
+
+const PhoneIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+  </svg>
+)
+
+const WhatsAppIcon = () => (
+  <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+  </svg>
+)
 
 interface PreferenceFormProps {
   recipient: RecipientWithGroup
@@ -41,6 +85,100 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
 
   const options = getPreferenceOptions()
 
+  // Icon-based frequency options
+  const frequencyIconOptions: IconOption<PreferenceUpdate['frequency']>[] = [
+    {
+      value: 'instant',
+      label: 'Instant',
+      description: 'Right away, as they happen',
+      icon: <BoltIcon />
+    },
+    {
+      value: 'daily',
+      label: 'Daily',
+      description: 'Once per day digest',
+      icon: <CalendarDayIcon />
+    },
+    {
+      value: 'weekly',
+      label: 'Weekly',
+      description: 'Once per week digest',
+      icon: <CalendarWeekIcon />
+    },
+    {
+      value: 'monthly',
+      label: 'Monthly',
+      description: 'Once per month digest',
+      icon: <CalendarMonthIcon />
+    }
+  ]
+
+  // Icon-based channel options
+  const channelIconOptions: IconOption<'email' | 'sms' | 'whatsapp'>[] = [
+    {
+      value: 'email',
+      label: 'Email',
+      description: 'Email notifications',
+      icon: <EmailIcon />
+    },
+    {
+      value: 'sms',
+      label: 'SMS',
+      description: 'Text messages',
+      icon: <PhoneIcon />
+    },
+    {
+      value: 'whatsapp',
+      label: 'WhatsApp',
+      description: 'WhatsApp messages',
+      icon: <WhatsAppIcon />
+    }
+  ]
+
+  // Content type icon options
+  const contentTypeIconOptions: IconOption<'photos' | 'text' | 'milestones'>[] = [
+    {
+      value: 'photos',
+      label: 'Photos',
+      description: 'Pictures and videos',
+      emoji: '📸'
+    },
+    {
+      value: 'text',
+      label: 'Text',
+      description: 'Text updates',
+      emoji: '📝'
+    },
+    {
+      value: 'milestones',
+      label: 'Milestones',
+      description: 'Important moments',
+      emoji: '⭐'
+    }
+  ]
+
+  // Importance threshold icon options
+  const importanceThresholdOptions: IconOption<NonNullable<PreferenceUpdate['importance_threshold']>>[] = [
+    {
+      value: 'all_updates',
+      label: 'All Updates',
+      description: 'Receive every memory shared',
+      emoji: '📋'
+    },
+    {
+      value: 'medium_and_up',
+      label: 'Medium & Up',
+      description: 'Moderate and important updates only',
+      emoji: '⚠️'
+    },
+    {
+      value: 'high_only',
+      label: 'High Priority',
+      description: 'Only the most important moments',
+      emoji: '🔥'
+    }
+  ]
+
   const handleFrequencyChange = (frequency: PreferenceUpdate['frequency']) => {
     setPreferences(prev => ({ ...prev, frequency }))
     setErrors(prev => ({ ...prev, frequency: undefined }))
@@ -48,28 +186,6 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
 
   const handleImportanceThresholdChange = (threshold: NonNullable<PreferenceUpdate['importance_threshold']>) => {
     setPreferences(prev => ({ ...prev, importance_threshold: threshold }))
-  }
-
-  const handleChannelChange = (channel: 'email' | 'sms' | 'whatsapp', checked: boolean) => {
-    setPreferences(prev => {
-      const newChannels = checked
-        ? [...prev.preferred_channels, channel]
-        : prev.preferred_channels.filter(c => c !== channel)
-
-      return { ...prev, preferred_channels: newChannels as PreferenceUpdate['preferred_channels'] }
-    })
-    setErrors(prev => ({ ...prev, preferred_channels: undefined }))
-  }
-
-  const handleContentTypeChange = (contentType: string, checked: boolean) => {
-    setPreferences(prev => {
-      const newContentTypes = checked
-        ? [...prev.content_types, contentType]
-        : prev.content_types.filter(c => c !== contentType)
-
-      return { ...prev, content_types: newContentTypes as PreferenceUpdate['content_types'] }
-    })
-    setErrors(prev => ({ ...prev, content_types: undefined }))
   }
 
   const validateForm = (): boolean => {
@@ -155,48 +271,26 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         <label className="text-base font-medium text-gray-900">
           How often would you like to receive memories?
         </label>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-1 mb-4">
           Choose how frequently you want to be notified about new memories
         </p>
 
-        <fieldset className="mt-4">
-          <legend className="sr-only">Memory frequency</legend>
-          <div className="space-y-3">
-            {options.frequencies.map((option) => {
-              const isGroupDefault = recipient.group && recipient.group.default_frequency === option.value
-              return (
-                <div key={option.value} className={`flex items-start ${isGroupDefault ? 'bg-blue-50 border border-blue-200 rounded-md p-3' : 'p-1'}`}>
-                  <div className="flex items-center h-5">
-                    <input
-                      id={`frequency-${option.value}`}
-                      name="frequency"
-                      type="radio"
-                      checked={preferences.frequency === option.value}
-                      onChange={() => handleFrequencyChange(option.value as PreferenceUpdate['frequency'])}
-                      className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm flex-1">
-                    <div className="flex items-center gap-2">
-                      <label
-                        htmlFor={`frequency-${option.value}`}
-                        className="font-medium text-gray-700 cursor-pointer"
-                      >
-                        {option.label}
-                      </label>
-                      {isGroupDefault && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Group Default
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-500">{option.description}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </fieldset>
+        <IconOptionSelector
+          options={frequencyIconOptions}
+          value={preferences.frequency}
+          onChange={(value) => handleFrequencyChange(value as PreferenceUpdate['frequency'])}
+          mode="single"
+          size="md"
+          columns={{ mobile: 1, tablet: 2, desktop: 4 }}
+          ariaLabel="Memory frequency"
+          badges={recipient.group && recipient.group.default_frequency ? {
+            [recipient.group.default_frequency]: (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
+                Default
+              </span>
+            )
+          } : undefined}
+        />
 
         {errors.frequency && (
           <p className="mt-2 text-sm text-red-600" role="alert">
@@ -205,43 +299,24 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         )}
       </div>
 
-      {/* Importance Threshold Selection - NEW FEATURE */}
+      {/* Importance Threshold Selection */}
       <div>
         <label className="text-base font-medium text-gray-900">
           What types of memories do you want to receive?
         </label>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-1 mb-4">
           Control which memories reach you based on their importance
         </p>
 
-        <fieldset className="mt-4">
-          <legend className="sr-only">Memory importance threshold</legend>
-          <div className="space-y-3">
-            {options.importanceThresholds.map((option) => (
-              <div key={option.value} className="flex items-start p-1">
-                <div className="flex items-center h-5">
-                  <input
-                    id={`importance-${option.value}`}
-                    name="importance_threshold"
-                    type="radio"
-                    checked={preferences.importance_threshold === option.value}
-                    onChange={() => handleImportanceThresholdChange(option.value as NonNullable<PreferenceUpdate['importance_threshold']>)}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
-                  />
-                </div>
-                <div className="ml-3 text-sm flex-1">
-                  <label
-                    htmlFor={`importance-${option.value}`}
-                    className="font-medium text-gray-700 cursor-pointer"
-                  >
-                    {option.label}
-                  </label>
-                  <p className="text-gray-500">{option.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </fieldset>
+        <IconOptionSelector
+          options={importanceThresholdOptions}
+          value={preferences.importance_threshold || 'all_updates'}
+          onChange={(value) => handleImportanceThresholdChange(value as NonNullable<PreferenceUpdate['importance_threshold']>)}
+          mode="single"
+          size="md"
+          columns={{ mobile: 1, tablet: 2, desktop: 3 }}
+          ariaLabel="Memory importance threshold"
+        />
 
         {/* Helpful info box */}
         <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-md p-3">
@@ -266,48 +341,29 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         <label className="text-base font-medium text-gray-900">
           How would you like to receive memories?
         </label>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-1 mb-4">
           Select one or more ways to receive notifications (at least one required)
         </p>
 
-        <fieldset className="mt-4">
-          <legend className="sr-only">Communication channels</legend>
-          <div className="space-y-3">
-            {options.channels.map((option) => {
-              const isGroupDefault = recipient.group && recipient.group.default_channels.includes(option.value as 'email' | 'sms' | 'whatsapp')
-              return (
-                <div key={option.value} className={`flex items-start ${isGroupDefault ? 'bg-blue-50 border border-blue-200 rounded-md p-3' : 'p-1'}`}>
-                  <div className="flex items-center h-5">
-                    <input
-                      id={`channel-${option.value}`}
-                      name="channels"
-                      type="checkbox"
-                      checked={preferences.preferred_channels.includes(option.value as 'email' | 'sms' | 'whatsapp')}
-                      onChange={(e) => handleChannelChange(option.value as 'email' | 'sms' | 'whatsapp', e.target.checked)}
-                      className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm flex-1">
-                    <div className="flex items-center gap-2">
-                      <label
-                        htmlFor={`channel-${option.value}`}
-                        className="font-medium text-gray-700 cursor-pointer"
-                      >
-                        {option.label}
-                      </label>
-                      {isGroupDefault && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Group Default
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-500">{option.description}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </fieldset>
+        <IconOptionSelector
+          options={channelIconOptions}
+          value={preferences.preferred_channels}
+          onChange={(value) => setPreferences(prev => ({ ...prev, preferred_channels: value as PreferenceUpdate['preferred_channels'] }))}
+          mode="multi"
+          size="md"
+          columns={{ mobile: 1, tablet: 2, desktop: 3 }}
+          ariaLabel="Communication channels"
+          badges={recipient.group && recipient.group.default_channels.length > 0 ?
+            Object.fromEntries(
+              recipient.group.default_channels.map(channel => [
+                channel,
+                <span key={channel} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
+                  Default
+                </span>
+              ])
+            ) : undefined
+          }
+        />
 
         {errors.preferred_channels && (
           <p className="mt-2 text-sm text-red-600" role="alert">
@@ -321,38 +377,19 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
         <label className="text-base font-medium text-gray-900">
           What types of content would you like to receive?
         </label>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-1 mb-4">
           Choose what types of memories you want to see (at least one required)
         </p>
 
-        <fieldset className="mt-4">
-          <legend className="sr-only">Content types</legend>
-          <div className="space-y-3">
-            {options.contentTypes.map((option) => (
-              <div key={option.value} className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id={`content-${option.value}`}
-                    name="content_types"
-                    type="checkbox"
-                    checked={preferences.content_types.includes(option.value as 'photos' | 'text' | 'milestones')}
-                    onChange={(e) => handleContentTypeChange(option.value, e.target.checked)}
-                    className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label
-                    htmlFor={`content-${option.value}`}
-                    className="font-medium text-gray-700 cursor-pointer"
-                  >
-                    {option.label}
-                  </label>
-                  <p className="text-gray-500">{option.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </fieldset>
+        <IconOptionSelector
+          options={contentTypeIconOptions}
+          value={preferences.content_types}
+          onChange={(value) => setPreferences(prev => ({ ...prev, content_types: value as PreferenceUpdate['content_types'] }))}
+          mode="multi"
+          size="md"
+          columns={{ mobile: 1, tablet: 2, desktop: 3 }}
+          ariaLabel="Content types"
+        />
 
         {errors.content_types && (
           <p className="mt-2 text-sm text-red-600" role="alert">
