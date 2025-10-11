@@ -1,6 +1,22 @@
 'use client'
 
 import { useState, useEffect, useCallback, useId } from 'react'
+import {
+  Smile,
+  RefreshCcw,
+  Armchair,
+  Baby,
+  Footprints,
+  MessageCircle,
+  Sparkle,
+  Accessibility,
+  Toilet,
+  School,
+  Cake,
+  Sparkles,
+  PartyPopper
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ChildProfileSelector } from '@/components/children/ChildProfileSelector'
 import SmartContextualInput from './SmartContextualInput'
@@ -11,28 +27,28 @@ import { detectMilestone, type MilestoneCandidate } from '@/lib/milestones/detec
 interface MilestoneOption {
   value: MilestoneType
   label: string
-  emoji: string
+  icon: LucideIcon
 }
 
-const milestoneEmojis: Record<MilestoneType, string> = {
-  first_smile: '😊',
-  rolling: '🔄',
-  sitting: '🧘',
-  crawling: '🐾',
-  first_steps: '👣',
-  first_words: '🗣️',
-  first_tooth: '🦷',
-  walking: '🚶',
-  potty_training: '🚽',
-  first_day_school: '🎒',
-  birthday: '🎂',
-  other: '✨'
+const milestoneIcons: Record<MilestoneType, LucideIcon> = {
+  first_smile: Smile,
+  rolling: RefreshCcw,
+  sitting: Armchair,
+  crawling: Baby,
+  first_steps: Footprints,
+  first_words: MessageCircle,
+  first_tooth: Sparkle,
+  walking: Accessibility,
+  potty_training: Toilet,
+  first_day_school: School,
+  birthday: Cake,
+  other: Sparkles
 }
 
 const milestoneOptions: MilestoneOption[] = milestoneTypes.map((type) => ({
   value: type,
   label: getMilestoneLabel(type),
-  emoji: milestoneEmojis[type] ?? '✨'
+  icon: milestoneIcons[type] ?? Sparkles
 }))
 
 interface MemoryFormProps {
@@ -207,8 +223,8 @@ export default function MemoryForm({
   const selectedMilestoneLabel = formData.milestoneType
     ? getMilestoneLabel(formData.milestoneType)
     : null
-  const selectedMilestoneEmoji = formData.milestoneType
-    ? milestoneEmojis[formData.milestoneType] ?? '✨'
+  const SelectedMilestoneIcon = formData.milestoneType
+    ? milestoneIcons[formData.milestoneType] ?? Sparkles
     : null
   const suggestionLabel = suggestedMilestone
     ? getMilestoneLabel(suggestedMilestone.type)
@@ -271,7 +287,7 @@ export default function MemoryForm({
             <div className="flex flex-wrap items-center gap-3" role="status" aria-live="polite">
               <div className="inline-flex flex-col gap-1 rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm text-primary-700 sm:flex-row sm:items-center sm:gap-2">
                 <span className="inline-flex items-center gap-2 font-medium">
-                  <span aria-hidden="true">🎉</span>
+                  <PartyPopper className="h-4 w-4" aria-hidden="true" />
                   <span>Detected milestone:</span>
                   <span className="font-semibold">{suggestionLabel}</span>
                 </span>
@@ -303,10 +319,8 @@ export default function MemoryForm({
           ) : selectedMilestoneLabel ? (
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700">
-                {selectedMilestoneEmoji && (
-                  <span aria-hidden="true" className="text-lg">
-                    {selectedMilestoneEmoji}
-                  </span>
+                {SelectedMilestoneIcon && (
+                  <SelectedMilestoneIcon className="h-4 w-4" aria-hidden="true" />
                 )}
                 <span>Selected milestone:</span>
                 <span className="font-semibold">{selectedMilestoneLabel}</span>
@@ -369,9 +383,7 @@ export default function MemoryForm({
                       aria-pressed={isSelected}
                       disabled={isLoading}
                     >
-                      <span className="text-xl" aria-hidden="true">
-                        {option.emoji}
-                      </span>
+                      <option.icon className="h-6 w-6" aria-hidden="true" />
                       <span className="mt-1 text-xs font-medium">{option.label}</span>
                     </button>
                   )
