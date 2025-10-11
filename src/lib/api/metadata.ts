@@ -5,11 +5,7 @@
 import type {
   MemoryMetadata,
   MetadataCategory,
-  MetadataAutocompleteRequest,
   MetadataAutocompleteResponse,
-  UpdateMetadataRequest,
-  UpdateMetadataCategoryRequest,
-  BulkUpdateMetadataRequest,
   BulkUpdateMetadataResponse,
 } from '@/lib/types/memory'
 

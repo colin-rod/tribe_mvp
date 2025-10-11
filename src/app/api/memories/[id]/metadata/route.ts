@@ -13,7 +13,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import type { MetadataCategory } from '@/lib/types/memory'
 
 // Validation schemas
 const metadataSchema = z.object({

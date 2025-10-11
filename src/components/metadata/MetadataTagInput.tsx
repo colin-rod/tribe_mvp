@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 import type { MetadataCategory, MetadataAutocompleteSuggestion } from '@/lib/types/memory'
 import { getMetadataAutocomplete } from '@/lib/api/metadata'
 import { MetadataBadge } from './MetadataBadge'
-import { X, Plus } from 'lucide-react'
 
 export interface MetadataTagInputProps {
   /** The metadata category */
@@ -55,7 +54,6 @@ export function MetadataTagInput({
   const [suggestions, setSuggestions] = useState<MetadataAutocompleteSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const debounceTimerRef = useRef<NodeJS.Timeout>()
@@ -77,7 +75,6 @@ export function MetadataTagInput({
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        setIsLoading(true)
         const response = await getMetadataAutocomplete(category, inputValue, 10)
 
         // Filter out values already selected
@@ -89,10 +86,9 @@ export function MetadataTagInput({
         setShowSuggestions(filteredSuggestions.length > 0)
         setSelectedIndex(-1)
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Failed to fetch autocomplete suggestions:', error)
         setSuggestions([])
-      } finally {
-        setIsLoading(false)
       }
     }, 300)
 
@@ -255,11 +251,6 @@ export function MetadataTagInput({
             )}
             aria-label={`Add ${category}`}
             aria-autocomplete="list"
-            aria-controls={showSuggestions ? `${category}-suggestions` : undefined}
-            aria-expanded={showSuggestions}
-            aria-activedescendant={
-              selectedIndex >= 0 ? `${category}-suggestion-${selectedIndex}` : undefined
-            }
           />
         )}
 
