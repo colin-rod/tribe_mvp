@@ -237,9 +237,11 @@ PR_URL=$(gh pr create \
     --title "${PR_TITLE}" \
     --body "${PR_BODY}" \
     --base "${BASE_BRANCH}" \
-    --head "${BRANCH_NAME}")
+    --head "${BRANCH_NAME}" \
+    --label "claude")
 
 print_success "Pull Request created!"
+print_success "Claude label automatically added"
 echo ""
 print_info "PR URL: ${PR_URL}"
 echo ""
