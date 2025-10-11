@@ -1,6 +1,7 @@
 /**
  * Navigation Items Configuration
  * CRO-294: Left Navigation Panel - Structure & Toggle
+ * CRO-534: Memory Book Experience - Unified Dashboard Navigation
  * Updated for Memory Book Experience (Updates → Memories, Digests → Summaries)
  */
 
@@ -39,9 +40,9 @@ export const navigationItems: NavItem[] = [
     href: '/dashboard/recipients',
   },
   {
-    id: 'drafts',
-    label: 'Drafts',
+    id: 'summaries',
+    label: 'Summaries',
     icon: DocumentTextIcon,
-    href: '/dashboard/drafts',
+    href: '/dashboard/digests',
   },
 ];
