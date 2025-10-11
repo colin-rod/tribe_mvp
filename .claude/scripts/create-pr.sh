@@ -103,8 +103,18 @@ git status -s
 
 # Create and checkout new branch
 print_section "Step 2: Creating Feature Branch"
+
+# Determine base branch (development preferred, fallback to main)
+BASE_BRANCH="development"
+if git show-ref --verify --quiet "refs/remotes/origin/development"; then
+    BASE_BRANCH="development"
+elif git show-ref --verify --quiet "refs/remotes/origin/main"; then
+    BASE_BRANCH="main"
+fi
+
 CURRENT_BRANCH=$(git branch --show-current)
 print_info "Current branch: ${CURRENT_BRANCH}"
+print_info "Base branch: ${BASE_BRANCH}"
 
 # Check if branch already exists
 if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
@@ -112,7 +122,14 @@ if git show-ref --verify --quiet "refs/heads/${BRANCH_NAME}"; then
     print_info "Checking out existing branch..."
     git checkout "${BRANCH_NAME}"
 else
-    print_info "Creating new branch: ${BRANCH_NAME}"
+    # Ensure we're branching from the correct base branch
+    if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+        print_info "Switching to ${BASE_BRANCH} first..."
+        git checkout "${BASE_BRANCH}"
+        git pull origin "${BASE_BRANCH}"
+    fi
+
+    print_info "Creating new branch: ${BRANCH_NAME} from ${BASE_BRANCH}"
     git checkout -b "${BRANCH_NAME}"
     print_success "Branch created"
 fi
@@ -220,16 +237,6 @@ All required quality checks have been completed successfully.
 ---
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"
-
-# Determine base branch (default to development)
-BASE_BRANCH="development"
-if git show-ref --verify --quiet "refs/remotes/origin/development"; then
-    BASE_BRANCH="development"
-elif git show-ref --verify --quiet "refs/remotes/origin/main"; then
-    BASE_BRANCH="main"
-fi
-
-print_info "Base branch: ${BASE_BRANCH}"
 
 # Create PR
 print_info "Creating Pull Request..."
