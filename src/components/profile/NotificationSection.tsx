@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createLogger } from '@/lib/logger'
 import { Button } from '@/components/ui/Button'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import { useNotificationManager } from '@/hooks/useNotificationManager'
@@ -233,11 +233,12 @@ function NotificationSectionComponent({ user: _user }: NotificationSectionProps)
   if (!preferences) {
     return (
       <div className="p-6">
-        <FormMessage
-          type="error"
-          message="Failed to load notification preferences"
-          details={error || 'Please try refreshing the page'}
-        />
+        <Alert
+          variant="error"
+          title="Failed to load notification preferences"
+        >
+          {error || 'Please try refreshing the page.'}
+        </Alert>
       </div>
     )
   }
@@ -658,21 +659,23 @@ function NotificationSectionComponent({ user: _user }: NotificationSectionProps)
 
       {/* Global Messages */}
       {error && (
-        <FormMessage
-          type="error"
-          message="Failed to update notification preferences"
-          details={error}
+        <Alert
+          variant="error"
           className="mt-6"
-        />
+          title="Failed to update notification preferences"
+        >
+          {error}
+        </Alert>
       )}
 
       {testNotificationSent && (
-        <FormMessage
-          type="success"
-          message="Test notification sent!"
-          details="Check your enabled notification channels for the test message."
+        <Alert
+          variant="success"
           className="mt-6"
-        />
+          title="Test notification sent"
+        >
+          Check your enabled notification channels for the test message.
+        </Alert>
       )}
 
       {saving && (

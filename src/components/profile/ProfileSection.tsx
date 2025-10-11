@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { FormField } from '@/components/ui/FormField'
-import { FormMessage } from '@/components/ui/FormMessage'
+import { Alert } from '@/components/ui/Alert'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
 import type { ProfileFormData, FormState, FormValidationResult } from '@/lib/types/profile'
@@ -34,33 +34,12 @@ const TIMEZONE_OPTIONS = [
   { value: 'Pacific/Auckland', label: 'Auckland (NZST)' }
 ]
 
-const LANGUAGE_OPTIONS = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'fr', label: 'Français' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'pt', label: 'Português' },
-  { value: 'ja', label: '日本語' },
-  { value: 'ko', label: '한국어' },
-  { value: 'zh', label: '中文' }
-]
-
-const DATE_FORMAT_OPTIONS = [
-  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (US)' },
-  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (UK)' },
-  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (ISO)' },
-  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (EU)' }
-]
-
 export function ProfileSection({ user }: ProfileSectionProps) {
   const [formData, setFormData] = useState<ProfileFormData>({
     firstName: user.user_metadata?.firstName || '',
     lastName: user.user_metadata?.lastName || '',
     bio: user.user_metadata?.bio || '',
     timezone: user.user_metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-    language: user.user_metadata?.language || 'en',
-    dateFormat: user.user_metadata?.dateFormat || 'MM/DD/YYYY',
     avatar: user.user_metadata?.avatar || ''
   })
 
@@ -280,71 +259,25 @@ export function ProfileSection({ user }: ProfileSectionProps) {
           </select>
         </FormField>
 
-        {/* Language Field */}
-        <FormField
-          label="Language"
-          optional
-          description="Your preferred language for the interface"
-        >
-          <select
-            id="language"
-            value={formData.language}
-            onChange={(e) => handleInputChange('language', e.target.value)}
-            className={cn(
-              'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
-              'disabled:cursor-not-allowed disabled:opacity-50'
-            )}
-            aria-describedby="language-description"
-          >
-            {LANGUAGE_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </FormField>
-
-        {/* Date Format Field */}
-        <FormField
-          label="Date Format"
-          optional
-          description="How dates are displayed throughout the app"
-        >
-          <select
-            id="dateFormat"
-            value={formData.dateFormat}
-            onChange={(e) => handleInputChange('dateFormat', e.target.value)}
-            className={cn(
-              'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
-              'disabled:cursor-not-allowed disabled:opacity-50'
-            )}
-            aria-describedby="dateFormat-description"
-          >
-            {DATE_FORMAT_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </FormField>
-
         {/* Form Messages */}
         {formState.success && (
-          <FormMessage
-            type="success"
-            message="Profile updated successfully!"
-            details={formState.lastSaved ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}` : undefined}
-          />
+          <Alert
+            variant="success"
+            title="Profile updated"
+          >
+            {formState.lastSaved
+              ? `Last saved at ${formState.lastSaved.toLocaleTimeString()}`
+              : 'Your profile details are up to date.'}
+          </Alert>
         )}
 
         {formState.error && (
-          <FormMessage
-            type="error"
-            message="Failed to update profile"
-            details={formState.error}
-          />
+          <Alert
+            variant="error"
+            title="Failed to update profile"
+          >
+            {formState.error}
+          </Alert>
         )}
 
         {/* Submit Button */}

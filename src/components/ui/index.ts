@@ -54,7 +54,6 @@ export { LoadingOverlay, InlineLoadingOverlay, type LoadingOverlayProps, type In
 
 // Form Components (re-export existing ones)
 export { FormField } from './FormField'
-export { FormMessage } from './FormMessage'
 export { default as DateInput } from './DateInput'
 export { ConfirmationDialog } from './ConfirmationDialog'
 export { DeliveryStatusBadge } from './DeliveryStatusBadge'

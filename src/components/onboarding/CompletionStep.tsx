@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Alert } from '@/components/ui/Alert'
 import { cn } from '@/lib/utils'
 import type { OnboardingData } from '@/hooks/useOnboarding'
 import {
@@ -36,6 +37,7 @@ export function CompletionStep({
   if (data.profile?.name) accomplishments.push('profile')
   if (data.child?.name) accomplishments.push(`${data.child.name}`)
   if (data.recipients?.recipients?.length) accomplishments.push(`${data.recipients.recipients.length} recipient${data.recipients.recipients.length !== 1 ? 's' : ''}`)
+  const accomplishmentSummary = accomplishments.length > 0 ? accomplishments.join(', ') : 'your account basics'
   const childDisplayName = data.child?.name ?? 'your child'
 
   return (
@@ -75,12 +77,16 @@ export function CompletionStep({
       </div>
 
       {/* Brief Accomplishment */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-green-800 text-sm">
-          <CheckCircleIcon className="w-4 h-4 inline mr-1" />
-          Set up {accomplishments.join(', ')}
+      <Alert
+        variant="success"
+        title="Setup complete"
+        icon={<CheckCircleIcon className="h-5 w-5" aria-hidden="true" />}
+        className="text-left sm:text-center sm:[&>div]:items-center sm:[&>div]:justify-center"
+      >
+        <p className="text-sm">
+          You&apos;ve set up {accomplishmentSummary}. Everything is ready for your first memory.
         </p>
-      </div>
+      </Alert>
 
       {/* Single Primary CTA */}
       <div className="space-y-4">

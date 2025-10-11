@@ -37,13 +37,26 @@ export async function POST(request: NextRequest) {
     // Check rate limiting with enhanced system
     const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
     if (!rateLimitResult.allowed) {
+      const { info } = rateLimitResult
       return NextResponse.json(
         {
-          error: 'Rate limit exceeded',
-          remaining: rateLimitResult.info.remaining,
-          resetTime: rateLimitResult.info.resetTime
+          error: 'Rate limit exceeded. Please try again later.',
+          details: {
+            limit: info.total,
+            remaining: info.remaining,
+            resetTime: new Date(info.resetTime).toISOString(),
+            retryAfter: Math.ceil((info.resetTime - Date.now()) / 1000)
+          }
         },
-        { status: 429 }
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': info.total.toString(),
+            'X-RateLimit-Remaining': info.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(info.resetTime / 1000).toString(),
+            'Retry-After': Math.ceil((info.resetTime - Date.now()) / 1000).toString()
+          }
+        }
       )
     }
 

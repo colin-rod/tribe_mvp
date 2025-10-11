@@ -41,23 +41,24 @@ export function SettingsRightPane() {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Settings</h2>
-      </div>
+    <div className="right-pane-section">
+      <header className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Control Center</p>
+        <h2 className="text-lg font-semibold text-neutral-900">Quick Settings</h2>
+      </header>
 
       {/* Quick Toggles */}
       <DetailCard title="Quick Toggles">
         <div className="space-y-3">
           {Object.entries(quickToggles).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between">
-              <span className="text-sm text-gray-700 capitalize">
+              <span className="text-sm text-neutral-700 capitalize">
                 {key.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <button
                 onClick={() => handleToggle(key as keyof typeof quickToggles)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  value ? 'bg-blue-600' : 'bg-gray-200'
+                  value ? 'bg-primary-600' : 'bg-neutral-200'
                 }`}
               >
                 <span
@@ -86,13 +87,13 @@ export function SettingsRightPane() {
         label="Storage Usage"
         value={`${accountInfo.storage.used} ${accountInfo.storage.unit}`}
       />
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full h-2 rounded-full bg-neutral-200">
         <div
-          className="bg-blue-600 h-2 rounded-full"
+          className="h-2 rounded-full bg-primary-600"
           style={{ width: `${(accountInfo.storage.used / accountInfo.storage.total) * 100}%` }}
         />
       </div>
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-xs text-neutral-500 text-center">
         {accountInfo.storage.used} of {accountInfo.storage.total} {accountInfo.storage.unit} used
       </p>
 
@@ -100,11 +101,11 @@ export function SettingsRightPane() {
       <DetailCard title="Recent Changes">
         <div className="space-y-3">
           {recentChanges.map((change) => (
-            <div key={change.id} className="pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-              <p className="text-sm font-medium text-gray-900">{change.setting}</p>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-gray-600">{change.value}</span>
-                <span className="text-xs text-gray-500">{change.date}</span>
+            <div key={change.id} className="pb-3 border-b border-neutral-100 last:border-0 last:pb-0">
+              <p className="text-sm font-medium text-neutral-900">{change.setting}</p>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-xs text-neutral-600">{change.value}</span>
+                <span className="text-xs text-neutral-500">{change.date}</span>
               </div>
             </div>
           ))}
@@ -118,7 +119,7 @@ export function SettingsRightPane() {
             <a
               key={link.id}
               href={link.url}
-              className="block text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              className="block text-sm text-primary-600 hover:text-primary-700 hover:underline"
             >
               {link.title} →
             </a>

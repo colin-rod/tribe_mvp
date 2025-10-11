@@ -181,7 +181,16 @@ export function ConversationView({
 
               {responses.length > 0 && (
                 <div className="text-sm text-gray-500">
-                  Latest: {formatDistanceToNow(new Date(responses[responses.length - 1]?.received_at), { addSuffix: true })}
+                  {(() => {
+                    const latestResponse = responses[responses.length - 1]
+                    const timestamp = latestResponse?.received_at
+
+                    if (!timestamp) {
+                      return 'Latest: just now'
+                    }
+
+                    return `Latest: ${formatDistanceToNow(new Date(timestamp), { addSuffix: true })}`
+                  })()}
                 </div>
               )}
             </div>

@@ -1,5 +1,16 @@
-import type { Meta, StoryFn, StoryObj } from '@storybook/nextjs-vite'
+import type { Meta, StoryObj, Decorator } from '@storybook/nextjs-vite'
 import { LoadingOverlay, InlineLoadingOverlay } from './LoadingOverlay'
+
+const fullscreenDecorator: Decorator = (Story) => (
+  <div style={{ height: '400px', position: 'relative' }}>
+    <div style={{ padding: '2rem' }}>
+      <h2>Sample Content</h2>
+      <p>This content will be blocked when the overlay is visible.</p>
+      <button>Click me</button>
+    </div>
+    <Story />
+  </div>
+)
 
 const meta: Meta<typeof LoadingOverlay> = {
   title: 'UI/LoadingOverlay',
@@ -36,18 +47,7 @@ const meta: Meta<typeof LoadingOverlay> = {
       description: 'Use portal to render at document body level'
     }
   },
-  decorators: [
-    (Story: StoryFn) => (
-      <div style={{ height: '400px', position: 'relative' }}>
-        <div style={{ padding: '2rem' }}>
-          <h2>Sample Content</h2>
-          <p>This content will be blocked when the overlay is visible.</p>
-          <button>Click me</button>
-        </div>
-        <Story />
-      </div>
-    )
-  ]
+  decorators: [fullscreenDecorator]
 }
 
 export default meta
