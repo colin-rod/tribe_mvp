@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import MediaUpload from '@/components/updates/MediaUpload'
-import ChildSelector from '@/components/children/ChildSelector'
+import { ChildProfileSelector } from '@/components/children/ChildProfileSelector'
 import VoiceNoteRecorder from '@/components/drafts/VoiceNoteRecorder'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import {
@@ -411,14 +411,14 @@ export default function DraftEditor({
           {activeTab === 'details' && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label className="block text-sm font-medium text-neutral-700 mb-3">
                   Child <span className="text-red-500">*</span>
                 </label>
-                <ChildSelector
+                <ChildProfileSelector
                   selectedChildId={localChildId}
                   onChildSelect={setLocalChildId}
                   placeholder="Select which child this update is about"
-                  required
+                  size="md"
                 />
               </div>
 
