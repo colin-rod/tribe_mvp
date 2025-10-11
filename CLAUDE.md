@@ -372,8 +372,124 @@ Please execute this migration via the Supabase SQL Editor:
 5. Execute the migration
 ```
 
+## Git Workflow for Claude Code
+
+**IMPORTANT**: Claude Code must NEVER commit directly to `main` or `development` branches. All changes must go through Pull Requests for human review.
+
+### Branch Strategy
+
+When making code changes, Claude Code will:
+1. Create a new feature branch with the `claude/` prefix
+2. Make all commits to that branch
+3. Push the branch to remote
+4. Automatically open a Pull Request
+5. Wait for human review and approval before merge
+
+### Branch Naming Convention
+
+Use descriptive branch names with the `claude/` prefix:
+
+- **Linear Issue Work**: `claude/CRO-XXX-short-description`
+  - Example: `claude/CRO-293-add-memory-metadata`
+- **Bug Fixes**: `claude/fix-description`
+  - Example: `claude/fix-auth-redirect-loop`
+- **New Features**: `claude/feature-description`
+  - Example: `claude/feature-profile-settings`
+- **Refactoring**: `claude/refactor-description`
+  - Example: `claude/refactor-api-handlers`
+
+### Pull Request Workflow
+
+1. **Before Creating PR**:
+   ```bash
+   # Run quality checks
+   npm run lint
+   npx tsc --noEmit
+   npm test
+   ```
+
+2. **Create Branch and Commit**:
+   ```bash
+   git checkout -b claude/CRO-XXX-description
+   git add .
+   git commit -m "feat: Description
+
+   - Change 1
+   - Change 2
+
+   Refs: CRO-XXX"
+   ```
+
+3. **Push and Open PR**:
+   ```bash
+   git push -u origin claude/CRO-XXX-description
+   gh pr create --title "feat: Description" \
+     --body "## Summary
+   - Change summary
+
+   ## Linear Issue
+   CRO-XXX: Issue title
+
+   ## Test Plan
+   - [ ] Quality checks passed
+   - [ ] Manual testing completed
+
+   🤖 Generated with Claude Code" \
+     --base development
+   ```
+
+### PR Requirements
+
+All Pull Requests must:
+- ✅ Pass linting (`npm run lint`)
+- ✅ Pass type checking (`npx tsc --noEmit`)
+- ✅ Pass all tests (`npm test`)
+- ✅ Include Linear issue reference (if applicable)
+- ✅ Include descriptive summary of changes
+- ✅ Include test plan or testing notes
+- ✅ Follow conventional commit format
+
+### Base Branch Selection
+
+- Use `development` as base for most PRs
+- Use `main` only for hotfixes or production-critical changes
+- Default to `development` when in doubt
+
+### After PR is Created
+
+1. CI/CD will automatically run quality checks
+2. Request review from appropriate team members
+3. Address any feedback or failing checks
+4. Wait for approval before merging
+5. Merge via GitHub UI (squash and merge recommended)
+
+### Multi-Agent Collaboration
+
+This workflow prevents conflicts when multiple AI tools (Claude, Copilot, Cursor) or human developers work on the same repository:
+
+- Each agent/developer works on separate `prefix/` branches
+- All changes go through PR review
+- Git history remains clean and traceable
+- Conflicts are resolved before merge
+- Traceability: `claude/` prefix clearly identifies AI-generated changes
+
+### Helper Script
+
+Use the helper script for automated PR creation:
+```bash
+./.claude/scripts/create-pr.sh "CRO-XXX" "Short description"
+```
+
+This script will:
+1. Create appropriately named branch
+2. Run quality checks
+3. Commit changes
+4. Push to remote
+5. Open PR with proper formatting
+
 ## Key Files
 
 - `agents/README.md`: Complete documentation and usage guide (23,518 lines)
 - `agents/examples/tdd-usage.md`: Usage examples for Test-Driven Development
 - `.claude/settings.local.json`: Claude Code permissions configuration
+- `.claude/scripts/create-pr.sh`: Helper script for PR creation workflow

@@ -4,7 +4,27 @@ import { useState } from 'react'
 import { DigestPreferences } from '@/lib/types/profile'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { IconOptionSelector, type IconOption } from '@/components/ui/IconOptionSelector'
 import { cn } from '@/lib/utils'
+
+// Icon components for frequency options
+const CalendarDayIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
+
+const CalendarWeekIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
+
+const CalendarMonthIcon = () => (
+  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+)
 
 interface SummarySettingsProps {
   digestPrefs: DigestPreferences
@@ -33,12 +53,6 @@ const CONTENT_TYPES = [
   }
 ]
 
-const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Daily', description: 'Receive summary every day' },
-  { value: 'weekly', label: 'Weekly', description: 'Receive summary once per week' },
-  { value: 'monthly', label: 'Monthly', description: 'Receive summary once per month' }
-] as const
-
 const WEEKDAYS = [
   'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 ]
@@ -47,6 +61,28 @@ const MONTH_DAYS = Array.from({ length: 28 }, (_, i) => i + 1)
 
 export default function SummarySettings({ digestPrefs, onUpdate, loading = false }: SummarySettingsProps) {
   const [showPreview, setShowPreview] = useState(false)
+
+  // Icon-based frequency options
+  const frequencyIconOptions: IconOption<DigestPreferences['frequency']>[] = [
+    {
+      value: 'daily',
+      label: 'Daily',
+      description: 'Receive summary every day',
+      icon: <CalendarDayIcon />
+    },
+    {
+      value: 'weekly',
+      label: 'Weekly',
+      description: 'Receive summary once per week',
+      icon: <CalendarWeekIcon />
+    },
+    {
+      value: 'monthly',
+      label: 'Monthly',
+      description: 'Receive summary once per month',
+      icon: <CalendarMonthIcon />
+    }
+  ]
 
   const handleFrequencyChange = (frequency: DigestPreferences['frequency']) => {
     const updates: Partial<DigestPreferences> = { frequency }
@@ -159,38 +195,16 @@ export default function SummarySettings({ digestPrefs, onUpdate, loading = false
           {/* Frequency Selection */}
           <div className="space-y-4">
             <h4 className="text-sm font-medium text-gray-900">Frequency</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {FREQUENCY_OPTIONS.map((option) => (
-                <div
-                  key={option.value}
-                  className={cn(
-                    'relative rounded-lg border p-4 cursor-pointer transition-colors',
-                    digestPrefs.frequency === option.value
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  )}
-                  onClick={() => handleFrequencyChange(option.value)}
-                >
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="frequency"
-                      value={option.value}
-                      checked={digestPrefs.frequency === option.value}
-                      onChange={() => handleFrequencyChange(option.value)}
-                      disabled={loading}
-                      className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                    />
-                    <div className="ml-3">
-                      <label className="text-sm font-medium text-gray-900 cursor-pointer">
-                        {option.label}
-                      </label>
-                      <p className="text-xs text-gray-600">{option.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <IconOptionSelector
+              options={frequencyIconOptions}
+              value={digestPrefs.frequency}
+              onChange={(value) => handleFrequencyChange(value as DigestPreferences['frequency'])}
+              mode="single"
+              size="md"
+              columns={{ mobile: 1, tablet: 2, desktop: 3 }}
+              ariaLabel="Summary frequency"
+              disabled={loading}
+            />
           </div>
 
           {/* Delivery Time */}

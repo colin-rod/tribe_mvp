@@ -23,6 +23,7 @@ import SmartContextualInput from './SmartContextualInput'
 import { validateUpdateContent, getMilestoneLabel, milestoneTypes } from '@/lib/validation/update'
 import type { UpdateFormData, MilestoneType } from '@/lib/validation/update'
 import { detectMilestone, type MilestoneCandidate } from '@/lib/milestones/detectMilestone'
+import { MetadataFormSection } from '@/components/metadata'
 
 interface MilestoneOption {
   value: MilestoneType
@@ -416,6 +417,22 @@ export default function MemoryForm({
           We&apos;ll suggest a milestone automatically when your memory sounds like one, or you can pick it manually.
         </p>
       </div>
+
+      {/* Metadata Section */}
+      <MetadataFormSection
+        metadata={formData.metadata || {
+          milestones: [],
+          locations: [],
+          dates: [],
+          people: [],
+          custom: {},
+        }}
+        onChange={(metadata) => onFormDataChange({ metadata })}
+        disabled={isLoading}
+        defaultExpanded={false}
+        compact={true}
+      />
+
       {/* Submit Button */}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button
