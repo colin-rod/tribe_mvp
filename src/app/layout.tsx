@@ -12,6 +12,7 @@ import { KeyboardShortcutsProvider } from '@/components/accessibility/KeyboardSh
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { Toaster } from 'sonner'
 import FeedbackButton from '@/components/feedback/FeedbackButton'
+import { DashboardAnalyticsInitializer } from '@/components/providers/DashboardAnalyticsInitializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -136,6 +137,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <DashboardAnalyticsInitializer />
         <SkipLinks />
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">

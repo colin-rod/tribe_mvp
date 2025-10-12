@@ -104,6 +104,14 @@ type StoredUserInteraction = Omit<UserInteraction, 'timestamp'> & { timestamp: s
 type StoredPerformanceMetric = Omit<PerformanceMetric, 'timestamp'> & { timestamp: string }
 type StoredUserBehaviorPattern = Omit<UserBehaviorPattern, 'lastUpdated'> & { lastUpdated: string }
 
+type FlushReason =
+  | 'interval'
+  | 'beforeunload'
+  | 'visibilitychange'
+  | 'batch'
+  | 'manual'
+  | 'destroy'
+
 class DashboardAnalyticsManager {
   private interactions: UserInteraction[] = []
   private performanceMetrics: PerformanceMetric[] = []
@@ -114,6 +122,8 @@ class DashboardAnalyticsManager {
   private flushTimer?: NodeJS.Timeout
   private performanceObserver?: PerformanceObserver
   private mutationObserver?: MutationObserver
+  private beforeUnloadHandler?: () => void
+  private visibilityChangeHandler?: () => void
 
   private readonly STORAGE_KEYS = {
     INTERACTIONS: 'dashboard_interactions',
@@ -388,15 +398,25 @@ class DashboardAnalyticsManager {
   private setupAutoFlush() {
     if (this.config.flushInterval > 0) {
       this.flushTimer = setInterval(() => {
-        this.flushToStorage()
+        this.flushToStorage('interval')
       }, this.config.flushInterval)
     }
 
     // Flush on page unload
     if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        this.flushToStorage()
-      })
+      this.beforeUnloadHandler = () => {
+        this.flushToStorage('beforeunload')
+      }
+      window.addEventListener('beforeunload', this.beforeUnloadHandler)
+    }
+
+    if (typeof document !== 'undefined') {
+      this.visibilityChangeHandler = () => {
+        if (document.visibilityState === 'hidden') {
+          this.flushToStorage('visibilitychange')
+        }
+      }
+      document.addEventListener('visibilitychange', this.visibilityChangeHandler)
     }
   }
 
@@ -435,7 +455,7 @@ class DashboardAnalyticsManager {
     }
   }
 
-  private flushToStorage() {
+  private flushToStorage(reason: FlushReason = 'manual') {
     try {
       // Check storage size
       const currentSize = this.getCurrentStorageSize()
@@ -451,6 +471,7 @@ class DashboardAnalyticsManager {
 
       if (this.config.enableDebugMode) {
         logger.info('Analytics data flushed to storage', {
+          reason,
           interactions: this.interactions.length,
           metrics: this.performanceMetrics.length,
           patterns: this.userPatterns.size
@@ -509,7 +530,7 @@ class DashboardAnalyticsManager {
 
     // Auto-flush if batch size reached
     if (this.interactions.length >= this.config.batchSize) {
-      this.flushToStorage()
+      this.flushToStorage('batch')
     }
   }
 
@@ -674,6 +695,10 @@ class DashboardAnalyticsManager {
     return JSON.stringify(this.getAnalytics(), null, 2)
   }
 
+  public flush(reason: FlushReason = 'manual') {
+    this.flushToStorage(reason)
+  }
+
   public destroy() {
     if (this.flushTimer) {
       clearInterval(this.flushTimer)
@@ -684,7 +709,15 @@ class DashboardAnalyticsManager {
     if (this.mutationObserver) {
       this.mutationObserver.disconnect()
     }
-    this.flushToStorage()
+    if (typeof window !== 'undefined' && this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+      this.beforeUnloadHandler = undefined
+    }
+    if (typeof document !== 'undefined' && this.visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
+      this.visibilityChangeHandler = undefined
+    }
+    this.flushToStorage('destroy')
   }
 }
 
@@ -705,7 +738,20 @@ export function getDashboardAnalytics() {
 }
 
 export function trackDashboardInteraction(interaction: Omit<UserInteraction, 'id' | 'timestamp' | 'sessionId' | 'context'>) {
-  analyticsInstance?.trackInteraction(interaction)
+  if (typeof window === 'undefined') return
+
+  if (!analyticsInstance) {
+    initializeDashboardAnalytics()
+  }
+
+  if (!analyticsInstance) {
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Dashboard analytics not initialized, skipping interaction', interaction as LogContext)
+    }
+    return
+  }
+
+  analyticsInstance.trackInteraction(interaction)
 }
 
 export function trackDashboardPerformance(metric: Omit<PerformanceMetric, 'id' | 'timestamp' | 'context'>) {
@@ -714,6 +760,10 @@ export function trackDashboardPerformance(metric: Omit<PerformanceMetric, 'id' |
 
 export function trackCustomDashboardEvent(eventName: string, eventData: Record<string, unknown>) {
   analyticsInstance?.trackCustomEvent(eventName, eventData)
+}
+
+export function flushDashboardAnalytics(reason: FlushReason = 'manual') {
+  analyticsInstance?.flush(reason)
 }
 
 export { DashboardAnalyticsManager }
