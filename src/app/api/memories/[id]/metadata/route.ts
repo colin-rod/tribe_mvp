@@ -61,11 +61,20 @@ export async function POST(
     const body = await request.json()
     const { metadata } = updateMetadataSchema.parse(body)
 
+    // Convert metadata to JSON-compatible format
+    const jsonMetadata = {
+      milestones: metadata.milestones,
+      locations: metadata.locations,
+      dates: metadata.dates,
+      people: metadata.people,
+      ...(metadata.custom ? { custom: metadata.custom } : {})
+    }
+
     // Update memory metadata
     const { data: memory, error: updateError } = await supabase
       .from('memories')
       .update({
-        metadata,
+        metadata: jsonMetadata as never,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memoryId)
@@ -153,14 +162,15 @@ export async function PATCH(
     }
 
     // Update specific category
+    const existingMetadata = (currentMemory.metadata as Record<string, unknown>) || {
+      milestones: [],
+      locations: [],
+      dates: [],
+      people: [],
+      custom: {},
+    }
     const updatedMetadata = {
-      ...(currentMemory.metadata || {
-        milestones: [],
-        locations: [],
-        dates: [],
-        people: [],
-        custom: {},
-      }),
+      ...existingMetadata,
       [category]: values,
     }
 
@@ -168,7 +178,7 @@ export async function PATCH(
     const { data: memory, error: updateError } = await supabase
       .from('memories')
       .update({
-        metadata: updatedMetadata,
+        metadata: updatedMetadata as never,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memoryId)
@@ -249,14 +259,15 @@ export async function DELETE(
     }
 
     // Remove specific category
+    const existingMetadata = (currentMemory.metadata as Record<string, unknown>) || {
+      milestones: [],
+      locations: [],
+      dates: [],
+      people: [],
+      custom: {},
+    }
     const updatedMetadata = {
-      ...(currentMemory.metadata || {
-        milestones: [],
-        locations: [],
-        dates: [],
-        people: [],
-        custom: {},
-      }),
+      ...existingMetadata,
       [category]: [],
     }
 
@@ -264,7 +275,7 @@ export async function DELETE(
     const { data: memory, error: updateError } = await supabase
       .from('memories')
       .update({
-        metadata: updatedMetadata,
+        metadata: updatedMetadata as never,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memoryId)

@@ -1,0 +1,70 @@
+name: Branch Name Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming convention
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Checking branch name: $BRANCH"
+
+          # Define valid prefixes
+          VALID_PREFIXES="^(claude|codex|feature|fix|hotfix|bugfix|chore|docs|refactor|test|dependabot)/"
+
+          # Check if branch follows naming convention
+          if [[ ! "$BRANCH" =~ $VALID_PREFIXES ]]; then
+            echo "❌ ERROR: Branch name '$BRANCH' does not follow naming convention!"
+            echo ""
+            echo "Valid branch prefixes:"
+            echo "  - claude/    (for Claude Code changes)"
+            echo "  - codex/     (for other AI tools)"
+            echo "  - feature/   (for new features)"
+            echo "  - fix/       (for bug fixes)"
+            echo "  - hotfix/    (for urgent production fixes)"
+            echo "  - bugfix/    (for non-urgent bug fixes)"
+            echo "  - chore/     (for maintenance tasks)"
+            echo "  - docs/      (for documentation)"
+            echo "  - refactor/  (for code refactoring)"
+            echo "  - test/      (for test-related changes)"
+            echo ""
+            echo "Examples:"
+            echo "  - claude/CRO-123-add-feature"
+            echo "  - feature/user-authentication"
+            echo "  - fix/login-redirect-loop"
+            echo ""
+            echo "See CLAUDE.md for more details."
+            exit 1
+          fi
+
+          echo "✅ Branch name follows convention: $BRANCH"
+
+      - name: Check for Linear issue reference (Claude branches)
+        if: startsWith(github.head_ref, 'claude/')
+        run: |
+          BRANCH="${{ github.head_ref }}"
+
+          # Check if Claude branches reference a Linear issue
+          if [[ ! "$BRANCH" =~ ^claude/(CRO-[0-9]+|fix-|feature-|refactor-|chore-) ]]; then
+            echo "⚠️ WARNING: Claude branches should reference a Linear issue (CRO-XXX) when possible"
+            echo "Branch: $BRANCH"
+            echo ""
+            echo "Recommended format:"
+            echo "  - claude/CRO-XXX-description"
+            echo ""
+            echo "For non-Linear work:"
+            echo "  - claude/fix-description"
+            echo "  - claude/feature-description"
+            echo "  - claude/refactor-description"
+            echo ""
+            # Don't fail, just warn
+          else
+            echo "✅ Claude branch properly formatted: $BRANCH"
+          fi

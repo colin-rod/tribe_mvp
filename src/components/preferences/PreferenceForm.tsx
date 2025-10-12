@@ -88,27 +88,27 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
   // Icon-based frequency options
   const frequencyIconOptions: IconOption<PreferenceUpdate['frequency']>[] = [
     {
-      value: 'instant',
+      value: 'every_update',
       label: 'Instant',
       description: 'Right away, as they happen',
       icon: <BoltIcon />
     },
     {
-      value: 'daily',
+      value: 'daily_digest',
       label: 'Daily',
       description: 'Once per day digest',
       icon: <CalendarDayIcon />
     },
     {
-      value: 'weekly',
+      value: 'weekly_digest',
       label: 'Weekly',
       description: 'Once per week digest',
       icon: <CalendarWeekIcon />
     },
     {
-      value: 'monthly',
-      label: 'Monthly',
-      description: 'Once per month digest',
+      value: 'milestones_only',
+      label: 'Milestones',
+      description: 'Only major milestones',
       icon: <CalendarMonthIcon />
     }
   ]
@@ -166,14 +166,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
       emoji: '📋'
     },
     {
-      value: 'medium_and_up',
-      label: 'Medium & Up',
-      description: 'Moderate and important updates only',
-      emoji: '⚠️'
+      value: 'milestones_only',
+      label: 'Milestones Only',
+      description: 'Only milestone updates',
+      emoji: '⭐'
     },
     {
-      value: 'high_only',
-      label: 'High Priority',
+      value: 'major_milestones_only',
+      label: 'Major Milestones',
       description: 'Only the most important moments',
       emoji: '🔥'
     }
@@ -283,13 +283,20 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 4 }}
           ariaLabel="Memory frequency"
-          badges={recipient.group && recipient.group.default_frequency ? {
-            [recipient.group.default_frequency]: (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
-                Default
-              </span>
-            )
-          } : undefined}
+          badges={
+            recipient.group && recipient.group.default_frequency
+              ? Object.fromEntries(
+                  frequencyIconOptions
+                    .filter(opt => opt.value === recipient.group!.default_frequency)
+                    .map(opt => [
+                      opt.value,
+                      <span key={opt.value} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
+                        Default
+                      </span>
+                    ])
+                ) as Record<PreferenceUpdate['frequency'], React.ReactNode>
+              : undefined
+          }
         />
 
         {errors.frequency && (
@@ -353,15 +360,17 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 3 }}
           ariaLabel="Communication channels"
-          badges={recipient.group && recipient.group.default_channels.length > 0 ?
-            Object.fromEntries(
-              recipient.group.default_channels.map(channel => [
-                channel,
-                <span key={channel} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
-                  Default
-                </span>
-              ])
-            ) : undefined
+          badges={
+            recipient.group && recipient.group.default_channels.length > 0
+              ? Object.fromEntries(
+                  recipient.group.default_channels.map(channel => [
+                    channel,
+                    <span key={channel} className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-600 text-white shadow-sm">
+                      Default
+                    </span>
+                  ])
+                ) as Record<'email' | 'sms' | 'whatsapp', React.ReactNode>
+              : undefined
           }
         />
 

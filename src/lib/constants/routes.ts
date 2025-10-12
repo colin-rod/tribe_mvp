@@ -71,9 +71,13 @@ export const NAVIGATION_ITEMS = [
  */
 export function getNavigationItemByPath(pathname: string) {
   return NAVIGATION_ITEMS.find(
-    (item) =>
-      item.href === pathname ||
-      ('alternateHrefs' in item && item.alternateHrefs?.includes(pathname as DashboardRoute))
+    (item) => {
+      if (item.href === pathname) return true;
+      if ('alternateHrefs' in item && item.alternateHrefs) {
+        return item.alternateHrefs.some(href => href === pathname);
+      }
+      return false;
+    }
   );
 }
 
