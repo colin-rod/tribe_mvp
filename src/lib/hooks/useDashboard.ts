@@ -387,7 +387,8 @@ export function useEngagementUpdates(
       (payload) => {
         setEngagementUpdates(prev => {
           const newMap = new Map(prev)
-          newMap.set(payload.update_id, payload)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          newMap.set((payload as any).update_id || (payload as any).updateId, payload)
           return newMap
         })
       }
@@ -411,11 +412,11 @@ export function useDashboardFilters(initialFilters: DashboardFilters = {}) {
   const [filters, setFilters] = useState<DashboardFilters>(initialFilters)
 
   const updateFilter = useCallback((key: keyof DashboardFilters, value: unknown) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+    setFilters((prev: DashboardFilters) => ({ ...prev, [key]: value }))
   }, [])
 
   const clearFilter = useCallback((key: keyof DashboardFilters) => {
-    setFilters(prev => {
+    setFilters((prev: DashboardFilters) => {
       const newFilters = { ...prev }
       delete newFilters[key]
       return newFilters
