@@ -6,6 +6,7 @@ import type { ProfileTab } from '@/lib/types/profile'
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
 import { useNavigationState } from '@/hooks/useNavigationState'
 import { createLogger } from '@/lib/logger'
+import { PROFILE_TABS } from '@/lib/constants/profile'
 import {
   UserIcon,
   CogIcon,
@@ -37,7 +38,9 @@ interface ProfileTabNavigationProps {
   variant: 'sidebar' | 'accordion'
 }
 
-const IconMap = {
+type ProfileTabIcon = (typeof PROFILE_TABS)[number]['icon']
+
+const IconMap: Record<ProfileTabIcon, typeof UserIcon> = {
   user: UserIcon,
   cog: CogIcon,
   shield: ShieldCheckIcon,

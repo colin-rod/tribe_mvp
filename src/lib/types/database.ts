@@ -85,36 +85,75 @@ export type Database = {
         Row: {
           birth_date: string
           created_at: string | null
+          delivery_method: string | null
+          group_id: string | null
           id: string
+          is_active: boolean | null
           name: string
           parent_id: string
           profile_photo_url: string | null
+          recipient_id: string | null
+          status: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
           birth_date: string
           created_at?: string | null
+          delivery_method?: string | null
+          group_id?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
           parent_id: string
           profile_photo_url?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
           birth_date?: string
           created_at?: string | null
+          delivery_method?: string | null
+          group_id?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
           parent_id?: string
           profile_photo_url?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "children_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "children_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "children_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "children_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
         ]
@@ -156,7 +195,7 @@ export type Database = {
             foreignKeyName: "comments_update_id_fkey"
             columns: ["update_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
             referencedColumns: ["id"]
           },
         ]
@@ -203,6 +242,13 @@ export type Database = {
             foreignKeyName: "delivery_jobs_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_jobs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
             referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
@@ -210,7 +256,7 @@ export type Database = {
             foreignKeyName: "delivery_jobs_update_id_fkey"
             columns: ["update_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
             referencedColumns: ["id"]
           },
         ]
@@ -265,149 +311,78 @@ export type Database = {
           },
         ]
       }
-      summary_memories: {
+      digest_schedules: {
         Row: {
-          ai_rationale: Json | null
           created_at: string | null
-          custom_caption: string | null
-          custom_subject: string | null
-          display_order: number
+          delivery_day: number | null
+          delivery_time: string
+          digest_settings: Json | null
+          frequency: string
+          group_id: string
           id: string
-          included: boolean | null
-          memory_id: string
-          narrative_data: Json | null
-          photo_count: number | null
+          include_content_types: string[] | null
+          is_active: boolean | null
+          last_digest_sent: string | null
+          max_updates_per_digest: number | null
+          next_digest_scheduled: string | null
           recipient_id: string
-          render_style: string | null
-          summary_id: string
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
-          ai_rationale?: Json | null
           created_at?: string | null
-          custom_caption?: string | null
-          custom_subject?: string | null
-          display_order?: number
+          delivery_day?: number | null
+          delivery_time?: string
+          digest_settings?: Json | null
+          frequency: string
+          group_id: string
           id?: string
-          included?: boolean | null
-          memory_id: string
-          narrative_data?: Json | null
-          photo_count?: number | null
+          include_content_types?: string[] | null
+          is_active?: boolean | null
+          last_digest_sent?: string | null
+          max_updates_per_digest?: number | null
+          next_digest_scheduled?: string | null
           recipient_id: string
-          render_style?: string | null
-          summary_id: string
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
-          ai_rationale?: Json | null
           created_at?: string | null
-          custom_caption?: string | null
-          custom_subject?: string | null
-          display_order?: number
+          delivery_day?: number | null
+          delivery_time?: string
+          digest_settings?: Json | null
+          frequency?: string
+          group_id?: string
           id?: string
-          included?: boolean | null
-          memory_id?: string
-          narrative_data?: Json | null
-          photo_count?: number | null
+          include_content_types?: string[] | null
+          is_active?: boolean | null
+          last_digest_sent?: string | null
+          max_updates_per_digest?: number | null
+          next_digest_scheduled?: string | null
           recipient_id?: string
-          render_style?: string | null
-          summary_id?: string
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "summary_memories_summary_id_fkey"
-            columns: ["summary_id"]
+            foreignKeyName: "digest_schedules_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "summaries"
+            referencedRelation: "recipient_groups"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "summary_memories_recipient_id_fkey"
+            foreignKeyName: "digest_schedules_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digest_schedules_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "recipients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "summary_memories_memory_id_fkey"
-            columns: ["memory_id"]
-            isOneToOne: false
-            referencedRelation: "memories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      digests: {
-        Row: {
-          ai_compilation_data: Json | null
-          approved_at: string | null
-          compiled_at: string | null
-          created_at: string | null
-          date_range_end: string
-          date_range_start: string
-          digest_date: string
-          failed_count: number | null
-          id: string
-          parent_id: string
-          parent_narrative: Json | null
-          recipient_breakdown: Json | null
-          sent_at: string | null
-          sent_count: number | null
-          status: string | null
-          title: string
-          total_recipients: number | null
-          total_updates: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          ai_compilation_data?: Json | null
-          approved_at?: string | null
-          compiled_at?: string | null
-          created_at?: string | null
-          date_range_end: string
-          date_range_start: string
-          digest_date: string
-          failed_count?: number | null
-          id?: string
-          parent_id: string
-          parent_narrative?: Json | null
-          recipient_breakdown?: Json | null
-          sent_at?: string | null
-          sent_count?: number | null
-          status?: string | null
-          title: string
-          total_recipients?: number | null
-          total_updates?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          ai_compilation_data?: Json | null
-          approved_at?: string | null
-          compiled_at?: string | null
-          created_at?: string | null
-          date_range_end?: string
-          date_range_start?: string
-          digest_date?: string
-          failed_count?: number | null
-          id?: string
-          parent_id?: string
-          parent_narrative?: Json | null
-          recipient_breakdown?: Json | null
-          sent_at?: string | null
-          sent_count?: number | null
-          status?: string | null
-          title?: string
-          total_recipients?: number | null
-          total_updates?: number | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "digests_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -443,6 +418,13 @@ export type Database = {
             columns: ["invitation_id"]
             isOneToOne: false
             referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitation_redemptions_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
             referencedColumns: ["id"]
           },
           {
@@ -523,124 +505,6 @@ export type Database = {
           },
         ]
       }
-      memories: {
-        Row: {
-          id: string
-          parent_id: string
-          child_id: string
-          content: string | null
-          media_urls: string[] | null
-          milestone_type: string | null
-          ai_analysis: Json | null
-          suggested_recipients: string[] | null
-          confirmed_recipients: string[] | null
-          distribution_status: string | null
-          created_at: string | null
-          updated_at: string | null
-          scheduled_for: string | null
-          sent_at: string | null
-          subject: string | null
-          rich_content: Json | null
-          content_format: string | null
-          like_count: number | null
-          comment_count: number | null
-          response_count: number | null
-          view_count: number | null
-          search_vector: unknown | null
-          summary_id: string | null
-          ai_suggested_importance: string | null
-          importance_level: string | null
-          importance_overridden: boolean | null
-          is_new: boolean | null
-          capture_channel: string | null
-          marked_ready_at: string | null
-        }
-        Insert: {
-          id?: string
-          parent_id: string
-          child_id: string
-          content?: string | null
-          media_urls?: string[] | null
-          milestone_type?: string | null
-          ai_analysis?: Json | null
-          suggested_recipients?: string[] | null
-          confirmed_recipients?: string[] | null
-          distribution_status?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          subject?: string | null
-          rich_content?: Json | null
-          content_format?: string | null
-          like_count?: number | null
-          comment_count?: number | null
-          response_count?: number | null
-          view_count?: number | null
-          search_vector?: unknown | null
-          summary_id?: string | null
-          ai_suggested_importance?: string | null
-          importance_level?: string | null
-          importance_overridden?: boolean | null
-          is_new?: boolean | null
-          capture_channel?: string | null
-          marked_ready_at?: string | null
-        }
-        Update: {
-          id?: string
-          parent_id?: string
-          child_id?: string
-          content?: string | null
-          media_urls?: string[] | null
-          milestone_type?: string | null
-          ai_analysis?: Json | null
-          suggested_recipients?: string[] | null
-          confirmed_recipients?: string[] | null
-          distribution_status?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          subject?: string | null
-          rich_content?: Json | null
-          content_format?: string | null
-          like_count?: number | null
-          comment_count?: number | null
-          response_count?: number | null
-          view_count?: number | null
-          search_vector?: unknown | null
-          summary_id?: string | null
-          ai_suggested_importance?: string | null
-          importance_level?: string | null
-          importance_overridden?: boolean | null
-          is_new?: boolean | null
-          capture_channel?: string | null
-          marked_ready_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "memories_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: false
-            referencedRelation: "children"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "memories_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "memories_summary_id_fkey"
-            columns: ["summary_id"]
-            isOneToOne: false
-            referencedRelation: "summaries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       likes: {
         Row: {
           created_at: string | null
@@ -672,7 +536,205 @@ export type Database = {
             foreignKeyName: "likes_update_id_fkey"
             columns: ["update_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memories: {
+        Row: {
+          ai_analysis: Json | null
+          ai_suggested_importance: string | null
+          capture_channel: string | null
+          child_id: string
+          comment_count: number | null
+          confirmed_recipients: string[] | null
+          content: string | null
+          content_format: string | null
+          created_at: string | null
+          distribution_status: string | null
+          id: string
+          importance_level: string | null
+          importance_overridden: boolean | null
+          is_new: boolean | null
+          like_count: number | null
+          marked_ready_at: string | null
+          media_urls: string[] | null
+          metadata: Json | null
+          milestone_type: string | null
+          parent_id: string
+          response_count: number | null
+          rich_content: Json | null
+          scheduled_for: string | null
+          search_vector: unknown | null
+          sent_at: string | null
+          subject: string | null
+          suggested_recipients: string[] | null
+          summary_id: string | null
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          ai_suggested_importance?: string | null
+          capture_channel?: string | null
+          child_id: string
+          comment_count?: number | null
+          confirmed_recipients?: string[] | null
+          content?: string | null
+          content_format?: string | null
+          created_at?: string | null
+          distribution_status?: string | null
+          id?: string
+          importance_level?: string | null
+          importance_overridden?: boolean | null
+          is_new?: boolean | null
+          like_count?: number | null
+          marked_ready_at?: string | null
+          media_urls?: string[] | null
+          metadata?: Json | null
+          milestone_type?: string | null
+          parent_id: string
+          response_count?: number | null
+          rich_content?: Json | null
+          scheduled_for?: string | null
+          search_vector?: unknown | null
+          sent_at?: string | null
+          subject?: string | null
+          suggested_recipients?: string[] | null
+          summary_id?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          ai_analysis?: Json | null
+          ai_suggested_importance?: string | null
+          capture_channel?: string | null
+          child_id?: string
+          comment_count?: number | null
+          confirmed_recipients?: string[] | null
+          content?: string | null
+          content_format?: string | null
+          created_at?: string | null
+          distribution_status?: string | null
+          id?: string
+          importance_level?: string | null
+          importance_overridden?: boolean | null
+          is_new?: boolean | null
+          like_count?: number | null
+          marked_ready_at?: string | null
+          media_urls?: string[] | null
+          metadata?: Json | null
+          milestone_type?: string | null
+          parent_id?: string
+          response_count?: number | null
+          rich_content?: Json | null
+          scheduled_for?: string | null
+          search_vector?: unknown | null
+          sent_at?: string | null
+          subject?: string | null
+          suggested_recipients?: string[] | null
+          summary_id?: string | null
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "updates_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "updates_digest_id_fkey"
+            columns: ["summary_id"]
+            isOneToOne: false
+            referencedRelation: "summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "updates_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_delivery_logs: {
+        Row: {
+          created_at: string | null
+          delivery_duration_ms: number | null
+          delivery_method: string
+          delivery_time: string | null
+          error_code: string | null
+          error_message: string | null
+          group_id: string
+          id: string
+          job_id: string | null
+          provider_message_id: string | null
+          provider_response: Json | null
+          recipient_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_duration_ms?: number | null
+          delivery_method: string
+          delivery_time?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          group_id: string
+          id?: string
+          job_id?: string | null
+          provider_message_id?: string | null
+          provider_response?: Json | null
+          recipient_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_duration_ms?: number | null
+          delivery_method?: string
+          delivery_time?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          group_id?: string
+          id?: string
+          job_id?: string | null
+          provider_message_id?: string | null
+          provider_response?: Json | null
+          recipient_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_logs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "notification_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_logs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
         ]
@@ -727,38 +789,253 @@ export type Database = {
           },
         ]
       }
+      notification_jobs: {
+        Row: {
+          content: Json
+          created_at: string | null
+          delivery_method: string
+          failure_reason: string | null
+          group_id: string
+          id: string
+          max_retries: number | null
+          message_id: string | null
+          metadata: Json | null
+          notification_type: string
+          processed_at: string | null
+          recipient_id: string
+          retry_count: number | null
+          scheduled_for: string
+          status: string
+          update_id: string | null
+          updated_at: string | null
+          urgency_level: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string | null
+          delivery_method: string
+          failure_reason?: string | null
+          group_id: string
+          id?: string
+          max_retries?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          processed_at?: string | null
+          recipient_id: string
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string
+          update_id?: string | null
+          updated_at?: string | null
+          urgency_level?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          delivery_method?: string
+          failure_reason?: string | null
+          group_id?: string
+          id?: string
+          max_retries?: number | null
+          message_id?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          processed_at?: string | null
+          recipient_id?: string
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string
+          update_id?: string | null
+          updated_at?: string | null
+          urgency_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_jobs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_jobs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_jobs_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_jobs_update_id_fkey"
+            columns: ["update_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences_cache: {
+        Row: {
+          cache_expires_at: string
+          cache_version: number | null
+          created_at: string | null
+          effective_channels: string[]
+          effective_content_types: string[]
+          effective_frequency: string
+          group_id: string
+          id: string
+          is_muted: boolean | null
+          muted_until: string | null
+          recipient_id: string
+          source: string
+          updated_at: string | null
+        }
+        Insert: {
+          cache_expires_at: string
+          cache_version?: number | null
+          created_at?: string | null
+          effective_channels: string[]
+          effective_content_types: string[]
+          effective_frequency: string
+          group_id: string
+          id?: string
+          is_muted?: boolean | null
+          muted_until?: string | null
+          recipient_id: string
+          source: string
+          updated_at?: string | null
+        }
+        Update: {
+          cache_expires_at?: string
+          cache_version?: number | null
+          created_at?: string | null
+          effective_channels?: string[]
+          effective_content_types?: string[]
+          effective_frequency?: string
+          group_id?: string
+          id?: string
+          is_muted?: boolean | null
+          muted_until?: string | null
+          recipient_id?: string
+          source?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_cache_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_cache_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_cache_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
           email: string
+          group_id: string | null
           id: string
           name: string
           notification_preferences: Json | null
           onboarding_completed: boolean | null
           onboarding_skipped: boolean | null
           onboarding_step: number | null
+          status: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           email: string
+          group_id?: string | null
           id: string
           name: string
           notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           onboarding_skipped?: boolean | null
           onboarding_step?: number | null
+          status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string
+          group_id?: string | null
           id?: string
           name?: string
           notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           onboarding_skipped?: boolean | null
           onboarding_step?: number | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_suggestions: {
+        Row: {
+          category: string
+          created_at: string | null
+          display_weight: number | null
+          id: string
+          is_active: boolean | null
+          prompt_text: string
+          times_clicked: number | null
+          times_shown: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          display_weight?: number | null
+          id?: string
+          is_active?: boolean | null
+          prompt_text: string
+          times_clicked?: number | null
+          times_shown?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          display_weight?: number | null
+          id?: string
+          is_active?: boolean | null
+          prompt_text?: string
+          times_clicked?: number | null
+          times_shown?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -875,6 +1152,7 @@ export type Database = {
           frequency: string | null
           group_id: string | null
           id: string
+          importance_threshold: string | null
           is_active: boolean | null
           name: string
           overrides_group_default: boolean | null
@@ -893,6 +1171,7 @@ export type Database = {
           frequency?: string | null
           group_id?: string | null
           id?: string
+          importance_threshold?: string | null
           is_active?: boolean | null
           name: string
           overrides_group_default?: boolean | null
@@ -911,6 +1190,7 @@ export type Database = {
           frequency?: string | null
           group_id?: string | null
           id?: string
+          importance_threshold?: string | null
           is_active?: boolean | null
           name?: string
           overrides_group_default?: boolean | null
@@ -977,6 +1257,13 @@ export type Database = {
             foreignKeyName: "responses_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
             referencedRelation: "recipients"
             referencedColumns: ["id"]
           },
@@ -984,7 +1271,170 @@ export type Database = {
             foreignKeyName: "responses_update_id_fkey"
             columns: ["update_id"]
             isOneToOne: false
-            referencedRelation: "updates"
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      summaries: {
+        Row: {
+          ai_compilation_data: Json | null
+          approved_at: string | null
+          auto_publish_hours: number | null
+          compiled_at: string | null
+          created_at: string | null
+          date_range_end: string
+          date_range_start: string
+          digest_date: string
+          failed_count: number | null
+          id: string
+          last_reminder_sent_at: string | null
+          parent_id: string
+          parent_narrative: Json | null
+          recipient_breakdown: Json | null
+          reminder_count: number | null
+          sent_at: string | null
+          sent_count: number | null
+          status: string | null
+          title: string
+          total_recipients: number | null
+          total_updates: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_compilation_data?: Json | null
+          approved_at?: string | null
+          auto_publish_hours?: number | null
+          compiled_at?: string | null
+          created_at?: string | null
+          date_range_end: string
+          date_range_start: string
+          digest_date: string
+          failed_count?: number | null
+          id?: string
+          last_reminder_sent_at?: string | null
+          parent_id: string
+          parent_narrative?: Json | null
+          recipient_breakdown?: Json | null
+          reminder_count?: number | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          title: string
+          total_recipients?: number | null
+          total_updates?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_compilation_data?: Json | null
+          approved_at?: string | null
+          auto_publish_hours?: number | null
+          compiled_at?: string | null
+          created_at?: string | null
+          date_range_end?: string
+          date_range_start?: string
+          digest_date?: string
+          failed_count?: number | null
+          id?: string
+          last_reminder_sent_at?: string | null
+          parent_id?: string
+          parent_narrative?: Json | null
+          recipient_breakdown?: Json | null
+          reminder_count?: number | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string | null
+          title?: string
+          total_recipients?: number | null
+          total_updates?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digests_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      summary_memories: {
+        Row: {
+          ai_rationale: Json | null
+          created_at: string | null
+          custom_caption: string | null
+          custom_subject: string | null
+          display_order: number
+          id: string
+          included: boolean | null
+          memory_id: string
+          narrative_data: Json | null
+          photo_count: number | null
+          recipient_id: string
+          render_style: string | null
+          summary_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_rationale?: Json | null
+          created_at?: string | null
+          custom_caption?: string | null
+          custom_subject?: string | null
+          display_order?: number
+          id?: string
+          included?: boolean | null
+          memory_id: string
+          narrative_data?: Json | null
+          photo_count?: number | null
+          recipient_id: string
+          render_style?: string | null
+          summary_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_rationale?: Json | null
+          created_at?: string | null
+          custom_caption?: string | null
+          custom_subject?: string | null
+          display_order?: number
+          id?: string
+          included?: boolean | null
+          memory_id?: string
+          narrative_data?: Json | null
+          photo_count?: number | null
+          recipient_id?: string
+          render_style?: string | null
+          summary_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digest_updates_digest_id_fkey"
+            columns: ["summary_id"]
+            isOneToOne: false
+            referencedRelation: "summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digest_updates_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_preferences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digest_updates_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digest_updates_update_id_fkey"
+            columns: ["memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
             referencedColumns: ["id"]
           },
         ]
@@ -1056,192 +1506,38 @@ export type Database = {
           },
         ]
       }
-      summaries: {
+      user_metadata_values: {
         Row: {
-          id: string
-          parent_id: string
-          title: string
-          digest_date: string
-          date_range_start: string
-          date_range_end: string
-          status: string | null
-          ai_compilation_data: Json | null
-          recipient_breakdown: Json | null
-          total_updates: number | null
-          total_recipients: number | null
-          sent_count: number | null
-          failed_count: number | null
-          compiled_at: string | null
-          approved_at: string | null
-          sent_at: string | null
+          category: string
           created_at: string | null
-          updated_at: string | null
-          parent_narrative: Json | null
-          auto_publish_hours: number | null
-          last_reminder_sent_at: string | null
-          reminder_count: number | null
+          id: string
+          last_used_at: string | null
+          usage_count: number | null
+          user_id: string
+          value: string
         }
         Insert: {
-          id?: string
-          parent_id: string
-          title: string
-          digest_date: string
-          date_range_start: string
-          date_range_end: string
-          status?: string | null
-          ai_compilation_data?: Json | null
-          recipient_breakdown?: Json | null
-          total_updates?: number | null
-          total_recipients?: number | null
-          sent_count?: number | null
-          failed_count?: number | null
-          compiled_at?: string | null
-          approved_at?: string | null
-          sent_at?: string | null
+          category: string
           created_at?: string | null
-          updated_at?: string | null
-          parent_narrative?: Json | null
-          auto_publish_hours?: number | null
-          last_reminder_sent_at?: string | null
-          reminder_count?: number | null
+          id?: string
+          last_used_at?: string | null
+          usage_count?: number | null
+          user_id: string
+          value: string
         }
         Update: {
-          id?: string
-          parent_id?: string
-          title?: string
-          digest_date?: string
-          date_range_start?: string
-          date_range_end?: string
-          status?: string | null
-          ai_compilation_data?: Json | null
-          recipient_breakdown?: Json | null
-          total_updates?: number | null
-          total_recipients?: number | null
-          sent_count?: number | null
-          failed_count?: number | null
-          compiled_at?: string | null
-          approved_at?: string | null
-          sent_at?: string | null
+          category?: string
           created_at?: string | null
-          updated_at?: string | null
-          parent_narrative?: Json | null
-          auto_publish_hours?: number | null
-          last_reminder_sent_at?: string | null
-          reminder_count?: number | null
+          id?: string
+          last_used_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+          value?: string
         }
         Relationships: [
           {
-            foreignKeyName: "summaries_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      updates: {
-        Row: {
-          ai_analysis: Json | null
-          child_id: string
-          comment_count: number | null
-          confirmed_recipients: string[] | null
-          content: string | null
-          content_format: string | null
-          created_at: string | null
-          digest_id: string | null
-          distribution_status: string | null
-          edit_count: number | null
-          id: string
-          last_edited_at: string | null
-          like_count: number | null
-          media_urls: string[] | null
-          milestone_type: string | null
-          parent_id: string
-          response_count: number | null
-          rich_content: Json | null
-          scheduled_for: string | null
-          search_vector: unknown | null
-          sent_at: string | null
-          subject: string | null
-          suggested_recipients: string[] | null
-          updated_at: string | null
-          version: number | null
-          view_count: number | null
-        }
-        Insert: {
-          ai_analysis?: Json | null
-          child_id: string
-          comment_count?: number | null
-          confirmed_recipients?: string[] | null
-          content?: string | null
-          content_format?: string | null
-          created_at?: string | null
-          digest_id?: string | null
-          distribution_status?: string | null
-          edit_count?: number | null
-          id?: string
-          last_edited_at?: string | null
-          like_count?: number | null
-          media_urls?: string[] | null
-          milestone_type?: string | null
-          parent_id: string
-          response_count?: number | null
-          rich_content?: Json | null
-          scheduled_for?: string | null
-          search_vector?: unknown | null
-          sent_at?: string | null
-          subject?: string | null
-          suggested_recipients?: string[] | null
-          updated_at?: string | null
-          version?: number | null
-          view_count?: number | null
-        }
-        Update: {
-          ai_analysis?: Json | null
-          child_id?: string
-          comment_count?: number | null
-          confirmed_recipients?: string[] | null
-          content?: string | null
-          content_format?: string | null
-          created_at?: string | null
-          digest_id?: string | null
-          distribution_status?: string | null
-          edit_count?: number | null
-          id?: string
-          last_edited_at?: string | null
-          like_count?: number | null
-          media_urls?: string[] | null
-          milestone_type?: string | null
-          parent_id?: string
-          response_count?: number | null
-          rich_content?: Json | null
-          scheduled_for?: string | null
-          search_vector?: unknown | null
-          sent_at?: string | null
-          subject?: string | null
-          suggested_recipients?: string[] | null
-          updated_at?: string | null
-          version?: number | null
-          view_count?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "updates_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: false
-            referencedRelation: "children"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "updates_digest_id_fkey"
-            columns: ["digest_id"]
-            isOneToOne: false
-            referencedRelation: "digests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "updates_parent_id_fkey"
-            columns: ["parent_id"]
+            foreignKeyName: "user_metadata_values_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1250,7 +1546,83 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      prompt_analytics: {
+        Row: {
+          category: string | null
+          click_through_rate: number | null
+          created_at: string | null
+          display_weight: number | null
+          id: string | null
+          is_active: boolean | null
+          prompt_text: string | null
+          times_clicked: number | null
+          times_shown: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          click_through_rate?: never
+          created_at?: string | null
+          display_weight?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          prompt_text?: string | null
+          times_clicked?: number | null
+          times_shown?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          click_through_rate?: never
+          created_at?: string | null
+          display_weight?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          prompt_text?: string | null
+          times_clicked?: number | null
+          times_shown?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipient_preferences: {
+        Row: {
+          content_types: string[] | null
+          created_at: string | null
+          email: string | null
+          frequency: string | null
+          group_default_channels: string[] | null
+          group_default_frequency: string | null
+          group_id: string | null
+          group_name: string | null
+          id: string | null
+          importance_threshold: string | null
+          is_active: boolean | null
+          name: string | null
+          overrides_group_default: boolean | null
+          parent_id: string | null
+          phone: string | null
+          preference_token: string | null
+          preferred_channels: string[] | null
+          relationship: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipients_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "recipient_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipients_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       analyze_content_formats: {
@@ -1263,8 +1635,22 @@ export type Database = {
           has_subject_count: number
         }[]
       }
+      bulk_update_metadata: {
+        Args: {
+          p_category: string
+          p_memory_ids: string[]
+          p_operation?: string
+          p_user_id: string
+          p_values: string[]
+        }
+        Returns: number
+      }
       cleanup_expired_invitations: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_notification_data: {
+        Args: { p_days_to_keep?: number }
         Returns: number
       }
       cleanup_old_notifications: {
@@ -1275,6 +1661,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      create_digest_jobs: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       create_template_from_community_prompt: {
         Args: {
           age_max?: number
@@ -1283,6 +1673,19 @@ export type Database = {
           prompt_type_param: string
           template_text_param: string
           variables_param?: Json
+        }
+        Returns: string
+      }
+      enqueue_notification_job: {
+        Args: {
+          p_content?: Json
+          p_delivery_method?: string
+          p_group_id: string
+          p_notification_type?: string
+          p_recipient_id: string
+          p_schedule_delay_minutes?: number
+          p_update_id: string
+          p_urgency_level?: string
         }
         Returns: string
       }
@@ -1303,6 +1706,19 @@ export type Database = {
         }
         Returns: string
       }
+      get_metadata_autocomplete: {
+        Args: {
+          p_category: string
+          p_limit?: number
+          p_query?: string
+          p_user_id: string
+        }
+        Returns: {
+          last_used_at: string
+          usage_count: number
+          value: string
+        }[]
+      }
       get_narrative_preview: {
         Args: { narrative_json: Json }
         Returns: string
@@ -1310,6 +1726,14 @@ export type Database = {
       get_notification_preferences: {
         Args: { user_uuid: string }
         Returns: Json
+      }
+      get_random_prompt_suggestion: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          category: string
+          id: string
+          prompt_text: string
+        }[]
       }
       get_recent_template_ids: {
         Args: { child_uuid: string; days_back?: number }
@@ -1319,6 +1743,25 @@ export type Database = {
         Args: { token: string }
         Returns: {
           recipient_data: Json
+        }[]
+      }
+      get_summaries_for_auto_publish: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          auto_publish_hours: number
+          compiled_at: string
+          hours_since_compiled: number
+          parent_id: string
+          summary_id: string
+        }[]
+      }
+      get_summaries_needing_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hours_until_auto_publish: number
+          last_reminder_hours_ago: number
+          parent_id: string
+          summary_id: string
         }[]
       }
       get_templates_by_filters: {
@@ -1341,6 +1784,33 @@ export type Database = {
           usage_count: number
           variables: Json
         }[]
+      }
+      get_user_metadata_values: {
+        Args: { p_category: string; p_user_id: string }
+        Returns: {
+          memory_count: number
+          value: string
+        }[]
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       increment_invitation_use_count: {
         Args: { invitation_id_param: string }
@@ -1382,9 +1852,49 @@ export type Database = {
         }
         Returns: string
       }
+      search_memories_by_metadata: {
+        Args: {
+          p_dates?: string[]
+          p_locations?: string[]
+          p_match_type?: string
+          p_milestones?: string[]
+          p_people?: string[]
+          p_user_id: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          memory_id: string
+          metadata: Json
+        }[]
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      should_send_to_recipient: {
+        Args: { recipient_threshold: string; update_importance: string }
+        Returns: boolean
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
       subject_search_vector: {
         Args: { subject_text: string }
         Returns: unknown
+      }
+      track_prompt_clicked: {
+        Args: { prompt_id: string }
+        Returns: undefined
+      }
+      track_prompt_shown: {
+        Args: { prompt_id: string }
+        Returns: undefined
       }
       update_template_effectiveness: {
         Args: { new_score: number; template_uuid: string }
@@ -1411,27 +1921,6 @@ export type Database = {
       validate_rich_text_length: {
         Args: { html_content: string; max_length?: number }
         Returns: boolean
-      }
-      get_summaries_for_auto_publish: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          parent_id: string
-          title: string
-          compiled_at: string
-          auto_publish_hours: number
-        }[]
-      }
-      get_summaries_needing_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          parent_id: string
-          title: string
-          compiled_at: string
-          last_reminder_sent_at: string | null
-          reminder_count: number
-        }[]
       }
     }
     Enums: {

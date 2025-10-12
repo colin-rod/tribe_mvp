@@ -10,56 +10,19 @@ import { NotificationSection } from './NotificationSection'
 import { PrivacySection } from './PrivacySection'
 import { ChildrenSection } from './ChildrenSection'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import type { ProfileTab } from '@/lib/types/profile'
-
-const PROFILE_TABS: ProfileTab[] = [
-  {
-    id: 'profile',
-    label: 'Profile',
-    description: 'Personal information and preferences',
-    icon: 'user'
-  },
-  {
-    id: 'account',
-    label: 'Account',
-    description: 'Manage your sign-in email',
-    icon: 'cog'
-  },
-  {
-    id: 'security',
-    label: 'Security',
-    description: 'Update your password',
-    icon: 'shield'
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    description: 'Email and push notification preferences',
-    icon: 'bell'
-  },
-  {
-    id: 'privacy',
-    label: 'Privacy',
-    description: 'Data privacy and sharing controls',
-    icon: 'lock'
-  },
-  {
-    id: 'children',
-    label: 'Children',
-    description: 'Manage your children\'s profiles',
-    icon: 'users'
-  }
-]
+import { PROFILE_TABS } from '@/lib/constants/profile'
+import { useBreadcrumbs } from '@/components/navigation/Breadcrumbs'
 
 export function ProfileManager() {
   const { user, loading } = useAuth()
   const [activeTab, setActiveTab] = useState<string>('profile')
+  const { setCrumbs, clearCrumbs } = useBreadcrumbs()
 
   // Handle URL tab parameter
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const tabParam = urlParams.get('tab')
-    const validTabs = ['profile', 'account', 'security', 'notifications', 'privacy', 'children']
+    const validTabs = PROFILE_TABS.map((tab) => tab.id)
 
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam)
@@ -79,6 +42,31 @@ export function ProfileManager() {
     }
     window.history.replaceState({}, '', url.toString())
   }
+
+  useEffect(() => {
+    const activeConfig = PROFILE_TABS.find((tab) => tab.id === activeTab)
+
+    if (!activeConfig) {
+      clearCrumbs()
+      return
+    }
+
+    const tabUrl = activeConfig.id === 'profile'
+      ? '/dashboard/settings'
+      : `/dashboard/settings?tab=${activeConfig.id}`
+
+    setCrumbs([
+      {
+        id: `profile-tab-${activeConfig.id}`,
+        label: activeConfig.label,
+        href: tabUrl
+      }
+    ])
+
+    return () => {
+      clearCrumbs()
+    }
+  }, [activeTab, clearCrumbs, setCrumbs])
 
   if (loading) {
     return (

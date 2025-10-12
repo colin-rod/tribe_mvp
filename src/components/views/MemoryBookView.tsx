@@ -1,3 +1,10 @@
+/**
+ * Memory Book View - Timeline of Sent Summaries
+ * CRO-534: Memory Book Experience - Unified Dashboard Navigation
+ *
+ * Displays browsable timeline of weekly memory summaries within dashboard layout
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -9,11 +16,7 @@ import { ErrorState } from '@/components/ui/ErrorState'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
-/**
- * Memory Book Timeline Page
- * Shows weekly summaries as browsable timeline pages
- */
-export default function MemoryBookPage() {
+export function MemoryBookView() {
   const router = useRouter()
   const [summaries, setSummaries] = useState<Summary[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,7 +40,7 @@ export default function MemoryBookPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center h-full">
         <LoadingState message="Loading Memory Book..." />
       </div>
     )
@@ -45,7 +48,7 @@ export default function MemoryBookPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center h-full p-8">
         <ErrorState message={error} onRetry={loadSummaries} />
       </div>
     )
@@ -53,8 +56,8 @@ export default function MemoryBookPage() {
 
   if (summaries.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center py-12 px-4 max-w-md">
           <svg
             className="mx-auto h-16 w-16 text-neutral-400"
             fill="none"
@@ -73,8 +76,8 @@ export default function MemoryBookPage() {
             Create and approve summaries to build your Memory Book timeline.
           </p>
           <div className="mt-6">
-            <Button onClick={() => router.push('/dashboard')}>
-              Go to Dashboard
+            <Button onClick={() => router.push('/dashboard/digests')}>
+              View Summaries
             </Button>
           </div>
         </div>
@@ -83,39 +86,20 @@ export default function MemoryBookPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
+    <div className="h-full overflow-y-auto bg-gradient-to-b from-neutral-50 to-white">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Memory Book</h1>
-              <p className="text-sm text-neutral-600 mt-1">
-                Your collection of weekly memory summaries
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              {/* Print/Export Placeholder CTA */}
-              <Button variant="outline" disabled className="opacity-50">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Print (Coming Soon)
-              </Button>
-              <Button variant="outline" disabled className="opacity-50">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Export (Coming Soon)
-              </Button>
-            </div>
-          </div>
+      <div className="bg-white border-b border-neutral-200 sticky top-0 z-10 px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Memory Book</h1>
+          <p className="text-sm text-neutral-600 mt-1">
+            Your collection of weekly memory summaries
+          </p>
         </div>
       </div>
 
       {/* Timeline */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="px-6 py-8">
+        <div className="max-w-3xl mx-auto">
           {/* Timeline line */}
           <div className="relative">
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-neutral-200" />
@@ -127,7 +111,7 @@ export default function MemoryBookPage() {
                   key={summary.id}
                   summary={summary}
                   isFirst={index === 0}
-                  onClick={() => router.push(`/memory-book/${summary.id}`)}
+                  onClick={() => router.push(`/dashboard/memory-book/${summary.id}`)}
                 />
               ))}
             </div>

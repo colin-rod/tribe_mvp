@@ -374,12 +374,32 @@ Please execute this migration via the Supabase SQL Editor:
 
 ## Git Workflow for Claude Code
 
-**IMPORTANT**: Claude Code must NEVER commit directly to `main` or `development` branches. All changes must go through Pull Requests for human review.
+**CRITICAL RULE**: Claude Code must **ALWAYS** create a new branch before making ANY code changes. NEVER commit directly to `main` or `development` branches. All changes must go through Pull Requests for human review.
+
+### Mandatory Pre-Change Check
+
+**BEFORE MAKING ANY CODE CHANGES**, Claude Code must:
+
+1. **Check current branch**:
+   ```bash
+   git branch --show-current
+   ```
+
+2. **If on `main` or `development`**, immediately create a new branch:
+   ```bash
+   git checkout -b claude/CRO-XXX-description
+   # or for non-Linear work:
+   git checkout -b claude/fix-description
+   ```
+
+3. **Only then** proceed with code modifications
+
+**NO EXCEPTIONS**: Even for "quick fixes" or "small changes", a new branch must be created first.
 
 ### Branch Strategy
 
 When making code changes, Claude Code will:
-1. Create a new feature branch with the `claude/` prefix
+1. **ALWAYS create a new feature branch** with the `claude/` prefix (before any code edits)
 2. Make all commits to that branch
 3. Push the branch to remote
 4. Automatically open a Pull Request

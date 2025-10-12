@@ -28,6 +28,14 @@ export interface UseNavigationStateReturn {
   getParam: (key: string) => string | null;
   /** Navigate with specific params */
   navigateWithParams: (path: DashboardRoute, params: Record<string, string>) => void;
+  /** Whether the mobile navigation drawer is open */
+  isMobileNavOpen: boolean;
+  /** Toggle the mobile navigation drawer */
+  toggleMobileNav: () => void;
+  /** Close the mobile navigation drawer */
+  closeMobileNav: () => void;
+  /** Open the mobile navigation drawer */
+  openMobileNav: () => void;
 }
 
 /**
@@ -53,15 +61,28 @@ export function useNavigationState(): UseNavigationStateReturn {
     searchParams,
     activeItemId,
     navigate: contextNavigate,
-    navigatePreserving,
+    navigatePreserving: contextNavigatePreserving,
     isActive,
+    isMobileNavOpen,
+    toggleMobileNav,
+    closeMobileNav,
+    openMobileNav,
   } = useNavigation();
 
   const navigate = useCallback(
     (path: DashboardRoute, preserveParams = false) => {
       contextNavigate(path, { preserveParams });
+      closeMobileNav();
     },
-    [contextNavigate]
+    [contextNavigate, closeMobileNav]
+  );
+
+  const navigatePreserving = useCallback(
+    (path: DashboardRoute) => {
+      contextNavigatePreserving(path);
+      closeMobileNav();
+    },
+    [contextNavigatePreserving, closeMobileNav]
   );
 
   const getParam = useCallback(
@@ -74,8 +95,9 @@ export function useNavigationState(): UseNavigationStateReturn {
   const navigateWithParams = useCallback(
     (path: DashboardRoute, params: Record<string, string>) => {
       contextNavigate(path, { params });
+      closeMobileNav();
     },
-    [contextNavigate]
+    [contextNavigate, closeMobileNav]
   );
 
   return {
@@ -87,5 +109,9 @@ export function useNavigationState(): UseNavigationStateReturn {
     isActive,
     getParam,
     navigateWithParams,
+    isMobileNavOpen,
+    toggleMobileNav,
+    closeMobileNav,
+    openMobileNav,
   };
 }

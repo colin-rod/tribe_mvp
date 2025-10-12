@@ -4,6 +4,7 @@
  * RightPaneContent Component
  * CRO-299: Right Pane - Other View Contexts
  * CRO-303: Performance Optimization & Code Splitting
+ * CRO-534: Memory Book Experience - Unified Dashboard Navigation
  *
  * Content router for right pane that displays context-aware content
  * based on the active navigation view.
@@ -54,6 +55,11 @@ const SettingsRightPane = dynamic(
   { loading: () => <RightPaneSkeleton /> }
 )
 
+const MemoryBookRightPane = dynamic(
+  () => import('./MemoryBookRightPane').then(mod => ({ default: mod.MemoryBookRightPane })),
+  { loading: () => <RightPaneSkeleton /> }
+)
+
 /**
  * Skeleton loading state for right pane components
  */
@@ -87,7 +93,11 @@ export function RightPaneContent() {
           onSelectAIPrompt={handleSelectAIPrompt}
         />
       )
+    case 'memory-book':
+      return <MemoryBookRightPane />
     case 'digests':
+      return <SummaryRightPane />
+    case 'summaries':
       return <SummaryRightPane />
     case 'children':
       return <ChildrenRightPane />

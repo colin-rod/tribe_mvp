@@ -15,6 +15,9 @@ export interface ProfileFormData {
 
 export interface AccountFormData {
   email: string
+  timezone: string
+  autoSave: boolean
+  emailDigest: boolean
 }
 
 export interface SecurityFormData {

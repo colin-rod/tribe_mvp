@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Bell } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { LAYOUT_DIMENSIONS, LAYOUT_Z_INDEX } from '@/types/layout'
 import { GlobalSearch } from './GlobalSearch'
 import { UserDropdown } from './UserDropdown'
 import { ProfileModal } from '@/components/profile/ProfileModal'
 import { Button } from '@/components/ui/Button'
+import { useNavigationState } from '@/hooks/useNavigationState'
 
 /**
  * TopBar component with three sections: logo (left), search (center), profile (right)
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/Button'
 export function TopBar() {
   const { user, signOut } = useAuth()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const { isMobileNavOpen, toggleMobileNav } = useNavigationState()
 
   return (
     <header
@@ -29,7 +31,19 @@ export function TopBar() {
       <div className="h-full">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
           {/* Left Section: Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-neutral-600 hover:text-neutral-900"
+              onClick={toggleMobileNav}
+              aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileNavOpen}
+              aria-controls="mobile-navigation"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </Button>
             <Link
               href="/dashboard"
               className="rounded px-2 text-xl font-bold text-primary-700 transition-colors duration-200 hover:text-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
