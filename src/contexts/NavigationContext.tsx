@@ -16,7 +16,7 @@ import React, {
   useState,
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { DashboardRoute, isPathActive } from '@/lib/constants/routes';
+import { DashboardRoute } from '@/lib/constants/routes';
 import {
   getNavigationItemByPath,
   type DashboardNavigationItemId,

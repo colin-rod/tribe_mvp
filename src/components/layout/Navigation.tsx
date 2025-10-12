@@ -218,15 +218,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                     )
                   })}
                 </div>
-              <div className="hidden md:flex ml-10 space-x-8">
-                <Link
-                  href="/dashboard"
-                  prefetch={true}
-                  onClick={() => trackNavigationClick('/dashboard')}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Dashboard
-                </Link>
                 {customActions || (
                   <button
                     type="button"
