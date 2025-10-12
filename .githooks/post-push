@@ -1,0 +1,122 @@
+#!/bin/bash
+# Post-push hook to automatically create Pull Requests
+# This runs after a successful git push
+
+set -e
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+PROTECTED_BRANCHES="^(main|development)$"
+
+# Skip if on protected branch
+if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
+    exit 0
+fi
+
+# Check if branch is pushed to remote
+if ! git rev-parse --verify origin/"$BRANCH" &>/dev/null; then
+    exit 0
+fi
+
+# Check if PR already exists
+PR_EXISTS=$(gh pr list --head "$BRANCH" --json number --jq '. | length' 2>/dev/null || echo "0")
+
+if [ "$PR_EXISTS" -gt 0 ]; then
+    echo "✅ Pull Request already exists for branch: $BRANCH"
+    PR_URL=$(gh pr list --head "$BRANCH" --json url --jq '.[0].url')
+    echo "View PR: $PR_URL"
+    exit 0
+fi
+
+# Determine base branch (default to development)
+BASE_BRANCH="development"
+
+# Check if this looks like a hotfix (should go to main)
+if [[ "$BRANCH" =~ ^(hotfix|emergency)/ ]]; then
+    BASE_BRANCH="main"
+    echo "⚠️  Detected hotfix branch - will target 'main'"
+    read -p "Continue with base branch 'main'? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cancelled. Please create PR manually: gh pr create --base development"
+        exit 0
+    fi
+fi
+
+echo ""
+echo "🚀 Creating Pull Request for branch: $BRANCH"
+echo "   Base branch: $BASE_BRANCH"
+echo ""
+
+# Get commit messages since branching
+COMMITS=$(git log --pretty=format:"- %s" origin/$BASE_BRANCH..HEAD | head -10)
+
+# Extract Linear issue ID if present
+LINEAR_ISSUE=""
+if [[ "$BRANCH" =~ CRO-([0-9]+) ]]; then
+    LINEAR_ISSUE="CRO-${BASH_REMATCH[1]}"
+    echo "   Linear Issue: $LINEAR_ISSUE"
+fi
+
+# Create PR title from branch name
+PR_TITLE=$(echo "$BRANCH" | sed -E 's/^[^/]+\///' | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+
+# If Linear issue exists, get details
+if [ -n "$LINEAR_ISSUE" ]; then
+    ISSUE_TITLE=$(linear issue view "$LINEAR_ISSUE" --format json 2>/dev/null | jq -r '.title' || echo "")
+    if [ -n "$ISSUE_TITLE" ] && [ "$ISSUE_TITLE" != "null" ]; then
+        PR_TITLE="$LINEAR_ISSUE: $ISSUE_TITLE"
+    fi
+fi
+
+# Create PR body
+PR_BODY="## Summary
+
+$COMMITS
+
+"
+
+if [ -n "$LINEAR_ISSUE" ]; then
+    PR_BODY+="## Linear Issue
+$LINEAR_ISSUE
+
+"
+fi
+
+PR_BODY+="## Test Plan
+- [ ] Linting passes (\`npm run lint\`)
+- [ ] Type checking passes (\`npx tsc --noEmit\`)
+- [ ] Tests pass (\`npm test\`)
+- [ ] Manual testing completed
+
+## Changes
+<!-- Describe your changes here -->
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
+# Create the PR
+if command -v gh &> /dev/null; then
+    PR_URL=$(gh pr create \
+        --base "$BASE_BRANCH" \
+        --title "$PR_TITLE" \
+        --body "$PR_BODY" \
+        --web 2>&1)
+
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "✅ Pull Request created successfully!"
+        echo ""
+    else
+        echo ""
+        echo "⚠️  Could not create PR automatically. Please create manually:"
+        echo "   gh pr create --base $BASE_BRANCH"
+        echo ""
+    fi
+else
+    echo ""
+    echo "⚠️  GitHub CLI (gh) not found. Install it to enable automatic PR creation:"
+    echo "   brew install gh"
+    echo ""
+    echo "Create PR manually:"
+    echo "   gh pr create --base $BASE_BRANCH"
+    echo ""
+fi

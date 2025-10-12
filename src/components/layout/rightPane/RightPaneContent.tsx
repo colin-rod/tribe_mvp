@@ -93,10 +93,6 @@ export function RightPaneContent() {
           onSelectAIPrompt={handleSelectAIPrompt}
         />
       )
-    case 'memory-book':
-      return <MemoryBookRightPane />
-    case 'digests':
-      return <SummaryRightPane />
     case 'summaries':
       return <SummaryRightPane />
     case 'children':

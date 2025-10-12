@@ -1,8 +1,8 @@
 export interface ProfileTab {
-  id: string
-  label: string
-  description: string
-  icon: 'user' | 'cog' | 'shield' | 'bell' | 'lock' | 'users'
+  readonly id: 'profile' | 'account' | 'security' | 'notifications' | 'privacy' | 'children'
+  readonly label: string
+  readonly description: string
+  readonly icon: 'user' | 'cog' | 'shield' | 'bell' | 'lock' | 'users'
 }
 
 export interface ProfileFormData {

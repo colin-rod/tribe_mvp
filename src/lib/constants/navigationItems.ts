@@ -2,12 +2,9 @@
  * Navigation Items Configuration
  * CRO-294: Left Navigation Panel - Structure & Toggle
  * CRO-295: Routing & Navigation State Management
+ * CRO-534: Memory Book Experience - Unified Dashboard Navigation
  *
  * Centralized navigation configuration shared by all dashboard surfaces.
- */
-
-import type { ComponentType } from 'react';
- * CRO-534: Memory Book Experience - Unified Dashboard Navigation
  * Updated for Memory Book Experience (Updates → Memories, Digests → Summaries)
  */
 
@@ -30,7 +27,7 @@ import { DASHBOARD_ROUTES, type DashboardRoute } from './routes';
 export type NavigationIcon = ComponentType<{ className?: string }>;
 
 export interface DashboardNavigationItem {
-  id: 'activity' | 'digests' | 'children' | 'recipients' | 'groups' | 'drafts' | 'settings';
+  id: 'activity' | 'summaries' | 'children' | 'recipients' | 'groups' | 'drafts' | 'settings';
   label: string;
   icon: NavigationIcon;
   href: DashboardRoute;
@@ -44,31 +41,7 @@ export interface DashboardNavigationSection {
   items: readonly DashboardNavigationItem[];
 }
 
-export const DASHBOARD_NAVIGATION_SECTIONS = [
-  icon: ComponentType<{ className?: string }>;
-  href: string;
-  badge?: number; // For notification counts
-}
-
-export interface NavigationSection {
-  id: string;
-  label: string;
-  items: NavItem[];
-}
-
-export const navigationItems: NavItem[] = [
-  {
-    id: 'activity',
-    label: 'Activity',
-    icon: RectangleStackIcon,
-    href: '/dashboard/activity',
-  },
-  {
-    id: 'memory-book',
-    label: 'Memory Book',
-    icon: BookOpenIcon,
-    href: '/dashboard/memory-book',
-  },
+export const DASHBOARD_NAVIGATION_SECTIONS: readonly DashboardNavigationSection[] = [
   {
     id: 'overview',
     items: [
@@ -80,10 +53,10 @@ export const navigationItems: NavItem[] = [
         alternateHrefs: [DASHBOARD_ROUTES.ACTIVITY_ALT],
       },
       {
-        id: 'digests',
+        id: 'summaries',
         label: 'Memory Book',
         icon: BookOpenIcon,
-        href: DASHBOARD_ROUTES.DIGESTS,
+        href: DASHBOARD_ROUTES.SUMMARIES,
       },
     ],
   },
@@ -122,6 +95,59 @@ export const navigationItems: NavItem[] = [
         href: DASHBOARD_ROUTES.SETTINGS,
       },
     ],
+  },
+] as const;
+
+export type DashboardNavigationItemId =
+  (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
+
+export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
+  (section) => section.items
+);
+
+export function getNavigationItemByPath(pathname: string) {
+  return DASHBOARD_NAVIGATION_ITEMS.find(
+    (item) =>
+      item.href === pathname ||
+      item.alternateHrefs?.includes(pathname as DashboardRoute)
+  );
+}
+
+// Legacy navigation items for mobile menu
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  badge?: number;
+}
+
+export interface NavigationSection {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+export const navigationItems: NavItem[] = [
+  {
+    id: 'activity',
+    label: 'Activity',
+    icon: RectangleStackIcon,
+    href: '/dashboard/activity',
+  },
+  {
+    id: 'memory-book',
+    label: 'Memory Book',
+    icon: BookOpenIcon,
+    href: '/dashboard/memory-book',
+  },
+  {
+    id: 'recipients',
+    label: 'Recipients',
+    icon: UserPlusIcon,
+    href: '/dashboard/recipients',
+  },
+  {
     id: 'summaries',
     label: 'Summaries',
     icon: DocumentTextIcon,
@@ -167,19 +193,4 @@ export const mobileNavigationSections: NavigationSection[] = [
     label: 'Account',
     items: accountNavigationItems,
   },
-] as const satisfies readonly DashboardNavigationSection[];
-
-export type DashboardNavigationItemId =
-  (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
-
-export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
-  (section) => section.items
-) as readonly DashboardNavigationItem[];
-
-export function getNavigationItemByPath(pathname: string) {
-  return DASHBOARD_NAVIGATION_ITEMS.find(
-    (item) =>
-      item.href === pathname ||
-      item.alternateHrefs?.includes(pathname as DashboardRoute)
-  );
-}
+];

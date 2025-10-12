@@ -23,13 +23,11 @@ import { cn, getInitials } from '@/lib/utils'
 import {
   DASHBOARD_NAVIGATION_ITEMS,
   DASHBOARD_NAVIGATION_SECTIONS,
+  mobileNavigationSections,
   type DashboardNavigationItem,
 } from '@/lib/constants/navigationItems'
-import { getInitials, cn } from '@/lib/utils'
-import { mobileNavigationSections } from '@/lib/constants/navigationItems'
 import type { UpdateType } from '@/hooks/useActivityFilters'
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
-import { useNavigationState } from '@/hooks/useNavigationState'
 
 function useOptionalNavigationState() {
   try {
@@ -218,15 +216,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                     )
                   })}
                 </div>
-              <div className="hidden md:flex ml-10 space-x-8">
-                <Link
-                  href="/dashboard"
-                  prefetch={true}
-                  onClick={() => trackNavigationClick('/dashboard')}
-                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                >
-                  Dashboard
-                </Link>
                 {customActions || (
                   <button
                     type="button"
@@ -424,14 +413,14 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
           <div className="px-2 pt-2 pb-3 space-y-4 bg-white shadow-lg border-t border-neutral-200 max-h-[calc(100vh-4rem)] overflow-y-auto animate-slide-up">
             {DASHBOARD_NAVIGATION_SECTIONS.map((section) => (
               <div key={section.id} className="space-y-1">
-                {section.label ? (
+                {'label' in section && section.label ? (
                   <p className="px-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                     {section.label}
                   </p>
                 ) : null}
                 {section.items.map((item) => {
                   const Icon = item.icon
-                  const itemIsActive = isActive(item.href, item.alternateHrefs)
+                  const itemIsActive = isActive(item.href, 'alternateHrefs' in item ? item.alternateHrefs : undefined)
 
                   return (
                     <Link
@@ -470,55 +459,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                   Create Memory
                 </button>
               )}
-          <div className="border-t border-neutral-200 bg-white px-4 py-4 shadow-lg">
-            <div className="max-h-[calc(100vh-4rem)] space-y-8 overflow-y-auto pr-1">
-              {mobileNavigationSections.map(section => (
-                <div key={section.id}>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                    {section.label}
-                  </p>
-                  <div className="space-y-1">
-                    {section.items.map(item => {
-                      const Icon = item.icon
-                      const basePath = item.href.split('?')[0]
-                      const active = pathname.startsWith(basePath)
-
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={cn(
-                            'flex min-h-[44px] items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                            active
-                              ? 'bg-primary-50 text-primary-700'
-                              : 'text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900'
-                          )}
-                          aria-current={active ? 'page' : undefined}
-                        >
-                          <Icon className="h-5 w-5 flex-shrink-0 text-neutral-500" aria-hidden="true" />
-                          <span className="flex-1 truncate">{item.label}</span>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              <div className="border-t border-neutral-200 pt-3">
-                {customActions || (
-                  <button
-                    type="button"
-                    onClick={() => triggerCreateUpdate('photo')}
-                    className="flex w-full min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-3 py-3 text-base font-medium text-white transition-all duration-200 hover:bg-primary-700 hover:shadow-md active:scale-[0.98] active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create Memory
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>

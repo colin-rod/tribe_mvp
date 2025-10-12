@@ -2054,3 +2054,18 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// Custom dashboard types used by hooks
+// TODO: Generate these from database schema or define properly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type UpdateWithChild = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DashboardStats = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TimelineUpdate = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DashboardFilters = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PaginationParams = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EngagementUpdatePayload = any

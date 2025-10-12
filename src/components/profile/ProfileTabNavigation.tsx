@@ -32,7 +32,7 @@ function useOptionalNavigationState() {
 }
 
 interface ProfileTabNavigationProps {
-  tabs: ProfileTab[]
+  tabs: readonly ProfileTab[]
   activeTab: string
   onTabChange: (tabId: string) => void
   variant: 'sidebar' | 'accordion'

@@ -194,7 +194,8 @@ export async function updateMemory(
 
   const { data, error } = await supabase
     .from('memories')
-    .update(updates)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(updates as any)
     .eq('id', memoryId)
     .eq('parent_id', user.id)
     .select()
@@ -331,7 +332,8 @@ export async function markMemoryAsSent(memoryId: string, summaryId?: string): Pr
 
   const { data, error } = await supabase
     .from('memories')
-    .update(updateData)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(updateData as any)
     .eq('id', memoryId)
     .eq('parent_id', user.id)
     .select()
@@ -364,7 +366,8 @@ export async function updateMemoryContent(
 
   const { data, error } = await supabase
     .from('memories')
-    .update(updateData)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update(updateData as any)
     .eq('id', memoryId)
     .eq('parent_id', user.id)
     .select()

@@ -11,6 +11,7 @@ import { PrivacySection } from './PrivacySection'
 import { ChildrenSection } from './ChildrenSection'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PROFILE_TABS } from '@/lib/constants/profile'
+import type { ProfileTab } from '@/lib/types/profile'
 import { useBreadcrumbs } from '@/components/navigation/Breadcrumbs'
 
 export function ProfileManager() {
@@ -24,8 +25,8 @@ export function ProfileManager() {
     const tabParam = urlParams.get('tab')
     const validTabs = PROFILE_TABS.map((tab) => tab.id)
 
-    if (tabParam && validTabs.includes(tabParam)) {
-      setActiveTab(tabParam)
+    if (tabParam && validTabs.includes(tabParam as ProfileTab['id'])) {
+      setActiveTab(tabParam as ProfileTab['id'])
     }
   }, [])
 

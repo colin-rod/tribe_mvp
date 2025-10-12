@@ -44,7 +44,7 @@ export function MiddlePane({ className = '' }: MiddlePaneProps) {
     switch (activeItemId) {
       case 'activity':
         return <ActivityFeedView />;
-      case 'digests':
+      case 'summaries':
         return <DigestsView />;
       case 'children':
         return <ChildrenView />;

@@ -458,6 +458,18 @@ Use descriptive branch names with the `claude/` prefix:
      --base development
    ```
 
+### Automation & Enforcement
+
+- **Applies to Claude *and* Codex**: Both agents must follow this branching strategy.
+- `./.githooks/pre-commit` blocks commits on `main` and `development`.
+- `./.githooks/pre-push` verifies feature branches are rebased on `development` (or `main` for `hotfix/`), then runs `npm run lint` and `npx tsc --noEmit`. Pushes fail until the checks pass.
+- `./.githooks/post-push` auto-creates a Pull Request targeting `development` (or `main` for hotfix branches) via the GitHub CLI.
+- Install or refresh the hooks anytime with:
+  ```bash
+  ./.githooks/install.sh
+  ```
+- Hotfixes or emergencies should use the `hotfix/` or `emergency/` prefix to target `main`; all other work flows through `development`.
+
 ### PR Requirements
 
 All Pull Requests must:

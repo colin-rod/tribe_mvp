@@ -1,0 +1,75 @@
+#!/bin/bash
+# Pre-push hook to enforce workflow rules for Claude and Codex
+# - Blocks pushes from protected branches
+# - Ensures feature branches are based on development (or main for hotfix)
+# - Runs linting and type checks before allowing a push
+
+set -euo pipefail
+
+# Allow manual override when absolutely necessary
+if [[ "${SKIP_PUSH_CHECKS:-0}" == "1" ]]; then
+    echo "⚠️  SKIP_PUSH_CHECKS=1 detected — skipping pre-push validations."
+    exit 0
+fi
+
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+PROTECTED_BRANCHES="^(main|development)$"
+
+if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
+    cat <<'EOF'
+❌ Direct pushes from protected branch detected!
+
+Please create a feature branch from development before pushing changes:
+  git checkout development
+  git pull --ff-only
+  git checkout -b claude/feature-description
+EOF
+    exit 1
+fi
+
+BASE_BRANCH="development"
+if [[ "$BRANCH" =~ ^(hotfix|emergency)/ ]]; then
+    BASE_BRANCH="main"
+fi
+
+echo "🔍 Verifying $BRANCH is up to date with origin/$BASE_BRANCH..."
+git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || {
+    echo "⚠️  Unable to fetch origin/$BASE_BRANCH. Ensure the branch exists and network access is available."
+    exit 1
+}
+
+if ! git merge-base --is-ancestor "origin/$BASE_BRANCH" HEAD; then
+    cat <<EOF
+❌ $BRANCH is not based on origin/$BASE_BRANCH.
+
+Please rebase before pushing:
+  git fetch origin "$BASE_BRANCH"
+  git rebase origin/"$BASE_BRANCH"
+
+If you intend to target a different base, update the branch prefix (hotfix/, emergency/) or merge development first.
+EOF
+    exit 1
+fi
+
+echo "✅ Branch ancestry verified."
+echo "📋 Running required quality checks..."
+
+run_check() {
+    local description="$1"
+    shift
+    echo "- $description"
+    if "$@"; then
+        echo "  ✅ Passed"
+    else
+        echo "  ❌ Failed"
+        echo ""
+        echo "Fix the issues above or set SKIP_PUSH_CHECKS=1 to bypass (not recommended)."
+        exit 1
+    fi
+    echo ""
+}
+
+run_check "npm run lint" npm run lint --silent
+run_check "npx tsc --noEmit" npx tsc --noEmit
+
+echo "✅ All pre-push checks passed. Proceeding with push."

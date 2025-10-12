@@ -52,7 +52,7 @@ export default function ChildCard({ child, onEdit, onDelete, showActions = true 
           <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 aspect-square">
             <ChildImage
               childId={child.id}
-              photoUrl={child.profile_photo_url}
+              photoUrl={child.profile_photo_url ?? undefined}
               name={child.name}
               alt={`${child.name}'s profile`}
               className="w-full h-full object-cover"
