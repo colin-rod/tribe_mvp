@@ -241,7 +241,7 @@ function WithoutDescriptionsWrapper() {
         { value: 'weekly', label: 'Weekly', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       showDescription={false}
       ariaLabel="Notification frequency"
@@ -262,7 +262,7 @@ function CustomGridWrapper() {
         { value: 'crawling', label: 'Crawling', emoji: '🐾' },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       columns={{ mobile: 2, tablet: 3, desktop: 6 }}
       showDescription={false}

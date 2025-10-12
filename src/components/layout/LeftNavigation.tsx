@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { navigationItems } from '@/lib/constants/navigationItems';
+import { DASHBOARD_NAVIGATION_SECTIONS } from '@/lib/constants/navigationItems';
 import { NavItem } from './NavItem';
 import { NavToggleButton } from './NavToggleButton';
 
@@ -110,9 +110,18 @@ export function LeftNavigation() {
       aria-label="Main navigation"
     >
       {/* Navigation Items */}
-      <div className="flex-1 overflow-y-auto pt-0 pb-4 px-2 space-y-1">
-        {navigationItems.map((item) => (
-          <NavItem key={item.id} item={item} isCollapsed={isCollapsed} />
+      <div className="flex-1 overflow-y-auto pt-0 pb-4 px-2 space-y-4">
+        {DASHBOARD_NAVIGATION_SECTIONS.map((section) => (
+          <div key={section.id} className="space-y-1">
+            {!isCollapsed && section.label ? (
+              <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                {section.label}
+              </p>
+            ) : null}
+            {section.items.map((item) => (
+              <NavItem key={item.id} item={item} isCollapsed={isCollapsed} />
+            ))}
+          </div>
         ))}
       </div>
 

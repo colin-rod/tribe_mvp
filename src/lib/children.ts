@@ -8,8 +8,8 @@ export interface Child {
   parent_id: string
   name: string
   birth_date: string
-  profile_photo_url?: string
-  created_at: string
+  profile_photo_url?: string | null
+  created_at: string | null
 }
 
 export async function createChild(childData: Omit<Child, 'id' | 'parent_id' | 'created_at'>) {

@@ -9,6 +9,7 @@
 
 import { useNavigation } from '@/contexts/NavigationContext';
 import { DashboardRoute } from '@/lib/constants/routes';
+import type { DashboardNavigationItemId } from '@/lib/constants/navigationItems';
 import { useCallback } from 'react';
 
 export interface UseNavigationStateReturn {
@@ -17,17 +18,25 @@ export interface UseNavigationStateReturn {
   /** Current search parameters */
   searchParams: URLSearchParams;
   /** Active navigation item ID */
-  activeView: string | null;
+  activeView: DashboardNavigationItemId | null;
   /** Navigate to a route with options */
   navigate: (path: DashboardRoute, preserveParams?: boolean) => void;
   /** Navigate preserving all search params */
   navigatePreserving: (path: DashboardRoute) => void;
   /** Check if a path is active */
-  isActive: (path: string) => boolean;
+  isActive: (path: string, alternateHrefs?: readonly string[]) => boolean;
   /** Get a search param value */
   getParam: (key: string) => string | null;
   /** Navigate with specific params */
   navigateWithParams: (path: DashboardRoute, params: Record<string, string>) => void;
+  /** Whether the mobile navigation drawer is open */
+  isMobileNavOpen: boolean;
+  /** Toggle the mobile navigation drawer */
+  toggleMobileNav: () => void;
+  /** Close the mobile navigation drawer */
+  closeMobileNav: () => void;
+  /** Open the mobile navigation drawer */
+  openMobileNav: () => void;
 }
 
 /**
@@ -53,15 +62,28 @@ export function useNavigationState(): UseNavigationStateReturn {
     searchParams,
     activeItemId,
     navigate: contextNavigate,
-    navigatePreserving,
+    navigatePreserving: contextNavigatePreserving,
     isActive,
+    isMobileNavOpen,
+    toggleMobileNav,
+    closeMobileNav,
+    openMobileNav,
   } = useNavigation();
 
   const navigate = useCallback(
     (path: DashboardRoute, preserveParams = false) => {
       contextNavigate(path, { preserveParams });
+      closeMobileNav();
     },
-    [contextNavigate]
+    [contextNavigate, closeMobileNav]
+  );
+
+  const navigatePreserving = useCallback(
+    (path: DashboardRoute) => {
+      contextNavigatePreserving(path);
+      closeMobileNav();
+    },
+    [contextNavigatePreserving, closeMobileNav]
   );
 
   const getParam = useCallback(
@@ -74,8 +96,9 @@ export function useNavigationState(): UseNavigationStateReturn {
   const navigateWithParams = useCallback(
     (path: DashboardRoute, params: Record<string, string>) => {
       contextNavigate(path, { params });
+      closeMobileNav();
     },
-    [contextNavigate]
+    [contextNavigate, closeMobileNav]
   );
 
   return {
@@ -87,5 +110,9 @@ export function useNavigationState(): UseNavigationStateReturn {
     isActive,
     getParam,
     navigateWithParams,
+    isMobileNavOpen,
+    toggleMobileNav,
+    closeMobileNav,
+    openMobileNav,
   };
 }
