@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { Json } from '@/lib/types/database'
 
 const logger = createLogger('DigestScheduleDetailAPI')
 
@@ -206,12 +207,15 @@ export async function PATCH(
     }
 
     // Update schedule
+    const updateData = {
+      ...validatedData,
+      digest_settings: validatedData.digest_settings as Json | undefined,
+      updated_at: new Date().toISOString()
+    }
+
     const { data: updatedSchedule, error: updateError } = await supabase
       .from('digest_schedules')
-      .update({
-        ...validatedData,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', scheduleId)
       .select()
       .single()

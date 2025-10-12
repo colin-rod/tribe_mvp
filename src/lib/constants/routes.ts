@@ -6,11 +6,12 @@
 export const DASHBOARD_ROUTES = {
   ACTIVITY: '/dashboard',
   ACTIVITY_ALT: '/dashboard/activity',
-  DIGESTS: '/dashboard/digests',
+  MEMORY_BOOK: '/dashboard/memory-book',
+  SUMMARIES: '/dashboard/digests', // Pending summaries (formerly "digests")
   CHILDREN: '/dashboard/children',
   RECIPIENTS: '/dashboard/recipients',
   GROUPS: '/dashboard/groups',
-  DRAFTS: '/dashboard/drafts',
+  DRAFTS: '/dashboard/drafts', // Kept for backward compatibility
   SETTINGS: '/dashboard/settings',
 } as const;
 
@@ -28,10 +29,10 @@ export const NAVIGATION_ITEMS = [
     alternateHrefs: [DASHBOARD_ROUTES.ACTIVITY_ALT],
   },
   {
-    id: 'digests',
+    id: 'memory-book',
     label: 'Memory Book',
     icon: 'Mail',
-    href: DASHBOARD_ROUTES.DIGESTS,
+    href: DASHBOARD_ROUTES.MEMORY_BOOK,
   },
   {
     id: 'children',
