@@ -113,7 +113,7 @@ export function LeftNavigation() {
       <div className="flex-1 overflow-y-auto pt-0 pb-4 px-2 space-y-4">
         {DASHBOARD_NAVIGATION_SECTIONS.map((section) => (
           <div key={section.id} className="space-y-1">
-            {!isCollapsed && section.label ? (
+            {!isCollapsed && 'label' in section && section.label ? (
               <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                 {section.label}
               </p>

@@ -59,9 +59,11 @@ interface NavigationOptions {
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathnameRaw = usePathname();
+  const pathname = pathnameRaw ?? '/';
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParamsRaw = useSearchParams();
+  const searchParams = searchParamsRaw ?? new URLSearchParams();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const activeItem = useMemo(() => {

@@ -41,7 +41,7 @@ export interface DashboardNavigationSection {
   items: readonly DashboardNavigationItem[];
 }
 
-export const DASHBOARD_NAVIGATION_SECTIONS = [
+export const DASHBOARD_NAVIGATION_SECTIONS: readonly DashboardNavigationSection[] = [
   {
     id: 'overview',
     items: [
@@ -96,14 +96,14 @@ export const DASHBOARD_NAVIGATION_SECTIONS = [
       },
     ],
   },
-] as const satisfies readonly DashboardNavigationSection[];
+] as const;
 
 export type DashboardNavigationItemId =
   (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
 
 export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
   (section) => section.items
-) as readonly DashboardNavigationItem[];
+);
 
 export function getNavigationItemByPath(pathname: string) {
   return DASHBOARD_NAVIGATION_ITEMS.find(
