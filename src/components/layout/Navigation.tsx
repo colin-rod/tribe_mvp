@@ -21,6 +21,19 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { getInitials, cn } from '@/lib/utils'
 import { mobileNavigationSections } from '@/lib/constants/navigationItems'
 import type { UpdateType } from '@/hooks/useActivityFilters'
+import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
+import { useNavigationState } from '@/hooks/useNavigationState'
+
+function useOptionalNavigationState() {
+  try {
+    return useNavigationState()
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Navigation state unavailable for analytics', { error })
+    }
+    return null
+  }
+}
 
 interface NavigationProps {
   onCreateUpdate?: (type?: UpdateType) => void
@@ -35,8 +48,40 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const navigationState = useOptionalNavigationState()
+
+  const getPreservedParams = () => {
+    if (!navigationState) return {}
+    return Object.fromEntries(navigationState.searchParams.entries())
+  }
+
+  const trackNavigationClick = (
+    destination: string,
+    element: string = 'navigation-link',
+    additionalMetadata: Record<string, unknown> = {}
+  ) => {
+    if (typeof window === 'undefined') return
+
+    trackDashboardInteraction({
+      type: 'click',
+      element,
+      elementId: destination,
+      metadata: {
+        surface: 'top-bar',
+        destination,
+        activeView: navigationState?.activeView ?? null,
+        preservedParams: getPreservedParams(),
+        ...additionalMetadata
+      }
+    })
+  }
 
   const triggerCreateUpdate = (type: UpdateType = 'photo') => {
+    trackNavigationClick('/dashboard/create-memory', 'navigation-action', {
+      action: 'create-update',
+      updateType: type
+    })
+
     if (onCreateUpdate) {
       onCreateUpdate(type)
       setIsMobileMenuOpen(false)
@@ -84,7 +129,11 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-primary-700 hover:text-primary-800 transition-colors duration-200">
+              <Link
+                href="/"
+                className="text-xl font-bold text-primary-700 hover:text-primary-800 transition-colors duration-200"
+                onClick={() => trackNavigationClick('/', 'navigation-link', { label: 'brand', state: 'loading' })}
+              >
                 Tribe
               </Link>
             </div>
@@ -113,7 +162,11 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href={user ? "/dashboard" : "/"} className="text-xl font-bold text-primary-700 hover:text-primary-800 transition-colors duration-200">
+            <Link
+              href={user ? "/dashboard" : "/"}
+              className="text-xl font-bold text-primary-700 hover:text-primary-800 transition-colors duration-200"
+              onClick={() => trackNavigationClick(user ? '/dashboard' : '/', 'navigation-link', { label: 'brand' })}
+            >
               Tribe
             </Link>
 
@@ -122,6 +175,7 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                 <Link
                   href="/dashboard"
                   prefetch={true}
+                  onClick={() => trackNavigationClick('/dashboard')}
                   className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 >
                   Dashboard
@@ -165,6 +219,8 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 p-2 hover:bg-gray-50 transition-all duration-200 active:scale-95"
+                  aria-haspopup="true"
+                  aria-expanded={isUserMenuOpen}
                 >
                   <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
                     <span className="text-primary-800 text-sm font-semibold">
@@ -204,7 +260,10 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                       {/* Menu Items */}
                       <Link
                         href="/dashboard/profile"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          trackNavigationClick('/dashboard/profile', 'navigation-link', { label: 'profile-settings' })
+                        }}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                       >
                         <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,7 +274,10 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
 
                       <Link
                         href="/dashboard/children"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          trackNavigationClick('/dashboard/children', 'navigation-link', { label: 'children' })
+                        }}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                       >
                         <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +288,10 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
 
                       <Link
                         href="/dashboard/profile?tab=security"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          trackNavigationClick('/dashboard/profile?tab=security', 'navigation-link', { label: 'security' })
+                        }}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                       >
                         <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,7 +302,10 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
 
                       <Link
                         href="/dashboard/profile?tab=notifications"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          trackNavigationClick('/dashboard/profile?tab=notifications', 'navigation-link', { label: 'notifications' })
+                        }}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                       >
                         <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +316,10 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
 
                       <Link
                         href="/dashboard/settings"
-                        onClick={() => setIsUserMenuOpen(false)}
+                        onClick={() => {
+                          setIsUserMenuOpen(false)
+                          trackNavigationClick('/dashboard/settings', 'navigation-link', { label: 'settings' })
+                        }}
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                       >
                         <svg className="mr-3 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,6 +334,7 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
                           onClick={() => {
                             setIsUserMenuOpen(false)
                             handleSignOut()
+                            trackNavigationClick('sign-out', 'navigation-action', { action: 'sign-out' })
                           }}
                           className="flex items-center w-full px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all duration-200 active:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset"
                         >
@@ -279,10 +351,19 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
             ) : (
               <div className="flex space-x-2">
                 <Link href="/login">
-                  <Button variant="ghost">Sign in</Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => trackNavigationClick('/login', 'navigation-link', { label: 'sign-in' })}
+                  >
+                    Sign in
+                  </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button>Sign up</Button>
+                  <Button
+                    onClick={() => trackNavigationClick('/signup', 'navigation-link', { label: 'sign-up' })}
+                  >
+                    Sign up
+                  </Button>
                 </Link>
               </div>
             )}
