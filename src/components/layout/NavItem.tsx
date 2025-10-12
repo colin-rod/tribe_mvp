@@ -13,17 +13,17 @@ import type { MouseEvent } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { cn } from '@/lib/utils';
 import { useNavigationState } from '@/hooks/useNavigationState';
-import type { NavItem as NavItemType } from '@/lib/constants/navigationItems';
+import type { DashboardNavigationItem } from '@/lib/constants/navigationItems';
 import type { DashboardRoute } from '@/lib/constants/routes';
 
 interface NavItemProps {
-  item: NavItemType;
+  item: DashboardNavigationItem;
   isCollapsed: boolean;
 }
 
 export function NavItem({ item, isCollapsed }: NavItemProps) {
   const { navigate, isActive } = useNavigationState();
-  const itemIsActive = isActive(item.href);
+  const itemIsActive = isActive(item.href, item.alternateHrefs);
   const Icon = item.icon;
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {

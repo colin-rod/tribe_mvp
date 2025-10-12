@@ -9,7 +9,11 @@
 
 import React, { createContext, useContext, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { DashboardRoute, getNavigationItemByPath } from '@/lib/constants/routes';
+import { DashboardRoute, isPathActive } from '@/lib/constants/routes';
+import {
+  getNavigationItemByPath,
+  type DashboardNavigationItemId,
+} from '@/lib/constants/navigationItems';
 
 interface NavigationContextValue {
   /** Current pathname */
@@ -17,13 +21,13 @@ interface NavigationContextValue {
   /** Current search parameters */
   searchParams: URLSearchParams;
   /** Active navigation item based on current route */
-  activeItemId: string | null;
+  activeItemId: DashboardNavigationItemId | null;
   /** Navigate to a new route */
   navigate: (path: DashboardRoute, options?: NavigationOptions) => void;
   /** Navigate with preserved search params */
   navigatePreserving: (path: DashboardRoute) => void;
   /** Check if a path is currently active */
-  isActive: (path: string) => boolean;
+  isActive: (path: string, alternateHrefs?: readonly string[]) => boolean;
 }
 
 interface NavigationOptions {
@@ -102,8 +106,8 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   }, [navigate]);
 
   const isActive = useMemo(() => {
-    return (path: string) => {
-      return pathname === path;
+    return (path: string, alternateHrefs?: readonly string[]) => {
+      return isPathActive(pathname, path, alternateHrefs);
     };
   }, [pathname]);
 
