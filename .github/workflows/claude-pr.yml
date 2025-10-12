@@ -259,33 +259,52 @@ jobs:
             BASE_BRANCH="main"
           fi
 
-          # Construct PR body
-          PR_BODY="## Summary
-
-Automated PR created for Claude Code branch: \`${BRANCH_NAME}\`
-
-"
-
+          # Construct PR body using heredoc
           if [ "${{ steps.extract-issue.outputs.has_issue }}" == "true" ]; then
-            PR_BODY+="## Linear Issue
+            PR_BODY=$(cat <<EOF
+          ## Summary
 
-${{ steps.extract-issue.outputs.issue_id }}
+          Automated PR created for Claude Code branch: \`${BRANCH_NAME}\`
 
-"
+          ## Linear Issue
+
+          ${{ steps.extract-issue.outputs.issue_id }}
+
+          ## Changes
+
+          Please review the changes in this branch.
+
+          ## Test Plan
+
+          - Quality checks will run automatically via CI/CD
+          - Manual testing and review required
+
+          ---
+
+          🤖 Automatically created by [Claude Code](https://claude.com/claude-code)
+          EOF
+          )
+          else
+            PR_BODY=$(cat <<EOF
+          ## Summary
+
+          Automated PR created for Claude Code branch: \`${BRANCH_NAME}\`
+
+          ## Changes
+
+          Please review the changes in this branch.
+
+          ## Test Plan
+
+          - Quality checks will run automatically via CI/CD
+          - Manual testing and review required
+
+          ---
+
+          🤖 Automatically created by [Claude Code](https://claude.com/claude-code)
+          EOF
+          )
           fi
-
-          PR_BODY+="## Changes
-
-Please review the changes in this branch.
-
-## Test Plan
-
-- Quality checks will run automatically via CI/CD
-- Manual testing and review required
-
----
-
-🤖 Automatically created by [Claude Code](https://claude.com/claude-code)"
 
           gh pr create \
             --title "${{ steps.extract-issue.outputs.title }}" \
