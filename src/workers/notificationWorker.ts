@@ -1,6 +1,8 @@
-// @ts-nocheck - TODO: Fix database types for notification_jobs table
+// TODO: Fix database types for notification_jobs table
 // This file has type narrowing issues due to Supabase type generation
 // The notification_jobs table may need schema updates or type regeneration
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 
 import { Queue, Worker, Job } from 'bullmq'
 import Redis from 'ioredis'

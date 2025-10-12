@@ -10,9 +10,11 @@ import MemoryCardSkeleton from '@/components/updates/MemoryCardSkeleton'
 import EmptyTimelineState, { NoSearchResultsState } from './EmptyTimelineState'
 
 // Temporary type placeholders until react-window types are fixed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ListImperativeAPI = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 type RowComponentProps<T = any> = any
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const List: any = null
 
 interface Update {

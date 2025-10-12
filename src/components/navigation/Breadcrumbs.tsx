@@ -106,6 +106,7 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
 
     const matchedItem = activeItem ?? NAVIGATION_ITEMS.find((item) => {
       if (item.href === basePath) return true
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (item.alternateHrefs?.includes(basePath as any)) return true
       return false
     })

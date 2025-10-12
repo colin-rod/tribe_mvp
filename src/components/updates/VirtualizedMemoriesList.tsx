@@ -6,7 +6,9 @@ import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 // TODO: Fix react-window imports - these types don't exist in the package
 // import { List, type RowComponentProps } from 'react-window'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 type RowComponentProps<T = any> = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const List: any = null
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
