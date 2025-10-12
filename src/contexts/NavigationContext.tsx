@@ -16,7 +16,11 @@ import React, {
   useState,
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { DashboardRoute, getNavigationItemByPath } from '@/lib/constants/routes';
+import { DashboardRoute, isPathActive } from '@/lib/constants/routes';
+import {
+  getNavigationItemByPath,
+  type DashboardNavigationItemId,
+} from '@/lib/constants/navigationItems';
 
 interface NavigationContextValue {
   /** Current pathname */
@@ -24,7 +28,7 @@ interface NavigationContextValue {
   /** Current search parameters */
   searchParams: URLSearchParams;
   /** Active navigation item based on current route */
-  activeItemId: string | null;
+  activeItemId: DashboardNavigationItemId | null;
   /** Navigate to a new route */
   navigate: (path: DashboardRoute, options?: NavigationOptions) => void;
   /** Navigate with preserved search params */

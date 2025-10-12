@@ -12,12 +12,19 @@
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Navigation')
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type MouseEvent as ReactMouseEvent } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useNavigationState } from '@/hooks/useNavigationState'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { cn, getInitials } from '@/lib/utils'
+import {
+  DASHBOARD_NAVIGATION_ITEMS,
+  DASHBOARD_NAVIGATION_SECTIONS,
+  type DashboardNavigationItem,
+} from '@/lib/constants/navigationItems'
 import { getInitials, cn } from '@/lib/utils'
 import { mobileNavigationSections } from '@/lib/constants/navigationItems'
 import type { UpdateType } from '@/hooks/useActivityFilters'
@@ -43,11 +50,13 @@ interface NavigationProps {
 export default function Navigation({ onCreateUpdate, customActions }: NavigationProps = {}) {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
+  const { navigate, isActive } = useNavigationState()
   const pathname = usePathname()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const navigationItems = DASHBOARD_NAVIGATION_ITEMS
   const navigationState = useOptionalNavigationState()
 
   const getPreservedParams = () => {
@@ -88,6 +97,19 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
       setIsUserMenuOpen(false)
     } else {
       router.push('/dashboard/create-memory')
+    }
+  }
+
+  const handleNavigation = (
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    item: DashboardNavigationItem,
+    options: { closeMobileMenu?: boolean } = {}
+  ) => {
+    event.preventDefault()
+    navigate(item.href)
+
+    if (options.closeMobileMenu) {
+      setIsMobileMenuOpen(false)
     }
   }
 
@@ -171,6 +193,31 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
             </Link>
 
             {user && (
+              <div className="hidden md:flex ml-10 items-center space-x-6">
+                <div className="flex items-center space-x-1">
+                  {navigationItems.map((item) => {
+                    const itemIsActive = isActive(item.href, item.alternateHrefs)
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        prefetch
+                        onClick={(event) => handleNavigation(event, item)}
+                        className={cn(
+                          'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
+                          itemIsActive
+                            ? 'text-primary-700 bg-primary-50 shadow-sm'
+                            : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:scale-95'
+                        )}
+                        data-active={itemIsActive ? 'true' : undefined}
+                        aria-current={itemIsActive ? 'page' : undefined}
+                      >
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
               <div className="hidden md:flex ml-10 space-x-8">
                 <Link
                   href="/dashboard"
@@ -374,6 +421,55 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
       {/* Mobile menu */}
       {user && isMobileMenuOpen && (
         <div className="md:hidden" id="mobile-menu" ref={mobileMenuRef}>
+          <div className="px-2 pt-2 pb-3 space-y-4 bg-white shadow-lg border-t border-neutral-200 max-h-[calc(100vh-4rem)] overflow-y-auto animate-slide-up">
+            {DASHBOARD_NAVIGATION_SECTIONS.map((section) => (
+              <div key={section.id} className="space-y-1">
+                {section.label ? (
+                  <p className="px-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {section.label}
+                  </p>
+                ) : null}
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  const itemIsActive = isActive(item.href, item.alternateHrefs)
+
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      prefetch
+                      onClick={(event) =>
+                        handleNavigation(event, item, { closeMobileMenu: true })
+                      }
+                      className={cn(
+                        'flex items-center min-h-[44px] px-3 py-3 rounded-md text-base font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-inset',
+                        itemIsActive
+                          ? 'text-primary-700 bg-primary-50 shadow-sm'
+                          : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50 active:bg-neutral-100'
+                      )}
+                      data-active={itemIsActive ? 'true' : undefined}
+                      aria-current={itemIsActive ? 'page' : undefined}
+                    >
+                      <Icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            ))}
+            <div className="pt-2 border-t border-neutral-200">
+              {customActions || (
+                <button
+                  type="button"
+                  onClick={() => triggerCreateUpdate('photo')}
+                  className="block w-full min-h-[44px] px-3 py-3 rounded-md text-base font-medium bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-all duration-200 flex items-center justify-center hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  <svg className="mr-3 h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Memory
+                </button>
+              )}
           <div className="border-t border-neutral-200 bg-white px-4 py-4 shadow-lg">
             <div className="max-h-[calc(100vh-4rem)] space-y-8 overflow-y-auto pr-1">
               {mobileNavigationSections.map(section => (

@@ -13,12 +13,12 @@ import type { MouseEvent } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { cn } from '@/lib/utils';
 import { useNavigationState } from '@/hooks/useNavigationState';
-import type { NavItem as NavItemType } from '@/lib/constants/navigationItems';
+import type { DashboardNavigationItem } from '@/lib/constants/navigationItems';
 import type { DashboardRoute } from '@/lib/constants/routes';
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics';
 
 interface NavItemProps {
-  item: NavItemType;
+  item: DashboardNavigationItem;
   isCollapsed: boolean;
 }
 
