@@ -77,7 +77,7 @@ export function ChildProfileSelector({
   const profileItems: ProfileItem[] = children.map((child) => ({
     id: child.id,
     name: child.name,
-    photoUrl: child.profile_photo_url,
+    photoUrl: child.profile_photo_url ?? undefined,
     subtitle: formatAgeShort(calculateAge(child.birth_date)),
   }))
 

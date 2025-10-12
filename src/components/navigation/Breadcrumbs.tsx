@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import { useNavigation } from '@/contexts/NavigationContext'
-import { NAVIGATION_ITEMS } from '@/lib/constants/routes'
+import { DASHBOARD_NAVIGATION_ITEMS as NAVIGATION_ITEMS } from '@/lib/constants/navigationItems'
 import { cn } from '@/lib/utils'
 
 export interface BreadcrumbItem {
@@ -106,7 +106,7 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
 
     const matchedItem = activeItem ?? NAVIGATION_ITEMS.find((item) => {
       if (item.href === basePath) return true
-      if (item.alternateHrefs?.includes(basePath)) return true
+      if (item.alternateHrefs?.includes(basePath as any)) return true
       return false
     })
 

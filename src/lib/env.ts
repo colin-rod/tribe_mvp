@@ -67,6 +67,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
     message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'
   }),
+  // Supabase Service Role - Optional (for background workers)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // SendGrid - Required for email functionality
   SENDGRID_API_KEY: z.string().min(1, {
