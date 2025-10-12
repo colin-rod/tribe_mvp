@@ -3,6 +3,10 @@
 import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { ProfileTab } from '@/lib/types/profile'
+import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
+import { useNavigationState } from '@/hooks/useNavigationState'
+import { createLogger } from '@/lib/logger'
+import { PROFILE_TABS } from '@/lib/constants/profile'
 import {
   UserIcon,
   CogIcon,
@@ -14,6 +18,19 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
 
+const logger = createLogger('ProfileTabNavigation')
+
+function useOptionalNavigationState() {
+  try {
+    return useNavigationState()
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Navigation state unavailable for profile analytics', { error })
+    }
+    return null
+  }
+}
+
 interface ProfileTabNavigationProps {
   tabs: ProfileTab[]
   activeTab: string
@@ -21,7 +38,9 @@ interface ProfileTabNavigationProps {
   variant: 'sidebar' | 'accordion'
 }
 
-const IconMap = {
+type ProfileTabIcon = (typeof PROFILE_TABS)[number]['icon']
+
+const IconMap: Record<ProfileTabIcon, typeof UserIcon> = {
   user: UserIcon,
   cog: CogIcon,
   shield: ShieldCheckIcon,
@@ -39,6 +58,31 @@ export function ProfileTabNavigation({
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
     new Set([activeTab])
   )
+  const navigationState = useOptionalNavigationState()
+
+  const trackProfileNavigation = (tabId: string) => {
+    if (typeof window === 'undefined') return
+
+    const destination = tabId === 'profile'
+      ? '/dashboard/profile'
+      : `/dashboard/profile?tab=${tabId}`
+
+    const preservedParams = navigationState
+      ? Object.fromEntries(navigationState.searchParams.entries())
+      : {}
+
+    trackDashboardInteraction({
+      type: 'click',
+      element: 'profile-tab',
+      elementId: tabId,
+      metadata: {
+        surface: 'profile',
+        destination,
+        activeView: navigationState?.activeView ?? null,
+        preservedParams
+      }
+    })
+  }
 
   const toggleAccordion = (tabId: string) => {
     const newExpanded = new Set(expandedAccordions)
@@ -49,6 +93,7 @@ export function ProfileTabNavigation({
     }
     setExpandedAccordions(newExpanded)
     onTabChange(tabId)
+    trackProfileNavigation(tabId)
   }
 
   if (variant === 'sidebar') {
@@ -65,7 +110,10 @@ export function ProfileTabNavigation({
               aria-selected={isActive}
               aria-controls={`panel-${tab.id}`}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => {
+                onTabChange(tab.id)
+                trackProfileNavigation(tab.id)
+              }}
               className={cn(
                 'w-full flex items-start p-3 rounded-lg text-left transition-all duration-200',
                 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',

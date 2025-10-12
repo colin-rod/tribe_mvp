@@ -1,7 +1,14 @@
+/**
+ * Memory Book Detail View - Individual Summary Display
+ * CRO-534: Memory Book Experience - Unified Dashboard Navigation
+ *
+ * Shows full parent-facing narrative with all memories
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { getSummaryById, getSummaryPreview } from '@/lib/services/summaryService'
 import type { Summary, SummaryPreviewData } from '@/lib/types/summary'
 import { LoadingState } from '@/components/ui/LoadingState'
@@ -9,15 +16,12 @@ import { ErrorState } from '@/components/ui/ErrorState'
 import { Button } from '@/components/ui/Button'
 import { MediaGallery } from '@/components/media/MediaGallery'
 
-/**
- * Individual Memory Book Summary Page
- * Shows the full parent-facing narrative with all memories
- */
-export default function MemoryBookSummaryPage() {
-  const router = useRouter()
-  const params = useParams()
-  const summaryId = params.summaryId as string
+interface MemoryBookDetailViewProps {
+  summaryId: string
+}
 
+export function MemoryBookDetailView({ summaryId }: MemoryBookDetailViewProps) {
+  const router = useRouter()
   const [summary, setSummary] = useState<Summary | null>(null)
   const [previewData, setPreviewData] = useState<SummaryPreviewData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -51,7 +55,7 @@ export default function MemoryBookSummaryPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center h-full">
         <LoadingState message="Loading summary..." />
       </div>
     )
@@ -59,7 +63,7 @@ export default function MemoryBookSummaryPage() {
 
   if (error || !summary) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center h-full p-8">
         <ErrorState message={error || 'Summary not found'} onRetry={loadSummary} />
       </div>
     )
@@ -69,46 +73,29 @@ export default function MemoryBookSummaryPage() {
   const allMedia = previewData?.recipients.flatMap(r => r.memories.flatMap(m => m.media_urls)) || []
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
+    <div className="h-full overflow-y-auto bg-gradient-to-b from-neutral-50 to-white">
       {/* Header */}
-      <div className="bg-white border-b border-neutral-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/memory-book')}
-              className="flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Back to Memory Book</span>
-            </Button>
-
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" disabled className="opacity-50">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Print
-              </Button>
-              <Button variant="outline" disabled className="opacity-50">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Export PDF
-              </Button>
-            </div>
-          </div>
+      <div className="bg-white border-b border-neutral-200 sticky top-0 z-10 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard/memory-book')}
+            className="flex items-center space-x-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Back to Memory Book</span>
+          </Button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
+      <div className="px-6 py-8">
+        <div className="max-w-3xl mx-auto">
           {/* Hero Section */}
           <div className="mb-12">
-            <h1 className="text-4xl font-bold text-neutral-900 mb-4">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-4">
               {narrative?.title || summary.title}
             </h1>
             <div className="flex items-center space-x-6 text-sm text-neutral-600">

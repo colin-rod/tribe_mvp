@@ -8,7 +8,7 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 type Child = Database['public']['Tables']['children']['Row']
 type Recipient = Database['public']['Tables']['recipients']['Row']
 type RecipientGroup = Database['public']['Tables']['recipient_groups']['Row']
-type Update = Database['public']['Tables']['updates']['Row']
+type Memory = Database['public']['Tables']['memories']['Row']
 type Response = Database['public']['Tables']['responses']['Row']
 
 interface ExportData {
@@ -16,7 +16,7 @@ interface ExportData {
   children: Child[]
   recipients: Recipient[]
   groups: RecipientGroup[]
-  updates: Update[]
+  memories: Memory[]
   responses: Response[]
   exportedAt: string
 }
@@ -109,7 +109,7 @@ export async function exportUserData(userId: string): Promise<void> {
       children: childrenResult.data || [],
       recipients: recipientsResult.data || [],
       groups: groupsResult.data || [],
-      updates: updatesResult.data || [],
+      memories: updatesResult.data || [],
       responses: responsesResult.data || [],
       exportedAt: new Date().toISOString()
     }

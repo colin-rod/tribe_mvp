@@ -319,13 +319,14 @@ export class GroupQueryOptimizer {
     const promises: Promise<unknown>[] = []
 
     if (inserts.length > 0) {
+      const insertData = inserts.map(op => ({
+        ...op.settings as Record<string, unknown>,
+        recipient_id: op.recipient_id,
+        group_id: op.group_id,
+      }))
       const insertPromise = supabase
         .from('recipients')
-        .upsert(inserts.map(op => ({
-          recipient_id: op.recipient_id,
-          group_id: op.group_id,
-          ...op.settings
-        })))
+        .upsert(insertData as never)
       promises.push(Promise.resolve(insertPromise))
     }
 
@@ -334,7 +335,7 @@ export class GroupQueryOptimizer {
       updates.forEach(op => {
         const updatePromise = supabase
           .from('recipients')
-          .update(op.settings)
+          .update(op.settings as Record<string, unknown>)
           .eq('recipient_id', op.recipient_id)
           .eq('group_id', op.group_id)
         promises.push(Promise.resolve(updatePromise))
@@ -366,11 +367,17 @@ export class GroupQueryOptimizer {
     const supabase = createClient()
 
     const { data, error } = await supabase
-      .rpc('get_user_group_statistics', { user_id: userId })
+      .rpc('get_user_group_statistics' as never, { user_id: userId } as never)
 
     if (error) throw error
 
-    return data || {
+    return (data as {
+      total_groups: number
+      total_members: number
+      avg_group_size: number
+      largest_group_size: number
+      most_active_group: string | null
+    }) || {
       total_groups: 0,
       total_members: 0,
       avg_group_size: 0,

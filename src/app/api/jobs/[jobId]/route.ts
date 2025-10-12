@@ -141,7 +141,7 @@ export async function GET(
         processing_time_ms: processingTimeMs,
         time_until_scheduled_ms: timeUntilScheduledMs,
         is_overdue: job.status === 'pending' && timeUntilScheduledMs !== null && timeUntilScheduledMs === 0,
-        can_retry: job.status === 'failed' && job.retry_count < job.max_retries
+        can_retry: job.status === 'failed' && ((job.retry_count ?? 0) < (job.max_retries ?? 3))
       },
       recipient: {
         id: job.recipient.id,

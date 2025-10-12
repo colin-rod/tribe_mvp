@@ -1,0 +1,28 @@
+#!/bin/bash
+# Pre-commit hook to prevent direct commits to main and development branches
+# This ensures all changes go through Pull Requests
+#
+# Installation:
+#   cp .githooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+PROTECTED_BRANCHES="^(main|development)$"
+
+if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
+    echo "❌ ERROR: Direct commits to '$BRANCH' are not allowed!"
+    echo ""
+    echo "Please create a new branch first:"
+    echo "  git checkout -b claude/CRO-XXX-description"
+    echo ""
+    echo "Or for non-Linear work:"
+    echo "  git checkout -b claude/fix-description"
+    echo ""
+    echo "See CLAUDE.md for full git workflow guidelines."
+    echo ""
+    echo "Commit aborted."
+    exit 1
+fi
+
+# Allow commit on feature branches
+exit 0

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'
+import type { Json } from '@/lib/types/database'
 
 const logger = createLogger('DigestSchedulesAPI')
 
@@ -260,7 +261,7 @@ export async function POST(request: NextRequest) {
         include_content_types: validatedData.include_content_types,
         is_active: validatedData.is_active,
         next_digest_scheduled: nextScheduled.toISOString(),
-        digest_settings: validatedData.digest_settings || {}
+        digest_settings: (validatedData.digest_settings || {}) as Json
       })
       .select()
       .single()

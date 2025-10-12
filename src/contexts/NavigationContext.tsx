@@ -7,7 +7,14 @@
  * Provides centralized navigation state management with URL preservation
  */
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { DashboardRoute, isPathActive } from '@/lib/constants/routes';
 import {
@@ -27,7 +34,15 @@ interface NavigationContextValue {
   /** Navigate with preserved search params */
   navigatePreserving: (path: DashboardRoute) => void;
   /** Check if a path is currently active */
-  isActive: (path: string, alternateHrefs?: readonly string[]) => boolean;
+  isActive: (path: string) => boolean;
+  /** Whether the mobile navigation drawer is open */
+  isMobileNavOpen: boolean;
+  /** Open the mobile navigation drawer */
+  openMobileNav: () => void;
+  /** Close the mobile navigation drawer */
+  closeMobileNav: () => void;
+  /** Toggle the mobile navigation drawer */
+  toggleMobileNav: () => void;
 }
 
 interface NavigationOptions {
@@ -47,13 +62,14 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const activeItem = useMemo(() => {
     return getNavigationItemByPath(pathname);
   }, [pathname]);
 
-  const navigate = useMemo(() => {
-    return (path: DashboardRoute, options: NavigationOptions = {}) => {
+  const navigate = useCallback(
+    (path: DashboardRoute, options: NavigationOptions = {}) => {
       const {
         preserveParams = false,
         params = {},
@@ -96,19 +112,39 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       if (prefetch) {
         router.prefetch(path);
       }
-    };
-  }, [router, searchParams]);
+    },
+    [router, searchParams]
+  );
 
-  const navigatePreserving = useMemo(() => {
-    return (path: DashboardRoute) => {
+  const navigatePreserving = useCallback(
+    (path: DashboardRoute) => {
       navigate(path, { preserveParams: true });
-    };
-  }, [navigate]);
+    },
+    [navigate]
+  );
 
-  const isActive = useMemo(() => {
-    return (path: string, alternateHrefs?: readonly string[]) => {
-      return isPathActive(pathname, path, alternateHrefs);
-    };
+  const isActive = useCallback(
+    (path: string) => {
+      return pathname === path;
+    },
+    [pathname]
+  );
+
+  const openMobileNav = useCallback(() => {
+    setIsMobileNavOpen(true);
+  }, []);
+
+  const closeMobileNav = useCallback(() => {
+    setIsMobileNavOpen(false);
+  }, []);
+
+  const toggleMobileNav = useCallback(() => {
+    setIsMobileNavOpen((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    // Close mobile nav on route change to keep state in sync
+    setIsMobileNavOpen(false);
   }, [pathname]);
 
   const value: NavigationContextValue = useMemo(
@@ -119,8 +155,23 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       navigate,
       navigatePreserving,
       isActive,
+      isMobileNavOpen,
+      openMobileNav,
+      closeMobileNav,
+      toggleMobileNav,
     }),
-    [pathname, searchParams, activeItem, navigate, navigatePreserving, isActive]
+    [
+      pathname,
+      searchParams,
+      activeItem,
+      navigate,
+      navigatePreserving,
+      isActive,
+      isMobileNavOpen,
+      openMobileNav,
+      closeMobileNav,
+      toggleMobileNav,
+    ]
   );
 
   return (

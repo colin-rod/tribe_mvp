@@ -117,11 +117,11 @@ export class GroupNotificationResolver {
     try {
       // Get all active recipients for the parent, considering group memberships
       const { data: recipients, error } = await supabase
-        .rpc('get_notification_recipients_with_groups', {
+        .rpc('get_notification_recipients_with_groups' as never, {
           p_parent_id: context.parent_id,
           p_content_type: context.content_type,
           p_target_groups: context.target_groups
-        })
+        } as never)
 
       if (error) {
         logger.errorWithStack('Error resolving notification recipients:', error as Error)
@@ -192,15 +192,15 @@ export class GroupNotificationResolver {
     // If target groups specified, prioritize those
     if (context.target_groups && context.target_groups.length > 0) {
       primaryMembership =
-        groupMemberships.find(m => context.target_groups?.includes(m.group_id)) ||
+        groupMemberships.find(m => m.group_id && context.target_groups?.includes(m.group_id)) ||
         primaryMembership
     }
 
     // Apply group defaults
     if (primaryMembership?.recipient_groups) {
       const groupSettings = primaryMembership.recipient_groups
-      effectiveFrequency = (groupSettings.default_frequency as NotificationFrequency) || effectiveFrequency
-      effectiveChannels = (groupSettings.default_channels as NotificationChannel[] | undefined) || effectiveChannels
+      effectiveFrequency = (groupSettings.default_frequency as string) as NotificationFrequency || effectiveFrequency
+      effectiveChannels = (groupSettings.default_channels as NotificationChannel[]) || effectiveChannels
 
       // Apply group notification settings
       if (groupSettings.notification_settings) {
@@ -219,13 +219,13 @@ export class GroupNotificationResolver {
 
     // Apply individual membership overrides
     if (primaryMembership?.frequency) {
-      effectiveFrequency = primaryMembership.frequency
+      effectiveFrequency = primaryMembership.frequency as NotificationFrequency
     }
     if (primaryMembership?.preferred_channels && primaryMembership.preferred_channels.length > 0) {
-      effectiveChannels = primaryMembership.preferred_channels
+      effectiveChannels = primaryMembership.preferred_channels as NotificationChannel[]
     }
     if (primaryMembership?.content_types) {
-      effectiveContentTypes = primaryMembership.content_types
+      effectiveContentTypes = primaryMembership.content_types as string[]
     }
 
     return {
@@ -234,7 +234,7 @@ export class GroupNotificationResolver {
       content_types: effectiveContentTypes,
       primary_group_id: primaryMembership?.group_id || DEFAULT_GROUP_CONTEXT.group_id,
       primary_group_name: primaryMembership?.recipient_groups?.name || DEFAULT_GROUP_CONTEXT.group_name,
-      role: primaryMembership?.role || DEFAULT_GROUP_CONTEXT.role,
+      role: DEFAULT_GROUP_CONTEXT.role,
       created_at: primaryMembership?.created_at || DEFAULT_GROUP_CONTEXT.created_at
     }
   }
@@ -407,11 +407,7 @@ export class GroupDigestProcessor {
         .select(`
           *,
           recipients!inner(*),
-          updates!inner(*),
-          group_memberships!inner(
-            *,
-            recipient_groups!inner(*)
-          )
+          updates!inner(*)
         `)
         .eq('status', 'queued')
         .lte('scheduled_for', new Date().toISOString())
@@ -423,7 +419,7 @@ export class GroupDigestProcessor {
       }
 
       // Group jobs by recipient and channel
-      const groupedJobs = this.groupJobsByRecipientAndChannel((pendingJobs ?? []) as DeliveryJobWithRelations[])
+      const groupedJobs = this.groupJobsByRecipientAndChannel((pendingJobs ?? []) as unknown as DeliveryJobWithRelations[])
 
       let processed = 0
       let errors = 0
