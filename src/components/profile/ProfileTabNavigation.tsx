@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { ProfileTab } from '@/lib/types/profile'
+import { PROFILE_TABS } from '@/lib/constants/profile'
 import {
   UserIcon,
   CogIcon,
@@ -21,7 +22,9 @@ interface ProfileTabNavigationProps {
   variant: 'sidebar' | 'accordion'
 }
 
-const IconMap = {
+type ProfileTabIcon = (typeof PROFILE_TABS)[number]['icon']
+
+const IconMap: Record<ProfileTabIcon, typeof UserIcon> = {
   user: UserIcon,
   cog: CogIcon,
   shield: ShieldCheckIcon,
