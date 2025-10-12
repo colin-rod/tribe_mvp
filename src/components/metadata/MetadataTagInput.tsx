@@ -56,7 +56,7 @@ export function MetadataTagInput({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
-  const debounceTimerRef = useRef<NodeJS.Timeout>()
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   const canAddMore = values.length < maxTags
 
