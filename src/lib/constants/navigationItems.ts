@@ -13,9 +13,7 @@ import type { ComponentType } from 'react';
 import {
   RectangleStackIcon,
   BookOpenIcon,
-  UserIcon,
   UserPlusIcon,
-  UserGroupIcon,
   DocumentTextIcon,
   UserCircleIcon,
   ShieldCheckIcon,
@@ -27,7 +25,7 @@ import { DASHBOARD_ROUTES, type DashboardRoute } from './routes';
 export type NavigationIcon = ComponentType<{ className?: string }>;
 
 export interface DashboardNavigationItem {
-  id: 'activity' | 'summaries' | 'children' | 'recipients' | 'groups' | 'drafts' | 'settings';
+  id: 'activity' | 'summaries' | 'recipients' | 'drafts' | 'settings';
   label: string;
   icon: NavigationIcon;
   href: DashboardRoute;
@@ -65,22 +63,10 @@ export const DASHBOARD_NAVIGATION_SECTIONS: readonly DashboardNavigationSection[
     label: 'Manage',
     items: [
       {
-        id: 'children',
-        label: 'Children',
-        icon: UserIcon,
-        href: DASHBOARD_ROUTES.CHILDREN,
-      },
-      {
         id: 'recipients',
         label: 'Recipients',
         icon: UserPlusIcon,
         href: DASHBOARD_ROUTES.RECIPIENTS,
-      },
-      {
-        id: 'groups',
-        label: 'Groups',
-        icon: UserGroupIcon,
-        href: DASHBOARD_ROUTES.GROUPS,
       },
       {
         id: 'drafts',

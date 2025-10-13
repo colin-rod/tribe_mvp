@@ -14,9 +14,7 @@ export { ActivityRightPane } from './ActivityRightPane';
 export type { ActivityRightPaneProps } from './ActivityRightPane';
 
 export { SummaryRightPane } from './SummaryRightPane';
-export { ChildrenRightPane } from './ChildrenRightPane';
 export { RecipientsRightPane } from './RecipientsRightPane';
-export { GroupsRightPane } from './GroupsRightPane';
 export { DraftsRightPane } from './DraftsRightPane';
 export { SettingsRightPane } from './SettingsRightPane';
 
