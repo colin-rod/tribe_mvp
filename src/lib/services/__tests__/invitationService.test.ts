@@ -1,4 +1,5 @@
 import { jest, describe, it, expect, beforeAll, afterEach } from '@jest/globals'
+import type { Invitation } from '../../types/invitation'
 
 const mockLogger = {
   info: jest.fn(),
@@ -19,8 +20,26 @@ jest.mock('@/lib/supabase/client', () => ({
   createClient: mockCreateClient
 }))
 
+const sendInvitationEmailMock = jest.fn()
+const sendInvitationSMSMock = jest.fn()
+const sendInvitationWhatsAppMock = jest.fn()
+
+jest.mock('../clientEmailService', () => ({
+  clientEmailService: {
+    sendInvitationEmail: sendInvitationEmailMock
+  }
+}))
+
+jest.mock('../smsService', () => ({
+  smsService: {
+    sendInvitationSMS: sendInvitationSMSMock,
+    sendInvitationWhatsApp: sendInvitationWhatsAppMock
+  }
+}))
+
 let createSingleUseInvitation: typeof import('../invitationService').createSingleUseInvitation
 let createReusableLink: typeof import('../invitationService').createReusableLink
+let sendInvitation: typeof import('../invitationService').sendInvitation
 
 type SupabaseResponse<T> = {
   data: T | null
@@ -75,10 +94,60 @@ function setupSupabase({
   }
 }
 
+function setupProfileFetch({
+  profileResponse
+}: {
+  profileResponse: SupabaseResponse<{
+    id: string
+    name?: string | null
+    email?: string | null
+    phone?: string | null
+  }>
+}) {
+  mockFrom.mockReset()
+
+  const profilesSingle = jest.fn().mockResolvedValue(profileResponse)
+  const profilesEq = jest.fn().mockReturnValue({ single: profilesSingle })
+  const profilesSelect = jest.fn().mockReturnValue({ eq: profilesEq })
+
+  mockFrom.mockImplementation((table: string) => {
+    if (table === 'profiles') {
+      return { select: profilesSelect }
+    }
+
+    throw new Error(`Unexpected table: ${table}`)
+  })
+
+  return { profilesSelect, profilesEq, profilesSingle }
+}
+
+function buildInvitation(overrides: Partial<Invitation> = {}): Invitation {
+  const base: Invitation = {
+    id: 'invitation-test',
+    parent_id: 'parent-123',
+    invitation_type: 'single_use',
+    token: 'token-123',
+    status: 'active',
+    channel: 'email',
+    recipient_email: 'family@example.com',
+    recipient_phone: '+15551234567',
+    expires_at: '2024-01-08T00:00:00.000Z',
+    group_id: null,
+    custom_message: null,
+    use_count: 0,
+    metadata: {},
+    created_at: '2024-01-01T00:00:00.000Z',
+    updated_at: '2024-01-01T00:00:00.000Z'
+  }
+
+  return { ...base, ...overrides }
+}
+
 beforeAll(async () => {
   const invitationModule = await import('../invitationService')
   createSingleUseInvitation = invitationModule.createSingleUseInvitation
   createReusableLink = invitationModule.createReusableLink
+  sendInvitation = invitationModule.sendInvitation
 })
 
 describe('invitationService', () => {
@@ -201,5 +270,98 @@ describe('invitationService', () => {
     ).rejects.toThrow('Parent not found')
 
     expect(invitationsInsert).not.toHaveBeenCalled()
+  })
+
+  describe('sendInvitation', () => {
+    it('fetches inviter profile and passes the inviter name to the email service', async () => {
+      const { profilesSelect, profilesEq } = setupProfileFetch({
+        profileResponse: {
+          data: {
+            id: 'parent-123',
+            name: 'Jamie Parent',
+            email: 'jamie@example.com',
+            phone: '+15550001111'
+          },
+          error: null
+        }
+      })
+
+      sendInvitationEmailMock.mockResolvedValue({ success: true, messageId: 'email-123' })
+
+      const invitation = buildInvitation({
+        parent_id: 'parent-123',
+        recipient_email: 'relative@example.com',
+        channel: 'email'
+      })
+
+      const result = await sendInvitation(invitation, 'email')
+
+      expect(mockFrom).toHaveBeenCalledWith('profiles')
+      expect(profilesSelect).toHaveBeenCalledWith('id, name, email, phone')
+      expect(profilesEq).toHaveBeenCalledWith('id', 'parent-123')
+      expect(sendInvitationEmailMock).toHaveBeenCalledWith(
+        'relative@example.com',
+        expect.objectContaining({ inviterName: 'Jamie Parent' }),
+        { replyTo: 'jamie@example.com' }
+      )
+      expect(result).toEqual({ success: true, messageId: 'email-123', error: undefined })
+    })
+
+    it('passes the inviter name to the SMS service', async () => {
+      setupProfileFetch({
+        profileResponse: {
+          data: {
+            id: 'parent-456',
+            name: 'Alex Sender'
+          },
+          error: null
+        }
+      })
+
+      sendInvitationSMSMock.mockResolvedValue({ success: true, messageId: 'sms-456' })
+
+      const invitation = buildInvitation({
+        parent_id: 'parent-456',
+        recipient_phone: '+15558889999',
+        channel: 'sms',
+        custom_message: 'Join us!'
+      })
+
+      const result = await sendInvitation(invitation, 'sms', 'Join soon')
+
+      expect(sendInvitationSMSMock).toHaveBeenCalledTimes(1)
+      const smsCall = sendInvitationSMSMock.mock.calls[0]
+      expect(smsCall[0]).toBe('+15558889999')
+      expect(smsCall[1]).toBe('Alex Sender')
+      expect(result).toEqual({ success: true, messageId: 'sms-456', error: undefined })
+    })
+
+    it('passes the inviter name to the WhatsApp service', async () => {
+      setupProfileFetch({
+        profileResponse: {
+          data: {
+            id: 'parent-789',
+            name: 'Taylor Host'
+          },
+          error: null
+        }
+      })
+
+      sendInvitationWhatsAppMock.mockResolvedValue({ success: true, messageId: 'wa-789' })
+
+      const invitation = buildInvitation({
+        parent_id: 'parent-789',
+        recipient_phone: '+15557778888',
+        channel: 'whatsapp'
+      })
+
+      const result = await sendInvitation(invitation, 'whatsapp')
+
+      expect(sendInvitationWhatsAppMock).toHaveBeenCalledTimes(1)
+      const whatsappCall = sendInvitationWhatsAppMock.mock.calls[0]
+      expect(whatsappCall[0]).toBe('+15557778888')
+      expect(whatsappCall[1]).toBe('Taylor Host')
+      expect(result).toEqual({ success: true, messageId: 'wa-789', error: undefined })
+    })
   })
 })
