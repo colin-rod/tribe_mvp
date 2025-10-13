@@ -98,6 +98,25 @@ export async function resetPassword(email: string) {
   return { data, error }
 }
 
+/**
+ * Resend verification email for email confirmation
+ * CRO-268: Email Verification for New Signups
+ * @param email - The email address to send the verification email to
+ */
+export async function resendVerificationEmail(email: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?verified=true`,
+    },
+  })
+
+  return { data, error }
+}
+
 // Note: Server-side auth utilities have been moved to individual components
 // that can properly import next/headers in Server Components
 
