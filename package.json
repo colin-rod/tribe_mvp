@@ -84,7 +84,7 @@
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.64.0",
     "react-intersection-observer": "^9.16.0",
-    "react-window": "^2.2.0",
+    "react-window": "^2.2.1",
     "react-window-infinite-loader": "^2.0.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
