@@ -462,7 +462,11 @@ Use descriptive branch names with the `claude/` prefix:
 
 - **Applies to Claude *and* Codex**: Both agents must follow this branching strategy.
 - `./.githooks/pre-commit` blocks commits on `main` and `development`.
-- `./.githooks/pre-push` verifies feature branches are rebased on `development` (or `main` for `hotfix/`), then runs `npm run lint` and `npx tsc --noEmit`. Pushes fail until the checks pass.
+- `./.githooks/pre-push` performs the following:
+  - **Auto-commits** any uncommitted changes before pushing
+  - Verifies feature branches are rebased on `development` (or `main` for `hotfix/`)
+  - Runs `npm run lint` and `npx tsc --noEmit`
+  - Pushes fail until all checks pass
 - `./.githooks/post-push` auto-creates a Pull Request targeting `development` (or `main` for hotfix branches) via the GitHub CLI.
 - Install or refresh the hooks anytime with:
   ```bash
