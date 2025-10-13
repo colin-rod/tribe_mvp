@@ -145,5 +145,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/colinrodrigues/tribe-mvp"
+  },
+  "optionalDependencies": {
+    "encoding": "^0.1.13"
   }
 }

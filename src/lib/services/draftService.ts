@@ -1,17 +1,21 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
-import type { DraftUpdate, DraftUpdateRequest, DraftWorkspaceSummary, ChildDraftSummary, DraftFilters } from '@/lib/types/digest'
+import type {
+  DraftUpdate,
+  DraftUpdateRequest,
+  DraftWorkspaceSummary,
+  ChildDraftSummary,
+  DraftFilters
+} from '@/lib/types/digest'
 import type { Json } from '@/lib/types/database.types'
+
+type SupabaseClientType = ReturnType<typeof createClient>
 
 export type SupabaseClientLike = {
   auth: {
-    getUser: () => Promise<{
-      data: { user: { id: string } | null }
-      error: { message?: string } | null
-    }>
+    getUser: SupabaseClientType['auth']['getUser']
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  from: (...args: any[]) => any
+  from: SupabaseClientType['from']
 }
 
 const logger = createLogger('DraftService')

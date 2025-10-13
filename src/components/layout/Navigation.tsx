@@ -14,7 +14,7 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('Navigation')
 import { useState, useRef, useEffect, type MouseEvent as ReactMouseEvent } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigationState } from '@/hooks/useNavigationState'
 import { Button } from '@/components/ui/Button'
@@ -23,7 +23,6 @@ import { cn, getInitials } from '@/lib/utils'
 import {
   DASHBOARD_NAVIGATION_ITEMS,
   DASHBOARD_NAVIGATION_SECTIONS,
-  mobileNavigationSections,
   type DashboardNavigationItem,
 } from '@/lib/constants/navigationItems'
 import type { UpdateType } from '@/hooks/useActivityFilters'
@@ -49,7 +48,6 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const { navigate, isActive } = useNavigationState()
-  const pathname = usePathname()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)

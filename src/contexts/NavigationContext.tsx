@@ -63,7 +63,10 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   const pathname = pathnameRaw ?? '/';
   const router = useRouter();
   const searchParamsRaw = useSearchParams();
-  const searchParams = searchParamsRaw ?? new URLSearchParams();
+  const searchParams = useMemo(
+    () => searchParamsRaw ?? new URLSearchParams(),
+    [searchParamsRaw]
+  );
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const activeItem = useMemo(() => {

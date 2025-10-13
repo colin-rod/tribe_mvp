@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -23,7 +23,7 @@ import {
  * 1. Pending verification - Shows "check your email" message with resend option
  * 2. Success - Shows success message after email verification, auto-redirects to onboarding
  */
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [user, setUser] = useState<{ email?: string } | null>(null)
@@ -317,5 +317,28 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Loading fallback component for Suspense boundary
+ */
+function VerifyEmailLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+    </div>
+  )
+}
+
+/**
+ * Page wrapper with Suspense boundary
+ * Wraps the main component in Suspense to handle useSearchParams() correctly
+ */
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailLoading />}>
+      <VerifyEmailPageContent />
+    </Suspense>
   )
 }

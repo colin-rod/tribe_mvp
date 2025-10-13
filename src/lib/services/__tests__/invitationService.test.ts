@@ -76,10 +76,9 @@ function setupSupabase({
 }
 
 beforeAll(async () => {
-  // eslint-disable-next-line @next/next/no-assign-module-variable
-  const module = await import('../invitationService')
-  createSingleUseInvitation = module.createSingleUseInvitation
-  createReusableLink = module.createReusableLink
+  const invitationModule = await import('../invitationService')
+  createSingleUseInvitation = invitationModule.createSingleUseInvitation
+  createReusableLink = invitationModule.createReusableLink
 })
 
 describe('invitationService', () => {

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import type { Meta } from '@storybook/nextjs-vite'
 import { IconOptionSelector } from './IconOptionSelector'
 import React, { useState } from 'react'
 
@@ -62,7 +62,6 @@ const meta = {
 } satisfies Meta<typeof IconOptionSelector>
 
 export default meta
-type Story = StoryObj<typeof meta>
 
 // Wrapper components for stories to use hooks properly
 function SingleSelectWrapper() {
@@ -273,34 +272,23 @@ function CustomGridWrapper() {
 
 // Stories
 export const SingleSelectWithIcons = () => <SingleSelectWrapper />
-SingleSelectWithIcons.storyName = 'Single Select with Icons'
 
 export const MultiSelectWithIcons = () => <MultiSelectWrapper />
-MultiSelectWithIcons.storyName = 'Multi Select with Icons'
 
 export const SingleSelectWithEmojis = () => <EmojiSingleSelectWrapper />
-SingleSelectWithEmojis.storyName = 'Single Select with Emojis'
 
 export const MultiSelectWithEmojis = () => <EmojiMultiSelectWrapper />
-MultiSelectWithEmojis.storyName = 'Multi Select with Emojis'
 
 export const SmallSize = () => <SmallSizeWrapper />
-SmallSize.storyName = 'Small Size'
 
 export const LargeSize = () => <LargeSizeWrapper />
-LargeSize.storyName = 'Large Size'
 
 export const WithBadges = () => <WithBadgesWrapper />
-WithBadges.storyName = 'With Badges'
 
 export const Disabled = () => <DisabledWrapper />
-Disabled.storyName = 'Disabled'
 
 export const IndividualDisabledOptions = () => <IndividualDisabledWrapper />
-IndividualDisabledOptions.storyName = 'Individual Disabled Options'
 
 export const WithoutDescriptions = () => <WithoutDescriptionsWrapper />
-WithoutDescriptions.storyName = 'Without Descriptions'
 
 export const CustomGridLayout = () => <CustomGridWrapper />
-CustomGridLayout.storyName = 'Custom Grid Layout'
