@@ -10,6 +10,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSupabaseConfig } from '../_shared/supabase-config.ts'
 
 // ============================================================================
 // CORS Headers (from _shared/cors.ts)
@@ -129,8 +130,7 @@ interface ParentDigestNarrative {
 // Environment Variables
 // ============================================================================
 const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
 
 // ============================================================================
 // AI Narrative Generation Functions (from _shared/digest-ai.ts)
@@ -474,7 +474,7 @@ serve(async (req) => {
       date_range: `${requestData.date_range_start} to ${requestData.date_range_end}`
     })
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     // Step 1: Create digest record
     const { data: digest, error: digestError } = await supabase

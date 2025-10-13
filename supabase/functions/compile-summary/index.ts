@@ -12,6 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSupabaseConfig } from '../_shared/supabase-config.ts'
 import {
   generateRecipientSummaryNarrative,
   generateParentSummaryNarrative,
@@ -79,8 +80,7 @@ interface AISummaryResponse {
 }
 
 const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
 
 serve(async (req) => {
   // Handle CORS
@@ -105,7 +105,7 @@ serve(async (req) => {
       date_range: `${requestData.date_range_start} to ${requestData.date_range_end}`
     })
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     // Step 1: Create summary record
     const { data: summary, error: summaryError } = await supabase

@@ -6,6 +6,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { getSupabaseConfig } from '../_shared/supabase-config.ts'
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -67,9 +68,8 @@ serve(async (req) => {
   try {
     const { parent_id, force_generation } = await req.json()
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     console.log('Starting template-based prompt generation', {
       parent_id,

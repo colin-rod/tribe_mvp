@@ -1,11 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { getSupabaseConfig } from './supabase-config.ts'
 import { UpdateWithDetails, RecipientWithDetails } from './types.ts'
 
 export function createSupabaseClient() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
 
-  return createClient(supabaseUrl, supabaseKey)
+  return createClient(supabaseUrl, supabaseServiceRoleKey)
 }
 
 export async function fetchUpdateWithDetails(
