@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import {
@@ -183,24 +182,24 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Button
+              <ButtonLink
                 size="xl"
                 className="w-full sm:w-auto"
+                href="/signup"
                 onClick={trackSignupStarted}
+                rightIcon={<HeartIcon className="w-5 h-5" />}
               >
-                <Link href="/signup" className="flex items-center">
-                  Start Free Family Circle
-                  <HeartIcon className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
-              <Button
+                Start Free Family Circle
+              </ButtonLink>
+              <ButtonLink
                 variant="outline"
                 size="xl"
                 className="w-full sm:w-auto"
+                href="#demo"
                 onClick={trackDemoRequested}
               >
-                <Link href="#demo">Watch 2-Min Demo</Link>
-              </Button>
+                Watch 2-Min Demo
+              </ButtonLink>
             </div>
 
           </div>
@@ -390,21 +389,23 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
+              <ButtonLink
                 size="xl"
                 variant="secondary"
                 className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
+                href="/signup"
                 onClick={trackSignupStarted}
               >
-                <Link href="/signup">Start Your Free Family Circle</Link>
-              </Button>
-              <Button
+                Start Your Free Family Circle
+              </ButtonLink>
+              <ButtonLink
                 size="xl"
                 variant="outline"
                 className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
+                href="/login"
               >
-                <Link href="/login">Sign In</Link>
-              </Button>
+                Sign In
+              </ButtonLink>
             </div>
 
             <p className="text-sm opacity-75 mt-6">

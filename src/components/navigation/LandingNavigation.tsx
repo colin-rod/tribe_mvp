@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useConversionTracking } from '@/components/analytics/ConversionTracker'
@@ -71,12 +71,12 @@ export function LandingNavigation() {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm">
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button size="sm" onClick={trackSignupStarted}>
-              <Link href="/signup">Start Free</Link>
-            </Button>
+            <ButtonLink variant="ghost" size="sm" href="/login">
+              Sign In
+            </ButtonLink>
+            <ButtonLink size="sm" href="/signup" onClick={trackSignupStarted}>
+              Start Free
+            </ButtonLink>
           </div>
 
           {/* Mobile Menu Button */}
@@ -115,12 +115,20 @@ export function LandingNavigation() {
               ))}
 
               <div className="pt-3 border-t border-gray-200 space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Button className="w-full" onClick={trackSignupStarted}>
-                  <Link href="/signup">Start Free</Link>
-                </Button>
+                <ButtonLink
+                  variant="ghost"
+                  className="w-full justify-start"
+                  href="/login"
+                >
+                  Sign In
+                </ButtonLink>
+                <ButtonLink
+                  className="w-full"
+                  href="/signup"
+                  onClick={trackSignupStarted}
+                >
+                  Start Free
+                </ButtonLink>
               </div>
             </div>
           </div>
