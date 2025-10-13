@@ -3,13 +3,23 @@ import { createLogger } from '@/lib/logger'
 import type { DraftUpdate, DraftUpdateRequest, DraftWorkspaceSummary, ChildDraftSummary, DraftFilters } from '@/lib/types/digest'
 import type { Json } from '@/lib/types/database.types'
 
+export type SupabaseClientLike = {
+  auth: {
+    getUser: () => Promise<{
+      data: { user: { id: string } | null }
+      error: { message?: string } | null
+    }>
+  }
+  from: (...args: any[]) => any
+}
+
 const logger = createLogger('DraftService')
 
 /**
  * Create a new draft update
  */
-export async function createDraft(data: DraftUpdateRequest): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function createDraft(data: DraftUpdateRequest, supabaseOverride?: SupabaseClientLike): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -47,8 +57,12 @@ export async function createDraft(data: DraftUpdateRequest): Promise<DraftUpdate
 /**
  * Update an existing draft
  */
-export async function updateDraft(draftId: string, data: Partial<DraftUpdateRequest>): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function updateDraft(
+  draftId: string,
+  data: Partial<DraftUpdateRequest>,
+  supabaseOverride?: SupabaseClientLike
+): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -87,8 +101,12 @@ export async function updateDraft(draftId: string, data: Partial<DraftUpdateRequ
 /**
  * Add media to an existing draft
  */
-export async function addMediaToDraft(draftId: string, newMediaUrls: string[]): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function addMediaToDraft(
+  draftId: string,
+  newMediaUrls: string[],
+  supabaseOverride?: SupabaseClientLike
+): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -140,8 +158,13 @@ export async function addMediaToDraft(draftId: string, newMediaUrls: string[]): 
 /**
  * Add or update text content in a draft
  */
-export async function addTextToDraft(draftId: string, text: string, append: boolean = false): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function addTextToDraft(
+  draftId: string,
+  text: string,
+  append: boolean = false,
+  supabaseOverride?: SupabaseClientLike
+): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -190,8 +213,8 @@ export async function addTextToDraft(draftId: string, text: string, append: bool
 /**
  * Mark a draft as ready for digest compilation
  */
-export async function markDraftAsReady(draftId: string): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function markDraftAsReady(draftId: string, supabaseOverride?: SupabaseClientLike): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -222,8 +245,8 @@ export async function markDraftAsReady(draftId: string): Promise<DraftUpdate> {
 /**
  * Mark a ready update back to draft status
  */
-export async function markReadyAsDraft(updateId: string): Promise<DraftUpdate> {
-  const supabase = createClient()
+export async function markReadyAsDraft(updateId: string, supabaseOverride?: SupabaseClientLike): Promise<DraftUpdate> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -254,8 +277,8 @@ export async function markReadyAsDraft(updateId: string): Promise<DraftUpdate> {
 /**
  * Delete a draft
  */
-export async function deleteDraft(draftId: string): Promise<void> {
-  const supabase = createClient()
+export async function deleteDraft(draftId: string, supabaseOverride?: SupabaseClientLike): Promise<void> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -280,8 +303,8 @@ export async function deleteDraft(draftId: string): Promise<void> {
 /**
  * Get all drafts for current user
  */
-export async function getDrafts(filters?: DraftFilters): Promise<DraftUpdate[]> {
-  const supabase = createClient()
+export async function getDrafts(filters?: DraftFilters, supabaseOverride?: SupabaseClientLike): Promise<DraftUpdate[]> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -346,8 +369,8 @@ export async function getDrafts(filters?: DraftFilters): Promise<DraftUpdate[]> 
 /**
  * Get draft workspace summary
  */
-export async function getDraftWorkspaceSummary(): Promise<DraftWorkspaceSummary> {
-  const supabase = createClient()
+export async function getDraftWorkspaceSummary(supabaseOverride?: SupabaseClientLike): Promise<DraftWorkspaceSummary> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
@@ -431,8 +454,8 @@ export async function getDraftWorkspaceSummary(): Promise<DraftWorkspaceSummary>
 /**
  * Get a single draft by ID
  */
-export async function getDraftById(draftId: string): Promise<DraftUpdate | null> {
-  const supabase = createClient()
+export async function getDraftById(draftId: string, supabaseOverride?: SupabaseClientLike): Promise<DraftUpdate | null> {
+  const supabase = supabaseOverride ?? createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error('Not authenticated')
