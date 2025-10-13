@@ -43,6 +43,8 @@ OPENAI_API_KEY=your-openai-api-key
 SENDGRID_API_KEY=your-sendgrid-api-key
 SENDGRID_FROM_EMAIL=updates@yourdomain.com
 SENDGRID_FROM_NAME=Tribe
+SENDGRID_WEBHOOK_PUBLIC_KEY=your-sendgrid-webhook-public-key
+SENDGRID_WEBHOOK_RELAXED_VALIDATION=false # Set to true only for local testing without a verified key
 REPLY_TO_DOMAIN=yourdomain.com
 WEBHOOK_SECRET=your-webhook-secret
 

@@ -9,6 +9,7 @@
    - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Set to your production anon key
    - [ ] `NEXT_PUBLIC_APP_URL` - Set to your production domain
    - [ ] `SENDGRID_API_KEY` - Set to your SendGrid API key
+   - [ ] `SENDGRID_WEBHOOK_PUBLIC_KEY` - Required for SendGrid webhook signature verification
    - [ ] `SUPABASE_SERVICE_ROLE_KEY` - Set to your service role key (server-only)
 
 2. **Verify Environment Variables**

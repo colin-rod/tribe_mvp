@@ -18,6 +18,7 @@ This implementation addresses the critical security issue **"Environment Variabl
 **Environment Variables Validated:**
 - **Required**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SENDGRID_API_KEY`
 - **Optional with defaults**: `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`, `NEXT_PUBLIC_APP_URL`, `NODE_ENV`, `PORT`
+- **Production-only requirement**: `SENDGRID_WEBHOOK_PUBLIC_KEY` (enforced unless `SENDGRID_WEBHOOK_RELAXED_VALIDATION=true`)
 - **Optional features**: `LINEAR_API_KEY`, `LINEAR_PROJECT_ID`, `DATABASE_URL`, `LOG_LEVEL`
 
 ### 2. Updated Files for Environment Validation

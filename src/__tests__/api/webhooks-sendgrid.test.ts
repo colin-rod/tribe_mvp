@@ -12,14 +12,27 @@ jest.mock('@/lib/logger', () => ({
   })
 }))
 
+jest.mock('@/lib/monitoring/securityIncidentTracker', () => ({
+  trackSecurityIncident: jest.fn(),
+  getSecurityIncidentMetrics: jest.fn(),
+  resetSecurityIncidentMetrics: jest.fn()
+}))
+
 jest.mock('@/lib/env', () => ({
   getEnv: jest.fn(() => ({
-    SENDGRID_WEBHOOK_PUBLIC_KEY: 'test-public-key'
+    NODE_ENV: 'development',
+    SENDGRID_WEBHOOK_PUBLIC_KEY: 'test-public-key',
+    SENDGRID_WEBHOOK_RELAXED_VALIDATION: false
   }))
 }))
 
+import { trackSecurityIncident } from '@/lib/monitoring/securityIncidentTracker'
+import { getEnv } from '@/lib/env'
+
 describe('SendGrid Webhook Tests', () => {
   const mockPublicKey = 'test-public-key'
+  const mockedGetEnv = getEnv as jest.Mock
+  const trackSecurityIncidentMock = trackSecurityIncident as jest.Mock
 
   // Helper to create signed webhook request
   function createSignedRequest(events: unknown[], sign = true) {
@@ -45,6 +58,15 @@ describe('SendGrid Webhook Tests', () => {
   }
 
   describe('Webhook Security', () => {
+    beforeEach(() => {
+      trackSecurityIncidentMock.mockClear()
+      mockedGetEnv.mockReturnValue({
+        NODE_ENV: 'development',
+        SENDGRID_WEBHOOK_PUBLIC_KEY: mockPublicKey,
+        SENDGRID_WEBHOOK_RELAXED_VALIDATION: false
+      })
+    })
+
     it('should accept valid webhook signature', async () => {
       const events = [{
         email: 'test@example.com',
@@ -88,6 +110,9 @@ describe('SendGrid Webhook Tests', () => {
 
       expect(response.status).toBe(401)
       expect(data.error).toBe('Invalid signature')
+      expect(trackSecurityIncidentMock).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'sendgrid_webhook_invalid_signature'
+      }))
     })
 
     it('should reject request without signature headers', async () => {
@@ -107,6 +132,33 @@ describe('SendGrid Webhook Tests', () => {
 
       expect(response.status).toBe(401)
       expect(data.error).toBe('Invalid signature')
+      expect(trackSecurityIncidentMock).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'sendgrid_webhook_missing_signature_headers'
+      }))
+    })
+
+    it('should reject webhook when public key missing in production', async () => {
+      mockedGetEnv.mockReturnValueOnce({
+        NODE_ENV: 'production',
+        SENDGRID_WEBHOOK_PUBLIC_KEY: undefined,
+        SENDGRID_WEBHOOK_RELAXED_VALIDATION: false
+      })
+
+      const events = [{
+        email: 'test@example.com',
+        timestamp: Date.now() / 1000,
+        event: SendGridEventType.DELIVERED
+      }]
+
+      const request = createSignedRequest(events)
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(data.error).toBe('SendGrid webhook verification misconfigured')
+      expect(trackSecurityIncidentMock).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'sendgrid_webhook_missing_public_key'
+      }))
     })
   })
 

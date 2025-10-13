@@ -122,8 +122,9 @@ Add to `.env.local`:
 # Redis (required for queue functionality)
 REDIS_URL=redis://localhost:6379
 
-# SendGrid Webhook Security (optional but recommended)
+# SendGrid Webhook Security (required in production)
 SENDGRID_WEBHOOK_PUBLIC_KEY=your_public_key_here
+SENDGRID_WEBHOOK_RELAXED_VALIDATION=false
 ```
 
 ### Redis Setup
@@ -153,10 +154,13 @@ brew services start redis
    - Select events to track
    - Enable signature verification
 
-3. **Set Environment Variable**:
+3. **Set Environment Variables**:
    ```env
    SENDGRID_WEBHOOK_PUBLIC_KEY=your_public_key_here
+   SENDGRID_WEBHOOK_RELAXED_VALIDATION=false
    ```
+
+   For local development without a public key you can temporarily set `SENDGRID_WEBHOOK_RELAXED_VALIDATION=true`, but this must remain `false` in production environments.
 
 ## Usage
 
