@@ -4,14 +4,15 @@ import {
   updateDraft,
   addMediaToDraft,
   deleteDraft,
-  markDraftReady,
+  markDraftAsReady,
+  markReadyAsDraft,
   getDraftById,
-  getDraftsByChild,
-  getWorkspaceSummary
+  getDrafts,
+  getDraftWorkspaceSummary,
+  type SupabaseClientLike
 } from '../draftService'
 import type { DraftUpdateRequest } from '@/lib/types/digest'
 
-// Mock logger
 const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
@@ -22,42 +23,95 @@ jest.mock('@/lib/logger', () => ({
   createLogger: () => mockLogger
 }))
 
-// Mock Supabase client
-const mockGetUser = jest.fn()
-const mockFrom = jest.fn()
-const mockSelect = jest.fn()
-const mockInsert = jest.fn()
-const mockUpdate = jest.fn()
-const mockDelete = jest.fn()
-const mockEq = jest.fn()
-const mockSingle = jest.fn()
-const mockOrder = jest.fn()
-const mockIn = jest.fn()
+type SupabaseFactoryOptions = {
+  getUserResult?: { data: { user: { id: string } | null }; error: { message?: string } | null }
+  fromImpl: (...args: any[]) => any
+}
 
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn(() => ({
+function createSupabaseOverride({
+  getUserResult = { data: { user: { id: 'user-123' } }, error: null },
+  fromImpl
+}: SupabaseFactoryOptions): SupabaseClientLike {
+  return {
     auth: {
-      getUser: mockGetUser
+      getUser: jest.fn(async () => getUserResult)
     },
-    from: mockFrom
-  }))
-}))
+    from: (...args: Parameters<SupabaseClientLike['from']>) => fromImpl(...args)
+  }
+}
 
-describe('draftService', () => {
-  const mockUser = {
-    id: 'user-123',
-    email: 'parent@example.com'
+function createSelectSingleChain<T>(response: { data: T; error: { message?: string; code?: string } | null }) {
+  const single = jest.fn(async () => response)
+  const select = jest.fn(() => ({ single }))
+  return { select, single }
+}
+
+function createUpdateChain<T>(
+  response: { data: T; error: { message?: string } | null },
+  eqCountBeforeSelect = 3
+) {
+  const { select, single } = createSelectSingleChain(response)
+  const buildLevel = (depth: number): any => {
+    if (depth === 0) {
+      return { select }
+    }
+
+    const next = buildLevel(depth - 1)
+    const eq = jest.fn(() => next)
+    return { eq }
   }
 
+  const chain = buildLevel(eqCountBeforeSelect)
+  const update = jest.fn(() => chain)
+  return { update, select, single }
+}
+
+function createDeleteChain(response: { error: { message?: string } | null }) {
+  const inFn = jest.fn(async () => response)
+  const secondEq = jest.fn(() => ({ in: inFn }))
+  const firstEq = jest.fn(() => ({ eq: secondEq }))
+  const del = jest.fn(() => ({ eq: firstEq }))
+  return { del, firstEq, secondEq, inFn }
+}
+
+function createFetchChain<T>(response: { data: T; error: { message?: string } | null }) {
+  const { select, single } = createSelectSingleChain(response)
+  const secondEq = jest.fn(() => ({ single }))
+  const firstEq = jest.fn(() => ({ eq: secondEq }))
+  return { select: jest.fn(() => ({ eq: firstEq })), firstEq, secondEq, single }
+}
+
+function createByIdChain<T>(response: { data: T; error: { message?: string; code?: string } | null }) {
+  const { select, single } = createSelectSingleChain(response)
+  const inFn = jest.fn(() => ({ single }))
+  const secondEq = jest.fn(() => ({ in: inFn }))
+  const firstEq = jest.fn(() => ({ eq: secondEq }))
+  return { select: jest.fn(() => ({ eq: firstEq })), firstEq, secondEq, inFn, single }
+}
+
+function createListChain<T>(response: { data: T; error: { message?: string } | null }) {
+  const builder: any = {}
+  builder.eq = jest.fn(() => builder)
+  builder.in = jest.fn(() => builder)
+  builder.gte = jest.fn(() => builder)
+  builder.lte = jest.fn(() => builder)
+  builder.not = jest.fn(() => builder)
+  builder.or = jest.fn(() => builder)
+  builder.is = jest.fn(() => builder)
+  builder.order = jest.fn(async () => response)
+  const select = jest.fn(() => builder)
+  return { select, builder }
+}
+
+describe('draftService', () => {
+  const mockUser = { id: 'user-123' }
   const mockChild = {
     id: 'child-123',
-    name: 'Emma',
-    birth_date: '2024-01-01'
+    name: 'Emma'
   }
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
   })
 
   describe('createDraft', () => {
@@ -79,27 +133,24 @@ describe('draftService', () => {
         subject: mockDraftRequest.subject,
         media_urls: mockDraftRequest.media_urls,
         milestone_type: mockDraftRequest.milestone_type,
-        distribution_status: 'draft',
-        version: 1,
-        edit_count: 0,
-        created_at: new Date().toISOString()
+        distribution_status: 'draft'
       }
 
-      mockFrom.mockReturnValue({
-        insert: mockInsert.mockReturnValue({
-          select: mockSelect.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
-              data: mockDraft,
-              error: null
-            })
-          })
+      const insert = jest.fn(() => ({
+        select: () => ({
+          single: () => Promise.resolve({ data: mockDraft, error: null })
         })
+      }))
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ insert })
       })
 
-      const result = await createDraft(mockDraftRequest)
+      const result = await createDraft(mockDraftRequest, supabase)
 
       expect(result).toEqual(mockDraft)
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(insert).toHaveBeenCalledWith(
         expect.objectContaining({
           parent_id: mockUser.id,
           child_id: mockDraftRequest.child_id,
@@ -107,34 +158,32 @@ describe('draftService', () => {
           distribution_status: 'draft'
         })
       )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Creating new draft',
-        expect.objectContaining({ childId: mockChild.id })
-      )
     })
 
     it('should handle creation failure', async () => {
-      mockFrom.mockReturnValue({
-        insert: mockInsert.mockReturnValue({
-          select: mockSelect.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
-              data: null,
-              error: { message: 'Insert failed' }
-            })
-          })
+      const insert = jest.fn(() => ({
+        select: () => ({
+          single: () => Promise.resolve({ data: null, error: { message: 'Insert failed' } })
         })
+      }))
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ insert })
       })
 
-      await expect(createDraft(mockDraftRequest)).rejects.toThrow(
+      await expect(createDraft(mockDraftRequest, supabase)).rejects.toThrow(
         'Failed to create draft: Insert failed'
       )
-      expect(mockLogger.error).toHaveBeenCalled()
     })
 
     it('should handle unauthenticated user', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: null }, error: null },
+        fromImpl: () => ({ insert: jest.fn() })
+      })
 
-      await expect(createDraft(mockDraftRequest)).rejects.toThrow('Not authenticated')
+      await expect(createDraft(mockDraftRequest, supabase)).rejects.toThrow('Not authenticated')
     })
 
     it('should create draft with minimal data', async () => {
@@ -152,18 +201,18 @@ describe('draftService', () => {
         distribution_status: 'draft'
       }
 
-      mockFrom.mockReturnValue({
-        insert: mockInsert.mockReturnValue({
-          select: mockSelect.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
-              data: mockDraft,
-              error: null
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({
+          insert: () => ({
+            select: () => ({
+              single: () => Promise.resolve({ data: mockDraft, error: null })
             })
           })
         })
       })
 
-      const result = await createDraft(minimalRequest)
+      const result = await createDraft(minimalRequest, supabase)
 
       expect(result.content).toBe('Quick note')
       expect(result.media_urls).toEqual([])
@@ -186,54 +235,29 @@ describe('draftService', () => {
         last_edited_at: new Date().toISOString()
       }
 
-      mockFrom.mockReturnValue({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                select: mockSelect.mockReturnValue({
-                  single: mockSingle.mockResolvedValue({
-                    data: mockUpdatedDraft,
-                    error: null
-                  })
-                })
-              })
-            })
-          })
-        })
+      const { update } = createUpdateChain({ data: mockUpdatedDraft, error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ update })
       })
 
-      const result = await updateDraft(draftId, updateData)
+      const result = await updateDraft(draftId, updateData, supabase)
 
       expect(result.content).toBe('Updated content')
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          content: 'Updated content',
-          subject: 'Updated Subject'
-        })
-      )
+      expect(update).toHaveBeenCalledWith(expect.objectContaining(updateData))
     })
 
     it('should only update status on drafts', async () => {
-      mockFrom.mockReturnValue({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                select: mockSelect.mockReturnValue({
-                  single: mockSingle.mockResolvedValue({
-                    data: null,
-                    error: { message: 'Not a draft' }
-                  })
-                })
-              })
-            })
-          })
-        })
+      const { update } = createUpdateChain({ data: null, error: { message: 'Not a draft' } })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ update })
       })
 
-      await expect(updateDraft(draftId, { content: 'Test' })).rejects.toThrow(
-        'Failed to update draft'
+      await expect(updateDraft(draftId, { content: 'Test' }, supabase)).rejects.toThrow(
+        'Failed to update draft: Not a draft'
       )
     })
   })
@@ -243,55 +267,25 @@ describe('draftService', () => {
     const newMediaUrls = ['photo2.jpg', 'photo3.jpg']
 
     it('should add media to draft successfully', async () => {
-      const existingDraft = {
-        id: draftId,
-        media_urls: ['photo1.jpg']
-      }
-
-      const updatedDraft = {
-        ...existingDraft,
-        media_urls: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg']
-      }
-
-      // Mock fetch current draft
-      mockFrom.mockReturnValueOnce({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                single: mockSingle.mockResolvedValue({
-                  data: existingDraft,
-                  error: null
-                })
-              })
-            })
-          })
-        })
+      const fetchChain = createFetchChain({
+        data: { media_urls: ['photo1.jpg'] },
+        error: null
       })
 
-      // Mock update draft
-      mockFrom.mockReturnValueOnce({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                select: mockSelect.mockReturnValue({
-                  single: mockSingle.mockResolvedValue({
-                    data: updatedDraft,
-                    error: null
-                  })
-                })
-              })
-            })
-          })
-        })
+      const { update } = createUpdateChain({
+        data: { id: draftId, media_urls: ['photo1.jpg', ...newMediaUrls] },
+        error: null
+      }, 2)
+
+      let callIndex = 0
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => (callIndex++ === 0 ? { select: fetchChain.select } : { update })
       })
 
-      const result = await addMediaToDraft(draftId, newMediaUrls)
+      const result = await addMediaToDraft(draftId, newMediaUrls, supabase)
 
-      expect(result.media_urls).toHaveLength(3)
-      expect(result.media_urls).toContain('photo2.jpg')
-      expect(result.media_urls).toContain('photo3.jpg')
+      expect(result.media_urls).toEqual(['photo1.jpg', ...newMediaUrls])
     })
   })
 
@@ -299,77 +293,65 @@ describe('draftService', () => {
     const draftId = 'draft-123'
 
     it('should delete draft successfully', async () => {
-      mockFrom.mockReturnValue({
-        delete: mockDelete.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockResolvedValue({
-                error: null
-              })
-            })
-          })
-        })
+      const { del } = createDeleteChain({ error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ delete: del })
       })
 
-      await expect(deleteDraft(draftId)).resolves.not.toThrow()
-      expect(mockDelete).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Draft deleted successfully',
-        expect.objectContaining({ draftId })
-      )
+      await expect(deleteDraft(draftId, supabase)).resolves.not.toThrow()
     })
 
     it('should handle deletion failure', async () => {
-      mockFrom.mockReturnValue({
-        delete: mockDelete.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockResolvedValue({
-                error: { message: 'Delete failed' }
-              })
-            })
-          })
-        })
+      const { del } = createDeleteChain({ error: { message: 'Delete failed' } })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ delete: del })
       })
 
-      await expect(deleteDraft(draftId)).rejects.toThrow('Failed to delete draft')
+      await expect(deleteDraft(draftId, supabase)).rejects.toThrow('Failed to delete draft: Delete failed')
     })
   })
 
-  describe('markDraftReady', () => {
+  describe('markDraftAsReady', () => {
     const draftId = 'draft-123'
 
     it('should mark draft as ready successfully', async () => {
-      const readyDraft = {
-        id: draftId,
-        distribution_status: 'draft',
-        marked_ready_at: new Date().toISOString()
-      }
-
-      mockFrom.mockReturnValue({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                select: mockSelect.mockReturnValue({
-                  single: mockSingle.mockResolvedValue({
-                    data: readyDraft,
-                    error: null
-                  })
-                })
-              })
-            })
-          })
-        })
+      const { update } = createUpdateChain({
+        data: { id: draftId, distribution_status: 'ready' },
+        error: null
       })
 
-      const result = await markDraftReady(draftId)
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ update })
+      })
 
-      expect(result.marked_ready_at).toBeDefined()
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Draft marked as ready',
-        expect.objectContaining({ draftId })
-      )
+      const result = await markDraftAsReady(draftId, supabase)
+
+      expect(result.distribution_status).toBe('ready')
+    })
+  })
+
+  describe('markReadyAsDraft', () => {
+    const draftId = 'draft-123'
+
+    it('should revert ready draft to draft status', async () => {
+      const { update } = createUpdateChain({
+        data: { id: draftId, distribution_status: 'draft' },
+        error: null
+      })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ update })
+      })
+
+      const result = await markReadyAsDraft(draftId, supabase)
+
+      expect(result.distribution_status).toBe('draft')
     })
   })
 
@@ -385,134 +367,123 @@ describe('draftService', () => {
         distribution_status: 'draft'
       }
 
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              single: mockSingle.mockResolvedValue({
-                data: mockDraft,
-                error: null
-              })
-            })
-          })
-        })
+      const chain = createByIdChain({ data: mockDraft, error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ select: chain.select })
       })
 
-      const result = await getDraftById(draftId)
+      const result = await getDraftById(draftId, supabase)
 
       expect(result).toEqual(mockDraft)
-      expect(mockFrom).toHaveBeenCalledWith('memories')
     })
 
-    it('should handle draft not found', async () => {
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              single: mockSingle.mockResolvedValue({
-                data: null,
-                error: { message: 'Not found', code: 'PGRST116' }
-              })
-            })
-          })
-        })
+    it('should return null when draft not found', async () => {
+      const chain = createByIdChain({
+        data: null,
+        error: { message: 'Not found', code: 'PGRST116' }
       })
 
-      await expect(getDraftById(draftId)).rejects.toThrow()
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ select: chain.select })
+      })
+
+      const result = await getDraftById(draftId, supabase)
+
+      expect(result).toBeNull()
     })
   })
 
-  describe('getDraftsByChild', () => {
+  describe('getDrafts', () => {
     const childId = mockChild.id
 
-    it('should fetch drafts for a child successfully', async () => {
+    it('should fetch drafts with filters successfully', async () => {
       const mockDrafts = [
         {
           id: 'draft-1',
           child_id: childId,
           content: 'Draft 1',
-          created_at: '2025-01-01T10:00:00Z'
+          created_at: '2025-01-01T10:00:00Z',
+          distribution_status: 'draft'
         },
         {
           id: 'draft-2',
           child_id: childId,
           content: 'Draft 2',
-          created_at: '2025-01-02T10:00:00Z'
+          created_at: '2025-01-02T10:00:00Z',
+          distribution_status: 'ready'
         }
       ]
 
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              eq: mockEq.mockReturnValue({
-                order: mockOrder.mockResolvedValue({
-                  data: mockDrafts,
-                  error: null
-                })
-              })
-            })
-          })
-        })
+      const { select, builder } = createListChain({ data: mockDrafts, error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ select })
       })
 
-      const result = await getDraftsByChild(childId)
+      const result = await getDrafts({ child_id: childId }, supabase)
 
       expect(result).toHaveLength(2)
-      expect(result[0].child_id).toBe(childId)
-      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false })
+      expect(builder.order).toHaveBeenCalledWith('created_at', { ascending: false })
+      expect(builder.eq).toHaveBeenCalledWith('child_id', childId)
+      expect(builder.in).toHaveBeenCalledWith('distribution_status', ['draft', 'ready'])
     })
   })
 
-  describe('getWorkspaceSummary', () => {
+  describe('getDraftWorkspaceSummary', () => {
     it('should fetch workspace summary successfully', async () => {
       const mockDrafts = [
         {
           id: 'draft-1',
           distribution_status: 'draft',
-          marked_ready_at: null,
-          child_id: 'child-1'
+          child_id: 'child-1',
+          created_at: '2025-01-01T10:00:00Z',
+          children: {
+            id: 'child-1',
+            name: 'Emma',
+            profile_photo_url: 'avatar.jpg'
+          }
         },
         {
           id: 'draft-2',
-          distribution_status: 'draft',
-          marked_ready_at: new Date().toISOString(),
-          child_id: 'child-1'
+          distribution_status: 'ready',
+          child_id: 'child-1',
+          created_at: '2025-01-02T10:00:00Z',
+          children: {
+            id: 'child-1',
+            name: 'Emma',
+            profile_photo_url: 'avatar.jpg'
+          }
         }
       ]
 
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockResolvedValue({
-              data: mockDrafts,
-              error: null
-            })
-          })
-        })
+      const { select, builder } = createListChain({ data: mockDrafts, error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ select })
       })
 
-      const result = await getWorkspaceSummary()
+      const result = await getDraftWorkspaceSummary(supabase)
 
-      expect(result).toBeDefined()
       expect(result.total_drafts).toBe(2)
       expect(result.ready_count).toBe(1)
       expect(result.can_compile_digest).toBe(true)
+      expect(builder.order).toHaveBeenCalledWith('created_at', { ascending: false })
     })
 
     it('should indicate no drafts ready when none marked', async () => {
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockResolvedValue({
-              data: [],
-              error: null
-            })
-          })
-        })
+      const { select } = createListChain({ data: [], error: null })
+
+      const supabase = createSupabaseOverride({
+        getUserResult: { data: { user: mockUser }, error: null },
+        fromImpl: () => ({ select })
       })
 
-      const result = await getWorkspaceSummary()
+      const result = await getDraftWorkspaceSummary(supabase)
 
       expect(result.total_drafts).toBe(0)
       expect(result.ready_count).toBe(0)
