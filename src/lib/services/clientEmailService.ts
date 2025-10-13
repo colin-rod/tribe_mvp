@@ -49,12 +49,23 @@ export class ClientEmailService {
   private logger = createLogger('ClientEmailService')
 
   private async fetchApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const { headers, ...rest } = options
+
+    const normalizedHeaders: Record<string, string> =
+      headers instanceof Headers
+        ? Object.fromEntries(headers.entries())
+        : Array.isArray(headers)
+        ? Object.fromEntries(headers)
+        : (headers as Record<string, string> | undefined) ?? {}
+
+    const mergedHeaders = {
+      'Content-Type': 'application/json',
+      ...normalizedHeaders,
+    }
+
     const response = await fetch(endpoint, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
+      ...rest,
+      headers: mergedHeaders,
     })
 
     return response
