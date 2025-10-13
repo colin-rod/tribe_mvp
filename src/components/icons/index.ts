@@ -1,0 +1,6 @@
+export { CalendarDaysIcon as CalendarIcon } from '@heroicons/react/24/outline'
+export { PhotoIcon } from '@heroicons/react/24/outline'
+export { StarIcon } from '@heroicons/react/24/outline'
+export { TrashIcon as DeleteIcon } from '@heroicons/react/24/outline'
+export { ArrowDownTrayIcon as ExportIcon } from '@heroicons/react/24/outline'
+export { ArchiveBoxArrowDownIcon as ArchiveIcon } from '@heroicons/react/24/outline'
