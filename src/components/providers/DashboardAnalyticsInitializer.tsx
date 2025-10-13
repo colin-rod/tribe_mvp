@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import {
   initializeDashboardAnalytics,
-  flushDashboardAnalytics
+  destroyDashboardAnalytics
 } from '@/lib/analytics/dashboard-analytics'
 
 export function DashboardAnalyticsInitializer() {
@@ -16,7 +16,7 @@ export function DashboardAnalyticsInitializer() {
 
     return () => {
       if (instance) {
-        flushDashboardAnalytics('destroy')
+        destroyDashboardAnalytics()
       }
     }
   }, [])
