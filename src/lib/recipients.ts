@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { requireAuthenticatedClient } from './supabase/auth'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 // getDefaultGroup is deprecated - using relationship-based defaults instead
@@ -110,10 +111,7 @@ function extractGroupFromRelation(relation: unknown): RecipientGroup | undefined
  * @returns Promise resolving to created recipient with group information
  */
 export async function createRecipient(recipientData: CreateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate that at least email or phone is provided
   if (!recipientData.email && !recipientData.phone) {
@@ -196,10 +194,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
  * @returns Promise resolving to array of recipients with group data
  */
 export async function getRecipients(filters: RecipientFilters = {}): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   let query = supabase
     .from('recipients')
@@ -261,10 +256,7 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
  * @returns Promise resolving to recipient or null if not found
  */
 export async function getRecipientById(recipientId: string): Promise<Recipient | null> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -304,10 +296,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
  * @returns Promise resolving to updated recipient
  */
 export async function updateRecipient(recipientId: string, updates: UpdateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate contact method if being updated
   if ((updates.email !== undefined || updates.phone !== undefined)) {
@@ -361,10 +350,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
  * @returns Promise resolving to boolean success
  */
 export async function deleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -388,10 +374,7 @@ export async function deleteRecipient(recipientId: string): Promise<boolean> {
  * @returns Promise resolving to boolean success
  */
 export async function permanentlyDeleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -414,10 +397,7 @@ export async function permanentlyDeleteRecipient(recipientId: string): Promise<b
  * @returns Promise resolving to reactivated recipient
  */
 export async function reactivateRecipient(recipientId: string): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -480,10 +460,7 @@ export async function bulkUpdateRecipients(
   recipientIds: string[],
   updates: Omit<UpdateRecipientData, 'email' | 'phone' | 'name'>
 ): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   if (recipientIds.length === 0) {
     throw new Error('No recipients specified for bulk update')
