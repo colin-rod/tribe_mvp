@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createLogger } from '@/lib/logger'
 import crypto from 'crypto'
 import { getEnv } from '@/lib/env'
+import { trackSecurityIncident } from '@/lib/monitoring/securityIncidentTracker'
 
 const logger = createLogger('SendGridWebhook')
 
@@ -69,8 +70,18 @@ function verifyWebhookSignature(
     const publicKeyFormatted = `-----BEGIN PUBLIC KEY-----\n${publicKey}\n-----END PUBLIC KEY-----`
     return verify.verify(publicKeyFormatted, signature, 'base64')
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     logger.error('Webhook signature verification failed', {
-      error: error instanceof Error ? error.message : String(error)
+      error: message
+    })
+    trackSecurityIncident({
+      type: 'sendgrid_webhook_signature_verification_error',
+      severity: 'high',
+      source: 'sendgrid_webhook',
+      description: 'Exception thrown during SendGrid webhook signature verification',
+      metadata: {
+        error: message
+      }
     })
     return false
   }
@@ -97,6 +108,8 @@ function verifyWebhookSignature(
 export async function POST(request: NextRequest) {
   try {
     const env = getEnv()
+    const isProduction = env.NODE_ENV === 'production'
+    const relaxedValidation = env.SENDGRID_WEBHOOK_RELAXED_VALIDATION
 
     // Get raw body for signature verification
     const rawBody = await request.text()
@@ -105,6 +118,28 @@ export async function POST(request: NextRequest) {
     if (env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
       const signature = request.headers.get('x-twilio-email-event-webhook-signature')
       const timestamp = request.headers.get('x-twilio-email-event-webhook-timestamp')
+
+      if (!signature || !timestamp) {
+        logger.error('Missing SendGrid webhook signature headers', {
+          hasSignature: !!signature,
+          hasTimestamp: !!timestamp
+        })
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_missing_signature_headers',
+          severity: 'high',
+          source: 'sendgrid_webhook',
+          description: 'SendGrid webhook request missing signature headers',
+          metadata: {
+            hasSignature: !!signature,
+            hasTimestamp: !!timestamp
+          }
+        })
+
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
 
       const isValid = verifyWebhookSignature(
         rawBody,
@@ -115,13 +150,42 @@ export async function POST(request: NextRequest) {
 
       if (!isValid) {
         logger.error('Invalid webhook signature')
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_invalid_signature',
+          severity: 'high',
+          source: 'sendgrid_webhook',
+          description: 'SendGrid webhook signature verification failed',
+          metadata: {
+            signatureLength: signature.length,
+            timestamp
+          }
+        })
+
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
         )
       }
     } else {
-      logger.warn('SendGrid webhook signature verification skipped - SENDGRID_WEBHOOK_PUBLIC_KEY not configured')
+      if (isProduction && !relaxedValidation) {
+        logger.error('SendGrid webhook signature verification blocked - public key missing in production')
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_missing_public_key',
+          severity: 'critical',
+          source: 'sendgrid_webhook',
+          description: 'SENDGRID_WEBHOOK_PUBLIC_KEY is missing in production environment'
+        })
+
+        return NextResponse.json(
+          { error: 'SendGrid webhook verification misconfigured' },
+          { status: 401 }
+        )
+      }
+
+      logger.warn('SendGrid webhook signature verification skipped - SENDGRID_WEBHOOK_PUBLIC_KEY not configured', {
+        environment: env.NODE_ENV,
+        relaxedValidation
+      })
     }
 
     // Parse events

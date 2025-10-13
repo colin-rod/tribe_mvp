@@ -40,6 +40,8 @@ function getZodFieldType(fieldName: string): string {
     SENDGRID_API_KEY: 'string (required, min length: 1)',
     SENDGRID_FROM_EMAIL: 'email (optional, default: updates@colinrodrigues.com)',
     SENDGRID_FROM_NAME: 'string (optional, default: Tribe)',
+    SENDGRID_WEBHOOK_PUBLIC_KEY: 'string (required in production, min length: 1)',
+    SENDGRID_WEBHOOK_RELAXED_VALIDATION: 'boolean (optional, default: false)',
     LINEAR_API_KEY: 'string (optional)',
     LINEAR_PROJECT_ID: 'uuid (optional)',
     DATABASE_URL: 'url (optional)',
@@ -79,7 +81,10 @@ const envSchema = z.object({
     message: 'SENDGRID_FROM_EMAIL must be a valid email address'
   }).optional().default('updates@colinrodrigues.com'),
   SENDGRID_FROM_NAME: z.string().optional().default('Tribe'),
-  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
+  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().min(1, {
+    message: 'SENDGRID_WEBHOOK_PUBLIC_KEY cannot be empty when provided'
+  }).optional(),
+  SENDGRID_WEBHOOK_RELAXED_VALIDATION: z.coerce.boolean().optional().default(false),
 
   // Redis - Optional for email queue functionality
   REDIS_URL: z.string().url({
@@ -268,7 +273,23 @@ function validateEnvironment(): Env {
       totalValidatedFields: Object.keys(result.data).length
     })
 
-    return result.data
+    const env = result.data
+
+    const requiresWebhookKey =
+      env.NODE_ENV === 'production' &&
+      !env.SENDGRID_WEBHOOK_RELAXED_VALIDATION
+
+    if (requiresWebhookKey && !env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+      logger.error('Environment validation failed - SENDGRID_WEBHOOK_PUBLIC_KEY missing in production', {
+        nodeEnv: env.NODE_ENV,
+        relaxedValidation: env.SENDGRID_WEBHOOK_RELAXED_VALIDATION,
+        hasPublicKey: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY
+      })
+
+      throw new Error('SENDGRID_WEBHOOK_PUBLIC_KEY is required in production when SENDGRID_WEBHOOK_RELAXED_VALIDATION is false')
+    }
+
+    return env
   } catch (error) {
     // Log error and re-throw for proper handling
     if (error instanceof Error && error.message.includes('Environment Configuration Error')) {
@@ -632,16 +653,6 @@ export function checkEnvironmentHealth(): {
   errors: string[]
 } {
   const result = envSchema.safeParse(process.env)
-
-  if (result.success) {
-    return {
-      isValid: true,
-      missingRequired: [],
-      missingOptional: [],
-      errors: []
-    }
-  }
-
   const requiredFields = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -658,28 +669,41 @@ export function checkEnvironmentHealth(): {
     'LOG_LEVEL'
   ]
 
-  const errors = result.error.errors
-  const missingRequired: string[] = []
-  const missingOptional: string[] = []
+  const missingRequired = new Set<string>()
+  const missingOptional = new Set<string>()
   const errorMessages: string[] = []
 
-  for (const error of errors) {
-    const field = error.path[0] as string
-    const errorMsg = `${field}: ${error.message}`
+  if (!result.success) {
+    for (const error of result.error.errors) {
+      const field = error.path[0] as string
+      const errorMsg = `${field}: ${error.message}`
 
-    errorMessages.push(errorMsg)
+      errorMessages.push(errorMsg)
 
-    if (requiredFields.includes(field)) {
-      missingRequired.push(field)
-    } else if (optionalFields.includes(field)) {
-      missingOptional.push(field)
+      if (requiredFields.includes(field)) {
+        missingRequired.add(field)
+      } else if (optionalFields.includes(field)) {
+        missingOptional.add(field)
+      }
     }
   }
 
+  const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production'
+  const relaxedValidationRaw = process.env.SENDGRID_WEBHOOK_RELAXED_VALIDATION
+  const relaxedValidation = typeof relaxedValidationRaw === 'string'
+    ? ['true', '1', 'yes', 'on'].includes(relaxedValidationRaw.toLowerCase())
+    : false
+  const hasWebhookKey = !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
+
+  if (isProduction && !relaxedValidation && !hasWebhookKey) {
+    missingRequired.add('SENDGRID_WEBHOOK_PUBLIC_KEY')
+    errorMessages.push('SENDGRID_WEBHOOK_PUBLIC_KEY: required in production for SendGrid webhook verification')
+  }
+
   return {
-    isValid: false,
-    missingRequired,
-    missingOptional,
+    isValid: result.success && errorMessages.length === 0,
+    missingRequired: Array.from(missingRequired),
+    missingOptional: Array.from(missingOptional),
     errors: errorMessages
   }
 }
@@ -700,7 +724,8 @@ export function initializeEnvironment(): void {
       features: {
         supabase: !!env.NEXT_PUBLIC_SUPABASE_URL,
         sendgrid: !!env.SENDGRID_API_KEY,
-        linear: !!env.LINEAR_API_KEY
+        linear: !!env.LINEAR_API_KEY,
+        sendgridWebhookVerified: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY
       }
     })
 
@@ -711,6 +736,14 @@ export function initializeEnvironment(): void {
 
     if (!env.DATABASE_URL) {
       logger.debug('Direct database URL not configured - using Supabase client only')
+    }
+
+    if (!env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+      if (env.SENDGRID_WEBHOOK_RELAXED_VALIDATION) {
+        logger.warn('SendGrid webhook verification running in relaxed mode - public key missing (allowed for development only)')
+      } else {
+        logger.warn('SendGrid webhook public key missing - signature verification disabled')
+      }
     }
 
   } catch (error) {
@@ -746,6 +779,7 @@ export function getFeatureFlags(): {
   whatsappEnabled: boolean
   linearEnabled: boolean
   directDbEnabled: boolean
+  sendgridWebhookVerified: boolean
 } {
   // Remove try-catch fallback - if environment validation fails,
   // the application should fail rather than return false flags
@@ -767,7 +801,8 @@ export function getFeatureFlags(): {
     smsEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER),
     whatsappEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER)),
     linearEnabled: !!(env.LINEAR_API_KEY && env.LINEAR_PROJECT_ID),
-    directDbEnabled: !!env.DATABASE_URL
+    directDbEnabled: !!env.DATABASE_URL,
+    sendgridWebhookVerified: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY
   }
 }
 

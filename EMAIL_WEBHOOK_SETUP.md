@@ -44,7 +44,10 @@ WEBHOOK_SECRET=your-secure-webhook-secret
 MEMORY_EMAIL=memory@yourdomain.com
 INBOUND_EMAIL_DOMAIN=yourdomain.com
 REPLY_TO_DOMAIN=yourdomain.com
+SENDGRID_WEBHOOK_PUBLIC_KEY=your-sendgrid-event-webhook-public-key
 ```
+
+> **Note:** For local development without a webhook key, you may temporarily set `SENDGRID_WEBHOOK_RELAXED_VALIDATION=true`. Do not enable this flag in production deployments.
 
 ## How It Works
 

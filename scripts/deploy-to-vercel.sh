@@ -82,6 +82,8 @@ setup_environment() {
     echo "  SENDGRID_API_KEY"
     echo "  SENDGRID_FROM_EMAIL"
     echo "  SENDGRID_FROM_NAME"
+    echo "  SENDGRID_WEBHOOK_PUBLIC_KEY"
+    echo "  SENDGRID_WEBHOOK_RELAXED_VALIDATION (set to false in production)"
     echo "  REPLY_TO_DOMAIN"
     echo "  WEBHOOK_SECRET"
     echo ""
