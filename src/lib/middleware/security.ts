@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createLogger } from '@/lib/logger'
 import { sanitizeText, createSecureStringSchema } from '@/lib/validation/security'
+import { requireAuth } from '@/lib/middleware/authorization'
 
 const logger = createLogger('SecurityMiddleware')
 
@@ -74,6 +75,13 @@ export function withSecurity(config: SecurityConfig = {}) {
               ip: getClientIP(request),
               userAgent: request.headers.get('user-agent')
             })
+          }
+        }
+
+        if (config.requireAuth) {
+          const authResult = await requireAuth(request)
+          if (authResult instanceof NextResponse) {
+            return authResult
           }
         }
 

@@ -2,6 +2,7 @@
  * Security validation tests
  */
 import { describe, test, expect } from '@jest/globals'
+import { NextRequest, NextResponse } from 'next/server'
 
 // Mock JSDOM for server-side testing
 const mockWindow = {
@@ -26,6 +27,10 @@ jest.mock('dompurify', () => ({
       return html.replace(/<script[^>]*>.*?<\/script>/gi, '')
     })
   }))
+}))
+
+jest.mock('../lib/middleware/authorization', () => ({
+  requireAuth: jest.fn()
 }))
 
 describe('Security Validation', () => {
@@ -192,6 +197,32 @@ describe('Security Middleware', () => {
     expect(SecurityConfigs.debug.allowInProduction).toBe(false)
     expect(SecurityConfigs.publicApi.allowInProduction).toBe(true)
     expect(SecurityConfigs.adminOnly.requireAuth).toBe(true)
+  })
+})
+
+describe('withSecurity authentication enforcement', () => {
+  test('adminOnly should reject unauthenticated requests', async () => {
+    const { requireAuth } = await import('../lib/middleware/authorization')
+    const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>
+    mockRequireAuth.mockResolvedValueOnce(
+      NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    )
+
+    const { withSecurity, SecurityConfigs } = await import('../lib/middleware/security')
+    const handler = jest.fn().mockResolvedValue(NextResponse.json({ ok: true }))
+    const request = new NextRequest('https://example.com/api/admin', {
+      method: 'GET',
+      headers: new Headers({ 'user-agent': 'jest', referer: 'https://example.com' })
+    })
+
+    const securedHandler = withSecurity(SecurityConfigs.adminOnly)(handler)
+    const response = await securedHandler(request)
+
+    expect(mockRequireAuth).toHaveBeenCalledTimes(1)
+    expect(handler).not.toHaveBeenCalled()
+    expect(response.status).toBe(401)
+
+    mockRequireAuth.mockReset()
   })
 })
 
