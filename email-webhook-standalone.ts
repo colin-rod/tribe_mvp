@@ -2,7 +2,7 @@
 // This file contains all dependencies inline to avoid import path issues
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
-import { getSupabaseConfig } from './supabase/functions/_shared/supabase-config.ts'
+import { getSupabaseConfig } from './supabase/functions/_shared/supabase-config'
 
 // =============================================================================
 // CORS HEADERS

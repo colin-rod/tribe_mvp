@@ -36,6 +36,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions/**/*",
+    "email-webhook-standalone.ts",
     "**/__tests__/**/*",
     "**/*.test.ts",
     "**/*.test.tsx"
