@@ -41,7 +41,7 @@ export async function createDraft(data: DraftUpdateRequest): Promise<DraftUpdate
   }
 
   logger.info('Draft created successfully', { draftId: draft.id, userId: user.id })
-  return draft as DraftUpdate
+  return draft as unknown as DraftUpdate
 }
 
 /**
@@ -80,8 +80,8 @@ export async function updateDraft(draftId: string, data: Partial<DraftUpdateRequ
     throw new Error(`Failed to update draft: ${error.message}`)
   }
 
-  logger.info('Draft updated successfully', { draftId, version: draft.version, userId: user.id })
-  return draft as DraftUpdate
+  logger.info('Draft updated successfully', { draftId, userId: user.id })
+  return draft as unknown as DraftUpdate
 }
 
 /**
@@ -134,7 +134,7 @@ export async function addMediaToDraft(draftId: string, newMediaUrls: string[]): 
     userId: user.id
   })
 
-  return updatedDraft as DraftUpdate
+  return updatedDraft as unknown as DraftUpdate
 }
 
 /**
@@ -184,7 +184,7 @@ export async function addTextToDraft(draftId: string, text: string, append: bool
   }
 
   logger.info('Text added successfully', { draftId, finalLength: finalContent.length, userId: user.id })
-  return updatedDraft as DraftUpdate
+  return updatedDraft as unknown as DraftUpdate
 }
 
 /**
@@ -216,7 +216,7 @@ export async function markDraftAsReady(draftId: string): Promise<DraftUpdate> {
   }
 
   logger.info('Draft marked as ready', { draftId, userId: user.id })
-  return draft as DraftUpdate
+  return draft as unknown as DraftUpdate
 }
 
 /**
@@ -248,7 +248,7 @@ export async function markReadyAsDraft(updateId: string): Promise<DraftUpdate> {
   }
 
   logger.info('Update marked as draft', { updateId, userId: user.id })
-  return draft as DraftUpdate
+  return draft as unknown as DraftUpdate
 }
 
 /**
@@ -340,7 +340,7 @@ export async function getDrafts(filters?: DraftFilters): Promise<DraftUpdate[]> 
   }
 
   logger.info('Drafts fetched successfully', { count: drafts?.length || 0, userId: user.id })
-  return (drafts as DraftUpdate[]) || []
+  return (drafts as unknown as DraftUpdate[]) || []
 }
 
 /**
@@ -374,7 +374,7 @@ export async function getDraftWorkspaceSummary(): Promise<DraftWorkspaceSummary>
     throw new Error(`Failed to fetch workspace summary: ${error.message}`)
   }
 
-  const draftUpdates = (drafts || []) as (DraftUpdate & { children: { id: string; name: string; profile_photo_url?: string } })[]
+  const draftUpdates = (drafts || []) as unknown as (DraftUpdate & { children: { id: string; name: string; profile_photo_url?: string } })[]
 
   // Calculate summary statistics
   const draft_count = draftUpdates.filter(d => d.distribution_status === 'draft').length
@@ -457,5 +457,5 @@ export async function getDraftById(draftId: string): Promise<DraftUpdate | null>
   }
 
   logger.info('Draft fetched successfully', { draftId, userId: user.id })
-  return draft as DraftUpdate
+  return draft as unknown as DraftUpdate
 }

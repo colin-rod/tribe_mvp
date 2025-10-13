@@ -11,7 +11,7 @@ import { createLogger, type LogContext } from '../logger'
 
 const logger = createLogger('dashboard-client')
 
-type UpdateRow = Database['public']['Tables']['updates']['Row']
+type UpdateRow = Database['public']['Tables']['memories']['Row']
 
 // Type definitions
 type DashboardFilters = {

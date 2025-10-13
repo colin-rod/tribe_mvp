@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import type { Recipient } from './recipients'
 import type { RecipientGroup } from './recipient-groups'
 import { createLogger } from './logger'
+import type { RecipientRelationship, UpdateFrequency, DeliveryChannel, ContentType, ImportanceThreshold } from './types/preferences'
 
 const logger = createLogger('PreferenceServer')
 
@@ -52,6 +53,14 @@ export async function getRecipientByTokenServer(token: string): Promise<Recipien
 
   return {
     ...data,
+    relationship: data.relationship as RecipientRelationship,
+    frequency: data.frequency as UpdateFrequency,
+    preferred_channels: data.preferred_channels as DeliveryChannel[],
+    content_types: data.content_types as ContentType[],
+    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
+    created_at: data.created_at as string,
+    is_active: data.is_active ?? true,
+    overrides_group_default: data.overrides_group_default ?? false,
     group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
   }
 }
