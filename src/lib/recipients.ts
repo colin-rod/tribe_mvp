@@ -466,53 +466,99 @@ export async function getRecipientStats(): Promise<{
 
   if (!user) throw new Error('Not authenticated')
 
-  const { data, error } = await supabase
-    .from('recipients')
-    .select(`
-      id,
-      relationship,
-      is_active,
-      recipient_groups(name)
-    `)
-    .eq('parent_id', user.id)
+  const [statusResponse, relationshipResponse, groupResponse] = await Promise.all([
+    supabase
+      .from('recipients')
+      .select('is_active, count:id', { group: 'is_active' })
+      .eq('parent_id', user.id),
+    supabase
+      .from('recipients')
+      .select('relationship, count:id', { group: 'relationship' })
+      .eq('parent_id', user.id)
+      .eq('is_active', true),
+    supabase
+      .from('recipients')
+      .select('group_id, count:id', { group: 'group_id' })
+      .eq('parent_id', user.id)
+      .eq('is_active', true)
+  ])
 
-  if (error) {
-    logger.errorWithStack('Error fetching recipient stats:', error as Error)
+  if (statusResponse.error) {
+    logger.errorWithStack('Error fetching recipient status counts:', statusResponse.error as Error)
     throw new Error('Failed to fetch recipient statistics')
   }
 
-  const recipients = (data ?? []) as Array<Pick<RecipientRow, 'is_active' | 'relationship'> & { recipient_groups: unknown }>
-  const byRelationship: Record<string, number> = {}
-  const byGroup: Record<string, number> = {}
+  if (relationshipResponse.error) {
+    logger.errorWithStack('Error fetching recipient relationship counts:', relationshipResponse.error as Error)
+    throw new Error('Failed to fetch recipient statistics')
+  }
 
-  let activeCount = 0
-  let inactiveCount = 0
+  if (groupResponse.error) {
+    logger.errorWithStack('Error fetching recipient group counts:', groupResponse.error as Error)
+    throw new Error('Failed to fetch recipient statistics')
+  }
 
-  recipients.forEach((recipient) => {
-    // Count by active status
-    if (recipient.is_active) {
-      activeCount++
-    } else {
-      inactiveCount++
+  type StatusCountRow = { is_active: boolean | null; count: number | string | null }
+  type RelationshipCountRow = { relationship: string | null; count: number | string | null }
+  type GroupCountRow = { group_id: string | null; count: number | string | null }
+
+  const statusCounts = (statusResponse.data ?? []) as StatusCountRow[]
+  const relationshipCounts = (relationshipResponse.data ?? []) as RelationshipCountRow[]
+  const groupCounts = (groupResponse.data ?? []) as GroupCountRow[]
+
+  const totalRecipients = statusCounts.reduce((sum, row) => sum + Number(row.count ?? 0), 0)
+  const activeRecipients = statusCounts.reduce((sum, row) => {
+    if (row.is_active) {
+      return sum + Number(row.count ?? 0)
+    }
+    return sum
+  }, 0)
+  const inactiveRecipients = totalRecipients - activeRecipients
+
+  const byRelationship = relationshipCounts.reduce<Record<string, number>>((acc, row) => {
+    const key = row.relationship && row.relationship.trim().length > 0 ? row.relationship : 'unknown'
+    acc[key] = Number(row.count ?? 0)
+    return acc
+  }, {})
+
+  const groupIds = Array.from(
+    new Set(
+      groupCounts
+        .map((row) => row.group_id)
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    )
+  )
+
+  let groupNameMap = new Map<string, string>()
+
+  if (groupIds.length > 0) {
+    const { data: groupNameRows, error: groupNameError } = await supabase
+      .from('recipient_groups')
+      .select('id, name')
+      .in('id', groupIds)
+      .eq('parent_id', user.id)
+
+    if (groupNameError) {
+      logger.errorWithStack('Error fetching recipient group names:', groupNameError as Error)
+      throw new Error('Failed to fetch recipient statistics')
     }
 
-    // Count by relationship (only active)
-    if (recipient.is_active) {
-      const relationshipKey = recipient.relationship || 'unknown'
-      byRelationship[relationshipKey] = (byRelationship[relationshipKey] || 0) + 1
-    }
+    groupNameMap = new Map(
+      (groupNameRows ?? []).map((row) => [row.id, row.name ?? 'Unknown Group'])
+    )
+  }
 
-    // Count by group (only active)
-    if (recipient.is_active) {
-      const groupName = extractGroupFromRelation(recipient.recipient_groups)?.name || 'Unassigned'
-      byGroup[groupName] = (byGroup[groupName] || 0) + 1
-    }
-  })
+  const byGroup = groupCounts.reduce<Record<string, number>>((acc, row) => {
+    const count = Number(row.count ?? 0)
+    const name = row.group_id ? groupNameMap.get(row.group_id) ?? 'Unknown Group' : 'Unassigned'
+    acc[name] = count
+    return acc
+  }, {})
 
   return {
-    totalRecipients: recipients.length,
-    activeRecipients: activeCount,
-    inactiveRecipients: inactiveCount,
+    totalRecipients,
+    activeRecipients,
+    inactiveRecipients,
     byRelationship,
     byGroup
   }
