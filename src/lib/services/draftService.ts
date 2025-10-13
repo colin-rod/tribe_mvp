@@ -10,6 +10,7 @@ export type SupabaseClientLike = {
       error: { message?: string } | null
     }>
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   from: (...args: any[]) => any
 }
 
