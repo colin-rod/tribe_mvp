@@ -1,5 +1,29 @@
 import { createClient } from './client'
-import type { AuthError, Provider } from '@supabase/supabase-js'
+import type { AuthError, Provider, SupabaseClient, User } from '@supabase/supabase-js'
+import type { Database } from '../types/database'
+
+export type AuthenticatedClient = {
+  supabase: SupabaseClient<Database>
+  user: User
+}
+
+export async function requireAuthenticatedClient(): Promise<AuthenticatedClient> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase.auth.getUser()
+
+  if (error) {
+    throw error
+  }
+
+  const user = data?.user
+
+  if (!user) {
+    throw new Error('Not authenticated')
+  }
+
+  return { supabase, user }
+}
 
 // Client-side auth utilities
 export async function signUp(email: string, password: string, name?: string) {
