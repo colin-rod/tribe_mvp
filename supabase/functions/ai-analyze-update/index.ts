@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getSupabaseConfig } from '../_shared/supabase-config.ts'
 import { RateLimiter, RATE_LIMITS } from '../_shared/rate-limiter.ts'
 
 interface AnalyzeRequest {
@@ -27,8 +28,7 @@ interface AnalysisResult {
 }
 
 const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
 
 // Initialize rate limiter
 let rateLimiter: RateLimiter | null = null
@@ -95,7 +95,7 @@ serve(async (req) => {
     }
 
     // Get recipients for context
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
     const { data: recipients } = await supabase
       .from('recipients')
       .select(`

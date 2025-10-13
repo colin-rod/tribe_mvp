@@ -16,6 +16,7 @@
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { getSupabaseConfig } from '../_shared/supabase-config.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,9 +43,11 @@ Deno.serve(async (req) => {
 
   try {
     // Initialize Supabase client with service role key
+    const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseConfig()
+
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      supabaseServiceRoleKey,
       {
         auth: {
           autoRefreshToken: false,
@@ -130,12 +133,12 @@ Deno.serve(async (req) => {
 
         // 4. Trigger send process (call send-summary Edge Function)
         const sendResponse = await fetch(
-          `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-summary`,
+          `${supabaseUrl}/functions/v1/send-summary`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              Authorization: `Bearer ${supabaseServiceRoleKey}`,
             },
             body: JSON.stringify({
               summaryId: summary.id,
