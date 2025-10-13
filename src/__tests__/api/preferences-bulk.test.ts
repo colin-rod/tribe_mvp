@@ -46,33 +46,52 @@ describe('Bulk Preferences API Tests', () => {
 
     it('should fetch bulk preferences with groups and members', async () => {
       const mockGroups = [
-        { id: 'group-1', name: 'Family', is_default_group: true },
-        { id: 'group-2', name: 'Friends', is_default_group: false },
+        {
+          id: 'c7f3e1d0-1234-5678-9abc-def012345678',
+          name: 'Family',
+          is_default_group: true,
+          default_frequency: 'daily_digest',
+          default_channels: ['email'],
+          notification_settings: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'd8f4e2d1-2345-6789-abcd-ef0123456789',
+          name: 'Friends',
+          is_default_group: false,
+          default_frequency: 'weekly_digest',
+          default_channels: ['email'],
+          notification_settings: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
       ];
 
       const mockMemberships = [
         {
-          group_id: 'group-1',
-          recipient_id: 'recipient-1',
+          group_id: 'c7f3e1d0-1234-5678-9abc-def012345678',
+          recipient_id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
           frequency: 'daily_digest',
           preferred_channels: ['email'],
           content_types: ['photos', 'text'],
           role: 'member',
           is_active: true,
-          recipients: { id: 'recipient-1', name: 'Grandma', email: 'grandma@example.com', relationship: 'grandparent', is_active: true },
+          recipients: { id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab', name: 'Grandma', email: 'grandma@example.com', relationship: 'grandparent', is_active: true },
         },
       ];
 
+      // Mock groups query - no .in() call when no group_ids filter
       mockSupabase.from
         .mockReturnValueOnce({
           select: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockReturnThis(),
-          in: jest.fn().mockResolvedValue({ data: mockGroups, error: null }),
+          eq: jest.fn().mockResolvedValue({ data: mockGroups, error: null })
         })
+        // Mock memberships query
         .mockReturnValueOnce({
           select: jest.fn().mockReturnThis(),
           in: jest.fn().mockReturnThis(),
-          eq: jest.fn().mockResolvedValue({ data: mockMemberships, error: null }),
+          eq: jest.fn().mockResolvedValue({ data: mockMemberships, error: null })
         });
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk')
@@ -81,28 +100,62 @@ describe('Bulk Preferences API Tests', () => {
 
       expect(response.status).toBe(200)
       expect(data.groups).toBeDefined()
+      expect(data.groups.length).toBe(2)
       expect(data.total_count).toBe(2)
     })
 
     it('should filter by specific group IDs', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        in: jest.fn().mockResolvedValue({ data: [], error: null })
-      })
+      const mockGroups = [
+        { id: 'c7f3e1d0-1234-5678-9abc-def012345678', name: 'Family', is_default_group: true },
+      ];
 
-      const request = new NextRequest('http://localhost:3000/api/preferences/bulk?group_ids=group-1,group-2')
+      // Mock groups query
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: mockGroups, error: null }),
+        })
+        // Mock memberships query
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+        });
+
+      const request = new NextRequest('http://localhost:3000/api/preferences/bulk?group_ids=c7f3e1d0-1234-5678-9abc-def012345678')
       const response = await GET(request)
 
       expect(response.status).toBe(200)
     })
 
     it('should provide settings summary when requested', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        in: jest.fn().mockResolvedValue({ data: [], error: null })
-      })
+      const mockGroups = [
+        {
+          id: 'c7f3e1d0-1234-5678-9abc-def012345678',
+          name: 'Family',
+          is_default_group: true,
+          default_frequency: 'daily_digest',
+          default_channels: ['email'],
+          notification_settings: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+
+      // Mock groups query
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: mockGroups, error: null })
+        })
+        // Mock memberships query
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        });
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk?settings_summary=true')
       const response = await GET(request)
@@ -113,11 +166,21 @@ describe('Bulk Preferences API Tests', () => {
     })
 
     it('should filter by group type', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        in: jest.fn().mockResolvedValue({ data: [], error: null })
-      })
+      const mockGroups = [{ id: 'c7f3e1d0-1234-5678-9abc-def012345678', name: 'Family', is_default_group: false }];
+
+      // Mock groups query
+      mockSupabase.from
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockResolvedValue({ data: mockGroups, error: null })
+        })
+        // Mock memberships query
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        });
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk?group_type=custom')
       const response = await GET(request)
@@ -155,7 +218,7 @@ describe('Bulk Preferences API Tests', () => {
         operation: 'update',
         target: {
           type: 'groups',
-          ids: ['group-1']
+          ids: ['c7f3e1d0-1234-5678-9abc-def012345678']
         },
         settings: {
           frequency: 'daily_digest',
@@ -168,33 +231,41 @@ describe('Bulk Preferences API Tests', () => {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
-          data: [{ id: 'group-1', name: 'Family', is_default_group: true }],
+          data: [{ id: 'c7f3e1d0-1234-5678-9abc-def012345678', name: 'Family', is_default_group: true }],
           error: null
         })
       })
 
       // Mock getting target recipients
-      mockSupabase.from.mockReturnValueOnce({
+      // Need to handle: .select().eq('is_active', true).eq('parent_id', userId).in('group_id', [...])
+      const recipientsQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [{
-            recipient_id: 'recipient-1',
-            group_id: 'group-1',
+            id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+            group_id: 'c7f3e1d0-1234-5678-9abc-def012345678',
             frequency: null,
             preferred_channels: null,
             content_types: null,
-            recipients: { id: 'recipient-1', name: 'Test', relationship: 'friend', parent_id: 'user-123' }
+            name: 'Test',
+            relationship: 'friend',
+            parent_id: 'user-123'
           }],
           error: null
         })
-      })
+      };
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
-      // Mock update operation
-      mockSupabase.from.mockReturnValue({
+      // Mock update operation - needs to support .update().eq('id', ...).eq('group_id', ...)
+      const updateQueryChain = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
-      })
+        eq: jest.fn().mockReturnThis()
+      };
+      // Make the last eq() call return a resolved promise
+      (updateQueryChain.eq as jest.Mock).mockReturnValueOnce(updateQueryChain);
+      (updateQueryChain.eq as jest.Mock).mockResolvedValueOnce({ error: null });
+      mockSupabase.from.mockReturnValue(updateQueryChain)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -215,7 +286,7 @@ describe('Bulk Preferences API Tests', () => {
         operation: 'update',
         target: {
           type: 'recipients',
-          ids: ['recipient-1']
+          ids: ['a1b2c3d4-5678-90ab-cdef-1234567890ab']
         },
         settings: {
           frequency: 'weekly_digest'
@@ -233,12 +304,12 @@ describe('Bulk Preferences API Tests', () => {
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [{
-            recipient_id: 'recipient-1',
-            group_id: 'group-1',
+            recipient_id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+            group_id: 'c7f3e1d0-1234-5678-9abc-def012345678',
             frequency: 'daily_digest', // Has custom setting
             preferred_channels: ['email'],
             content_types: ['photos'],
-            recipients: { id: 'recipient-1', parent_id: 'user-123' }
+            recipients: { id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab', parent_id: 'user-123' }
           }],
           error: null
         })
@@ -273,7 +344,7 @@ describe('Bulk Preferences API Tests', () => {
         operation: 'reset',
         target: {
           type: 'groups',
-          ids: ['group-1']
+          ids: ['c7f3e1d0-1234-5678-9abc-def012345678']
         }
       }
 
@@ -281,31 +352,38 @@ describe('Bulk Preferences API Tests', () => {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
-          data: [{ id: 'group-1', name: 'Family', is_default_group: true }],
+          data: [{ id: 'c7f3e1d0-1234-5678-9abc-def012345678', name: 'Family', is_default_group: true }],
           error: null
         })
       })
 
-      mockSupabase.from.mockReturnValueOnce({
+      const recipientsQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [{
-            recipient_id: 'recipient-1',
-            group_id: 'group-1',
+            id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+            group_id: 'c7f3e1d0-1234-5678-9abc-def012345678',
             frequency: 'daily_digest',
             preferred_channels: ['email'],
             content_types: ['photos'],
-            recipients: { id: 'recipient-1', parent_id: 'user-123' }
+            name: 'Test User',
+            relationship: 'friend',
+            parent_id: 'user-123'
           }],
           error: null
         })
-      })
+      };
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
-      mockSupabase.from.mockReturnValue({
+      // Mock update operation - needs to support two .eq() calls
+      const updateQueryChain = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
-      })
+        eq: jest.fn().mockReturnThis()
+      };
+      (updateQueryChain.eq as jest.Mock).mockReturnValueOnce(updateQueryChain);
+      (updateQueryChain.eq as jest.Mock).mockResolvedValueOnce({ error: null });
+      mockSupabase.from.mockReturnValue(updateQueryChain)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -334,10 +412,10 @@ describe('Bulk Preferences API Tests', () => {
     it('should copy settings from source group', async () => {
       const copyData = {
         operation: 'copy',
-        source_group_id: 'group-source',
+        source_group_id: 'e9f5e3d2-3456-789a-bcde-f01234567890',
         target: {
           type: 'groups',
-          ids: ['group-target']
+          ids: ['f0f6e4d3-4567-89ab-cdef-012345678901']
         }
       }
 
@@ -345,26 +423,29 @@ describe('Bulk Preferences API Tests', () => {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
-          data: [{ id: 'group-target', name: 'Target', is_default_group: false }],
+          data: [{ id: 'f0f6e4d3-4567-89ab-cdef-012345678901', name: 'Target', is_default_group: false }],
           error: null
         })
       })
 
-      mockSupabase.from.mockReturnValueOnce({
+      const recipientsQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [{
-            recipient_id: 'recipient-1',
-            group_id: 'group-target',
+            id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+            group_id: 'f0f6e4d3-4567-89ab-cdef-012345678901',
             frequency: null,
             preferred_channels: null,
             content_types: null,
-            recipients: { id: 'recipient-1', parent_id: 'user-123' }
+            name: 'Test User',
+            relationship: 'friend',
+            parent_id: 'user-123'
           }],
           error: null
         })
-      })
+      };
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
       // Mock getting source group settings
       mockSupabase.from.mockReturnValueOnce({
@@ -380,10 +461,14 @@ describe('Bulk Preferences API Tests', () => {
         })
       })
 
-      mockSupabase.from.mockReturnValue({
+      // Mock update operation - needs to support two .eq() calls
+      const updateQueryChain = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
-      })
+        eq: jest.fn().mockReturnThis()
+      };
+      (updateQueryChain.eq as jest.Mock).mockReturnValueOnce(updateQueryChain);
+      (updateQueryChain.eq as jest.Mock).mockResolvedValueOnce({ error: null });
+      mockSupabase.from.mockReturnValue(updateQueryChain)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -402,14 +487,30 @@ describe('Bulk Preferences API Tests', () => {
         operation: 'copy',
         target: {
           type: 'groups',
-          ids: ['group-1']
+          ids: ['c7f3e1d0-1234-5678-9abc-def012345678']
         }
       }
 
-      mockSupabase.from.mockReturnValue({
+      // Mock target groups query
+      mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValue({
+          data: [{ id: 'c7f3e1d0-1234-5678-9abc-def012345678', name: 'Family', is_default_group: true }],
+          error: null
+        })
       })
+
+      // Mock recipients query
+      const recipientsQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValue({
+          data: [],
+          error: null
+        })
+      };
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -420,7 +521,7 @@ describe('Bulk Preferences API Tests', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toContain('source_group_id required')
+      expect(data.error).toBe('source_group_id required for copy operation')
     })
   })
 
@@ -442,10 +543,26 @@ describe('Bulk Preferences API Tests', () => {
         }
       }
 
-      mockSupabase.from.mockReturnValue({
+      // Mock target groups query (for 'all' target type)
+      mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        eq: jest.fn().mockResolvedValue({
+          data: [],
+          error: null
+        })
       })
+
+      // Mock recipients query
+      const recipientsQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis()
+      };
+      (recipientsQueryChain.eq as jest.Mock).mockReturnValueOnce(recipientsQueryChain);
+      (recipientsQueryChain.eq as jest.Mock).mockResolvedValueOnce({
+        data: [],
+        error: null
+      });
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -456,7 +573,7 @@ describe('Bulk Preferences API Tests', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toContain('template_id required')
+      expect(data.error).toBe('template_id required for apply_template operation')
     })
   })
 
@@ -584,40 +701,50 @@ describe('Bulk Preferences API Tests', () => {
         operation: 'update',
         target: {
           type: 'recipients',
-          ids: ['recipient-1', 'recipient-2']
+          ids: ['a1b2c3d4-5678-90ab-cdef-1234567890ab', 'b2c3d4e5-6789-0abc-def1-234567890abc']
         },
         settings: {
           frequency: 'daily_digest'
         }
       }
 
+      // Mock target groups query
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockResolvedValue({ data: [], error: null })
       })
 
-      mockSupabase.from.mockReturnValueOnce({
+      // Mock target recipients query
+      const recipientsQueryChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         in: jest.fn().mockResolvedValue({
           data: [
-            { recipient_id: 'recipient-1', group_id: 'group-1', frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-1', parent_id: 'user-123' } },
-            { recipient_id: 'recipient-2', group_id: 'group-1', frequency: null, preferred_channels: null, content_types: null, recipients: { id: 'recipient-2', parent_id: 'user-123' } }
+            { id: 'a1b2c3d4-5678-90ab-cdef-1234567890ab', group_id: 'c7f3e1d0-1234-5678-9abc-def012345678', frequency: null, preferred_channels: null, content_types: null, name: 'User 1', relationship: 'friend', parent_id: 'user-123' },
+            { id: 'b2c3d4e5-6789-0abc-def1-234567890abc', group_id: 'c7f3e1d0-1234-5678-9abc-def012345678', frequency: null, preferred_channels: null, content_types: null, name: 'User 2', relationship: 'friend', parent_id: 'user-123' }
           ],
           error: null
         })
-      })
+      };
+      mockSupabase.from.mockReturnValueOnce(recipientsQueryChain)
 
-      // First update succeeds, second fails
-      mockSupabase.from.mockReturnValueOnce({
+      // First update succeeds - needs to support two .eq() calls
+      const updateQueryChain1 = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: null })
-      })
+        eq: jest.fn().mockReturnThis()
+      };
+      (updateQueryChain1.eq as jest.Mock).mockReturnValueOnce(updateQueryChain1);
+      (updateQueryChain1.eq as jest.Mock).mockResolvedValueOnce({ error: null });
+      mockSupabase.from.mockReturnValueOnce(updateQueryChain1)
 
-      mockSupabase.from.mockReturnValueOnce({
+      // Second update fails - needs to support two .eq() calls
+      const updateQueryChain2 = {
         update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockResolvedValue({ error: { message: 'Update failed' } })
-      })
+        eq: jest.fn().mockReturnThis()
+      };
+      (updateQueryChain2.eq as jest.Mock).mockReturnValueOnce(updateQueryChain2);
+      (updateQueryChain2.eq as jest.Mock).mockResolvedValueOnce({ error: { message: 'Update failed' } });
+      mockSupabase.from.mockReturnValueOnce(updateQueryChain2)
 
       const request = new NextRequest('http://localhost:3000/api/preferences/bulk', {
         method: 'POST',
@@ -627,7 +754,7 @@ describe('Bulk Preferences API Tests', () => {
       const response = await POST(request)
 
       // Expect 207 Multi-Status when there are both successes and failures
-      expect([200, 207, 500]).toContain(response.status)
+      expect(response.status).toBe(207)
     })
   })
 })
