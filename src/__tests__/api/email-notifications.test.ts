@@ -1,4 +1,5 @@
-import { POST, GET } from '@/app/api/notifications/send-email/route'
+import { POST as sendEmailPOST, GET as sendEmailGET } from '@/app/api/notifications/send-email/route'
+import { POST as sendBulkPOST, GET as sendBulkGET } from '@/app/api/notifications/send-bulk-emails/route'
 import { NextRequest, NextResponse } from 'next/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
@@ -29,6 +30,7 @@ describe('Email Notification System Tests', () => {
     mockCheckRateLimit.mockReturnValue({
       allowed: true,
       info: {
+        count: 1,
         total: 100,
         remaining: 99,
         resetTime: Date.now() + 60000
@@ -62,7 +64,7 @@ describe('Email Notification System Tests', () => {
         body: JSON.stringify(emailData)
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -76,6 +78,8 @@ describe('Email Notification System Tests', () => {
         emailData.templateData,
         emailData.options
       )
+      expect(response.headers.get('X-RateLimit-Limit')).toBeDefined()
+      expect(response.headers.get('X-RateLimit-Remaining')).toBeDefined()
     })
 
     it('should enforce authentication', async () => {
@@ -92,32 +96,21 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
 
       expect(response.status).toBe(401)
     })
 
     it('should enforce rate limiting', async () => {
+      const resetTime = Date.now() + 3600000
       mockCheckRateLimit.mockReturnValue({
         allowed: false,
-        response: new NextResponse(
-          JSON.stringify({
-            error: 'Rate limit exceeded',
-            details: {
-              limit: 100,
-              remaining: 0,
-              resetTime: Date.now() + 3600000
-            }
-          }),
-          {
-            status: 429,
-            headers: {
-              'X-RateLimit-Limit': '100',
-              'X-RateLimit-Remaining': '0',
-              'Retry-After': '3600'
-            }
-          }
-        )
+        info: {
+          count: 100,
+          total: 100,
+          remaining: 0,
+          resetTime
+        }
       })
 
       const request = new NextRequest('http://localhost:3000/api/notifications/send-email', {
@@ -128,13 +121,14 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(429)
       expect(data.error).toContain('Rate limit exceeded')
       expect(data.details.limit).toBe(100)
       expect(data.details.remaining).toBe(0)
+      expect(data.details.retryAfter).toBeGreaterThan(0)
       expect(response.headers.get('X-RateLimit-Limit')).toBe('100')
       expect(response.headers.get('X-RateLimit-Remaining')).toBe('0')
       expect(response.headers.get('Retry-After')).toBeDefined()
@@ -154,7 +148,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(403)
@@ -163,6 +157,7 @@ describe('Email Notification System Tests', () => {
         'user-123',
         ['unauthorized@example.com']
       )
+      expect(response.headers.get('X-RateLimit-Limit')).toBeDefined()
     })
 
     it('should validate email type', async () => {
@@ -174,7 +169,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -191,7 +186,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -209,7 +204,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(500)
@@ -230,7 +225,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(500)
@@ -256,7 +251,7 @@ describe('Email Notification System Tests', () => {
           })
         })
 
-        const response = await POST(request)
+        const response = await sendEmailPOST(request)
         const data = await response.json()
 
         expect(response.status).toBe(200)
@@ -295,7 +290,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -319,7 +314,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(400)
@@ -332,7 +327,7 @@ describe('Email Notification System Tests', () => {
         body: 'invalid json{'
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(500)
@@ -342,7 +337,7 @@ describe('Email Notification System Tests', () => {
 
   describe('GET /api/notifications/send-email', () => {
     it('should reject GET requests', async () => {
-      const response = await GET()
+      const response = await sendEmailGET()
       const data = await response.json()
 
       expect(response.status).toBe(405)
@@ -360,7 +355,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      await POST(request)
+      await sendEmailPOST(request)
 
       expect(mockCheckRateLimit).toHaveBeenCalledWith(
         request,
@@ -374,18 +369,12 @@ describe('Email Notification System Tests', () => {
 
       mockCheckRateLimit.mockReturnValue({
         allowed: false,
-        response: new NextResponse(
-          JSON.stringify({
-            error: 'Rate limit exceeded',
-            details: {
-              limit: 50,
-              remaining: 0,
-              resetTime,
-              retryAfter: 120
-            }
-          }),
-          { status: 429 }
-        )
+        info: {
+          count: 50,
+          total: 50,
+          remaining: 0,
+          resetTime
+        }
       })
 
       const request = new NextRequest('http://localhost:3000/api/notifications/send-email', {
@@ -396,7 +385,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(data.details.limit).toBe(50)
@@ -420,7 +409,7 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(500)
@@ -440,10 +429,127 @@ describe('Email Notification System Tests', () => {
         })
       })
 
-      const response = await POST(request)
+      const response = await sendEmailPOST(request)
       const data = await response.json()
 
       expect(response.status).toBe(500)
+    })
+  })
+
+  describe('POST /api/notifications/send-bulk-emails', () => {
+    beforeEach(() => {
+      mockVerifyNotificationPermissions.mockResolvedValue({
+        allowed: true,
+        ownedEmails: ['recipient@example.com', 'second@example.com']
+      })
+    })
+
+    it('should send bulk emails successfully', async () => {
+      mockServerEmailService.sendTemplatedEmail
+        .mockResolvedValueOnce({ success: true, messageId: 'msg-1', statusCode: 202 })
+        .mockResolvedValueOnce({ success: true, messageId: 'msg-2', statusCode: 202 })
+
+      const request = new NextRequest('http://localhost:3000/api/notifications/send-bulk-emails', {
+        method: 'POST',
+        body: JSON.stringify({
+          emails: [
+            { to: 'recipient@example.com', type: 'response' as const },
+            { to: 'second@example.com', type: 'prompt' as const }
+          ]
+        })
+      })
+
+      const response = await sendBulkPOST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.summary.total).toBe(2)
+      expect(data.summary.successful).toBe(2)
+      expect(data.success).toBe(true)
+      expect(mockCheckRateLimit).toHaveBeenCalledWith(
+        request,
+        RateLimitConfigs.bulk,
+        'user-123'
+      )
+      expect(response.headers.get('X-RateLimit-Limit')).toBeDefined()
+    })
+
+    it('should handle unauthorized recipients gracefully', async () => {
+      mockVerifyNotificationPermissions.mockResolvedValue({
+        allowed: false,
+        ownedEmails: ['recipient@example.com']
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/notifications/send-bulk-emails', {
+        method: 'POST',
+        body: JSON.stringify({
+          emails: [
+            { to: 'recipient@example.com', type: 'response' as const },
+            { to: 'blocked@example.com', type: 'prompt' as const }
+          ]
+        })
+      })
+
+      const response = await sendBulkPOST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(data.details.totalRequested).toBe(2)
+      expect(data.details.unauthorized).toBe(1)
+      expect(response.headers.get('X-RateLimit-Limit')).toBeDefined()
+    })
+
+    it('should surface configuration errors', async () => {
+      mockServerEmailService.isConfigured.mockReturnValue(false)
+
+      const request = new NextRequest('http://localhost:3000/api/notifications/send-bulk-emails', {
+        method: 'POST',
+        body: JSON.stringify({
+          emails: [
+            { to: 'recipient@example.com', type: 'response' as const }
+          ]
+        })
+      })
+
+      const response = await sendBulkPOST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Email service not properly configured')
+    })
+
+    it('should report partial failures per recipient', async () => {
+      mockServerEmailService.sendTemplatedEmail
+        .mockResolvedValueOnce({ success: true, messageId: 'msg-1', statusCode: 202 })
+        .mockResolvedValueOnce({ success: false, error: 'Send error', statusCode: 500 })
+
+      const request = new NextRequest('http://localhost:3000/api/notifications/send-bulk-emails', {
+        method: 'POST',
+        body: JSON.stringify({
+          emails: [
+            { to: 'recipient@example.com', type: 'response' as const },
+            { to: 'second@example.com', type: 'prompt' as const }
+          ]
+        })
+      })
+
+      const response = await sendBulkPOST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.summary.failed).toBe(1)
+      expect(data.results.some((result: { success: boolean }) => !result.success)).toBe(true)
+      expect(data.success).toBe(false)
+    })
+  })
+
+  describe('GET /api/notifications/send-bulk-emails', () => {
+    it('should reject GET requests', async () => {
+      const response = await sendBulkGET()
+      const data = await response.json()
+
+      expect(response.status).toBe(405)
+      expect(data.error).toBe('Method not allowed')
     })
   })
 })
