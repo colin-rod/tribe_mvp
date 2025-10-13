@@ -57,6 +57,21 @@ jest.mock('../ResponseAnalytics', () => ({
   }
 }))
 
+// Mock RichTextRenderer
+jest.mock('@/components/ui/RichTextRenderer', () => {
+  return {
+    __esModule: true,
+    default: function MockRichTextRenderer({ content, subject }: { content: string, subject?: string }) {
+      return (
+        <div>
+          {subject && <div className="font-semibold mb-2">{subject}</div>}
+          <div className="whitespace-pre-wrap">{content}</div>
+        </div>
+      )
+    }
+  }
+})
+
 // Mock date-fns
 jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn(() => '2 hours ago'),
@@ -194,7 +209,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('Photos (2)')).toBeInTheDocument()
     expect(screen.getByTestId('photo-icon')).toBeInTheDocument()
 
-    const photos = screen.getAllByLabelText(/Update photo \d+/)
+    const photos = screen.getAllByLabelText(/Memory photo \d+/)
     expect(photos).toHaveLength(2)
     expect(photos[0]).toHaveAttribute('data-src', 'https://example.com/photo1.jpg')
     expect(photos[1]).toHaveAttribute('data-src', 'https://example.com/photo2.jpg')
@@ -211,7 +226,7 @@ describe('ConversationView', () => {
   it('opens photo in new tab when clicked', () => {
     render(<ConversationView updateId="update-123" update={mockUpdate} />)
 
-    const firstPhoto = screen.getByLabelText('Update photo 1')
+    const firstPhoto = screen.getByLabelText('Memory photo 1')
     fireEvent.click(firstPhoto)
 
     expect(window.open).toHaveBeenCalledWith('https://example.com/photo1.jpg', '_blank')
