@@ -39,6 +39,24 @@ export interface Recipient {
 }
 
 type RecipientRow = Database['public']['Tables']['recipients']['Row']
+type RecipientRowWithRelations = RecipientRow & { recipient_groups?: unknown }
+
+export function mapRecipientRecord(record: RecipientRowWithRelations): Recipient {
+  const { recipient_groups, overrides_group_default, is_active, created_at, ...rest } = record
+
+  return {
+    ...rest,
+    relationship: rest.relationship as RecipientRelationship,
+    frequency: rest.frequency as UpdateFrequency,
+    preferred_channels: rest.preferred_channels as DeliveryChannel[],
+    content_types: rest.content_types as ContentType[],
+    importance_threshold: rest.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: overrides_group_default ?? false,
+    is_active: is_active ?? true,
+    created_at: created_at as string,
+    group: extractGroupFromRelation(recipient_groups)
+  }
+}
 
 /**
  * Interface for creating new recipients
@@ -174,18 +192,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     }
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -238,20 +245,9 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     throw new Error('Failed to fetch recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: recipient.overrides_group_default ?? false,
-    is_active: recipient.is_active ?? true,
-    created_at: recipient.created_at as string,
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
@@ -282,18 +278,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
     throw new Error('Failed to fetch recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: extractGroupFromRelation(data.recipient_groups)
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -340,18 +325,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
     throw new Error('Failed to update recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -435,18 +409,7 @@ export async function reactivateRecipient(recipientId: string): Promise<Recipien
     throw new Error('Failed to reactivate recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -504,20 +467,9 @@ export async function bulkUpdateRecipients(
     throw new Error('Failed to bulk update recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: recipient.overrides_group_default ?? false,
-    is_active: recipient.is_active ?? true,
-    created_at: recipient.created_at as string,
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
