@@ -6,6 +6,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Json } from '@/lib/types/database.types'
 import type {
   Invitation,
   InvitationWithDetails,
@@ -72,7 +73,7 @@ type InvitationInsertOverrides = {
   recipient_email?: string | null
   recipient_phone?: string | null
   expires_at?: string | null
-  metadata?: Record<string, unknown> | null
+  metadata?: Json | null
 }
 
 function buildInvitationInsert(
@@ -213,9 +214,9 @@ export async function createReusableLink(
           expires_at: null,
           metadata: {
             qrCodeSettings: qrCodeSettings || {}
-          }
+          } as unknown as Json
         }
-      ) as never
+      )
     )
     .select()
     .single()
