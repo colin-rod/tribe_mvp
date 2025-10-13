@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs'
+import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { IconOptionSelector } from './IconOptionSelector'
 import React, { useState } from 'react'
 
@@ -75,7 +75,7 @@ function SingleSelectWrapper() {
         { value: 'weekly', label: 'Weekly', description: 'Once per week', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       ariaLabel="Notification frequency"
     />
@@ -92,7 +92,7 @@ function MultiSelectWrapper() {
         { value: 'push', label: 'Push', description: 'Push notifications', icon: <BoltIcon /> },
       ]}
       value={values}
-      onChange={setValues}
+      onChange={(val) => setValues(val as string[])}
       mode="multi"
       ariaLabel="Notification channels"
     />
@@ -110,7 +110,7 @@ function EmojiSingleSelectWrapper() {
         { value: 'first_words', label: 'First Words', description: 'Speaking milestone', emoji: '🗣️' },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       columns={{ mobile: 2, tablet: 2, desktop: 4 }}
       ariaLabel="Milestone type"
@@ -128,7 +128,7 @@ function EmojiMultiSelectWrapper() {
         { value: 'milestones', label: 'Milestones', description: 'Important moments', emoji: '⭐' },
       ]}
       value={values}
-      onChange={setValues}
+      onChange={(val) => setValues(val as string[])}
       mode="multi"
       ariaLabel="Content types"
     />
@@ -145,7 +145,7 @@ function SmallSizeWrapper() {
         { value: 'weekly', label: 'Weekly', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       size="sm"
       showDescription={false}
@@ -164,7 +164,7 @@ function LargeSizeWrapper() {
         { value: 'weekly', label: 'Weekly', description: 'Once per week', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       size="lg"
       ariaLabel="Notification frequency"
@@ -182,7 +182,7 @@ function WithBadgesWrapper() {
         { value: 'weekly', label: 'Weekly', description: 'Once per week', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       badges={{
         daily: (
@@ -206,7 +206,7 @@ function DisabledWrapper() {
         { value: 'weekly', label: 'Weekly', description: 'Once per week', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       disabled
       ariaLabel="Notification frequency"
@@ -224,7 +224,7 @@ function IndividualDisabledWrapper() {
         { value: 'weekly', label: 'Weekly', description: 'Once per week', icon: <CalendarIcon /> },
       ]}
       value={value}
-      onChange={setValue}
+      onChange={(val) => setValue(val as string)}
       mode="single"
       ariaLabel="Notification frequency"
     />
@@ -272,46 +272,35 @@ function CustomGridWrapper() {
 }
 
 // Stories
-export const SingleSelectWithIcons: Story = {
-  render: () => <SingleSelectWrapper />,
-}
+export const SingleSelectWithIcons = () => <SingleSelectWrapper />
+SingleSelectWithIcons.storyName = 'Single Select with Icons'
 
-export const MultiSelectWithIcons: Story = {
-  render: () => <MultiSelectWrapper />,
-}
+export const MultiSelectWithIcons = () => <MultiSelectWrapper />
+MultiSelectWithIcons.storyName = 'Multi Select with Icons'
 
-export const SingleSelectWithEmojis: Story = {
-  render: () => <EmojiSingleSelectWrapper />,
-}
+export const SingleSelectWithEmojis = () => <EmojiSingleSelectWrapper />
+SingleSelectWithEmojis.storyName = 'Single Select with Emojis'
 
-export const MultiSelectWithEmojis: Story = {
-  render: () => <EmojiMultiSelectWrapper />,
-}
+export const MultiSelectWithEmojis = () => <EmojiMultiSelectWrapper />
+MultiSelectWithEmojis.storyName = 'Multi Select with Emojis'
 
-export const SmallSize: Story = {
-  render: () => <SmallSizeWrapper />,
-}
+export const SmallSize = () => <SmallSizeWrapper />
+SmallSize.storyName = 'Small Size'
 
-export const LargeSize: Story = {
-  render: () => <LargeSizeWrapper />,
-}
+export const LargeSize = () => <LargeSizeWrapper />
+LargeSize.storyName = 'Large Size'
 
-export const WithBadges: Story = {
-  render: () => <WithBadgesWrapper />,
-}
+export const WithBadges = () => <WithBadgesWrapper />
+WithBadges.storyName = 'With Badges'
 
-export const Disabled: Story = {
-  render: () => <DisabledWrapper />,
-}
+export const Disabled = () => <DisabledWrapper />
+Disabled.storyName = 'Disabled'
 
-export const IndividualDisabledOptions: Story = {
-  render: () => <IndividualDisabledWrapper />,
-}
+export const IndividualDisabledOptions = () => <IndividualDisabledWrapper />
+IndividualDisabledOptions.storyName = 'Individual Disabled Options'
 
-export const WithoutDescriptions: Story = {
-  render: () => <WithoutDescriptionsWrapper />,
-}
+export const WithoutDescriptions = () => <WithoutDescriptionsWrapper />
+WithoutDescriptions.storyName = 'Without Descriptions'
 
-export const CustomGridLayout: Story = {
-  render: () => <CustomGridWrapper />,
-}
+export const CustomGridLayout = () => <CustomGridWrapper />
+CustomGridLayout.storyName = 'Custom Grid Layout'

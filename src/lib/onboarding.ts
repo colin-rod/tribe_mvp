@@ -201,7 +201,7 @@ export async function getUserOnboardingProgress(userId: string): Promise<Onboard
       completedSteps: [], // Would need additional tracking for this
       skippedSteps: [], // Would need additional tracking for this
       isCompleted: data.onboarding_completed || false,
-      lastUpdated: data.updated_at
+      lastUpdated: data.updated_at as string
     }
   } catch (error) {
     logger.errorWithStack('Failed to get onboarding progress:', error as Error)

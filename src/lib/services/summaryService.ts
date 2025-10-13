@@ -438,8 +438,7 @@ export async function getSummaryStats(): Promise<SummaryStats> {
     .eq('status', 'sent')
     .order('sent_at', { ascending: false })
     .limit(1)
-    .returns<Pick<SummaryRow, 'sent_at'>>()
-    .single()
+    .maybeSingle()
 
   return {
     total_summaries: totalSummaries || 0,
@@ -447,7 +446,7 @@ export async function getSummaryStats(): Promise<SummaryStats> {
     pending_review: pendingReview || 0,
     average_memories_per_summary: Math.round(avgMemories),
     average_recipients_per_summary: Math.round(avgRecipients),
-    last_sent_at: lastSent?.sent_at
+    last_sent_at: lastSent?.sent_at || undefined
   }
 }
 

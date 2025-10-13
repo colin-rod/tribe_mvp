@@ -101,7 +101,13 @@ export async function createDefaultGroups(userId: string): Promise<RecipientGrou
     throw new Error('Failed to create default recipient groups')
   }
 
-  return data || []
+  return (data || []).map(group => ({
+    ...group,
+    default_frequency: group.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: group.default_channels as RecipientGroup['default_channels'],
+    is_default_group: group.is_default_group ?? false,
+    created_at: group.created_at as string
+  }))
 }
 
 /**
@@ -142,6 +148,8 @@ export async function getUserGroups(): Promise<(RecipientGroup & { recipient_cou
     ...group,
     default_frequency: group.default_frequency as RecipientGroup['default_frequency'],
     default_channels: group.default_channels as RecipientGroup['default_channels'],
+    is_default_group: group.is_default_group ?? false,
+    created_at: group.created_at as string,
     recipient_count: Array.isArray(group.recipients) && group.recipients.length > 0
       ? group.recipients[0]?.count ?? 0
       : 0
@@ -188,7 +196,13 @@ export async function createGroup(groupData: CreateGroupData): Promise<Recipient
     throw new Error('Failed to create recipient group')
   }
 
-  return data
+  return {
+    ...data,
+    default_frequency: data.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: data.default_channels as RecipientGroup['default_channels'],
+    is_default_group: data.is_default_group ?? false,
+    created_at: data.created_at as string
+  }
 }
 
 /**
@@ -248,7 +262,13 @@ export async function updateGroup(groupId: string, updates: UpdateGroupData): Pr
     throw new Error('Failed to update recipient group')
   }
 
-  return data
+  return {
+    ...data,
+    default_frequency: data.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: data.default_channels as RecipientGroup['default_channels'],
+    is_default_group: data.is_default_group ?? false,
+    created_at: data.created_at as string
+  }
 }
 
 /**
@@ -346,7 +366,13 @@ export async function getGroupById(groupId: string): Promise<RecipientGroup | nu
     throw new Error('Failed to fetch recipient group')
   }
 
-  return data
+  return {
+    ...data,
+    default_frequency: data.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: data.default_channels as RecipientGroup['default_channels'],
+    is_default_group: data.is_default_group ?? false,
+    created_at: data.created_at as string
+  }
 }
 
 /**
@@ -375,7 +401,13 @@ export async function getDefaultGroup(groupName: 'Close Family' | 'Extended Fami
     throw new Error('Failed to fetch default group')
   }
 
-  return data
+  return {
+    ...data,
+    default_frequency: data.default_frequency as RecipientGroup['default_frequency'],
+    default_channels: data.default_channels as RecipientGroup['default_channels'],
+    is_default_group: data.is_default_group ?? false,
+    created_at: data.created_at as string
+  }
 }
 
 /**
@@ -407,7 +439,7 @@ export async function hasDefaultGroups(userId?: string): Promise<boolean> {
   }
 
   // Should have exactly 3 default groups
-  return data && data.length === 3
+  return data !== null && data.length === 3
 }
 
 /**

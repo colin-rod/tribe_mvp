@@ -176,6 +176,14 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
 
   return {
     ...data,
+    relationship: data.relationship as RecipientRelationship,
+    frequency: data.frequency as UpdateFrequency,
+    preferred_channels: data.preferred_channels as DeliveryChannel[],
+    content_types: data.content_types as ContentType[],
+    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: data.overrides_group_default ?? false,
+    is_active: data.is_active ?? true,
+    created_at: data.created_at as string,
     group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
   }
 }
@@ -238,6 +246,10 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     frequency: recipient.frequency as Recipient['frequency'],
     preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
     content_types: recipient.content_types as Recipient['content_types'],
+    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: recipient.overrides_group_default ?? false,
+    is_active: recipient.is_active ?? true,
+    created_at: recipient.created_at as string,
     group: extractGroupFromRelation(recipient.recipient_groups)
   }))
 }
@@ -272,6 +284,14 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
 
   return {
     ...data,
+    relationship: data.relationship as RecipientRelationship,
+    frequency: data.frequency as UpdateFrequency,
+    preferred_channels: data.preferred_channels as DeliveryChannel[],
+    content_types: data.content_types as ContentType[],
+    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: data.overrides_group_default ?? false,
+    is_active: data.is_active ?? true,
+    created_at: data.created_at as string,
     group: extractGroupFromRelation(data.recipient_groups)
   }
 }
@@ -322,6 +342,14 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
 
   return {
     ...data,
+    relationship: data.relationship as RecipientRelationship,
+    frequency: data.frequency as UpdateFrequency,
+    preferred_channels: data.preferred_channels as DeliveryChannel[],
+    content_types: data.content_types as ContentType[],
+    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: data.overrides_group_default ?? false,
+    is_active: data.is_active ?? true,
+    created_at: data.created_at as string,
     group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
   }
 }
@@ -409,6 +437,14 @@ export async function reactivateRecipient(recipientId: string): Promise<Recipien
 
   return {
     ...data,
+    relationship: data.relationship as RecipientRelationship,
+    frequency: data.frequency as UpdateFrequency,
+    preferred_channels: data.preferred_channels as DeliveryChannel[],
+    content_types: data.content_types as ContentType[],
+    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: data.overrides_group_default ?? false,
+    is_active: data.is_active ?? true,
+    created_at: data.created_at as string,
     group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
   }
 }
@@ -476,6 +512,10 @@ export async function bulkUpdateRecipients(
     frequency: recipient.frequency as Recipient['frequency'],
     preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
     content_types: recipient.content_types as Recipient['content_types'],
+    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: recipient.overrides_group_default ?? false,
+    is_active: recipient.is_active ?? true,
+    created_at: recipient.created_at as string,
     group: extractGroupFromRelation(recipient.recipient_groups)
   }))
 }
@@ -627,15 +667,15 @@ async function sendPreferenceLink(email: string, name: string, token: string): P
     // Get the parent's information for the email
     const supabase = createClient()
     const { data: tokenData } = await supabase
-      .from('preference_tokens')
+      .from('recipients')
       .select(`
         parent_id,
         profiles!inner(name)
       `)
-      .eq('token', token)
+      .eq('preference_token', token)
       .single()
 
-    const senderName = (tokenData?.profiles as unknown as { name: string } | undefined)?.name || 'Someone'
+    const senderName = (tokenData?.profiles as { name: string })?.name || 'Someone'
 
     // Send the preference invitation email
     const result = await clientEmailService.sendTemplatedEmail(
