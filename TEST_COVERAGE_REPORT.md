@@ -136,7 +136,6 @@ collectCoverageFrom: [
 - `useLikes.ts` - Like functionality
 - `useDigestCompilation.ts` - Digest generation
 - `useDraftManagement.ts` - Draft operations
-- `useFormValidation.ts` - Form validation
 - `useGlobalSearch.ts` - Search functionality
 - `useOnboarding.ts` - Onboarding flow
 - `useAdvancedFiltering.ts` - Filtering logic
@@ -169,14 +168,14 @@ collectCoverageFrom: [
 - `updates.ts` - Update operations
 - `data-export.ts` - Data export
 
-**Validation (8 files):**
+**Validation (7 files):**
 - `validation/invitations.ts` (8,785 bytes)
-- `validation/form-utils.ts` (9,898 bytes)
 - `validation/profile.ts` (5,391 bytes)
 - `validation/recipients.ts` (6,955 bytes)
 - `validation/update.ts` (5,476 bytes)
 - `validation/child.ts` (3,253 bytes)
 - `validation/security.ts` (6,830 bytes)
+- `validation/memory.ts` (6,473 bytes)
 
 **Middleware (5 files):**
 - `middleware/authorization.ts` (6,710 bytes) - ⚠️ Critical security
