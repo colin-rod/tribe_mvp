@@ -274,6 +274,42 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
 }
 
 /**
+ * Fetches multiple recipients by their IDs while preserving the requested order
+ */
+export async function getRecipientsByIds(recipientIds: string[]): Promise<Recipient[]> {
+  if (recipientIds.length === 0) {
+    return []
+  }
+
+  const { supabase, user } = await requireAuthenticatedClient()
+
+  const { data, error } = await supabase
+    .from('recipients')
+    .select(`
+      *,
+      recipient_groups(*)
+    `)
+    .in('id', recipientIds)
+    .eq('parent_id', user.id)
+
+  if (error) {
+    logger.errorWithStack('Error fetching recipients by ids:', error as Error)
+    throw new Error('Failed to fetch recipients')
+  }
+
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
+  const recipientsMap = new Map<string, Recipient>()
+
+  recipientsWithGroups.forEach(record => {
+    recipientsMap.set(record.id, mapRecipientRecord(record))
+  })
+
+  return recipientIds
+    .map(id => recipientsMap.get(id))
+    .filter((recipient): recipient is Recipient => Boolean(recipient))
+}
+
+/**
  * Updates an existing recipient
  *
  * @param recipientId - ID of the recipient to update
