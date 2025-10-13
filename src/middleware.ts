@@ -135,13 +135,16 @@ export async function middleware(request: NextRequest) {
                       request.nextUrl.pathname.startsWith('/signup')
     const isOnboardingPage = request.nextUrl.pathname.startsWith('/onboarding')
     const isProtectedPage = request.nextUrl.pathname.startsWith('/dashboard')
+    const isVerifyEmailPage = request.nextUrl.pathname === '/verify-email'
 
     logger.debug('Middleware auth check', {
       path: request.nextUrl.pathname,
       hasUser: !!user,
       isAuthPage,
       isOnboardingPage,
-      isProtectedPage
+      isProtectedPage,
+      isVerifyEmailPage,
+      emailVerified: user?.email_confirmed_at ? true : false
     })
 
     // Redirect authenticated users away from auth pages
@@ -165,6 +168,18 @@ export async function middleware(request: NextRequest) {
       const redirectResponse = NextResponse.redirect(redirectUrl)
       applySecurityHeaders(redirectResponse.headers)
       return redirectResponse
+    }
+
+    // CRO-268: Check email verification for authenticated users on protected routes
+    if (user && !user.email_confirmed_at && isProtectedPage && !isVerifyEmailPage) {
+      logger.info('Redirecting unverified user to email verification page', {
+        from: request.nextUrl.pathname,
+        userId: user.id,
+        email: user.email
+      })
+      const verifyRedirect = NextResponse.redirect(new URL('/verify-email', request.url))
+      applySecurityHeaders(verifyRedirect.headers)
+      return verifyRedirect
     }
 
     // Redirect old digest routes to new memory-book routes
