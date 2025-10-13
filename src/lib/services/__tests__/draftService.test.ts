@@ -25,6 +25,7 @@ jest.mock('@/lib/logger', () => ({
 
 type SupabaseFactoryOptions = {
   getUserResult?: { data: { user: { id: string } | null }; error: { message?: string } | null }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fromImpl: (...args: any[]) => any
 }
 
@@ -51,6 +52,7 @@ function createUpdateChain<T>(
   eqCountBeforeSelect = 3
 ) {
   const { select, single } = createSelectSingleChain(response)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buildLevel = (depth: number): any => {
     if (depth === 0) {
       return { select }
@@ -90,6 +92,7 @@ function createByIdChain<T>(response: { data: T; error: { message?: string; code
 }
 
 function createListChain<T>(response: { data: T; error: { message?: string } | null }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const builder: any = {}
   builder.eq = jest.fn(() => builder)
   builder.in = jest.fn(() => builder)
