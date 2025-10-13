@@ -766,4 +766,9 @@ export function flushDashboardAnalytics(reason: FlushReason = 'manual') {
   analyticsInstance?.flush(reason)
 }
 
+export function destroyDashboardAnalytics() {
+  analyticsInstance?.destroy()
+  analyticsInstance = null
+}
+
 export { DashboardAnalyticsManager }
