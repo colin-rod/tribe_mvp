@@ -17,12 +17,35 @@ PROTECTED_BRANCHES="^(main|development)$"
 
 if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
     cat <<'EOF'
-❌ Direct pushes from protected branch detected!
 
-Please create a feature branch from development before pushing changes:
+🚨 =====================================================================
+   BLOCKED: Cannot push from protected branch!
+===================================================================== 🚨
+
+This protection enforces the PR workflow for ALL changes.
+
+📋 Required steps:
+  1. Create a feature branch from development
+  2. Commit your changes to the feature branch
+  3. Push the feature branch
+  4. Open a Pull Request
+
+🌿 For Claude Code:
   git checkout development
   git pull --ff-only
-  git checkout -b claude/feature-description
+  git checkout -b claude/CRO-XXX-description
+
+🌿 For Codex:
+  git checkout development
+  git pull --ff-only
+  git checkout -b codex/feature-description
+
+🌿 For other developers:
+  git checkout development
+  git pull --ff-only
+  git checkout -b yourname/feature-description
+
+❌ Push aborted - Create a feature branch first!
 EOF
     exit 1
 fi

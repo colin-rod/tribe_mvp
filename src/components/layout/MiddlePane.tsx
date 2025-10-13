@@ -16,9 +16,7 @@ import { BreadcrumbProvider, Breadcrumbs } from '@/components/navigation/Breadcr
 // Lazy load view components for better performance
 const ActivityFeedView = React.lazy(() => import('@/components/views/ActivityFeedView'));
 const DigestsView = React.lazy(() => import('@/components/views/DigestsView'));
-const ChildrenView = React.lazy(() => import('@/components/views/ChildrenView'));
 const RecipientsView = React.lazy(() => import('@/components/views/RecipientsView'));
-const GroupsView = React.lazy(() => import('@/components/views/GroupsView'));
 const DraftsView = React.lazy(() => import('@/components/views/DraftsView'));
 const SettingsView = React.lazy(() => import('@/components/views/SettingsView'));
 
@@ -46,12 +44,8 @@ export function MiddlePane({ className = '' }: MiddlePaneProps) {
         return <ActivityFeedView />;
       case 'summaries':
         return <DigestsView />;
-      case 'children':
-        return <ChildrenView />;
       case 'recipients':
         return <RecipientsView />;
-      case 'groups':
-        return <GroupsView />;
       case 'drafts':
         return <DraftsView />;
       case 'settings':
