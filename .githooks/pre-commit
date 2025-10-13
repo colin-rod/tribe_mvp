@@ -3,6 +3,9 @@
 # This ensures all changes go through Pull Requests
 #
 # Installation:
+#   ./.githooks/install.sh
+#
+# Or manually:
 #   cp .githooks/pre-commit .git/hooks/pre-commit
 #   chmod +x .git/hooks/pre-commit
 
@@ -10,19 +13,42 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 PROTECTED_BRANCHES="^(main|development)$"
 
 if [[ "$BRANCH" =~ $PROTECTED_BRANCHES ]]; then
-    echo "❌ ERROR: Direct commits to '$BRANCH' are not allowed!"
     echo ""
-    echo "Please create a new branch first:"
-    echo "  git checkout -b claude/CRO-XXX-description"
+    echo "🚨 ====================================================================="
+    echo "   PROTECTED BRANCH: Direct commits to '$BRANCH' are BLOCKED"
+    echo "===================================================================== 🚨"
     echo ""
-    echo "Or for non-Linear work:"
-    echo "  git checkout -b claude/fix-description"
+    echo "This protection applies to ALL developers, Claude Code, and Codex."
     echo ""
-    echo "See CLAUDE.md for full git workflow guidelines."
+    echo "📋 Required workflow:"
+    echo "   1. Create a new branch BEFORE making any code changes"
+    echo "   2. Make your commits on the feature branch"
+    echo "   3. Push and create a Pull Request"
+    echo "   4. Merge after review and approval"
     echo ""
-    echo "Commit aborted."
+    echo "🌿 For Linear issues:"
+    echo "   git checkout -b claude/CRO-XXX-short-description"
+    echo "   Example: git checkout -b claude/CRO-293-add-memory-metadata"
+    echo ""
+    echo "🌿 For Codex work:"
+    echo "   git checkout -b codex/feature-description"
+    echo "   Example: git checkout -b codex/refactor-auth-flow"
+    echo ""
+    echo "🌿 For bug fixes:"
+    echo "   git checkout -b <prefix>/fix-description"
+    echo "   Example: git checkout -b claude/fix-auth-redirect-loop"
+    echo ""
+    echo "🌿 For hotfixes (targets main):"
+    echo "   git checkout -b hotfix/critical-description"
+    echo "   Example: git checkout -b hotfix/security-patch"
+    echo ""
+    echo "📖 See CLAUDE.md for complete git workflow guidelines."
+    echo ""
+    echo "❌ Commit aborted - Create a branch first!"
+    echo ""
     exit 1
 fi
 
 # Allow commit on feature branches
+echo "✅ Committing to feature branch: $BRANCH"
 exit 0
