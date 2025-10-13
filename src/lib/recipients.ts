@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { requireAuthenticatedClient } from './supabase/auth'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 // getDefaultGroup is deprecated - using relationship-based defaults instead
@@ -39,6 +40,24 @@ export interface Recipient {
 }
 
 type RecipientRow = Database['public']['Tables']['recipients']['Row']
+type RecipientRowWithRelations = RecipientRow & { recipient_groups?: unknown }
+
+export function mapRecipientRecord(record: RecipientRowWithRelations): Recipient {
+  const { recipient_groups, overrides_group_default, is_active, created_at, ...rest } = record
+
+  return {
+    ...rest,
+    relationship: rest.relationship as RecipientRelationship,
+    frequency: rest.frequency as UpdateFrequency,
+    preferred_channels: rest.preferred_channels as DeliveryChannel[],
+    content_types: rest.content_types as ContentType[],
+    importance_threshold: rest.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: overrides_group_default ?? false,
+    is_active: is_active ?? true,
+    created_at: created_at as string,
+    group: extractGroupFromRelation(recipient_groups)
+  }
+}
 
 /**
  * Interface for creating new recipients
@@ -110,10 +129,7 @@ function extractGroupFromRelation(relation: unknown): RecipientGroup | undefined
  * @returns Promise resolving to created recipient with group information
  */
 export async function createRecipient(recipientData: CreateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate that at least email or phone is provided
   if (!recipientData.email && !recipientData.phone) {
@@ -174,18 +190,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     }
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -196,10 +201,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
  * @returns Promise resolving to array of recipients with group data
  */
 export async function getRecipients(filters: RecipientFilters = {}): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   let query = supabase
     .from('recipients')
@@ -238,20 +240,9 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     throw new Error('Failed to fetch recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: recipient.overrides_group_default ?? false,
-    is_active: recipient.is_active ?? true,
-    created_at: recipient.created_at as string,
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
@@ -261,10 +252,7 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
  * @returns Promise resolving to recipient or null if not found
  */
 export async function getRecipientById(recipientId: string): Promise<Recipient | null> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -282,18 +270,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
     throw new Error('Failed to fetch recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: extractGroupFromRelation(data.recipient_groups)
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -304,10 +281,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
  * @returns Promise resolving to updated recipient
  */
 export async function updateRecipient(recipientId: string, updates: UpdateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate contact method if being updated
   if ((updates.email !== undefined || updates.phone !== undefined)) {
@@ -340,18 +314,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
     throw new Error('Failed to update recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -361,10 +324,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
  * @returns Promise resolving to boolean success
  */
 export async function deleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -388,10 +348,7 @@ export async function deleteRecipient(recipientId: string): Promise<boolean> {
  * @returns Promise resolving to boolean success
  */
 export async function permanentlyDeleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -414,10 +371,7 @@ export async function permanentlyDeleteRecipient(recipientId: string): Promise<b
  * @returns Promise resolving to reactivated recipient
  */
 export async function reactivateRecipient(recipientId: string): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -435,18 +389,7 @@ export async function reactivateRecipient(recipientId: string): Promise<Recipien
     throw new Error('Failed to reactivate recipient')
   }
 
-  return {
-    ...data,
-    relationship: data.relationship as RecipientRelationship,
-    frequency: data.frequency as UpdateFrequency,
-    preferred_channels: data.preferred_channels as DeliveryChannel[],
-    content_types: data.content_types as ContentType[],
-    importance_threshold: data.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: data.overrides_group_default ?? false,
-    is_active: data.is_active ?? true,
-    created_at: data.created_at as string,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -480,10 +423,7 @@ export async function bulkUpdateRecipients(
   recipientIds: string[],
   updates: Omit<UpdateRecipientData, 'email' | 'phone' | 'name'>
 ): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   if (recipientIds.length === 0) {
     throw new Error('No recipients specified for bulk update')
@@ -504,20 +444,9 @@ export async function bulkUpdateRecipients(
     throw new Error('Failed to bulk update recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    importance_threshold: recipient.importance_threshold as ImportanceThreshold | undefined,
-    overrides_group_default: recipient.overrides_group_default ?? false,
-    is_active: recipient.is_active ?? true,
-    created_at: recipient.created_at as string,
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
