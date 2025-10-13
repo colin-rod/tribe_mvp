@@ -72,13 +72,13 @@ export default function TimelineLayout({
             </div>
 
             {/* Memories for this date - alternate left/right on desktop */}
-            <div className="space-y-12 md:space-y-16">
+            <ul className="space-y-12 md:space-y-16">
               {dateUpdates.map((update, updateIndex) => {
                 const isLeft = updateIndex % 2 === 0
                 const isLiked = likedUpdates.has(update.id)
 
                 return (
-                  <div
+                  <li
                     key={update.id}
                     className={`relative ${
                       isLeft
@@ -166,13 +166,18 @@ export default function TimelineLayout({
                         } justify-start`}>
                           <button
                             onClick={() => handleLike(update.id)}
-                            className="flex items-center space-x-1 text-neutral-600 hover:text-red-500 transition-colors"
+                            aria-pressed={isLiked}
+                            aria-label={`${isLiked ? 'Unlike' : 'Like'} update from ${update.child_name}`}
+                            className="flex items-center space-x-1 text-neutral-600 hover:text-red-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
                           >
                             {isLiked ? (
                               <HeartIconSolid className="w-5 h-5 text-red-500" />
                             ) : (
                               <HeartIcon className="w-5 h-5" />
                             )}
+                            <span className="sr-only">
+                              {isLiked ? 'Liked' : 'Not liked'}
+                            </span>
                             <span className="text-sm">
                               {(update.response_count || 0) + (isLiked ? 1 : 0)}
                             </span>
@@ -180,18 +185,20 @@ export default function TimelineLayout({
 
                           <button
                             onClick={() => onComment?.(update.id)}
-                            className="flex items-center space-x-1 text-neutral-600 hover:text-blue-500 transition-colors"
+                            aria-label={`Comment on update from ${update.child_name}`}
+                            className="flex items-center space-x-1 text-neutral-600 hover:text-blue-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           >
                             <ChatBubbleLeftIcon className="w-5 h-5" />
+                            <span className="sr-only">Comments</span>
                             <span className="text-sm">{update.response_count || 0}</span>
                           </button>
                         </div>
                       </div>
                     </Card>
-                  </div>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
           </div>
         ))}
       </div>
