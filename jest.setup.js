@@ -17,23 +17,32 @@ jest.mock('next/navigation', () => ({
 
 // Mock Heroicons
 jest.mock('@heroicons/react/24/outline', () => ({
-  ChatBubbleLeftIcon: ({ className, ...props }) => <div data-testid="chat-icon" className={className} {...props} />,
-  EnvelopeIcon: ({ className, ...props }) => <div data-testid="email-icon" className={className} {...props} />,
-  PhoneIcon: ({ className, ...props }) => <div data-testid="phone-icon" className={className} {...props} />,
-  ChatBubbleLeftEllipsisIcon: ({ className, ...props }) => <div data-testid="sms-icon" className={className} {...props} />,
-  UsersIcon: ({ className, ...props }) => <div data-testid="users-icon" className={className} {...props} />,
-  ArrowTrendingUpIcon: ({ className, ...props }) => <div data-testid="trending-icon" className={className} {...props} />,
-  CalendarDaysIcon: ({ className, ...props }) => <div data-testid="calendar-icon" className={className} {...props} />,
-  PhotoIcon: ({ className, ...props }) => <div data-testid="photo-icon" className={className} {...props} />,
-  ClockIcon: ({ className, ...props }) => <div data-testid="clock-icon" className={className} {...props} />,
-  ChartBarIcon: ({ className, ...props }) => <div data-testid="chart-icon" className={className} {...props} />,
-  XMarkIcon: ({ className, ...props }) => <div data-testid="x-icon" className={className} {...props} />,
-  ArrowDownTrayIcon: ({ className, ...props }) => <div data-testid="download-icon" className={className} {...props} />,
-  ArrowTopRightOnSquareIcon: ({ className, ...props }) => <div data-testid="external-icon" className={className} {...props} />,
-  ChevronLeftIcon: ({ className, ...props }) => <div data-testid="chevron-left-icon" className={className} {...props} />,
-  ChevronRightIcon: ({ className, ...props }) => <div data-testid="chevron-right-icon" className={className} {...props} />,
-  PlayIcon: ({ className, ...props }) => <div data-testid="play-icon" className={className} {...props} />,
-  ArrowLeftIcon: ({ className, ...props }) => <div data-testid="arrow-left-icon" className={className} {...props} />,
+  ChatBubbleLeftIcon: ({ className, ...props }) => <div data-testid="chat-icon" className={className} {...props} />, 
+  EnvelopeIcon: ({ className, ...props }) => <div data-testid="email-icon" className={className} {...props} />, 
+  PhoneIcon: ({ className, ...props }) => <div data-testid="phone-icon" className={className} {...props} />, 
+  ChatBubbleLeftEllipsisIcon: ({ className, ...props }) => <div data-testid="sms-icon" className={className} {...props} />, 
+  UsersIcon: ({ className, ...props }) => <div data-testid="users-icon" className={className} {...props} />, 
+  ArrowTrendingUpIcon: ({ className, ...props }) => <div data-testid="trending-icon" className={className} {...props} />, 
+  CalendarDaysIcon: ({ className, ...props }) => <div data-testid="calendar-icon" className={className} {...props} />, 
+  PhotoIcon: ({ className, ...props }) => <div data-testid="photo-icon" className={className} {...props} />, 
+  ClockIcon: ({ className, ...props }) => <div data-testid="clock-icon" className={className} {...props} />, 
+  ChartBarIcon: ({ className, ...props }) => <div data-testid="chart-icon" className={className} {...props} />, 
+  XMarkIcon: ({ className, ...props }) => <div data-testid="x-icon" className={className} {...props} />, 
+  ArrowDownTrayIcon: ({ className, ...props }) => <div data-testid="download-icon" className={className} {...props} />, 
+  ArrowTopRightOnSquareIcon: ({ className, ...props }) => <div data-testid="external-icon" className={className} {...props} />, 
+  ChevronLeftIcon: ({ className, ...props }) => <div data-testid="chevron-left-icon" className={className} {...props} />, 
+  ChevronRightIcon: ({ className, ...props }) => <div data-testid="chevron-right-icon" className={className} {...props} />, 
+  PlayIcon: ({ className, ...props }) => <div data-testid="play-icon" className={className} {...props} />, 
+  ArrowLeftIcon: ({ className, ...props }) => <div data-testid="arrow-left-icon" className={className} {...props} />, 
+  ChatBubbleOvalLeftIcon: ({ className, ...props }) => (
+    <div data-testid="chat-bubble-oval-left-icon" className={className} {...props} />
+  ),
+  HeartIcon: ({ className, ...props }) => <div data-testid="heart-icon" className={className} {...props} />, 
+  ShareIcon: ({ className, ...props }) => <div data-testid="share-icon" className={className} {...props} />
+}))
+
+jest.mock('@heroicons/react/24/solid', () => ({
+  HeartIcon: ({ className, ...props }) => <div data-testid="heart-solid-icon" className={className} {...props} />
 }))
 
 // Mock date-fns
@@ -44,6 +53,9 @@ jest.mock('date-fns', () => ({
   differenceInMonths: jest.fn(() => 8),
   format: jest.fn(() => 'September'),
   getDay: jest.fn(() => 1),
+  isToday: jest.fn(() => false),
+  isYesterday: jest.fn(() => false),
+  isSameWeek: jest.fn(() => false),
 }))
 
 // Mock ChildImage component
