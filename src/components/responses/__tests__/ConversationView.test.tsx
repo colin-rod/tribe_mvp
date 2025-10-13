@@ -176,7 +176,7 @@ describe('ConversationView', () => {
   it('renders update header with child info', () => {
     render(<ConversationView updateId="update-123" update={mockUpdate} />)
 
-    expect(screen.getByText('Update from Emma')).toBeInTheDocument()
+    expect(screen.getByText('Memory from Emma')).toBeInTheDocument()
     expect(screen.getByText('2 hours ago')).toBeInTheDocument()
     expect(screen.getByTestId('child-image')).toBeInTheDocument()
     expect(screen.getByTestId('calendar-icon')).toBeInTheDocument()
@@ -411,7 +411,7 @@ describe('ConversationView', () => {
   it('has proper semantic structure', () => {
     render(<ConversationView updateId="update-123" update={mockUpdate} />)
 
-    const heading = screen.getByText('Update from Emma')
+    const heading = screen.getByText('Memory from Emma')
     expect(heading.tagName).toBe('H2')
 
     const photoHeading = screen.getByText('Photos (2)')
