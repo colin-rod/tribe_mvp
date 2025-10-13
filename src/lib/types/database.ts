@@ -1218,6 +1218,50 @@ export type Database = {
           },
         ]
       }
+      search_analytics: {
+        Row: {
+          id: string
+          user_id: string
+          query: string
+          results_count: number
+          execution_time_ms: number | null
+          search_types: string[]
+          clicked_result_id: string | null
+          clicked_result_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          query: string
+          results_count?: number
+          execution_time_ms?: number | null
+          search_types?: string[]
+          clicked_result_id?: string | null
+          clicked_result_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          query?: string
+          results_count?: number
+          execution_time_ms?: number | null
+          search_types?: string[]
+          clicked_result_id?: string | null
+          clicked_result_type?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       responses: {
         Row: {
           channel: string
@@ -1921,6 +1965,78 @@ export type Database = {
       validate_rich_text_length: {
         Args: { html_content: string; max_length?: number }
         Returns: boolean
+      }
+      search_memories: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          subject: string | null
+          content: string | null
+          child_id: string
+          distribution_status: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      search_comments: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          content: string
+          update_id: string
+          update_subject: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      search_memories_with_highlights: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          subject: string | null
+          content: string | null
+          subject_highlight: string
+          content_highlight: string
+          child_id: string
+          distribution_status: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      get_search_statistics: {
+        Args: {
+          user_id: string
+          days_back?: number
+        }
+        Returns: {
+          total_searches: number
+          unique_queries: number
+          avg_results_count: number
+          avg_execution_time_ms: number
+          top_queries: string[]
+        }[]
+      }
+      rebuild_search_vectors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rows_updated: number
+        }[]
       }
     }
     Enums: {
