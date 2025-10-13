@@ -10,22 +10,141 @@
 
 'use client'
 
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 
+const PRINT_ROUTE = '/dashboard/memory-book/print'
+const EXPORT_ENDPOINT = '/api/memory-book/export'
+const SHARE_ENDPOINT = '/api/memory-book/share'
+
+interface SharePayload {
+  shareUrl: string
+  shareSubject: string
+  shareText: string
+}
+
 export function MemoryBookRightPane() {
-  const handlePrint = () => {
-    // TODO: Implement print functionality
-    window.print()
+  const [isPrinting, setIsPrinting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
+
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true)
+      const printWindow = window.open(PRINT_ROUTE, '_blank', 'noopener')
+
+      if (!printWindow) {
+        throw new Error('Pop-up blocked. Please allow pop-ups to print.')
+      }
+
+      toast.success('Opened print-friendly Memory Book')
+      printWindow.focus()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to open print view'
+      toast.error(message)
+    } finally {
+      setIsPrinting(false)
+    }
   }
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export functionality
-    alert('PDF export coming soon!')
+  const handleExportPDF = async () => {
+    try {
+      setIsExporting(true)
+      const response = await fetch(EXPORT_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to export Memory Book'
+        try {
+          const errorData = await response.json()
+          if (errorData?.error) {
+            errorMessage = errorData.error
+          }
+        } catch (parseError) {
+          console.error('Failed to parse export error response', parseError)
+        }
+        throw new Error(errorMessage)
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const downloadFileName = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
+        || `memory-book-${new Date().toISOString().split('T')[0]}.pdf`
+
+      link.href = downloadUrl
+      link.download = downloadFileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(downloadUrl)
+
+      toast.success('Memory Book PDF exported successfully')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export Memory Book'
+      toast.error(message)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
-  const handleShare = () => {
-    // TODO: Implement sharing functionality
-    alert('Sharing functionality coming soon!')
+  const handleShare = async () => {
+    try {
+      setIsSharing(true)
+      const response = await fetch(SHARE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Unable to prepare Memory Book for sharing'
+        try {
+          const errorData = await response.json()
+          if (errorData?.error) {
+            errorMessage = errorData.error
+          }
+        } catch (parseError) {
+          console.error('Failed to parse share error response', parseError)
+        }
+        throw new Error(errorMessage)
+      }
+
+      const payload = await response.json() as SharePayload
+
+      if ('share' in navigator && typeof navigator.share === 'function') {
+        await navigator.share({
+          title: payload.shareSubject,
+          text: payload.shareText,
+          url: payload.shareUrl
+        })
+        toast.success('Shared Memory Book with your favorite apps')
+      } else {
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(payload.shareSubject)}&body=${encodeURIComponent(`${payload.shareText}\n\n${payload.shareUrl}`)}`
+        const shareWindow = window.open(mailtoLink, '_self')
+
+        if (shareWindow === null) {
+          throw new Error('Email client blocked by the browser. Please allow pop-ups to share.')
+        }
+
+        toast.success('Opened your email client to share the Memory Book')
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Sharing was cancelled')
+      } else {
+        const message = error instanceof Error ? error.message : 'Failed to share Memory Book'
+        toast.error(message)
+      }
+    } finally {
+      setIsSharing(false)
+    }
   }
 
   return (
@@ -48,6 +167,7 @@ export function MemoryBookRightPane() {
           variant="outline"
           className="w-full justify-start"
           onClick={handlePrint}
+          loading={isPrinting}
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -64,7 +184,7 @@ export function MemoryBookRightPane() {
           variant="outline"
           className="w-full justify-start"
           onClick={handleExportPDF}
-          disabled
+          loading={isExporting}
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -75,14 +195,13 @@ export function MemoryBookRightPane() {
             />
           </svg>
           Export as PDF
-          <span className="ml-auto text-xs text-neutral-500">Coming Soon</span>
         </Button>
 
         <Button
           variant="outline"
           className="w-full justify-start"
           onClick={handleShare}
-          disabled
+          loading={isSharing}
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -93,7 +212,6 @@ export function MemoryBookRightPane() {
             />
           </svg>
           Share Memory Book
-          <span className="ml-auto text-xs text-neutral-500">Coming Soon</span>
         </Button>
       </div>
 
