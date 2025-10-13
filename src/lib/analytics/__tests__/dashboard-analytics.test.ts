@@ -1,98 +1,119 @@
-describe('dashboard analytics lifecycle', () => {
-  let originalPerformanceObserver: typeof PerformanceObserver | undefined
-  let originalMutationObserver: typeof MutationObserver | undefined
-  let originalRequestAnimationFrame: typeof requestAnimationFrame | undefined
+import { DashboardAnalyticsManager } from '../dashboard-analytics'
+
+describe('DashboardAnalyticsManager cleanup', () => {
+  const originalPerformanceObserver = window.PerformanceObserver
+  const originalPerformanceMemory = (performance as Performance & { memory?: unknown }).memory
 
   beforeEach(() => {
-    jest.resetModules()
-    jest.useFakeTimers()
-
-    const globalWithObservers = globalThis as unknown as {
-      PerformanceObserver?: typeof PerformanceObserver
-      MutationObserver?: typeof MutationObserver
-      requestAnimationFrame?: typeof requestAnimationFrame
-    }
-
-    originalPerformanceObserver = globalWithObservers.PerformanceObserver
     class MockPerformanceObserver {
-      public observe = jest.fn()
-      public disconnect = jest.fn()
-      public takeRecords = jest.fn(() => [])
-
-      constructor(public callback: PerformanceObserverCallback) {}
+      observe = jest.fn()
+      disconnect = jest.fn()
     }
-    globalWithObservers.PerformanceObserver = MockPerformanceObserver as unknown as typeof PerformanceObserver
 
-    originalMutationObserver = globalWithObservers.MutationObserver
-    class MockMutationObserver {
-      public observe = jest.fn()
-      public disconnect = jest.fn()
-      public takeRecords = jest.fn(() => [])
+    Object.defineProperty(window, 'PerformanceObserver', {
+      configurable: true,
+      value: MockPerformanceObserver
+    })
 
-      constructor(public callback: MutationCallback) {}
-    }
-    globalWithObservers.MutationObserver = MockMutationObserver as unknown as typeof MutationObserver
+    Object.defineProperty(performance, 'memory', {
+      configurable: true,
+      value: {
+        usedJSHeapSize: 0,
+        totalJSHeapSize: 0,
+        jsHeapSizeLimit: 0
+      }
+    })
 
-    originalRequestAnimationFrame = globalWithObservers.requestAnimationFrame
-    globalWithObservers.requestAnimationFrame = jest.fn() as unknown as typeof requestAnimationFrame
+    localStorage.clear()
   })
 
   afterEach(() => {
-    const globalWithObservers = globalThis as unknown as {
-      PerformanceObserver?: typeof PerformanceObserver
-      MutationObserver?: typeof MutationObserver
-      requestAnimationFrame?: typeof requestAnimationFrame
-    }
-
-    jest.useRealTimers()
     jest.restoreAllMocks()
 
     if (originalPerformanceObserver) {
-      globalWithObservers.PerformanceObserver = originalPerformanceObserver
+      Object.defineProperty(window, 'PerformanceObserver', {
+        configurable: true,
+        value: originalPerformanceObserver
+      })
     } else {
-      delete globalWithObservers.PerformanceObserver
+      delete (window as typeof window & { PerformanceObserver?: typeof PerformanceObserver }).PerformanceObserver
     }
 
-    if (originalMutationObserver) {
-      globalWithObservers.MutationObserver = originalMutationObserver
+    if (originalPerformanceMemory) {
+      Object.defineProperty(performance, 'memory', {
+        configurable: true,
+        value: originalPerformanceMemory
+      })
     } else {
-      delete globalWithObservers.MutationObserver
-    }
-
-    if (originalRequestAnimationFrame) {
-      globalWithObservers.requestAnimationFrame = originalRequestAnimationFrame
-    } else {
-      delete globalWithObservers.requestAnimationFrame
+      delete (performance as Performance & { memory?: unknown }).memory
     }
   })
 
-  it('destroys analytics instance between mounts to prevent listener accumulation', () => {
+  it('removes registered listeners and timers on destroy', () => {
     const documentAddSpy = jest.spyOn(document, 'addEventListener')
     const documentRemoveSpy = jest.spyOn(document, 'removeEventListener')
     const windowAddSpy = jest.spyOn(window, 'addEventListener')
     const windowRemoveSpy = jest.spyOn(window, 'removeEventListener')
 
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const analyticsModule = require('@/lib/analytics/dashboard-analytics') as typeof import('@/lib/analytics/dashboard-analytics')
+    let intervalId = 100
+    const setIntervalSpy = jest
+      .spyOn(window, 'setInterval')
+      .mockImplementation(((handler: TimerHandler, timeout?: number) => {
+        return (intervalId++) as unknown as number
+      }) as unknown as typeof window.setInterval)
+    const clearIntervalSpy = jest
+      .spyOn(window, 'clearInterval')
+      .mockImplementation(() => undefined)
 
-      const firstInstance = analyticsModule.initializeDashboardAnalytics()
-      expect(firstInstance).not.toBeNull()
+    let frameId = 200
+    jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(((callback: FrameRequestCallback) => {
+        return (frameId++) as unknown as number
+      }) as unknown as typeof window.requestAnimationFrame)
+    const cancelAnimationFrameSpy = jest
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(() => undefined)
 
-      analyticsModule.destroyDashboardAnalytics()
+    const timeoutId = 300
+    const setTimeoutSpy = jest
+      .spyOn(window, 'setTimeout')
+      .mockImplementation(((handler: TimerHandler, timeout?: number) => {
+        return timeoutId as unknown as number
+      }) as unknown as typeof window.setTimeout)
+    const clearTimeoutSpy = jest
+      .spyOn(window, 'clearTimeout')
+      .mockImplementation(() => undefined)
 
-      const secondInstance = analyticsModule.initializeDashboardAnalytics()
-      expect(secondInstance).not.toBe(firstInstance)
+    const manager = new DashboardAnalyticsManager({ flushInterval: 0 })
 
-      analyticsModule.destroyDashboardAnalytics()
-    })
+    const clickHandler = documentAddSpy.mock.calls.find(call => call[0] === 'click')?.[1]
+    const keydownHandler = documentAddSpy.mock.calls.find(call => call[0] === 'keydown')?.[1]
+    const scrollHandler = windowAddSpy.mock.calls.find(call => call[0] === 'scroll')?.[1]
+    const resizeHandler = windowAddSpy.mock.calls.find(call => call[0] === 'resize')?.[1]
 
-    const beforeUnloadAdds = windowAddSpy.mock.calls.filter(([event]) => event === 'beforeunload')
-    const beforeUnloadRemoves = windowRemoveSpy.mock.calls.filter(([event]) => event === 'beforeunload')
-    expect(beforeUnloadRemoves).toHaveLength(beforeUnloadAdds.length)
+    expect(clickHandler).toBeInstanceOf(Function)
+    expect(keydownHandler).toBeInstanceOf(Function)
+    expect(scrollHandler).toBeInstanceOf(Function)
+    expect(resizeHandler).toBeInstanceOf(Function)
 
-    const visibilityAdds = documentAddSpy.mock.calls.filter(([event]) => event === 'visibilitychange')
-    const visibilityRemoves = documentRemoveSpy.mock.calls.filter(([event]) => event === 'visibilitychange')
-    expect(visibilityRemoves).toHaveLength(visibilityAdds.length)
+    if (typeof scrollHandler === 'function') {
+      scrollHandler(new Event('scroll'))
+    }
+
+    manager.destroy()
+
+    expect(documentRemoveSpy).toHaveBeenCalledWith('click', clickHandler, true)
+    expect(documentRemoveSpy).toHaveBeenCalledWith('keydown', keydownHandler)
+    expect(windowRemoveSpy).toHaveBeenCalledWith('scroll', scrollHandler)
+    expect(windowRemoveSpy).toHaveBeenCalledWith('resize', resizeHandler)
+    expect(clearIntervalSpy).toHaveBeenCalledWith((intervalId - 1) as unknown as number)
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledWith((frameId - 1) as unknown as number)
+
+    if (setTimeoutSpy.mock.calls.length > 0) {
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(timeoutId as unknown as number)
+    }
+
+    expect(setIntervalSpy).toHaveBeenCalled()
   })
 })
