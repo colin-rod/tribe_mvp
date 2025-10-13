@@ -52,6 +52,26 @@ EOF
 fi
 
 echo "✅ Branch ancestry verified."
+
+# Check for uncommitted changes and auto-commit if present
+if ! git diff-index --quiet HEAD --; then
+    echo "📝 Uncommitted changes detected. Auto-committing before push..."
+
+    # Get the branch name for commit message context
+    COMMIT_MSG="chore: auto-commit changes on $BRANCH
+
+Automatically committed by pre-push hook before pushing to remote.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+    git add -A
+    git commit -m "$COMMIT_MSG"
+    echo "✅ Changes committed successfully."
+    echo ""
+fi
+
 echo "📋 Running required quality checks..."
 
 run_check() {
