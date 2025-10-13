@@ -25,8 +25,7 @@ jest.mock('@/lib/logger', () => ({
 
 type SupabaseFactoryOptions = {
   getUserResult?: { data: { user: { id: string } | null }; error: { message?: string } | null }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fromImpl: (...args: any[]) => any
+  fromImpl: SupabaseClientLike['from']
 }
 
 function createSupabaseOverride({
@@ -47,25 +46,22 @@ function createSelectSingleChain<T>(response: { data: T; error: { message?: stri
   return { select, single }
 }
 
-function createUpdateChain<T>(
-  response: { data: T; error: { message?: string } | null },
-  eqCountBeforeSelect = 3
-) {
+function createUpdateChain<T>(response: { data: T; error: { message?: string } | null }) {
   const { select, single } = createSelectSingleChain(response)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buildLevel = (depth: number): any => {
-    if (depth === 0) {
-      return { select }
-    }
-
-    const next = buildLevel(depth - 1)
-    const eq = jest.fn(() => next)
-    return { eq }
+  type UpdateBuilder = {
+    eq: jest.Mock<UpdateBuilder, [string, unknown]>
+    select: jest.Mock<{ single: typeof single }, []>
   }
 
-  const chain = buildLevel(eqCountBeforeSelect)
-  const update = jest.fn(() => chain)
-  return { update, select, single }
+  const builder: UpdateBuilder = {
+    eq: jest.fn(),
+    select: jest.fn(() => ({ single }))
+  }
+
+  builder.eq.mockImplementation(() => builder)
+
+  const update = jest.fn(() => builder)
+  return { update, select: builder.select, single }
 }
 
 function createDeleteChain(response: { error: { message?: string } | null }) {
@@ -92,16 +88,36 @@ function createByIdChain<T>(response: { data: T; error: { message?: string; code
 }
 
 function createListChain<T>(response: { data: T; error: { message?: string } | null }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const builder: any = {}
-  builder.eq = jest.fn(() => builder)
-  builder.in = jest.fn(() => builder)
-  builder.gte = jest.fn(() => builder)
-  builder.lte = jest.fn(() => builder)
-  builder.not = jest.fn(() => builder)
-  builder.or = jest.fn(() => builder)
-  builder.is = jest.fn(() => builder)
-  builder.order = jest.fn(async () => response)
+  type ListBuilder = {
+    eq: jest.Mock<ListBuilder, [string, unknown]>
+    in: jest.Mock<ListBuilder, [string, unknown]>
+    gte: jest.Mock<ListBuilder, [string, unknown]>
+    lte: jest.Mock<ListBuilder, [string, unknown]>
+    not: jest.Mock<ListBuilder, [string, unknown]>
+    or: jest.Mock<ListBuilder, [string]>
+    is: jest.Mock<ListBuilder, [string, unknown]>
+    order: jest.Mock<Promise<{ data: T; error: { message?: string } | null }>, [string, { ascending: boolean }?]>
+  }
+
+  const builder: ListBuilder = {
+    eq: jest.fn(),
+    in: jest.fn(),
+    gte: jest.fn(),
+    lte: jest.fn(),
+    not: jest.fn(),
+    or: jest.fn(),
+    is: jest.fn(),
+    order: jest.fn(async () => response)
+  }
+
+  builder.eq.mockImplementation(() => builder)
+  builder.in.mockImplementation(() => builder)
+  builder.gte.mockImplementation(() => builder)
+  builder.lte.mockImplementation(() => builder)
+  builder.not.mockImplementation(() => builder)
+  builder.or.mockImplementation(() => builder)
+  builder.is.mockImplementation(() => builder)
+
   const select = jest.fn(() => builder)
   return { select, builder }
 }
