@@ -17,5 +17,9 @@ export function getSupabaseConfig(): SupabaseConfig {
     throw new Error(message)
   }
 
-  return { supabaseUrl, supabaseServiceRoleKey }
+  // TypeScript knows these are defined after the checks above, but we need explicit assertion
+  return {
+    supabaseUrl: supabaseUrl as string,
+    supabaseServiceRoleKey: supabaseServiceRoleKey as string
+  }
 }
