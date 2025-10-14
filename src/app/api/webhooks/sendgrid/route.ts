@@ -4,10 +4,17 @@ import crypto from 'crypto'
 import { getEnv, type Env } from '@/lib/env'
 import { trackSecurityIncident } from '@/lib/monitoring/securityIncidentTracker'
 import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('SendGridWebhook')
 
-type ServiceRoleClient = SupabaseClient<any, 'public', any>
+type ServiceRoleClient = SupabaseClient<Database>
+type EmailLogRecord = {
+  id?: string
+  open_count?: number | null
+  click_count?: number | null
+  metadata?: Record<string, unknown> | null
+}
 
 // SendGrid Event Types
 export enum SendGridEventType {
@@ -752,7 +759,7 @@ async function upsertEmailLog(
     ...updates
   }
 
-  let existingLog: any | null = null
+  let existingLog: EmailLogRecord | null = null
 
   if (options?.incrementOpen || options?.incrementClick || options?.metadata) {
     const { data, error } = await supabase

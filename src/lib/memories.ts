@@ -1,12 +1,7 @@
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
 import type { Json } from '@/lib/types/database.types'
-import type {
-  Memory,
-  CreateMemoryRequest,
-  MemoryWithStats,
-  RecentMemoriesWithStatsResult
-} from './types/memory'
+import type { Memory, CreateMemoryRequest, RecentMemoriesWithStatsResult } from './types/memory'
 
 const logger = createLogger('Memories')
 

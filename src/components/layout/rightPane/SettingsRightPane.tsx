@@ -93,6 +93,57 @@ export function SettingsRightPane() {
     await refreshProfile()
   }
 
+  const memberSince = useMemo(() => {
+    if (!profile?.created_at) return 'Unknown'
+    return format(new Date(profile.created_at), 'PPP')
+  }, [profile?.created_at])
+
+  const lastUpdatedRelative = useMemo(() => {
+    if (!profile?.updated_at) return null
+    return formatDistanceToNow(new Date(profile.updated_at), { addSuffix: true })
+  }, [profile?.updated_at])
+
+  const recentChanges = useMemo(() => {
+    if (!profile) return []
+
+    const changes: Array<{ id: string; setting: string; value: string; date?: string }> = []
+
+    if (profile.updated_at) {
+      changes.push({
+        id: 'profile-updated',
+        setting: 'Account updated',
+        value: lastUpdatedRelative ?? 'Recently',
+        date: format(new Date(profile.updated_at), 'PP')
+      })
+    }
+
+    const preferences = getNotificationPreferences()
+    if (preferences) {
+      changes.push({
+        id: 'notifications',
+        setting: 'Notification preferences',
+        value: preferences.email_notifications ? 'Email alerts enabled' : 'Email alerts disabled'
+      })
+    }
+
+    return changes
+  }, [profile, lastUpdatedRelative, getNotificationPreferences])
+
+  const helpLinks = useMemo(() => {
+    return [
+      {
+        id: 'digest',
+        title: quickToggles.weeklyDigest ? 'Adjust weekly digest timing' : 'Enable weekly digest summaries',
+        url: '/dashboard/settings?tab=notifications'
+      },
+      {
+        id: 'support',
+        title: 'Contact Support',
+        url: 'mailto:support@tribeapp.com'
+      }
+    ]
+  }, [quickToggles.weeklyDigest])
+
   if (!profile && loading) {
     return (
       <div className="right-pane-section">
@@ -122,50 +173,6 @@ export function SettingsRightPane() {
       </div>
     )
   }
-
-  const memberSince = profile.created_at ? format(new Date(profile.created_at), 'PPP') : 'Unknown'
-  const lastUpdatedRelative = profile.updated_at
-    ? formatDistanceToNow(new Date(profile.updated_at), { addSuffix: true })
-    : null
-
-  const recentChanges = useMemo(() => {
-    const changes: Array<{ id: string; setting: string; value: string; date?: string }> = []
-
-    if (profile.updated_at) {
-      changes.push({
-        id: 'profile-updated',
-        setting: 'Account updated',
-        value: lastUpdatedRelative ?? 'Recently',
-        date: format(new Date(profile.updated_at), 'PP')
-      })
-    }
-
-    const preferences = getNotificationPreferences()
-    if (preferences) {
-      changes.push({
-        id: 'notifications',
-        setting: 'Notification preferences',
-        value: preferences.email_notifications ? 'Email alerts enabled' : 'Email alerts disabled'
-      })
-    }
-
-    return changes
-  }, [profile.updated_at, lastUpdatedRelative, getNotificationPreferences])
-
-  const helpLinks = useMemo(() => {
-    return [
-      {
-        id: 'digest',
-        title: quickToggles.weeklyDigest ? 'Adjust weekly digest timing' : 'Enable weekly digest summaries',
-        url: '/dashboard/settings?tab=notifications'
-      },
-      {
-        id: 'support',
-        title: 'Contact Support',
-        url: 'mailto:support@tribeapp.com'
-      }
-    ]
-  }, [quickToggles.weeklyDigest])
 
   return (
     <div className="right-pane-section">

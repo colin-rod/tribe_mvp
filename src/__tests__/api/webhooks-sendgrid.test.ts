@@ -40,7 +40,7 @@ describe('SendGrid Webhook Tests', () => {
   const trackSecurityIncidentMock = trackSecurityIncident as jest.Mock
   const createClientMock = createClient as jest.Mock
 
-  let supabaseMock: any
+  let supabaseMock: { from: jest.Mock }
   let emailLogUpsert: jest.Mock
   let emailLogSelect: jest.Mock
   let emailLogSelectEq: jest.Mock
@@ -64,8 +64,8 @@ describe('SendGrid Webhook Tests', () => {
   }
 
   function setupSupabaseMocks(options?: {
-    existingEmailLog?: any
-    recipientData?: any
+    existingEmailLog?: Record<string, unknown>
+    recipientData?: Record<string, unknown>
     emailLogError?: { message: string } | null
   }) {
     emailLogSelectMaybeSingle = jest.fn().mockResolvedValue({

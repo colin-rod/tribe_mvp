@@ -4,7 +4,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ArchiveIcon, CalendarIcon, DeleteIcon, ExportIcon, PhotoIcon, StarIcon } from '@/components/icons'
 import { useAdvancedFiltering } from '@/hooks/useAdvancedFiltering'
 import type { SearchFilters } from '@/hooks/useSearchDebounced'
