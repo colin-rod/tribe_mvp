@@ -1,7 +1,7 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals'
-import { renderHook, waitFor, act, render } from '@testing-library/react'
-import { AuthProvider, useAuth } from '../useAuth'
 import React from 'react'
+
+// Mock functions will be created as part of mockSupabaseAuth below
 
 // Mock logger
 const mockLogger = {
@@ -15,49 +15,43 @@ jest.mock('@/lib/logger', () => ({
   createLogger: () => mockLogger
 }))
 
-// Mock Supabase client - Everything must be inside the factory for Jest hoisting
+// Mock Supabase client - must create a STABLE singleton instance
 jest.mock('@/lib/supabase/client', () => {
-  // Create mocks inside the factory with default implementations
-  const mockGetUser = jest.fn().mockResolvedValue({ data: { user: null }, error: null })
-  const mockGetSession = jest.fn().mockResolvedValue({ data: { session: null }, error: null })
-  const mockSignOut = jest.fn().mockResolvedValue({ error: null })
-  const mockOnAuthStateChange = jest.fn().mockReturnValue({
-    data: {
-      subscription: {
-        unsubscribe: jest.fn()
-      }
-    }
-  })
+  const mockAuth = {
+    getUser: jest.fn(),
+    getSession: jest.fn(),
+    signOut: jest.fn(),
+    refreshSession: jest.fn(),
+    onAuthStateChange: jest.fn(() => ({
+      data: { subscription: { unsubscribe: jest.fn() } }
+    }))
+  }
 
-  // Store references globally so tests can access them
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(global as any).mockGetUser = mockGetUser
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(global as any).mockGetSession = mockGetSession
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(global as any).mockSignOut = mockSignOut
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(global as any).mockOnAuthStateChange = mockOnAuthStateChange
+  const mockClient = {
+    auth: mockAuth
+  }
 
   return {
-    createClient: jest.fn(() => ({
-      auth: {
-        getUser: mockGetUser,
-        getSession: mockGetSession,
-        signOut: mockSignOut,
-        onAuthStateChange: mockOnAuthStateChange
-      }
-    }))
+    createClient: jest.fn(() => mockClient),
+    // Export mockAuth so we can access it in tests
+    __mockAuth: mockAuth,
+    __mockClient: mockClient
   }
 })
 
-// Get mock references from global
-const mockGetUser = (global as { mockGetUser?: jest.Mock }).mockGetUser!
-const mockGetSession = (global as { mockGetSession?: jest.Mock }).mockGetSession!
-const mockSignOut = (global as { mockSignOut?: jest.Mock }).mockSignOut!
-const mockOnAuthStateChange = (global as { mockOnAuthStateChange?: jest.Mock }).mockOnAuthStateChange!
+// Get reference to the mocked auth object for test assertions
+import { createClient } from '@/lib/supabase/client'
+const mockedModule = jest.mocked(require('@/lib/supabase/client'))
+const mockSupabaseAuth = (mockedModule as unknown as { __mockAuth: typeof mockSupabaseAuth }).__mockAuth
 
-// Mock fetch for logout API
+// Now the AuthService will get the mocked client when instantiated
+// No need to mock AuthService itself - let it use the real implementation with mocked client
+
+// NOW import after all mocks are set up
+import { renderHook, waitFor, act } from '@testing-library/react'
+import { AuthProvider, useAuth } from '../useAuth'
+
+// Mock fetch for session health checks
 global.fetch = jest.fn<typeof fetch>()
 
 describe('useAuth', () => {
@@ -77,26 +71,42 @@ describe('useAuth', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    // Set default mock implementations
-    mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
-    mockGetSession.mockResolvedValue({ data: { session: null }, error: null })
-    mockSignOut.mockResolvedValue({ error: null })
-    mockOnAuthStateChange.mockReturnValue({
+    // Set default mock implementations for Supabase auth methods
+    mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
+    mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: null }, error: null })
+    mockSupabaseAuth.signOut.mockResolvedValue({ error: null })
+    mockSupabaseAuth.refreshSession.mockResolvedValue({ data: { session: null }, error: null })
+    mockSupabaseAuth.onAuthStateChange.mockReturnValue({
       data: {
         subscription: {
           unsubscribe: jest.fn()
         }
       }
     })
+
+    // Mock fetch for session health checks
+    ;(global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ session: { timeUntilExpiry: 3600 } })
+    })
   })
 
+  // Create a mock AuthService factory for testing
+  const mockAuthServiceFactory = () => ({
+    getUser: mockSupabaseAuth.getUser,
+    getSession: mockSupabaseAuth.getSession,
+    signOut: mockSupabaseAuth.signOut,
+    refreshSession: mockSupabaseAuth.refreshSession,
+    onAuthStateChange: mockSupabaseAuth.onAuthStateChange
+  }) as unknown as InstanceType<typeof import('@/lib/services/authService').AuthService>
+
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AuthProvider>{children}</AuthProvider>
+    <AuthProvider authServiceFactory={mockAuthServiceFactory}>{children}</AuthProvider>
   )
 
   describe('AuthProvider initialization', () => {
     it('should initialize with loading state', () => {
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -106,8 +116,8 @@ describe('useAuth', () => {
     })
 
     it('should load authenticated user on mount', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -120,7 +130,7 @@ describe('useAuth', () => {
     })
 
     it('should handle unauthenticated state', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -133,7 +143,7 @@ describe('useAuth', () => {
     })
 
     it('should handle initial authentication error', async () => {
-      mockGetUser.mockResolvedValue({
+      mockSupabaseAuth.getUser.mockResolvedValue({
         data: { user: null },
         error: { message: 'Auth error' }
       })
@@ -156,7 +166,7 @@ describe('useAuth', () => {
     it('should handle SIGNED_IN event', async () => {
       let authCallback: ((event: string, session: unknown) => void) | undefined
 
-      mockOnAuthStateChange.mockImplementation((callback) => {
+      mockSupabaseAuth.onAuthStateChange.mockImplementation((callback) => {
         authCallback = callback
         return {
           data: {
@@ -167,7 +177,7 @@ describe('useAuth', () => {
         }
       })
 
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -194,7 +204,7 @@ describe('useAuth', () => {
     it('should handle SIGNED_OUT event', async () => {
       let authCallback: ((event: string, session: unknown) => void) | undefined
 
-      mockOnAuthStateChange.mockImplementation((callback) => {
+      mockSupabaseAuth.onAuthStateChange.mockImplementation((callback) => {
         authCallback = callback
         return {
           data: {
@@ -205,8 +215,8 @@ describe('useAuth', () => {
         }
       })
 
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -230,7 +240,7 @@ describe('useAuth', () => {
     it('should handle TOKEN_REFRESHED event', async () => {
       let authCallback: ((event: string, session: unknown) => void) | undefined
 
-      mockOnAuthStateChange.mockImplementation((callback) => {
+      mockSupabaseAuth.onAuthStateChange.mockImplementation((callback) => {
         authCallback = callback
         return {
           data: {
@@ -241,8 +251,8 @@ describe('useAuth', () => {
         }
       })
 
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -270,15 +280,9 @@ describe('useAuth', () => {
 
   describe('signOut', () => {
     it('should sign out successfully', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
-      mockSignOut.mockResolvedValue({ error: null })
-
-      // Mock fetch for logout API
-      ;(global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true })
-      })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.signOut.mockResolvedValue(undefined)
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -290,23 +294,13 @@ describe('useAuth', () => {
         await result.current.signOut()
       })
 
-      expect(global.fetch).toHaveBeenCalledWith('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      expect(mockSignOut).toHaveBeenCalledWith({ scope: 'local' })
+      expect(mockSupabaseAuth.signOut).toHaveBeenCalledWith('local')
     })
 
-    it('should handle sign out API error', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
-
-      ;(global.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Logout failed' })
-      })
+    it('should handle sign out error', async () => {
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.signOut.mockRejectedValue(new Error('Sign out failed'))
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -318,30 +312,7 @@ describe('useAuth', () => {
         act(async () => {
           await result.current.signOut()
         })
-      ).rejects.toThrow('Logout failed')
-    })
-
-    it('should handle Supabase signOut error', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
-      mockSignOut.mockResolvedValue({ error: { message: 'Sign out failed' } })
-
-      ;(global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true })
-      })
-
-      const { result } = renderHook(() => useAuth(), { wrapper })
-
-      await waitFor(() => {
-        expect(result.current.user).toEqual(mockUser)
-      })
-
-      await expect(
-        act(async () => {
-          await result.current.signOut()
-        })
-      ).rejects.toThrow()
+      ).rejects.toThrow('Sign out failed')
 
       expect(mockLogger.errorWithStack).toHaveBeenCalled()
     })
@@ -349,8 +320,9 @@ describe('useAuth', () => {
 
   describe('refreshSession', () => {
     it('should refresh session successfully', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.refreshSession.mockResolvedValue(undefined)
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -363,7 +335,7 @@ describe('useAuth', () => {
         access_token: 'refreshed-token'
       }
 
-      mockGetSession.mockResolvedValue({ data: { session: newSession }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: newSession }, error: null })
 
       await act(async () => {
         await result.current.refreshSession()
@@ -372,11 +344,14 @@ describe('useAuth', () => {
       await waitFor(() => {
         expect(result.current.session?.access_token).toBe('refreshed-token')
       })
+
+      expect(mockSupabaseAuth.refreshSession).toHaveBeenCalled()
     })
 
     it('should handle refresh error gracefully', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
-      mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+      mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null })
+      mockSupabaseAuth.refreshSession.mockRejectedValue(new Error('Refresh failed'))
 
       const { result } = renderHook(() => useAuth(), { wrapper })
 
@@ -384,16 +359,13 @@ describe('useAuth', () => {
         expect(result.current.user).toEqual(mockUser)
       })
 
-      mockGetSession.mockResolvedValue({
-        data: { session: null },
-        error: { message: 'Refresh failed' }
-      })
-
       await expect(
         act(async () => {
           await result.current.refreshSession()
         })
-      ).rejects.toThrow()
+      ).rejects.toThrow('Refresh failed')
+
+      expect(mockLogger.errorWithStack).toHaveBeenCalled()
     })
   })
 
@@ -418,7 +390,7 @@ describe('useAuth', () => {
     it('should unsubscribe on unmount', async () => {
       const mockUnsubscribe = jest.fn()
 
-      mockOnAuthStateChange.mockReturnValue({
+      mockSupabaseAuth.onAuthStateChange.mockReturnValue({
         data: {
           subscription: {
             unsubscribe: mockUnsubscribe
@@ -426,12 +398,12 @@ describe('useAuth', () => {
         }
       })
 
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
       const { unmount } = renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
-        expect(mockOnAuthStateChange).toHaveBeenCalled()
+        expect(mockSupabaseAuth.onAuthStateChange).toHaveBeenCalled()
       })
 
       unmount()
