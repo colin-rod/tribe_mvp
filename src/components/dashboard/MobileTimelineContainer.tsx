@@ -1,21 +1,16 @@
 'use client'
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-// TODO: Fix react-window imports - these types don't exist in the package
-// import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
+import {
+  List,
+  type ListImperativeAPI,
+  type RowComponentProps
+} from 'react-window'
 import { cn } from '@/lib/utils'
 import { format, isToday, isYesterday, isSameWeek } from 'date-fns'
 import MobileMemoryCard from './MobileMemoryCard'
 import MemoryCardSkeleton from '@/components/updates/MemoryCardSkeleton'
 import EmptyTimelineState, { NoSearchResultsState } from './EmptyTimelineState'
-
-// Temporary type placeholders until react-window types are fixed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ListImperativeAPI = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-type RowComponentProps<T = any> = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const List: any = null
 
 interface Update {
   id: string

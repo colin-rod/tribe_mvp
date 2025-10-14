@@ -1,15 +1,12 @@
 'use client'
 
 import { memo, forwardRef, useCallback, useMemo, useRef, useEffect } from 'react'
-import type { MutableRefObject, ComponentType, CSSProperties } from 'react'
-// TODO: Fix react-window imports - these types don't exist in the package
-// import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ListImperativeAPI = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-type RowComponentProps<T = any> = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const List: any = null
+import type { ComponentProps, MutableRefObject, ComponentType, CSSProperties } from 'react'
+import {
+  List,
+  type ListImperativeAPI,
+  type RowComponentProps
+} from 'react-window'
 import { useInView } from 'react-intersection-observer'
 import { cn } from '@/lib/utils'
 import { createLogger } from '@/lib/logger'
@@ -254,16 +251,17 @@ const VirtualScrollContainer = forwardRef<ListImperativeAPI | null, VirtualScrol
     }, [direction])
 
     // Scroll performance optimization
-    const handleScroll = useCallback(() => {
-      if (enablePerformanceTracking) {
-        // Throttle scroll events for better performance
-        if (listRef.current) {
+    const handleScroll = useCallback(
+      (_event: Parameters<NonNullable<ComponentProps<typeof List>['onScroll']>>[0]) => {
+        if (enablePerformanceTracking && listRef.current) {
+          // Throttle scroll events for better performance
           requestAnimationFrame(() => {
             // Any additional scroll handling can go here
           })
         }
-      }
-    }, [enablePerformanceTracking])
+      },
+      [enablePerformanceTracking]
+    )
 
     const setListRef = useCallback(
       (instance: ListImperativeAPI | null) => {
