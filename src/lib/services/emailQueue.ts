@@ -1,7 +1,7 @@
 import { Queue, Worker, Job, QueueEvents } from 'bullmq'
 import Redis from 'ioredis'
 import { createLogger } from '@/lib/logger'
-import { EmailOptions, EmailDeliveryResult } from './serverEmailService'
+import type { EmailDeliveryResult, EmailOptions } from '@/lib/types/email'
 import { getEnv } from '@/lib/env'
 
 const logger = createLogger('EmailQueue')

@@ -182,24 +182,26 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <ButtonLink
-                size="xl"
-                className="w-full sm:w-auto"
-                href="/signup"
-                onClick={trackSignupStarted}
-                rightIcon={<HeartIcon className="w-5 h-5" />}
-              >
-                Start Free Family Circle
-              </ButtonLink>
-              <ButtonLink
-                variant="outline"
-                size="xl"
-                className="w-full sm:w-auto"
-                href="#demo"
-                onClick={trackDemoRequested}
-              >
-                Watch 2-Min Demo
-              </ButtonLink>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackSignupStarted}
+                >
+                  Start Free Family Circle
+                  <HeartIcon className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="#demo" className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackDemoRequested}
+                >
+                  Watch 2-Min Demo
+                </Button>
+              </Link>
             </div>
 
           </div>
@@ -389,23 +391,25 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <ButtonLink
-                size="xl"
-                variant="secondary"
-                className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
-                href="/signup"
-                onClick={trackSignupStarted}
-              >
-                Start Your Free Family Circle
-              </ButtonLink>
-              <ButtonLink
-                size="xl"
-                variant="outline"
-                className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
-                href="/login"
-              >
-                Sign In
-              </ButtonLink>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="secondary"
+                  className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
+                  onClick={trackSignupStarted}
+                >
+                  Start Your Free Family Circle
+                </Button>
+              </Link>
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="outline"
+                  className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
+                >
+                  Sign In
+                </Button>
+              </Link>
             </div>
 
             <p className="text-sm opacity-75 mt-6">

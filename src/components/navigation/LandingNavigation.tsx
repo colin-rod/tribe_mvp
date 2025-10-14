@@ -71,12 +71,16 @@ export function LandingNavigation() {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <ButtonLink variant="ghost" size="sm" href="/login">
-              Sign In
-            </ButtonLink>
-            <ButtonLink size="sm" href="/signup" onClick={trackSignupStarted}>
-              Start Free
-            </ButtonLink>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm" onClick={trackSignupStarted}>
+                Start Free
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -115,20 +119,16 @@ export function LandingNavigation() {
               ))}
 
               <div className="pt-3 border-t border-gray-200 space-y-2">
-                <ButtonLink
-                  variant="ghost"
-                  className="w-full justify-start"
-                  href="/login"
-                >
-                  Sign In
-                </ButtonLink>
-                <ButtonLink
-                  className="w-full"
-                  href="/signup"
-                  onClick={trackSignupStarted}
-                >
-                  Start Free
-                </ButtonLink>
+                <Link href="/login" className="block w-full">
+                  <Button variant="ghost" className="w-full justify-start">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup" className="block w-full">
+                  <Button className="w-full" onClick={trackSignupStarted}>
+                    Start Free
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
