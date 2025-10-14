@@ -1,4 +1,6 @@
 import { jest, describe, it, expect, beforeEach, beforeAll } from '@jest/globals'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const mockLogger = {
   errorWithStack: jest.fn(),
@@ -15,10 +17,13 @@ jest.mock('@/lib/logger', () => ({
 const mockFrom = jest.fn()
 const mockAuthGetUser = jest.fn()
 
-const mockSupabase = {
+const mockSupabase: Partial<SupabaseClient<Database>> & {
+  from: jest.Mock
+  auth: { getUser: jest.Mock }
+} = {
   from: mockFrom,
   auth: { getUser: mockAuthGetUser }
-} as any
+}
 
 jest.mock('@/lib/supabase/client', () => ({
   __esModule: true,
@@ -90,19 +95,19 @@ describe('recipient dashboard stats helpers', () => {
 
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipients')
-      return { select: statusSelect } as any
+      return { select: statusSelect }
     })
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipients')
-      return { select: relationshipSelect } as any
+      return { select: relationshipSelect }
     })
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipients')
-      return { select: groupSelect } as any
+      return { select: groupSelect }
     })
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipient_groups')
-      return { select: groupNameSelect } as any
+      return { select: groupNameSelect }
     })
 
     const stats = await getRecipientStats()
@@ -159,15 +164,15 @@ describe('recipient dashboard stats helpers', () => {
 
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipient_groups')
-      return { select: groupsSelect } as any
+      return { select: groupsSelect }
     })
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipient_groups')
-      return { select: breakdownSelect } as any
+      return { select: breakdownSelect }
     })
     mockFrom.mockImplementationOnce((table: string) => {
       expect(table).toBe('recipients')
-      return { select: recipientsSelect } as any
+      return { select: recipientsSelect }
     })
 
     const stats = await getGroupStats()

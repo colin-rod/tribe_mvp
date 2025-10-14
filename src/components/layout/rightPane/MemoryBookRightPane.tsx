@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
+import { createLogger } from '@/lib/logger'
 
 const PRINT_ROUTE = '/dashboard/memory-book/print'
 const EXPORT_ENDPOINT = '/api/memory-book/export'
@@ -23,6 +24,8 @@ interface SharePayload {
   shareSubject: string
   shareText: string
 }
+
+const logger = createLogger('MemoryBookRightPane')
 
 export function MemoryBookRightPane() {
   const [isPrinting, setIsPrinting] = useState(false)
@@ -66,7 +69,7 @@ export function MemoryBookRightPane() {
             errorMessage = errorData.error
           }
         } catch (parseError) {
-          console.error('Failed to parse export error response', parseError)
+          logger.error('Failed to parse export error response', { error: parseError })
         }
         throw new Error(errorMessage)
       }
@@ -111,7 +114,7 @@ export function MemoryBookRightPane() {
             errorMessage = errorData.error
           }
         } catch (parseError) {
-          console.error('Failed to parse share error response', parseError)
+          logger.error('Failed to parse share error response', { error: parseError })
         }
         throw new Error(errorMessage)
       }

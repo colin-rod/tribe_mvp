@@ -44,13 +44,21 @@ const mockGetRecentSummaries = getRecentSummaries as jest.MockedFunction<typeof 
 const mockGetDraftById = getDraftById as jest.MockedFunction<typeof getDraftById>
 const mockGetChildById = getChildById as jest.MockedFunction<typeof getChildById>
 
+const createViewSelectionValue = (
+  selectedId: string | null
+): ReturnType<typeof useViewSelection> => ({
+  selectedId,
+  setSelectedId: jest.fn(),
+  clearSelection: jest.fn()
+})
+
 describe('RecipientsRightPane', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
   it('renders empty state when no recipient is selected', () => {
-    mockUseViewSelection.mockReturnValue({ selectedId: null } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(null))
 
     render(<RecipientsRightPane />)
 
@@ -77,7 +85,7 @@ describe('RecipientsRightPane', () => {
       group: { id: 'group-1', name: 'Family', created_at: null, parent_id: 'parent-1', description: null }
     }
 
-    mockUseViewSelection.mockReturnValue({ selectedId: recipient.id } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(recipient.id))
     mockGetRecipientById.mockResolvedValue(recipient)
 
     render(<RecipientsRightPane />)
@@ -96,7 +104,7 @@ describe('SummaryRightPane', () => {
   })
 
   it('renders empty state when no summary is selected', () => {
-    mockUseViewSelection.mockReturnValue({ selectedId: null } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(null))
 
     render(<SummaryRightPane />)
 
@@ -141,7 +149,7 @@ describe('SummaryRightPane', () => {
       }
     ]
 
-    mockUseViewSelection.mockReturnValue({ selectedId: summary.id } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(summary.id))
     mockGetSummaryById.mockResolvedValue(summary)
     mockGetRecentSummaries.mockResolvedValue(recentSummaries)
 
@@ -161,7 +169,7 @@ describe('DraftsRightPane', () => {
   })
 
   it('renders empty state when no draft is selected', () => {
-    mockUseViewSelection.mockReturnValue({ selectedId: null } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(null))
 
     render(<DraftsRightPane />)
 
@@ -188,7 +196,6 @@ describe('DraftsRightPane', () => {
       confirmed_recipients: ['recipient-1'],
       suggested_recipients: null,
       summary_id: null,
-      ai_analysis: null as any,
       ai_suggested_importance: null,
       importance_level: null,
       importance_overridden: null,
@@ -234,7 +241,7 @@ describe('DraftsRightPane', () => {
       }
     ]
 
-    mockUseViewSelection.mockReturnValue({ selectedId: draft.id } as any)
+    mockUseViewSelection.mockReturnValue(createViewSelectionValue(draft.id))
     mockGetDraftById.mockResolvedValue(draft)
     mockGetChildById.mockResolvedValue(child)
     mockGetRecipientsByIds.mockResolvedValue(recipients)

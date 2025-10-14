@@ -54,7 +54,7 @@ export function TopBar() {
               href="/dashboard"
               className="rounded px-2 text-xl font-bold text-primary-700 transition-colors duration-200 hover:text-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
-              Tribe
+              TribeUpdate
             </Link>
           </div>
 

@@ -2,7 +2,7 @@
   "name": "tribe-mvp",
   "version": "0.1.0",
   "private": true,
-  "description": "Smart baby update distribution platform",
+  "description": "TribeUpdate - Share life's moments with the people who matter most",
   "author": "Colin Rodrigues",
   "license": "MIT",
   "scripts": {

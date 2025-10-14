@@ -50,9 +50,9 @@ export function LandingNavigation() {
             <Link
               href="/"
               className="text-2xl font-bold text-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md"
-              aria-label="Tribe Home"
+              aria-label="TribeUpdate Home"
             >
-              Tribe
+              TribeUpdate
             </Link>
           </div>
 
