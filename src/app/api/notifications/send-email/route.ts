@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverEmailService } from '@/lib/services/serverEmailService'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
-import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
-import { checkRateLimit, RateLimitConfigs } from '@/lib/middleware/rateLimiting'
+import { RateLimitConfigs } from '@/lib/middleware/rateLimiting'
+import { handleEmailNotificationRequest } from '@/lib/services/notificationService/emailNotificationHandler'
 import { emailSchema } from '@/lib/validation/security'
 
 const logger = createLogger('NotificationSendEmailAPI')
@@ -22,18 +21,34 @@ const sendEmailSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  try {
-    // Parse request body
-    const body = await request.json()
-    const validatedData = sendEmailSchema.parse(body)
+  return handleEmailNotificationRequest(request, {
+    schema: sendEmailSchema,
+    rateLimit: RateLimitConfigs.email,
+    logger,
+    transformPayload: validatedData => ({
+      notifications: [{
+        to: validatedData.to,
+        type: validatedData.type,
+        templateData: validatedData.templateData || {},
+        options: validatedData.options || {}
+      }]
+    }),
+    buildSuccessResponse: (_context, summary) => {
+      const delivery = summary.deliveries[0]
 
-    // Check authentication
-    const authResult = await requireAuth(request)
-    if (authResult instanceof NextResponse) {
-      return authResult
-    }
-    const { user } = authResult
+      if (!delivery || !delivery.delivery.success) {
+        const statusCode = delivery?.delivery.statusCode || 500
+        return NextResponse.json(
+          {
+            error: delivery?.delivery.error || 'Failed to send email',
+            statusCode,
+            retryable: statusCode === 503
+          },
+          { status: statusCode }
+        )
+      }
 
+      const statusCode = delivery.delivery.statusCode
     // Check rate limiting with enhanced system
     const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
     if (!rateLimitResult.allowed) {
@@ -61,13 +76,15 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    // Verify user can send email to this recipient
-    const { allowed, ownedEmails } = await verifyNotificationPermissions(user.id, [validatedData.to])
-    if (!allowed) {
-      logger.warn('Unauthorized email send attempt', {
-        userId: user.id,
-        requestedEmail: validatedData.to,
-        ownedEmails
+      return NextResponse.json({
+        success: true,
+        messageId: delivery.delivery.messageId,
+        jobId: delivery.delivery.messageId,
+        status: statusCode === 202 ? 'queued' : 'sent',
+        statusCode,
+        message: statusCode === 202
+          ? 'Email queued for delivery'
+          : 'Email sent successfully'
       })
       return NextResponse.json(
         { error: 'You are not authorized to send emails to this recipient' },
@@ -131,12 +148,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })
 }
 
 export async function GET() {

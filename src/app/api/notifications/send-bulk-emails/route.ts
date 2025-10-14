@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverEmailService } from '@/lib/services/serverEmailService'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
+import { RateLimitConfigs } from '@/lib/middleware/rateLimiting'
+import { handleEmailNotificationRequest } from '@/lib/services/notificationService/emailNotificationHandler'
+import { emailSchema } from '@/lib/validation/security'
 import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
 import { checkRateLimit } from '@/lib/middleware/rateLimiting'
 
@@ -9,13 +11,13 @@ const logger = createLogger('NotificationBulkEmailAPI')
 
 const bulkEmailSchema = z.object({
   emails: z.array(z.object({
-    to: z.string().email('Invalid email address'),
+    to: emailSchema,
     type: z.enum(['response', 'prompt', 'digest', 'system', 'preference']),
     templateData: z.record(z.any()).optional(),
     options: z.object({
-      from: z.string().email().optional(),
+      from: emailSchema.optional(),
       fromName: z.string().optional(),
-      replyTo: z.string().email().optional(),
+      replyTo: emailSchema.optional(),
       categories: z.array(z.string()).optional(),
       customArgs: z.record(z.string()).optional()
     }).optional()
@@ -23,6 +25,39 @@ const bulkEmailSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  return handleEmailNotificationRequest(request, {
+    schema: bulkEmailSchema,
+    rateLimit: RateLimitConfigs.bulk,
+    logger,
+    transformPayload: validatedData => ({
+      notifications: validatedData.emails.map(email => ({
+        to: email.to,
+        type: email.type,
+        templateData: email.templateData || {},
+        options: email.options || {}
+      })),
+      meta: {
+        totalRequested: validatedData.emails.length
+      }
+    }),
+    buildSuccessResponse: (context, summary) => {
+      const results = summary.deliveries.map(delivery => ({
+        to: delivery.payload.to,
+        success: delivery.delivery.success,
+        messageId: delivery.delivery.messageId,
+        error: delivery.delivery.error
+      }))
+
+      const successCount = results.filter(result => result.success).length
+      const failureCount = results.length - successCount
+
+      context.logger.info('Bulk email send completed', {
+        userId: context.user.id,
+        totalRequested: summary.meta?.totalRequested ?? results.length,
+        totalSent: results.length,
+        successfulSends: successCount,
+        failedSends: failureCount
+      })
   try {
     // Parse request body
     const body = await request.json()
@@ -65,28 +100,31 @@ export async function POST(request: NextRequest) {
     // Extract all recipient emails
     const recipientEmails = validatedData.emails.map(email => email.to)
 
-    // Verify user can send emails to all recipients
-    const { allowed, ownedEmails } = await verifyNotificationPermissions(user.id, recipientEmails)
-    if (!allowed) {
-      const unauthorizedEmails = recipientEmails.filter(email => !ownedEmails.includes(email.toLowerCase()))
-      logger.warn('Unauthorized bulk email send attempt', {
-        userId: user.id,
-        totalRequested: recipientEmails.length,
-        authorized: ownedEmails.length,
-        unauthorizedEmails
+      return NextResponse.json({
+        success: failureCount === 0,
+        results,
+        summary: {
+          total: results.length,
+          successful: successCount,
+          failed: failureCount
+        }
       })
+    },
+    handlePermissionDenied: (_context, details) => {
+      const totalRequested = details.transformResult.notifications.length
       return NextResponse.json(
         {
           error: 'You are not authorized to send emails to some recipients',
           details: {
-            totalRequested: recipientEmails.length,
-            authorized: ownedEmails.length,
-            unauthorized: unauthorizedEmails.length
+            totalRequested,
+            authorized: details.ownedEmails.length,
+            unauthorized: details.unauthorizedEmails.length
           }
         },
         { status: 403 }
       )
     }
+  })
 
     // Check if email service is configured
     if (!serverEmailService.isConfigured()) {
