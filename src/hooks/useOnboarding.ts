@@ -349,16 +349,6 @@ export function useOnboarding(): UseOnboardingReturn {
     const currentIndex = state.currentStepIndex
     const currentStep = state.currentStep
 
-    // Track analytics event
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'onboarding_step_continue', {
-        step_name: currentStep,
-        step_index: currentIndex,
-        direction: 'forward',
-        timestamp: new Date().toISOString()
-      })
-    }
-
     // Mark current step as completed
     setState(prev => ({
       ...prev,
@@ -368,6 +358,23 @@ export function useOnboarding(): UseOnboardingReturn {
     // Move to next step
     if (currentIndex < STEP_ORDER.length - 1) {
       const nextStep = STEP_ORDER[currentIndex + 1]
+
+      if (typeof window !== 'undefined' && window.gtag) {
+        if (currentStep === 'first-update') {
+          window.gtag('event', 'reflection_entry_completed', {
+            event_category: 'reflection',
+            event_label: currentStep,
+            timestamp: new Date().toISOString()
+          })
+        } else if (nextStep === 'first-update') {
+          window.gtag('event', 'reflection_entry_opened', {
+            event_category: 'reflection',
+            event_label: nextStep,
+            timestamp: new Date().toISOString()
+          })
+        }
+      }
+
       setState(prev => ({
         ...prev,
         currentStep: nextStep,
@@ -376,49 +383,46 @@ export function useOnboarding(): UseOnboardingReturn {
 
       await saveProgress()
     } else {
+      if (typeof window !== 'undefined' && window.gtag && currentStep === 'first-update') {
+        window.gtag('event', 'reflection_entry_completed', {
+          event_category: 'reflection',
+          event_label: currentStep,
+          timestamp: new Date().toISOString()
+        })
+      }
+
       // Complete onboarding
       await completeOnboarding()
     }
   }, [state, saveProgress, completeOnboarding])
 
   const previousStep = useCallback(() => {
-    const currentIndex = state.currentStepIndex
-    const currentStep = state.currentStep
+    setState(prev => {
+      const currentIndex = prev.currentStepIndex
+      if (currentIndex > 0) {
+        const prevStep = STEP_ORDER[currentIndex - 1]
+        return {
+          ...prev,
+          currentStep: prevStep,
+          currentStepIndex: currentIndex - 1
+        }
+      }
 
-    // Track analytics event
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'onboarding_step_previous', {
-        step_name: currentStep,
-        step_index: currentIndex,
-        direction: 'backward',
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    if (currentIndex > 0) {
-      const prevStep = STEP_ORDER[currentIndex - 1]
-      setState(prev => ({
-        ...prev,
-        currentStep: prevStep,
-        currentStepIndex: currentIndex - 1
-      }))
-    }
-  }, [state.currentStepIndex, state.currentStep])
+      return prev
+    })
+  }, [])
 
   const skipStep = useCallback(async () => {
     const currentStep = state.currentStep
-    const currentIndex = state.currentStepIndex
-
     if (!SKIPPABLE_STEPS.includes(currentStep)) {
       setError('This step cannot be skipped')
       return
     }
 
-    // Track analytics event
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'onboarding_step_skip', {
-        step_name: currentStep,
-        step_index: currentIndex,
+    if (typeof window !== 'undefined' && window.gtag && currentStep === 'first-update') {
+      window.gtag('event', 'reflection_entry_skipped', {
+        event_category: 'reflection',
+        event_label: currentStep,
         timestamp: new Date().toISOString()
       })
     }
@@ -433,7 +437,7 @@ export function useOnboarding(): UseOnboardingReturn {
     await saveProgress()
 
     await nextStep()
-  }, [state.currentStep, state.currentStepIndex, nextStep, saveProgress])
+  }, [state.currentStep, nextStep, saveProgress])
 
   const goToStep = useCallback((step: OnboardingStep) => {
     const stepIndex = STEP_ORDER.indexOf(step)
@@ -441,6 +445,14 @@ export function useOnboarding(): UseOnboardingReturn {
     if (stepIndex === -1) {
       setError('Invalid step')
       return
+    }
+
+    if (typeof window !== 'undefined' && window.gtag && step === 'first-update') {
+      window.gtag('event', 'reflection_entry_opened', {
+        event_category: 'reflection',
+        event_label: step,
+        timestamp: new Date().toISOString()
+      })
     }
 
     setState(prev => ({

@@ -7,10 +7,11 @@ declare global {
       eventName: string,
       eventParameters: {
         event_category: string
-        event_label: string
-        value?: number
-        custom_parameter?: string
-      }
+      event_label: string
+      value?: number
+      custom_parameter?: string
+      timestamp?: string
+    }
     ) => void) & ((
       command: 'config' | 'event',
       targetId: string,
@@ -44,11 +45,18 @@ export interface DashboardAnalyticsEvents {
     value: 1
   }
 
-  // Onboarding events
-  onboarding_step_click: {
-    event_category: 'onboarding'
-    event_label: 'add-child' | 'invite-recipients' | 'create-first-update' | 'complete'
-    value: 1
+  // Reflection-focused onboarding events
+  reflection_entry_opened: {
+    event_category: 'reflection'
+    event_label: string
+  }
+  reflection_entry_completed: {
+    event_category: 'reflection'
+    event_label: string
+  }
+  reflection_entry_skipped: {
+    event_category: 'reflection'
+    event_label: string
   }
 
   // Update Card events
