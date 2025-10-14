@@ -8,6 +8,15 @@ import { recipientGroupSchema, RecipientGroupFormData, FREQUENCY_OPTIONS, CHANNE
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/Dialog'
 
 const logger = createLogger('GroupEditor')
 
@@ -30,6 +39,16 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
     default_channels?: string
     general?: string
   }>({})
+
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      if (loading) {
+        return
+      }
+
+      onClose()
+    }
+  }
 
   const validateForm = () => {
     try {
@@ -103,31 +122,21 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Edit Group</h2>
-              {group.is_default_group && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Default groups can only have their preferences updated
-                </p>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              disabled={loading}
-              className="p-2 h-8 w-8"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </Button>
+    <Dialog open onOpenChange={handleDialogOpenChange}>
+      <DialogContent maxWidth="md" className="max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <div>
+            <DialogTitle>Edit Group</DialogTitle>
+            {group.is_default_group && (
+              <DialogDescription>
+                Default groups can only have their preferences updated
+              </DialogDescription>
+            )}
           </div>
+          <DialogClose onClick={onClose} disabled={loading} />
+        </DialogHeader>
 
+        <DialogBody className="flex-1">
           <form onSubmit={handleSubmit} className="space-y-6">
             {errors.general && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-md">
@@ -247,8 +256,8 @@ export default function GroupEditor({ group, onGroupUpdated, onClose }: GroupEdi
               </Button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   )
 }
