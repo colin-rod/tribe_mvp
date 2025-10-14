@@ -1,15 +1,56 @@
-// TODO: Fix database types for notification_jobs table
-// This file has type narrowing issues due to Supabase type generation
-// The notification_jobs table may need schema updates or type regeneration
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-
-import { Queue, Worker, Job } from 'bullmq'
+import { Queue, Worker, type Job } from 'bullmq'
 import Redis from 'ioredis'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createLogger } from '@/lib/logger'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { getEnv } from '@/lib/env'
+import type { Database } from '@/lib/types/database'
+import {
+  NOTIFICATION_JOB_DELIVERY_METHODS,
+  NOTIFICATION_JOB_TYPES,
+  NOTIFICATION_JOB_URGENCY_LEVELS,
+  type NotificationJobContent,
+  type NotificationJobDeliveryMethod,
+  type NotificationJobMetadata,
+  type NotificationJobRecord,
+  type NotificationJobType,
+  type NotificationJobUrgency
+} from '@/lib/types/notificationJobs'
+
+type RecipientEmailRow = Pick<Database['public']['Tables']['recipients']['Row'], 'email'>
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isNotificationJobType = (value: string): value is NotificationJobType =>
+  (NOTIFICATION_JOB_TYPES as readonly string[]).includes(value)
+
+const isNotificationUrgencyLevel = (value: string): value is NotificationJobUrgency =>
+  (NOTIFICATION_JOB_URGENCY_LEVELS as readonly string[]).includes(value)
+
+const isNotificationDeliveryMethod = (value: string): value is NotificationJobDeliveryMethod =>
+  (NOTIFICATION_JOB_DELIVERY_METHODS as readonly string[]).includes(value)
+
+const isNotificationJobContent = (value: unknown): value is NotificationJobContent => {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  const { subject, body, media_urls: mediaUrls } = value
+  const hasValidMediaUrls =
+    mediaUrls === undefined ||
+    (Array.isArray(mediaUrls) && mediaUrls.every((item) => typeof item === 'string'))
+
+  return typeof subject === 'string' && typeof body === 'string' && hasValidMediaUrls
+}
+
+const parseMetadata = (value: unknown): NotificationJobMetadata | undefined => {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  return value
+}
 
 const logger = createLogger('NotificationWorker')
 
@@ -17,25 +58,19 @@ export interface NotificationJobData {
   jobId: string
   recipientId: string
   groupId: string
-  updateId: string
-  notificationType: 'immediate' | 'digest' | 'milestone'
-  urgencyLevel: 'normal' | 'urgent' | 'low'
-  deliveryMethod: 'email' | 'sms' | 'whatsapp' | 'push'
-  content: {
-    subject: string
-    body: string
-    media_urls?: string[]
-    milestone_type?: string
-    [key: string]: unknown
-  }
+  updateId: string | null
+  notificationType: NotificationJobType
+  urgencyLevel: NotificationJobUrgency
+  deliveryMethod: NotificationJobDeliveryMethod
+  content: NotificationJobContent
   scheduledFor: string
-  metadata?: Record<string, unknown>
+  metadata?: NotificationJobMetadata
 }
 
 export interface NotificationJobResult {
   success: boolean
   messageId?: string
-  deliveryMethod: string
+  deliveryMethod: NotificationJobDeliveryMethod
   error?: string
   deliveredAt?: string
 }
@@ -56,10 +91,10 @@ export interface NotificationJobResult {
  */
 export class NotificationWorker {
   private static instance: NotificationWorker
-  private notificationQueue: Queue | null = null
-  private worker: Worker | null = null
+  private notificationQueue: Queue<NotificationJobData> | null = null
+  private worker: Worker<NotificationJobData, NotificationJobResult> | null = null
   private redisConnection: Redis | null = null
-  private supabaseClient: ReturnType<typeof createClient> | null = null
+  private supabaseClient: SupabaseClient<Database> | null = null
   private isShuttingDown = false
   private isInitialized = false
   private pollingInterval: NodeJS.Timeout | null = null
@@ -114,7 +149,7 @@ export class NotificationWorker {
       })
 
       // Initialize Supabase client with service role key
-      this.supabaseClient = createClient(
+      this.supabaseClient = createClient<Database>(
         env.SUPABASE_URL,
         env.SUPABASE_SERVICE_ROLE_KEY,
         {
@@ -126,7 +161,7 @@ export class NotificationWorker {
       )
 
       // Initialize notification queue
-      this.notificationQueue = new Queue('notification-queue', {
+      this.notificationQueue = new Queue<NotificationJobData>('notification-queue', {
         connection: this.redisConnection,
         defaultJobOptions: {
           attempts: 3,
@@ -168,7 +203,7 @@ export class NotificationWorker {
     }
 
     // Start BullMQ worker to process queued jobs
-    this.worker = new Worker(
+    this.worker = new Worker<NotificationJobData, NotificationJobResult>(
       'notification-queue',
       async (job: Job<NotificationJobData>): Promise<NotificationJobResult> => {
         return await this.processNotificationJob(job)
@@ -233,14 +268,19 @@ export class NotificationWorker {
       return
     }
 
+    const supabase = this.supabaseClient
+    const queue = this.notificationQueue
+
     // Find pending jobs that are due (scheduled_for <= now)
-    const { data: pendingJobs, error } = await this.supabaseClient
+    const { data, error } = await supabase
       .from('notification_jobs')
       .select('*')
       .eq('status', 'pending')
       .lte('scheduled_for', new Date().toISOString())
       .order('scheduled_for', { ascending: true })
       .limit(100) // Process up to 100 jobs per poll
+
+    const pendingJobs = (data ?? []) as NotificationJobRecord[]
 
     if (error) {
       logger.error('Error querying pending jobs', { error: error.message })
@@ -256,21 +296,50 @@ export class NotificationWorker {
     // Add jobs to queue
     for (const job of pendingJobs) {
       try {
+        if (!isNotificationJobType(job.notification_type)) {
+          logger.error('Invalid notification type for job', {
+            jobId: job.id,
+            notificationType: job.notification_type
+          })
+          continue
+        }
+
+        if (!isNotificationUrgencyLevel(job.urgency_level)) {
+          logger.error('Invalid urgency level for job', {
+            jobId: job.id,
+            urgencyLevel: job.urgency_level
+          })
+          continue
+        }
+
+        if (!isNotificationDeliveryMethod(job.delivery_method)) {
+          logger.error('Invalid delivery method for job', {
+            jobId: job.id,
+            deliveryMethod: job.delivery_method
+          })
+          continue
+        }
+
+        if (!isNotificationJobContent(job.content)) {
+          logger.error('Invalid notification content for job', { jobId: job.id })
+          continue
+        }
+
         const jobData: NotificationJobData = {
           jobId: job.id,
           recipientId: job.recipient_id,
           groupId: job.group_id,
           updateId: job.update_id,
-          notificationType: job.notification_type as NotificationJobData['notificationType'],
-          urgencyLevel: job.urgency_level as NotificationJobData['urgencyLevel'],
-          deliveryMethod: job.delivery_method as NotificationJobData['deliveryMethod'],
-          content: job.content as NotificationJobData['content'],
+          notificationType: job.notification_type,
+          urgencyLevel: job.urgency_level,
+          deliveryMethod: job.delivery_method,
+          content: job.content,
           scheduledFor: job.scheduled_for,
-          metadata: job.metadata as Record<string, unknown> | undefined
+          metadata: parseMetadata(job.metadata)
         }
 
         // Add to BullMQ queue (will be picked up by worker)
-        await this.notificationQueue.add('send-notification', jobData, {
+        await queue.add('send-notification', jobData, {
           jobId: job.id, // Use database job ID as BullMQ job ID
           priority: job.urgency_level === 'urgent' ? 1 : 10
         })
@@ -385,13 +454,15 @@ export class NotificationWorker {
       .eq('id', recipientId)
       .single()
 
-    if (recipientError || !recipient?.email) {
+    const recipientRow = recipient as RecipientEmailRow | null
+
+    if (recipientError || !recipientRow?.email) {
       throw new Error(`Recipient email not found: ${recipientId}`)
     }
 
     // Send email via email service
     const emailResult = await serverEmailService.sendEmail({
-      to: recipient.email,
+      to: recipientRow.email,
       subject: content.subject,
       html: content.body,
       text: content.body.replace(/<[^>]*>/g, ''), // Strip HTML for text version
