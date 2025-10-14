@@ -43,6 +43,13 @@ type ParentProfile = {
   name?: string | null
 }
 
+type InviterProfile = {
+  id: string
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
 async function ensureParentProfile(
   supabase: SupabaseClient,
   parentId: string
@@ -848,8 +855,37 @@ export async function sendInvitation(
   channel: 'email' | 'sms' | 'whatsapp',
   customMessage?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const supabase = createClient()
   const invitationUrl = getInvitationURL(invitation.token)
   const message = customMessage || invitation.custom_message || undefined
+
+  let inviterProfile: InviterProfile | null = null
+
+  if (invitation.parent_id) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email, phone')
+        .eq('id', invitation.parent_id)
+        .single()
+
+      if (error) {
+        logger.errorWithStack('Error fetching inviter profile for invitation delivery', error as Error)
+      } else if (data) {
+        inviterProfile = data as InviterProfile
+      }
+    } catch (profileError) {
+      logger.errorWithStack('Unexpected error fetching inviter profile for invitation delivery', profileError as Error)
+    }
+  } else {
+    logger.warn('Invitation missing parent_id when attempting to send', {
+      invitationId: invitation.id,
+      channel
+    })
+  }
+
+  const inviterName = inviterProfile?.name?.trim() ? inviterProfile.name : 'A parent'
+  const inviterEmail = inviterProfile?.email || undefined
 
   try {
     if (channel === 'email') {
@@ -862,11 +898,16 @@ export async function sendInvitation(
         invitation.recipient_email,
         {
           recipientName: undefined,
-          inviterName: 'A parent', // TODO: Get actual parent name
+          inviterName,
           customMessage: message,
           invitationUrl,
           expiresAt: invitation.expires_at || undefined
-        }
+        },
+        inviterEmail
+          ? {
+              replyTo: inviterEmail
+            }
+          : undefined
       )
 
       return {
@@ -884,7 +925,7 @@ export async function sendInvitation(
       if (channel === 'sms') {
         const result = await smsService.sendInvitationSMS(
           invitation.recipient_phone,
-          'A parent', // TODO: Get actual parent name
+          inviterName,
           invitationUrl,
           message,
           invitation.expires_at || undefined
@@ -898,7 +939,7 @@ export async function sendInvitation(
       } else {
         const result = await smsService.sendInvitationWhatsApp(
           invitation.recipient_phone,
-          'A parent', // TODO: Get actual parent name
+          inviterName,
           invitationUrl,
           message,
           invitation.expires_at || undefined
