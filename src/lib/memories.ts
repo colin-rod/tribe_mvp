@@ -581,65 +581,59 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
       update_id: string
     }
 
-    const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
+  const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
-    // Get response counts and engagement data for each memory
-    const memoriesWithStats = await Promise.all(
-      memories.map(async (memory): Promise<MemoryWithStats> => {
-        try {
-          // Get response count
-          const { count } = await supabase
-            .from('responses')
-            .select('*', { count: 'exact', head: true })
-            .eq('update_id', memory.id)
+  type AggregatedResponseStat = {
+    update_id: string
+    response_count: number | null
+    last_response_at: string | null
+  }
 
-          // Get last response
-          const { data: lastResponseData } = await supabase
-            .from('responses')
-            .select('received_at')
-            .eq('update_id', memory.id)
-            .order('received_at', { ascending: false })
-            .limit(1)
+  const { data: aggregatedResponseStats, error: responseStatsError } = await supabase
+    .from('responses')
+    .select('update_id,response_count:count(*),last_response_at:max(received_at)')
+    .in('update_id', memoryIds)
+    .group('update_id')
 
-          type LastResponse = {
-            received_at: string | null
-          }
-
-          const lastResponse = lastResponseData && lastResponseData.length > 0 ? (lastResponseData[0] as LastResponse) : null
-
-          return {
-            ...memory,
-            response_count: count || 0,
-            last_response_at: lastResponse?.received_at || null,
-            has_unread_responses: false,
-            like_count: memory.like_count || 0,
-            comment_count: memory.comment_count || 0,
-            isLiked: likedMemoryIds.has(memory.id)
-          }
-        } catch {
-          logger.error('Error processing individual memory stats', {
-            requestId,
-            memoryId: memory.id
-          })
-          return {
-            ...memory,
-            response_count: 0,
-            last_response_at: null,
-            has_unread_responses: false,
-            like_count: memory.like_count || 0,
-            comment_count: memory.comment_count || 0,
-            isLiked: false
-          }
-        }
-      })
-    )
-
-    logger.info('Successfully completed getRecentMemoriesWithStats', {
+  if (responseStatsError) {
+    logger.error('Error fetching aggregated response stats', {
       requestId,
-      totalMemories: memoriesWithStats.length,
-      newMemoriesCount,
-      duration: Date.now() - startTime
+      error: responseStatsError.message
     })
+  }
+
+  const responseStatsMap = new Map<string, AggregatedResponseStat>()
+
+  ;(aggregatedResponseStats as AggregatedResponseStat[] | null)?.forEach((stat) => {
+    responseStatsMap.set(stat.update_id, stat)
+  })
+
+  // Merge response stats and engagement data for each memory
+  const memoriesWithStats = memories.map((memory) => {
+    const stats = responseStatsMap.get(memory.id)
+
+    let responseCount = 0
+    if (stats?.response_count !== undefined && stats?.response_count !== null) {
+      const parsedCount = Number(stats.response_count)
+      responseCount = Number.isNaN(parsedCount) ? 0 : parsedCount
+    }
+
+    return {
+      ...memory,
+      response_count: responseCount,
+      last_response_at: stats?.last_response_at ?? null,
+      has_unread_responses: false,
+      like_count: memory.like_count ?? 0,
+      comment_count: memory.comment_count ?? 0,
+      isLiked: likedMemoryIds.has(memory.id)
+    }
+  })
+
+  logger.info('Successfully completed getRecentMemoriesWithStats', {
+    requestId,
+    totalMemories: memoriesWithStats.length,
+    duration: Date.now() - startTime
+  })
 
     return {
       memories: memoriesWithStats,

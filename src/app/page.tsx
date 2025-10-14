@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import {
@@ -183,24 +182,26 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Button
-                size="xl"
-                className="w-full sm:w-auto"
-                onClick={trackSignupStarted}
-              >
-                <Link href="/signup" className="flex items-center">
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackSignupStarted}
+                >
                   Start Free Family Circle
                   <HeartIcon className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="xl"
-                className="w-full sm:w-auto"
-                onClick={trackDemoRequested}
-              >
-                <Link href="#demo">Watch 2-Min Demo</Link>
-              </Button>
+                </Button>
+              </Link>
+              <Link href="#demo" className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackDemoRequested}
+                >
+                  Watch 2-Min Demo
+                </Button>
+              </Link>
             </div>
 
           </div>
@@ -390,21 +391,25 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                size="xl"
-                variant="secondary"
-                className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
-                onClick={trackSignupStarted}
-              >
-                <Link href="/signup">Start Your Free Family Circle</Link>
-              </Button>
-              <Button
-                size="xl"
-                variant="outline"
-                className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="secondary"
+                  className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
+                  onClick={trackSignupStarted}
+                >
+                  Start Your Free Family Circle
+                </Button>
+              </Link>
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="outline"
+                  className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
+                >
+                  Sign In
+                </Button>
+              </Link>
             </div>
 
             <p className="text-sm opacity-75 mt-6">
