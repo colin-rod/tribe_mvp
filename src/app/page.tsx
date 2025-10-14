@@ -209,6 +209,63 @@ function Home() {
         </Container>
       </section>
 
+      {/* Demo Section */}
+      <section
+        id="demo"
+        className="py-16 lg:py-24 bg-white"
+        aria-labelledby="demo-heading"
+      >
+        <Container>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2
+                id="demo-heading"
+                className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
+              >
+                Watch the Tribe Experience
+              </h2>
+              <p className="text-xl text-gray-600 mb-6">
+                Take a quick look at how Tribe helps you capture milestones, keep everyone
+                in the loop, and nurture genuine connections with the people who matter most.
+              </p>
+              <ul className="space-y-4 text-gray-700">
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>Guided tour of creating and sharing your first update.</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>See how digests and milestone reminders keep family close.</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>Accessible controls let you pause, rewind, or watch full screen.</span>
+                </li>
+              </ul>
+            </div>
+            <figure>
+              <div className="relative aspect-video rounded-3xl overflow-hidden shadow-xl ring-1 ring-gray-200">
+                <iframe
+                  className="absolute inset-0 h-full w-full"
+                  src="https://www.youtube.com/embed/2eYk1KzZ2UY"
+                  title="Tribe Product Demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  aria-describedby="demo-caption"
+                />
+              </div>
+              <figcaption
+                id="demo-caption"
+                className="mt-4 text-sm text-gray-500"
+              >
+                Video demonstration with captions available on YouTube. Use the on-player controls to
+                enable captions, adjust playback speed, or open the video in full screen.
+              </figcaption>
+            </figure>
+          </div>
+        </Container>
+      </section>
+
       {/* Features Section */}
       <section
         id="features"
