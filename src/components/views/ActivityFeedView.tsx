@@ -321,7 +321,6 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                   onStepClick={handleOnboardingStepClick}
                   onCollapse={handleCollapseOnboarding}
                   onDismiss={handleDismissOnboarding}
-                  showCelebration={hasCompletedOnboarding}
                 />
               </div>
             )}
