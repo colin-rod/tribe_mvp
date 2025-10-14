@@ -194,7 +194,7 @@ export class ServerEmailService {
     } catch (error) {
       this.logger.warn('Failed to get validated environment, using fallbacks', { error: (error as Error).message })
       return {
-        email: 'updates@colinrodrigues.com',
+        email: 'updates@tribeupdate.com',
         name: 'Tribe'
       }
     }

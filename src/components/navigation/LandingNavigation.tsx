@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ButtonLink } from '@/components/ui/Button'
+import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useConversionTracking } from '@/components/analytics/ConversionTracker'
