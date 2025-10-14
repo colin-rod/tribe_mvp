@@ -458,27 +458,64 @@ export async function getGroupStats(): Promise<{
 
   if (!user) throw new Error('Not authenticated')
 
-  const [groupsResult, recipientsResult] = await Promise.all([
+  const [groupTotalsResponse, groupBreakdownResponse, activeRecipientResponse] = await Promise.all([
     supabase
       .from('recipient_groups')
-      .select('id, is_default_group')
+      .select('*', { head: true, count: 'exact' })
+      .eq('parent_id', user.id),
+    supabase
+      .from('recipient_groups')
+      .select('is_default_group, count:id', { group: 'is_default_group' })
       .eq('parent_id', user.id),
     supabase
       .from('recipients')
-      .select('id')
+      .select('*', { head: true, count: 'exact' })
       .eq('parent_id', user.id)
       .eq('is_active', true)
   ])
 
-  type RecipientGroupSummary = Pick<Database['public']['Tables']['recipient_groups']['Row'], 'id' | 'is_default_group'>
+  if (groupTotalsResponse.error) {
+    logger.errorWithStack('Error fetching total group count:', groupTotalsResponse.error as Error)
+    throw new Error('Failed to fetch group statistics')
+  }
 
-  const groups = (groupsResult.data ?? []) as RecipientGroupSummary[]
-  const recipients = recipientsResult.data || []
+  if (groupBreakdownResponse.error) {
+    logger.errorWithStack('Error fetching group breakdown:', groupBreakdownResponse.error as Error)
+    throw new Error('Failed to fetch group statistics')
+  }
+
+  if (activeRecipientResponse.error) {
+    logger.errorWithStack('Error fetching active recipient count for groups:', activeRecipientResponse.error as Error)
+    throw new Error('Failed to fetch group statistics')
+  }
+
+  type GroupBreakdownRow = { is_default_group: boolean | null; count: number | string | null }
+
+  const breakdownRows = (groupBreakdownResponse.data ?? []) as GroupBreakdownRow[]
+
+  let defaultGroups = 0
+  let customGroups = 0
+
+  breakdownRows.forEach((row) => {
+    const count = Number(row.count ?? 0)
+    if (row.is_default_group) {
+      defaultGroups += count
+    } else {
+      customGroups += count
+    }
+  })
+
+  const totalGroups =
+    typeof groupTotalsResponse.count === 'number'
+      ? groupTotalsResponse.count
+      : defaultGroups + customGroups
+
+  const totalRecipients = typeof activeRecipientResponse.count === 'number' ? activeRecipientResponse.count : 0
 
   return {
-    totalGroups: groups.length,
-    totalRecipients: recipients.length,
-    defaultGroups: groups.filter((group) => group.is_default_group).length,
-    customGroups: groups.filter((group) => !group.is_default_group).length
+    totalGroups,
+    totalRecipients,
+    defaultGroups,
+    customGroups
   }
 }

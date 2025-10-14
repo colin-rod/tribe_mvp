@@ -119,7 +119,7 @@ class DashboardAnalyticsManager {
   private sessionId: string
   private userId?: string
   private config: AnalyticsConfiguration
-  private flushTimer?: NodeJS.Timeout
+  private flushTimer?: ReturnType<typeof setInterval> | number
   private performanceObserver?: PerformanceObserver
   private mutationObserver?: MutationObserver
   private beforeUnloadHandler?: () => void
@@ -128,8 +128,8 @@ class DashboardAnalyticsManager {
   private handleKeyboardListener?: (event: KeyboardEvent) => void
   private handleScrollListener?: () => void
   private handleResizeListener?: () => void
-  private scrollDebounceTimeoutId?: ReturnType<typeof setTimeout>
-  private memoryUsageIntervalId?: ReturnType<typeof setInterval>
+  private scrollDebounceTimeoutId?: ReturnType<typeof setTimeout> | number
+  private memoryUsageIntervalId?: ReturnType<typeof setInterval> | number
   private fpsFrameRequestId?: number
   private fpsMeasurementCallback?: (timestamp: number) => void
   private fpsLastFrameTime = 0

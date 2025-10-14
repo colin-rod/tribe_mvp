@@ -72,6 +72,10 @@ describe('Email Notification System Tests', () => {
       expect(data.messageId).toBe('msg-123')
       expect(data.statusCode).toBe(202)
 
+      expect(response.headers.get('X-RateLimit-Limit')).toBe('100')
+      expect(response.headers.get('X-RateLimit-Remaining')).toBe('99')
+      expect(response.headers.get('X-RateLimit-Reset')).toBeTruthy()
+
       expect(mockServerEmailService.sendTemplatedEmail).toHaveBeenCalledWith(
         'recipient@example.com',
         'response',
@@ -388,10 +392,12 @@ describe('Email Notification System Tests', () => {
       const response = await sendEmailPOST(request)
       const data = await response.json()
 
+      expect(response.status).toBe(429)
       expect(data.details.limit).toBe(50)
       expect(data.details.remaining).toBe(0)
       expect(data.details.retryAfter).toBeGreaterThan(0)
       expect(data.details.resetTime).toBeDefined()
+      expect(response.headers.get('Retry-After')).toBeDefined()
     })
   })
 

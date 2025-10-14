@@ -6,7 +6,7 @@ const logger = createLogger('MemoryList')
 import { useState, useEffect, useCallback, memo } from 'react'
 import MemoryDetailModal from '@/components/memories/MemoryDetailModal'
 import { cn } from '@/lib/utils'
-import { getRecentMemoriesWithStats, getNewMemoriesCount } from '@/lib/memories'
+import { getRecentMemoriesWithStats } from '@/lib/memories'
 import MemoryCard from './MemoryCard'
 import { MemoryCountBadge } from './MemoryBadge'
 import { Button } from '@/components/ui/Button'
@@ -55,22 +55,23 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
         timestamp: new Date().toISOString()
       })
 
-      const rawMemories = await getRecentMemoriesWithStats(limit)
+      const result = await getRecentMemoriesWithStats(limit)
 
       // Defensive null check
-      if (!rawMemories || !Array.isArray(rawMemories)) {
+      if (!result || !Array.isArray(result.memories)) {
         logger.warn('MemoryList: getRecentMemoriesWithStats returned invalid data', {
           componentRequestId,
-          rawMemories,
-          typeof: typeof rawMemories,
-          isArray: Array.isArray(rawMemories)
+          result,
+          typeof: typeof result,
+          isArray: Array.isArray(result?.memories)
         })
         setMemories([])
+        setNewMemoriesCount(0)
         return
       }
 
       // Transform to card data
-      let transformedMemories: MemoryCardData[] = rawMemories.map((memory) => ({
+      let transformedMemories: MemoryCardData[] = result.memories.map((memory) => ({
         id: memory.id,
         child: {
           id: memory.child_id,
@@ -109,9 +110,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       }
 
       setMemories(transformedMemories)
-
-      // Load new memories count for badge
-      const count = await getNewMemoriesCount()
+      const count = result.newMemoriesCount ?? 0
       setNewMemoriesCount(count)
 
       const loadEndTime = Date.now()

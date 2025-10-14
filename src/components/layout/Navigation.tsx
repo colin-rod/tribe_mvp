@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useNavigationState } from '@/hooks/useNavigationState'
-import { Button } from '@/components/ui/Button'
+import { ButtonLink } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn, getInitials } from '@/lib/utils'
 import {
@@ -384,21 +384,27 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
               </div>
             ) : (
               <div className="flex space-x-2">
-                <Link href="/login">
-                  <Button
-                    variant="ghost"
-                    onClick={() => trackNavigationClick('/login', 'navigation-link', { label: 'sign-in' })}
-                  >
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button
-                    onClick={() => trackNavigationClick('/signup', 'navigation-link', { label: 'sign-up' })}
-                  >
-                    Sign up
-                  </Button>
-                </Link>
+                <ButtonLink
+                  variant="ghost"
+                  href="/login"
+                  onClick={() =>
+                    trackNavigationClick('/login', 'navigation-link', {
+                      label: 'sign-in',
+                    })
+                  }
+                >
+                  Sign in
+                </ButtonLink>
+                <ButtonLink
+                  href="/signup"
+                  onClick={() =>
+                    trackNavigationClick('/signup', 'navigation-link', {
+                      label: 'sign-up',
+                    })
+                  }
+                >
+                  Sign up
+                </ButtonLink>
               </div>
             )}
           </div>

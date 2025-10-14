@@ -166,6 +166,11 @@ export type MemoryWithStats = Memory & {
   photo_count?: number  // Number of photos in this memory
 }
 
+export interface RecentMemoriesWithStatsResult {
+  memories: MemoryWithStats[]
+  newMemoriesCount: number
+}
+
 /**
  * Memory display data for UI components
  */
