@@ -1,25 +1,20 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-
-const logger = createLogger('NotificationService')
-
-import { createClient } from '@/lib/supabase/client'
+import {
+  createNotificationRepository,
+  type NotificationHistoryRow
+} from '@/lib/data/notificationRepository'
 import { clientEmailService } from './clientEmailService'
 import type { NotificationDeliveryMethod, NotificationStatus, NotificationDigestType } from '@/lib/types/profile'
 
-export interface NotificationHistoryEntry {
-  id: string
-  user_id: string
-  type: 'response' | 'prompt' | 'delivery' | 'system' | 'digest'
-  title: string
-  content?: string
+const logger = createLogger('NotificationService')
+
+export interface NotificationHistoryEntry extends Omit<NotificationHistoryRow, 'metadata' | 'delivery_method' | 'delivery_status' | 'sent_at'> {
   metadata: NotificationMetadata
-  read_at?: string
-  sent_at: string
+  sent_at: string | null
   delivery_method: NotificationDeliveryMethod
-  delivery_status: NotificationStatus
-  created_at: string
+  delivery_status: NotificationStatus | null
 }
 
 export interface DigestQueueEntry {
@@ -63,21 +58,33 @@ interface NotificationData extends NotificationMetadata {
 type NotificationHistorySummary = Pick<NotificationHistoryEntry, 'type' | 'delivery_method' | 'delivery_status' | 'sent_at'>
 
 export class NotificationService {
-  private supabase = createClient()
+  private repository = createNotificationRepository()
+  private supabase = this.repository.client
+
+  private mapHistoryRow(row: NotificationHistoryRow): NotificationHistoryEntry {
+    return {
+      ...row,
+      metadata: (row.metadata as NotificationMetadata) ?? {},
+      delivery_method: row.delivery_method as NotificationDeliveryMethod,
+      delivery_status: (row.delivery_status as NotificationStatus | null) ?? null,
+      sent_at: row.sent_at
+    }
+  }
 
   // Create notification history entry
   async createNotificationHistory(entry: Omit<NotificationHistoryEntry, 'id' | 'created_at' | 'sent_at'>): Promise<NotificationHistoryEntry> {
-    const { data, error } = await this.supabase
-      .from('notification_history')
-      .insert(entry as never)
-      .select()
-      .single()
+    const record = await this.repository.createHistoryEntry({
+      user_id: entry.user_id,
+      type: entry.type,
+      title: entry.title,
+      content: entry.content ?? null,
+      metadata: (entry.metadata ?? {}) as NotificationHistoryRow['metadata'],
+      read_at: entry.read_at ?? null,
+      delivery_method: entry.delivery_method,
+      delivery_status: entry.delivery_status ?? null
+    })
 
-    if (error) {
-      throw new Error(`Failed to create notification history: ${error.message}`)
-    }
-
-    return data as NotificationHistoryEntry
+    return this.mapHistoryRow(record)
   }
 
   // Get notification history for user
@@ -90,42 +97,19 @@ export class NotificationService {
       unread_only?: boolean
     } = {}
   ): Promise<NotificationHistoryEntry[]> {
-    const { limit = 20, offset = 0, type, unread_only } = options
+    const records = await this.repository.listHistory(userId, {
+      limit: options.limit,
+      offset: options.offset,
+      type: options.type,
+      unreadOnly: options.unread_only
+    })
 
-    let query = this.supabase
-      .from('notification_history')
-      .select('*')
-      .eq('user_id', userId)
-      .order('sent_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (type) {
-      query = query.eq('type', type)
-    }
-
-    if (unread_only) {
-      query = query.is('read_at', null)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      throw new Error(`Failed to fetch notification history: ${error.message}`)
-    }
-
-    return (data || []) as NotificationHistoryEntry[]
+    return records.map(record => this.mapHistoryRow(record))
   }
 
   // Mark notification as read
   async markNotificationAsRead(notificationId: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('notification_history')
-      .update({ read_at: new Date().toISOString() })
-      .eq('id', notificationId)
-
-    if (error) {
-      throw new Error(`Failed to mark notification as read: ${error.message}`)
-    }
+    await this.repository.markHistoryEntryRead(notificationId, new Date().toISOString())
   }
 
   // Send browser notification
@@ -480,7 +464,8 @@ export class NotificationService {
       notifications.forEach((notification) => {
         analytics.by_type[notification.type] = (analytics.by_type[notification.type] || 0) + 1
         analytics.by_method[notification.delivery_method] = (analytics.by_method[notification.delivery_method] || 0) + 1
-        analytics.by_status[notification.delivery_status] = (analytics.by_status[notification.delivery_status] || 0) + 1
+        const statusKey = notification.delivery_status ?? 'unknown'
+        analytics.by_status[statusKey] = (analytics.by_status[statusKey] || 0) + 1
       })
 
       // Calculate delivery rate
@@ -489,6 +474,10 @@ export class NotificationService {
 
       // Group by date for recent activity
       const activityByDate = notifications.reduce((acc: Record<string, number>, notification) => {
+        if (!notification.sent_at) {
+          return acc
+        }
+
         const date = notification.sent_at.split('T')[0]
         acc[date] = (acc[date] || 0) + 1
         return acc
