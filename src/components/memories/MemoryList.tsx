@@ -8,7 +8,6 @@ import MemoryDetailModal from '@/components/memories/MemoryDetailModal'
 import { cn } from '@/lib/utils'
 import { getRecentMemoriesWithStats } from '@/lib/memories'
 import MemoryCard from './MemoryCard'
-import { MemoryCountBadge } from './MemoryBadge'
 import { Button } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { ErrorState } from '@/components/ui/ErrorState'
@@ -37,8 +36,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
-  const [newMemoriesCount, setNewMemoriesCount] = useState(0)
-  const [showingNewOnly, setShowingNewOnly] = useState(false)
+  const [groupedMemories, setGroupedMemories] = useState<{ label: string; memories: MemoryCardData[] }[]>([])
 
   const loadMemories = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -66,7 +64,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
           isArray: Array.isArray(result?.memories)
         })
         setMemories([])
-        setNewMemoriesCount(0)
+        setGroupedMemories([])
         return
       }
 
@@ -85,6 +83,8 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
         content_format: memory.content_format ?? null,
         contentPreview: getContentPreview(memory.content, memory.subject),
         media_urls: memory.media_urls ?? [],
+        metadata: (memory.metadata as MemoryCardData['metadata']) ?? null,
+        createdAt: memory.created_at ?? null,
         distributionStatus: (memory.distribution_status ?? 'new') as MemoryCardData['distributionStatus'],
         isNew: Boolean(memory.is_new),
         captureChannel: (memory.capture_channel ?? 'web') as MemoryCardData['captureChannel'],
@@ -110,14 +110,13 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       }
 
       setMemories(transformedMemories)
-      const count = result.newMemoriesCount ?? 0
-      setNewMemoriesCount(count)
+      setGroupedMemories(groupMemories(transformedMemories))
 
       const loadEndTime = Date.now()
       logger.info('MemoryList: Successfully loaded memories', {
         componentRequestId,
         count: transformedMemories.length,
-        newCount: count,
+        newCount: result.newMemoriesCount ?? 0,
         duration: loadEndTime - loadStartTime,
         timestamp: new Date().toISOString()
       })
@@ -134,6 +133,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
 
       setError(err instanceof Error ? err.message : 'Failed to load memories')
       setMemories([])
+      setGroupedMemories([])
     } finally {
       setLoading(false)
     }
@@ -142,22 +142,6 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   useEffect(() => {
     loadMemories()
   }, [loadMemories])
-
-  useEffect(() => {
-    if (newMemoriesCount === 0 && showingNewOnly) {
-      setShowingNewOnly(false)
-    }
-  }, [newMemoriesCount, showingNewOnly])
-
-  const handleNewBadgeClick = useCallback(() => {
-    if (newMemoriesCount > 0) {
-      setShowingNewOnly(true)
-    }
-  }, [newMemoriesCount])
-
-  const handleClearFilter = useCallback(() => {
-    setShowingNewOnly(false)
-  }, [])
 
   // Handle memory click - open detail modal
   const handleMemoryClick = useCallback((memoryId: string) => {
@@ -222,78 +206,38 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
     )
   }
 
-  const filteredMemories = showingNewOnly
-    ? memories.filter(memory => memory.isNew)
-    : memories
-
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Header with new memories count */}
-      {newMemoriesCount > 0 && (
-        <button
-          type="button"
-          onClick={handleNewBadgeClick}
-          className={cn(
-            'flex w-full items-center justify-between p-4 border rounded-lg transition-colors',
-            showingNewOnly
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100 focus:bg-blue-100'
-          )}
-          aria-pressed={showingNewOnly}
-          aria-label="Show only new memories"
-        >
-          <div className="flex items-center space-x-3">
-            <MemoryCountBadge count={newMemoriesCount} />
-            <div className="text-left">
-              <p className="text-sm font-medium">
-                {newMemoriesCount === 1 ? '1 new memory' : `${newMemoriesCount} new memories`}
-              </p>
-              <p className="text-xs">
-                Review and mark as ready for compilation
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-semibold underline">
-            {showingNewOnly ? 'Filter active' : 'Show only new'}
-          </span>
-        </button>
-      )}
-
-      {showingNewOnly && (
-        <div className="flex items-center justify-between p-3 bg-blue-100 border border-blue-200 rounded-lg text-blue-900">
-          <span className="text-sm font-medium">Showing only new memories</span>
-          <button
-            type="button"
-            onClick={handleClearFilter}
-            className="text-xs font-semibold underline hover:text-blue-800"
-          >
-            Show all activity
-          </button>
-        </div>
-      )}
-
-      {/* Memory cards */}
-      {filteredMemories.length === 0 ? (
+    <div className={cn('space-y-8', className)}>
+      {groupedMemories.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-blue-200 rounded-lg bg-blue-50 text-blue-700">
-          <p className="text-sm font-medium">All caught up! No new memories to review.</p>
-          <button
-            type="button"
-            onClick={handleClearFilter}
-            className="mt-2 text-xs font-semibold underline"
-          >
-            Show all activity
-          </button>
+          <p className="text-sm font-medium">No memories to share just yet.</p>
+          {showCreateButton && onCreateMemory && (
+            <div className="mt-4">
+              <Button onClick={onCreateMemory} variant="outline">
+                Create Memory
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredMemories.map((memory) => (
-            <MemoryCard
-              key={memory.id}
-              memory={memory}
-              onClick={handleMemoryClick}
-            />
-          ))}
-        </div>
+        groupedMemories.map((group) => (
+          <section key={group.label} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+                {group.label}
+              </h4>
+            </div>
+            <div className="space-y-4">
+              {group.memories.map((memory) => (
+                <MemoryCard
+                  key={memory.id}
+                  memory={memory}
+                  onClick={handleMemoryClick}
+                />
+              ))}
+            </div>
+          </section>
+        ))
       )}
 
       {/* Detail modal */}
@@ -335,6 +279,53 @@ function getContentPreview(content: string | null, subject?: string | null): str
     return `${subject}: ${(content || '').substring(0, 100)}...`
   }
   return (content || '').substring(0, 150) + (content && content.length > 150 ? '...' : '')
+}
+
+function groupMemories(memories: MemoryCardData[]): { label: string; memories: MemoryCardData[] }[] {
+  const orderedGroups: { label: string; memories: MemoryCardData[] }[] = []
+
+  memories.forEach((memory) => {
+    const label = getGroupingLabel(memory.createdAt)
+    if (!label) {
+      return
+    }
+
+    let group = orderedGroups.find((g) => g.label === label)
+    if (!group) {
+      group = { label, memories: [] }
+      orderedGroups.push(group)
+    }
+    group.memories.push(memory)
+  })
+
+  return orderedGroups
+}
+
+function getGroupingLabel(createdAt?: string | null): string | null {
+  if (!createdAt) return 'Recent moments'
+
+  const createdDate = new Date(createdAt)
+  if (Number.isNaN(createdDate.getTime())) {
+    return 'Recent moments'
+  }
+
+  const now = new Date()
+  const diffMs = now.getTime() - createdDate.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 7) {
+    return 'Moments from this week'
+  }
+
+  if (diffDays < 30) {
+    return 'Moments from this month'
+  }
+
+  if (diffDays < 90) {
+    return 'Highlights from this season'
+  }
+
+  return 'Treasured moments'
 }
 
 function formatTimeAgo(dateString: string | null): string {

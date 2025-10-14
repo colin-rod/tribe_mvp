@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { MemoryCardProps } from '@/lib/types/memory'
 import ChildImage from '@/components/ui/ChildImage'
@@ -23,6 +23,9 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
   const [isApproving, setIsApproving] = useState(false)
   const [localStatus, setLocalStatus] = useState(memory.distributionStatus)
   const [showNewBadge, setShowNewBadge] = useState(memory.isNew)
+  const [showDetails, setShowDetails] = useState(false)
+
+  const insightCopy = useMemo(() => buildInsightCopy(memory), [memory])
 
   const handleClick = () => {
     // Analytics tracking
@@ -59,6 +62,11 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
     } finally {
       setIsApproving(false)
     }
+  }
+
+  const handleToggleDetails = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setShowDetails((prev) => !prev)
   }
 
   return (
@@ -125,74 +133,28 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
           <p className="text-sm text-neutral-500 font-medium">
             {memory.timeAgo}
           </p>
-          {localStatus !== 'sent' && (
-            <div>
-              <span
-                className={cn(
-                  'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
-                  'shadow-sm border',
-                  getStatusColorClass(localStatus)
-                )}
-              >
-                {getStatusDisplayText(localStatus)}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Content preview */}
       <div className="relative z-10 mb-4">
+        {insightCopy && (
+          <p className="text-sm text-primary-700 font-medium mb-3 leading-relaxed">
+            {insightCopy}
+          </p>
+        )}
         <RichTextRenderer
           content={memory.content}
           subject={memory.subject ?? undefined}
           richContent={memory.rich_content ?? undefined}
           contentFormat={memory.content_format ?? undefined}
           preview={true}
-          previewLength={150}
+          previewLength={220}
           showSubject={true}
           showFormatIndicator={false}
-          className="text-sm leading-relaxed"
+          className="text-base leading-7 text-neutral-700"
         />
       </div>
-
-      {/* Metadata badges */}
-      {memory.metadata && (
-        <div className="relative z-10 mb-4 flex flex-wrap gap-1.5">
-          {memory.metadata.milestones?.map((milestone) => (
-            <MetadataBadge
-              key={milestone}
-              value={milestone}
-              category="milestones"
-              size="sm"
-            />
-          ))}
-          {memory.metadata.locations?.map((location) => (
-            <MetadataBadge
-              key={location}
-              value={location}
-              category="locations"
-              size="sm"
-            />
-          ))}
-          {memory.metadata.people?.map((person) => (
-            <MetadataBadge
-              key={person}
-              value={person}
-              category="people"
-              size="sm"
-            />
-          ))}
-          {memory.metadata.dates?.map((date) => (
-            <MetadataBadge
-              key={date}
-              value={date}
-              category="dates"
-              size="sm"
-            />
-          ))}
-        </div>
-      )}
 
       {/* Media preview */}
       {memory.media_urls && memory.media_urls.length > 0 && (
@@ -206,126 +168,159 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
         </div>
       )}
 
-      {/* Footer with enhanced engagement metrics */}
-      <div className="relative z-10 flex items-center justify-between pt-3 border-t border-neutral-100">
-        <div className="flex items-center space-x-4">
-          {/* Response count with icon */}
-          <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 bg-neutral-100 rounded-full flex items-center justify-center group-hover:bg-primary-100 transition-colors duration-200">
-              <svg
-                className="w-3.5 h-3.5 text-neutral-500 group-hover:text-primary-600 transition-colors duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            </div>
-            <span className="text-sm text-neutral-600 font-medium">
-              {memory.responseCount === 0 ? 'No responses yet' :
-               memory.responseCount === 1 ? '1 response' :
-               `${memory.responseCount} responses`}
-            </span>
-          </div>
+      {/* Details affordance */}
+      <div className="relative z-10 pt-4 border-t border-neutral-100">
+        <button
+          type="button"
+          onClick={handleToggleDetails}
+          className="flex items-center justify-between w-full text-sm font-medium text-neutral-600 hover:text-neutral-900"
+          aria-expanded={showDetails}
+        >
+          <span>Details</span>
+          <svg
+            className={cn(
+              'w-4 h-4 transition-transform duration-200',
+              showDetails ? 'transform rotate-180' : 'transform rotate-0'
+            )}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
 
-          {/* Media count indicator */}
-          {memory.media_urls && memory.media_urls.length > 0 && (
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-neutral-100 rounded-full flex items-center justify-center group-hover:bg-primary-100 transition-colors duration-200">
-                <svg
-                  className="w-3.5 h-3.5 text-neutral-500 group-hover:text-primary-600 transition-colors duration-200"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+        {showDetails && (
+          <div className="mt-3 space-y-4 text-sm text-neutral-600">
+            {localStatus !== 'sent' && (
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Status</span>
+                <span
+                  className={cn(
+                    'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+                    'shadow-sm border',
+                    getStatusColorClass(localStatus)
+                  )}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-                  />
-                </svg>
+                  {getStatusDisplayText(localStatus)}
+                </span>
               </div>
-              <span className="text-sm text-neutral-600 font-medium">
-                {memory.media_urls.length === 1 ? '1 attachment' : `${memory.media_urls.length} attachments`}
-              </span>
-            </div>
-          )}
+            )}
 
-          {/* Unread indicator with pulse */}
-          {memory.hasUnreadResponses && (
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
-              <span className="text-sm text-primary-600 font-semibold">
-                New responses
-              </span>
-            </div>
-          )}
-        </div>
+            {memory.metadata && (
+              <div className="space-y-2">
+                <span className="block text-neutral-500">Tags</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {memory.metadata.milestones?.map((milestone) => (
+                    <MetadataBadge
+                      key={milestone}
+                      value={milestone}
+                      category="milestones"
+                      size="sm"
+                    />
+                  ))}
+                  {memory.metadata.locations?.map((location) => (
+                    <MetadataBadge
+                      key={location}
+                      value={location}
+                      category="locations"
+                      size="sm"
+                    />
+                  ))}
+                  {memory.metadata.people?.map((person) => (
+                    <MetadataBadge
+                      key={person}
+                      value={person}
+                      category="people"
+                      size="sm"
+                    />
+                  ))}
+                  {memory.metadata.dates?.map((date) => (
+                    <MetadataBadge
+                      key={date}
+                      value={date}
+                      category="dates"
+                      size="sm"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Action button - Mark as Ready or View */}
-        <div className="flex items-center space-x-2">
-          {canApproveMemory(localStatus) ? (
-            <button
-              onClick={handleApprove}
-              disabled={isApproving}
-              className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium',
-                'bg-primary-600 text-white',
-                'hover:bg-primary-700 active:bg-primary-800',
-                'transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                'disabled:opacity-50 disabled:cursor-not-allowed',
-                'flex items-center space-x-2'
-              )}
-              aria-label="Mark memory as ready for compilation"
-            >
-              {isApproving ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Marking...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Mark as Ready</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <div className="flex items-center space-x-1 text-neutral-400 group-hover:text-primary-600 transition-all duration-200">
-              <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                View
-              </span>
-              <svg
-                className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+            <div className="space-y-2">
+              <span className="block text-neutral-500">Engagement</span>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span>Responses</span>
+                  <span className="font-medium text-neutral-700">
+                    {memory.responseCount === 0 ? 'No responses yet' :
+                     memory.responseCount === 1 ? '1 response' :
+                     `${memory.responseCount} responses`}
+                  </span>
+                </div>
+                {memory.media_urls && memory.media_urls.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Attachments</span>
+                    <span className="font-medium text-neutral-700">
+                      {memory.media_urls.length === 1 ? '1 attachment' : `${memory.media_urls.length} attachments`}
+                    </span>
+                  </div>
+                )}
+                {memory.hasUnreadResponses && (
+                  <div className="flex items-center justify-between text-primary-600 font-semibold">
+                    <span>Unread replies</span>
+                    <span className="flex items-center space-x-2">
+                      <span>New responses</span>
+                      <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="flex items-center justify-end">
+              {canApproveMemory(localStatus) && (
+                <button
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium',
+                    'bg-primary-600 text-white',
+                    'hover:bg-primary-700 active:bg-primary-800',
+                    'transition-all duration-200',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    'flex items-center space-x-2'
+                  )}
+                  aria-label="Mark memory as ready for compilation"
+                >
+                  {isApproving ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Marking...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Mark as Ready</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -334,3 +329,34 @@ const MemoryCard = memo<MemoryCardProps>(({ memory, onClick, className }) => {
 MemoryCard.displayName = 'MemoryCard'
 
 export default MemoryCard
+
+function buildInsightCopy(memory: MemoryCardProps['memory']): string | null {
+  const metadata = memory.metadata
+  if (!metadata) return null
+
+  const fragments: string[] = []
+
+  if (metadata.milestones?.length) {
+    fragments.push(`celebrated ${formatList(metadata.milestones)}`)
+  }
+
+  if (metadata.locations?.length) {
+    fragments.push(`at ${formatList(metadata.locations)}`)
+  }
+
+  if (metadata.people?.length) {
+    fragments.push(`with ${formatList(metadata.people)}`)
+  }
+
+  if (fragments.length === 0) {
+    return null
+  }
+
+  return `${memory.child.name} ${fragments.join(', ')}.`
+}
+
+function formatList(items: string[]): string {
+  if (items.length === 1) return items[0]
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`
+}

@@ -190,6 +190,8 @@ export interface MemoryCardData {
   media_urls: string[] | null
   /** Structured metadata (milestones, locations, dates, people) */
   metadata?: MemoryMetadata | null
+  /** Original creation timestamp for grouping */
+  createdAt?: string | null
   distributionStatus: MemoryStatus
   isNew: boolean  // New badge indicator
   captureChannel: CaptureChannel
