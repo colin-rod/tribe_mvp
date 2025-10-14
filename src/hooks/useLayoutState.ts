@@ -14,6 +14,7 @@ export function useLayoutState() {
     leftNavCollapsed: false,
     rightPaneCollapsed: false,
     isMobile: false,
+    focusMode: true,
   })
 
   // Track user's manual preference for right pane (to restore when screen is large enough)
@@ -25,10 +26,13 @@ export function useLayoutState() {
       const stored = localStorage.getItem(LAYOUT_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<LayoutState> & { userRightPanePreference?: boolean }
+        const hasFocusPreference = Object.prototype.hasOwnProperty.call(parsed, 'focusMode')
+
         setState(prev => ({
           ...prev,
           leftNavCollapsed: parsed.leftNavCollapsed ?? false,
           rightPaneCollapsed: parsed.rightPaneCollapsed ?? false,
+          focusMode: hasFocusPreference ? Boolean(parsed.focusMode) : false,
         }))
         setUserRightPanePreference(parsed.userRightPanePreference ?? false)
       }
@@ -43,13 +47,14 @@ export function useLayoutState() {
       const toStore = {
         leftNavCollapsed: state.leftNavCollapsed,
         rightPaneCollapsed: state.rightPaneCollapsed,
+        focusMode: state.focusMode,
         userRightPanePreference,
       }
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(toStore))
     } catch {
       // Ignore localStorage errors
     }
-  }, [state.leftNavCollapsed, state.rightPaneCollapsed, userRightPanePreference])
+  }, [state.leftNavCollapsed, state.rightPaneCollapsed, state.focusMode, userRightPanePreference])
 
   // Handle window resize to detect mobile/desktop and auto-collapse right pane
   // CRO-301: Auto-collapse right pane below 1280px
@@ -60,6 +65,15 @@ export function useLayoutState() {
       const isXL = width >= LAYOUT_BREAKPOINTS.XL
 
       setState(prev => {
+        // Focus mode always enforces a single column layout
+        if (prev.focusMode) {
+          return {
+            ...prev,
+            isMobile,
+            rightPaneCollapsed: true,
+          }
+        }
+
         // If mobile (< 1024px), show mobile fallback
         if (isMobile) {
           return {
@@ -122,10 +136,30 @@ export function useLayoutState() {
     }))
   }, [])
 
+  const setFocusMode = useCallback(
+    (focusMode: boolean) => {
+      setState(prev => {
+        const isXLViewport = typeof window !== 'undefined' && window.innerWidth >= LAYOUT_BREAKPOINTS.XL
+
+        return {
+          ...prev,
+          focusMode,
+          rightPaneCollapsed: focusMode
+            ? true
+            : isXLViewport
+              ? userRightPanePreference
+              : prev.rightPaneCollapsed,
+        }
+      })
+    },
+    [userRightPanePreference]
+  )
+
   return {
     ...state,
     toggleLeftNav,
     toggleRightPane,
     setIsMobile,
+    setFocusMode,
   }
 }

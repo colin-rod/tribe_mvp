@@ -10,6 +10,8 @@ export interface LayoutState {
   rightPaneCollapsed: boolean
   /** Whether the layout is in mobile mode (below 1024px) */
   isMobile: boolean
+  /** Whether the layout is in focus mode (single column) */
+  focusMode: boolean
 }
 
 export interface LayoutContextValue extends LayoutState {
@@ -19,6 +21,8 @@ export interface LayoutContextValue extends LayoutState {
   toggleRightPane: () => void
   /** Set mobile state (called by resize observer) */
   setIsMobile: (isMobile: boolean) => void
+  /** Explicitly set focus mode */
+  setFocusMode: (focusMode: boolean) => void
 }
 
 export const LAYOUT_STORAGE_KEY = 'tribe-layout-state'

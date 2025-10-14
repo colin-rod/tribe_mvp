@@ -21,6 +21,7 @@ import { getRecentMemoriesWithStats } from '@/lib/memories';
 import { needsOnboarding, getOnboardingStatus, dismissOnboarding } from '@/lib/onboarding';
 import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { UserPlusIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import MemoryList from '@/components/memories/MemoryList';
@@ -29,12 +30,15 @@ import EmptyTimelineState from '@/components/dashboard/EmptyTimelineState';
 import { useCreateUpdateModal } from '@/hooks/useCreateUpdateModal';
 import { useActivityFilters, type UpdateType } from '@/hooks/useActivityFilters';
 import { DashboardActionsProvider } from '@/contexts/DashboardActionsContext';
+import { useLayout } from '@/contexts/LayoutContext';
+import { FiltersPanel } from '@/components/layout/rightPane/FiltersPanel';
 
 const logger = createLogger('ActivityFeedView');
 
 const ActivityFeedView = memo(function ActivityFeedView() {
   const { user } = useAuth();
   const router = useRouter();
+  const { focusMode, setFocusMode } = useLayout();
   const [childrenCount, setChildrenCount] = useState(0);
   const [showSummarySentAlert, setShowSummarySentAlert] = useState(false);
   const [showSummaryScheduledAlert, setShowSummaryScheduledAlert] = useState(false);
@@ -344,7 +348,47 @@ const ActivityFeedView = memo(function ActivityFeedView() {
                     </div>
                   </div>
 
-                  {/* Filters moved to Right Pane */}
+                  {/* Inline filters when focus mode is active */}
+                  {focusMode && (
+                    <div className="mb-6 space-y-4">
+                      <Alert
+                        variant="info"
+                        icon={null}
+                        title="Tools view available"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <p>
+                            Need filters, quick actions, or AI prompts? Switch to the tools view to open the
+                            right pane.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="sm:flex-shrink-0"
+                            onClick={() => setFocusMode(false)}
+                          >
+                            Switch to tools view
+                          </Button>
+                        </div>
+                      </Alert>
+
+                      <div className="rounded-lg border border-neutral-200 bg-white/80 p-4 sm:p-5">
+                        <FiltersPanel
+                          searchQuery={filters.searchQuery}
+                          dateRange={filters.dateRange}
+                          childIds={filters.childIds}
+                          memoryTypes={filters.updateTypes}
+                          onSearchChange={setSearchQuery}
+                          onDateRangeChange={setDateRange}
+                          onChildIdsChange={setChildIds}
+                          onMemoryTypesChange={setUpdateTypes}
+                          onClearFilters={clearFilters}
+                          activeFilterCount={activeFilterCount}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {!loadingStats && memoizedStats.memories === 0 ? (
                     <EmptyTimelineState
