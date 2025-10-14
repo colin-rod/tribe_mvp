@@ -130,7 +130,7 @@ export async function fetchDigestPreviewRows(
     throw new Error(`Failed to fetch summary memories: ${error.message}`)
   }
 
-  return (data ?? []) as DigestPreviewRow[]
+  return (data ?? []) as unknown as DigestPreviewRow[]
 }
 
 /**

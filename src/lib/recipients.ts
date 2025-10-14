@@ -505,16 +505,16 @@ export async function getRecipientStats(): Promise<{
   const [statusResponse, relationshipResponse, groupResponse] = await Promise.all([
     supabase
       .from('recipients')
-      .select('is_active, count:id', { group: 'is_active' })
+      .select('is_active')
       .eq('parent_id', user.id),
     supabase
       .from('recipients')
-      .select('relationship, count:id', { group: 'relationship' })
+      .select('relationship')
       .eq('parent_id', user.id)
       .eq('is_active', true),
     supabase
       .from('recipients')
-      .select('group_id, count:id', { group: 'group_id' })
+      .select('group_id')
       .eq('parent_id', user.id)
       .eq('is_active', true)
   ])
@@ -534,26 +534,21 @@ export async function getRecipientStats(): Promise<{
     throw new Error('Failed to fetch recipient statistics')
   }
 
-  type StatusCountRow = { is_active: boolean | null; count: number | string | null }
-  type RelationshipCountRow = { relationship: string | null; count: number | string | null }
-  type GroupCountRow = { group_id: string | null; count: number | string | null }
+  type StatusCountRow = { is_active: boolean | null }
+  type RelationshipCountRow = { relationship: string | null }
+  type GroupCountRow = { group_id: string | null }
 
   const statusCounts = (statusResponse.data ?? []) as StatusCountRow[]
   const relationshipCounts = (relationshipResponse.data ?? []) as RelationshipCountRow[]
   const groupCounts = (groupResponse.data ?? []) as GroupCountRow[]
 
-  const totalRecipients = statusCounts.reduce((sum, row) => sum + Number(row.count ?? 0), 0)
-  const activeRecipients = statusCounts.reduce((sum, row) => {
-    if (row.is_active) {
-      return sum + Number(row.count ?? 0)
-    }
-    return sum
-  }, 0)
+  const totalRecipients = statusCounts.length
+  const activeRecipients = statusCounts.filter(row => row.is_active).length
   const inactiveRecipients = totalRecipients - activeRecipients
 
   const byRelationship = relationshipCounts.reduce<Record<string, number>>((acc, row) => {
     const key = row.relationship && row.relationship.trim().length > 0 ? row.relationship : 'unknown'
-    acc[key] = Number(row.count ?? 0)
+    acc[key] = (acc[key] || 0) + 1
     return acc
   }, {})
 
@@ -585,9 +580,8 @@ export async function getRecipientStats(): Promise<{
   }
 
   const byGroup = groupCounts.reduce<Record<string, number>>((acc, row) => {
-    const count = Number(row.count ?? 0)
     const name = row.group_id ? groupNameMap.get(row.group_id) ?? 'Unknown Group' : 'Unassigned'
-    acc[name] = count
+    acc[name] = (acc[name] || 0) + 1
     return acc
   }, {})
 

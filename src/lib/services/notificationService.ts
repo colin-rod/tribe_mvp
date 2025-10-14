@@ -161,7 +161,8 @@ export class NotificationService {
           data: notification.data
         },
         delivery_method: 'browser',
-        delivery_status: 'sent'
+        delivery_status: 'sent',
+        read_at: null
       })
 
       // Auto-close notification after 5 seconds
@@ -182,7 +183,8 @@ export class NotificationService {
           error: error instanceof Error ? error.message : 'Unknown error'
         },
         delivery_method: 'browser',
-        delivery_status: 'failed'
+        delivery_status: 'failed',
+        read_at: null
       })
 
       throw error
@@ -216,7 +218,8 @@ export class NotificationService {
           sendgrid_status_code: result.statusCode
         },
         delivery_method: 'email',
-        delivery_status: 'sent'
+        delivery_status: 'sent',
+        read_at: null
       })
 
       return true
@@ -233,7 +236,8 @@ export class NotificationService {
           error: error instanceof Error ? error.message : 'Unknown error'
         },
         delivery_method: 'email',
-        delivery_status: 'failed'
+        delivery_status: 'failed',
+        read_at: null
       })
 
       throw error
@@ -270,7 +274,8 @@ export class NotificationService {
           ...metadata
         },
         delivery_method: 'email',
-        delivery_status: 'sent'
+        delivery_status: 'sent',
+        read_at: null
       })
 
       return true
@@ -288,7 +293,8 @@ export class NotificationService {
           ...metadata
         },
         delivery_method: 'email',
-        delivery_status: 'failed'
+        delivery_status: 'failed',
+        read_at: null
       })
 
       throw error

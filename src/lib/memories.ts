@@ -1,7 +1,7 @@
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
 import type { Json } from '@/lib/types/database.types'
-import type { Memory, CreateMemoryRequest, RecentMemoriesWithStatsResult } from './types/memory'
+import type { Memory, CreateMemoryRequest, RecentMemoriesWithStatsResult, MemoryWithStats } from './types/memory'
 
 const logger = createLogger('Memories')
 
@@ -584,11 +584,13 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
     last_response_at: string | null
   }
 
-  const { data: aggregatedResponseStats, error: responseStatsError } = await supabase
+  // NOTE: GROUP BY not directly supported in Supabase JS client
+  // This aggregation should be done via a database function or view
+  // For now, we fetch all responses and aggregate in JS
+  const { data: responseData, error: responseStatsError } = await supabase
     .from('responses')
-    .select('update_id,response_count:count(*),last_response_at:max(received_at)')
+    .select('update_id, received_at')
     .in('update_id', memoryIds)
-    .group('update_id')
 
   if (responseStatsError) {
     logger.error('Error fetching aggregated response stats', {
@@ -597,14 +599,37 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
     })
   }
 
+  // Aggregate response stats in JavaScript
   const responseStatsMap = new Map<string, AggregatedResponseStat>()
 
-  ;(aggregatedResponseStats as AggregatedResponseStat[] | null)?.forEach((stat) => {
-    responseStatsMap.set(stat.update_id, stat)
-  })
+  if (responseData) {
+    const statsMap = new Map<string, { count: number; lastDate: string }>()
+
+    for (const response of responseData) {
+      const existing = statsMap.get(response.update_id)
+      const receivedAt = response.received_at || ''
+
+      if (!existing) {
+        statsMap.set(response.update_id, { count: 1, lastDate: receivedAt })
+      } else {
+        existing.count++
+        if (receivedAt > existing.lastDate) {
+          existing.lastDate = receivedAt
+        }
+      }
+    }
+
+    for (const [updateId, stats] of statsMap.entries()) {
+      responseStatsMap.set(updateId, {
+        update_id: updateId,
+        response_count: stats.count,
+        last_response_at: stats.lastDate || null
+      })
+    }
+  }
 
   // Merge response stats and engagement data for each memory
-  const memoriesWithStats = memories.map((memory) => {
+  const memoriesWithStats: MemoryWithStats[] = memories.map((memory) => {
     const stats = responseStatsMap.get(memory.id)
 
     let responseCount = 0
@@ -621,7 +646,7 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
       like_count: memory.like_count ?? 0,
       comment_count: memory.comment_count ?? 0,
       isLiked: likedMemoryIds.has(memory.id)
-    }
+    } as MemoryWithStats
   })
 
   logger.info('Successfully completed getRecentMemoriesWithStats', {

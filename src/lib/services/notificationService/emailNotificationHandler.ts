@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodError, ZodSchema } from 'zod'
 import { requireAuth, verifyNotificationPermissions, type AuthenticatedUser } from '@/lib/middleware/authorization'
 import { checkRateLimit, type RateLimitConfig, type RateLimitInfo } from '@/lib/middleware/rateLimiting'
-import { serverEmailService, type EmailDeliveryResult, type EmailOptions } from '@/lib/services/serverEmailService'
+import { serverEmailService } from '@/lib/services/serverEmailService'
+import type { EmailDeliveryResult, EmailOptions } from '@/lib/types/email'
 
 type NotificationLogger = {
   info: (message: string, context?: Record<string, unknown>) => void

@@ -872,7 +872,7 @@ export async function sendInvitation(
       if (error) {
         logger.errorWithStack('Error fetching inviter profile for invitation delivery', error as Error)
       } else if (data) {
-        inviterProfile = data as InviterProfile
+        inviterProfile = data as unknown as InviterProfile
       }
     } catch (profileError) {
       logger.errorWithStack('Unexpected error fetching inviter profile for invitation delivery', profileError as Error)
