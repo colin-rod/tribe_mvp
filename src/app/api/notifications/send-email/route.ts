@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         options: validatedData.options || {}
       }]
     }),
-    buildSuccessResponse: (_context, summary) => {
+    buildSuccessResponse: (_context, summary, _ownedEmails, _rateLimitInfo) => {
       const delivery = summary.deliveries[0]
 
       if (!delivery || !delivery.delivery.success) {
