@@ -1,7 +1,12 @@
 import { createClient } from './supabase/client'
 import { createLogger } from '@/lib/logger'
 import type { Json } from '@/lib/types/database.types'
-import type { Memory, CreateMemoryRequest, MemoryWithStats } from './types/memory'
+import type {
+  Memory,
+  CreateMemoryRequest,
+  MemoryWithStats,
+  RecentMemoriesWithStatsResult
+} from './types/memory'
 
 const logger = createLogger('Memories')
 
@@ -509,71 +514,72 @@ export async function getApprovedMemories(): Promise<Memory[]> {
 
 /**
  * Get recent memories with response counts for dashboard display
- * Always returns an array, never null or undefined
+ * Always returns an object with a memories array and new-memory count
  */
-export async function getRecentMemoriesWithStats(limit: number = 5): Promise<MemoryWithStats[]> {
+export async function getRecentMemoriesWithStats(limit: number = 5): Promise<RecentMemoriesWithStatsResult> {
   const startTime = Date.now()
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const supabase = createClient()
 
-  // Wrap entire function in try-catch to ensure we always return an array
+  // Wrap entire function in try-catch to ensure we always return a consistent payload
   try {
+    logger.info('Starting getRecentMemoriesWithStats request', {
+      limit,
+      requestId,
+      timestamp: new Date().toISOString()
+    })
 
-  logger.info('Starting getRecentMemoriesWithStats request', {
-    limit,
-    requestId,
-    timestamp: new Date().toISOString()
-  })
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      logger.error('Authentication error in getRecentMemoriesWithStats', { requestId })
+      return { memories: [], newMemoriesCount: 0 }
+    }
 
-  if (authError || !user) {
-    logger.error('Authentication error in getRecentMemoriesWithStats', { requestId })
-    return []
-  }
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const { data: memories, error } = await supabase
+      .from('memories')
+      .select(`
+        *,
+        children:child_id (
+          id,
+          name,
+          birth_date,
+          profile_photo_url
+        )
+      `)
+      .eq('parent_id', user.id)
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(limit)
 
-  const { data: memories, error } = await supabase
-    .from('memories')
-    .select(`
-      *,
-      children:child_id (
-        id,
-        name,
-        birth_date,
-        profile_photo_url
-      )
-    `)
-    .eq('parent_id', user.id)
-    .gte('created_at', thirtyDaysAgo.toISOString())
-    .order('created_at', { ascending: false })
-    .limit(limit)
+    if (error) {
+      logger.error('Database query failed', { requestId, error: error.message })
+      return { memories: [], newMemoriesCount: 0 }
+    }
 
-  if (error) {
-    logger.error('Database query failed', { requestId, error: error.message })
-    return []
-  }
+    if (!memories || memories.length === 0) {
+      return { memories: [], newMemoriesCount: 0 }
+    }
 
-  if (!memories || memories.length === 0) {
-    return []
-  }
+    const newMemoriesCount = memories.reduce((count, memory) => count + (memory.is_new ? 1 : 0), 0)
 
-  // Get the memory IDs for batch queries
-  const memoryIds = memories.map(memory => memory.id)
+    // Get the memory IDs for batch queries
+    const memoryIds = memories.map(memory => memory.id)
 
-  // Get user's likes for these memories in a single query
-  const { data: userLikes } = await supabase
-    .from('likes')
-    .select('update_id')
-    .eq('parent_id', user.id)
-    .in('update_id', memoryIds)
+    // Get user's likes for these memories in a single query
+    const { data: userLikes } = await supabase
+      .from('likes')
+      .select('update_id')
+      .eq('parent_id', user.id)
+      .in('update_id', memoryIds)
 
-  type UserLike = {
-    update_id: string
-  }
+    type UserLike = {
+      update_id: string
+    }
 
   const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
@@ -629,36 +635,16 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Mem
     duration: Date.now() - startTime
   })
 
-  return memoriesWithStats as MemoryWithStats[]
+    return {
+      memories: memoriesWithStats,
+      newMemoriesCount
+    }
 
   } catch (globalError) {
     logger.error('Critical error in getRecentMemoriesWithStats', {
       requestId,
       error: globalError instanceof Error ? globalError.message : 'Unknown'
     })
-    return []
+    return { memories: [], newMemoriesCount: 0 }
   }
-}
-
-/**
- * Count new memories for badge display
- */
-export async function getNewMemoriesCount(): Promise<number> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return 0
-
-  const { count, error } = await supabase
-    .from('memories')
-    .select('*', { count: 'exact', head: true })
-    .eq('parent_id', user.id)
-    .eq('is_new', true)
-
-  if (error) {
-    logger.error('Error counting new memories', { error: error.message })
-    return 0
-  }
-
-  return count || 0
 }

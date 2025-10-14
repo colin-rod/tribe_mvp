@@ -146,7 +146,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
     try {
       setLoadingStats(true);
 
-      const [children, recipientStatsData, groupStatsData, memories] = await Promise.all([
+      const [children, recipientStatsData, groupStatsData, memoriesResult] = await Promise.all([
         getChildren(),
         getRecipientStats(),
         getGroupStats(),
@@ -160,7 +160,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
         groups: groupStatsData.totalGroups
       });
 
-      const totalMemories = memories.length;
+      const totalMemories = memoriesResult.memories.length;
       setMemoriesCreated(totalMemories);
     } catch (error) {
       logger.errorWithStack('Error loading dashboard stats:', error as Error);
