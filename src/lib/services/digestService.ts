@@ -78,10 +78,10 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
   // Group by recipient
   const recipientMap = new Map<string, RecipientDigestPreview>()
 
-  digestUpdates?.forEach((du: Record<string, unknown>) => {
+  digestUpdates?.forEach((du) => {
     const recipientId = du.recipient_id as string
-    const recipient = du.recipients as Record<string, unknown>
-    const update = du.updates as Record<string, unknown>
+    const recipient = du.recipients as unknown as Record<string, unknown>
+    const update = du.updates as unknown as Record<string, unknown>
     const children = update.children as Record<string, unknown>
 
     if (!recipientMap.has(recipientId)) {
@@ -92,7 +92,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
         relationship: recipient.relationship as string,
         frequency_preference: recipient.frequency as string,
         updates: [],
-        narrative: du.narrative_data as import('@/lib/types/digest').DigestNarrative | undefined, // CRO-267: Include AI narrative
+        narrative: du.narrative_data as unknown as import('@/lib/types/digest').DigestNarrative | undefined, // CRO-267: Include AI narrative
         email_subject: digest.title || 'New Update',
         email_preview_html: '',
         ai_rationale: ((du.ai_rationale as Record<string, unknown>)?.recipient_rationale as string) || '',

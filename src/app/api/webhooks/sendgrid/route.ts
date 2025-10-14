@@ -9,12 +9,6 @@ import type { Database } from '@/lib/types/database'
 const logger = createLogger('SendGridWebhook')
 
 type ServiceRoleClient = SupabaseClient<Database>
-type EmailLogRecord = {
-  id?: string
-  open_count?: number | null
-  click_count?: number | null
-  metadata?: Record<string, unknown> | null
-}
 
 // SendGrid Event Types
 export enum SendGridEventType {
@@ -714,93 +708,23 @@ function isSupabaseNoRowError(error: { code?: string } | null | undefined) {
   return error?.code === 'PGRST116'
 }
 
-function mergeMetadata(
-  current: unknown,
-  updates: Record<string, unknown> | undefined
-): Record<string, unknown> | undefined {
-  if (!updates) {
-    return undefined
-  }
-
-  if (current && typeof current === 'object' && !Array.isArray(current)) {
-    return { ...(current as Record<string, unknown>), ...updates }
-  }
-
-  return updates
-}
-
+// NOTE: email_logs table does not exist in database schema
+// This functionality has been disabled until the table is created
+// or migrated to use notification_delivery_logs
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function upsertEmailLog(
-  supabase: ServiceRoleClient | null,
-  messageId: string | null,
-  recipientEmail: string,
-  updates: Record<string, unknown>,
-  options?: {
+  _supabase: ServiceRoleClient | null,
+  _messageId: string | null,
+  _recipientEmail: string,
+  _updates: Record<string, unknown>,
+  _options?: {
     metadata?: Record<string, unknown>
     incrementOpen?: boolean
     incrementClick?: boolean
   }
 ) {
-  if (!supabase) {
-    logger.warn('Supabase client unavailable - skipping email log update')
-    return
-  }
-
-  if (!messageId) {
-    logger.warn('Missing message identifier for email log update', {
-      recipientEmail
-    })
-    return
-  }
-
-  const payload: Record<string, unknown> = {
-    message_id: messageId,
-    recipient_email: recipientEmail,
-    updated_at: new Date().toISOString(),
-    ...updates
-  }
-
-  let existingLog: EmailLogRecord | null = null
-
-  if (options?.incrementOpen || options?.incrementClick || options?.metadata) {
-    const { data, error } = await supabase
-      .from('email_logs')
-      .select('id, open_count, click_count, metadata')
-      .eq('message_id', messageId)
-      .maybeSingle()
-
-    if (error && !isSupabaseNoRowError(error)) {
-      throw new Error(`Failed to fetch email log: ${error.message}`)
-    }
-
-    existingLog = data ?? null
-
-    if (existingLog?.id) {
-      payload.id = existingLog.id
-    }
-
-    if (options?.incrementOpen) {
-      const currentOpen = existingLog?.open_count ?? 0
-      payload.open_count = currentOpen + 1
-    }
-
-    if (options?.incrementClick) {
-      const currentClick = existingLog?.click_count ?? 0
-      payload.click_count = currentClick + 1
-    }
-
-    const mergedMetadata = mergeMetadata(existingLog?.metadata, options?.metadata)
-    if (mergedMetadata) {
-      payload.metadata = mergedMetadata
-    }
-  }
-
-  const { error: upsertError } = await supabase
-    .from('email_logs')
-    .upsert(payload, { onConflict: 'message_id' })
-
-  if (upsertError) {
-    throw new Error(`Failed to update email log: ${upsertError.message}`)
-  }
+  // Disabled - email_logs table does not exist
+  return
 }
 
 async function updateNotificationDeliveryLog(

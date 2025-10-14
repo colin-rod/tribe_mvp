@@ -153,7 +153,7 @@ export async function POST(_request: NextRequest) {
 
   const filename = `memory-book-${new Date().toISOString().split('T')[0]}.pdf`
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(Buffer.from(pdfBuffer), {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',

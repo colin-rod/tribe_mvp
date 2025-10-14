@@ -255,6 +255,8 @@ export interface DraftUpdate {
   last_edited_at: string
   created_at: string
   updated_at: string
+  confirmed_recipients?: string[]
+  scheduled_for?: string
 }
 
 /**

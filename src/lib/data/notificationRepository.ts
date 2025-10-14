@@ -1,5 +1,3 @@
-import type { PostgrestFilterBuilder } from '@supabase/postgrest-js'
-
 import type { SupabaseClientType } from './supabaseClient'
 import { createSupabaseClient } from './supabaseClient'
 import type { Database } from '@/lib/types/database'
@@ -17,7 +15,8 @@ export interface NotificationHistoryQueryOptions {
 }
 
 function applyHistoryFilters(
-  builder: PostgrestFilterBuilder<NotificationHistoryRow, NotificationHistoryRow[], unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  builder: any,
   options: NotificationHistoryQueryOptions
 ) {
   const { type, unreadOnly } = options
