@@ -281,7 +281,7 @@ function Home() {
               Everything You Need for Meaningful Sharing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Built people who want to stay close with friends, family, and community in a more intentional way.
+              Built for people who want to stay close with friends, family, and community in a more intentional way.
             </p>
           </div>
 
@@ -309,7 +309,7 @@ function Home() {
               <CardHeader>
                 <CardTitle>Flexible Sharing</CardTitle>
                 <CardDescription>
-                  Post updates however it’s easiest—email, SMS, or WhatsApp. Share text, photos, or even voice notes. Your recipients receive simple digests at the pace they choose—instantly,daily, or weekly.
+                  Post updates however it’s easiest—email, SMS, or WhatsApp. Share text, photos, or even voice notes. Your recipients receive simple digests at the pace they choose—instantly, daily, or weekly.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -444,7 +444,7 @@ function Home() {
               Ready to Build Your Tribe?
             </h2>
             <p className="text-xl opacity-90 mb-8 max-w-3xl mx-auto">
-              Join members who trust Tribe o share moments, milestones, and memories with the people who matter most. 
+              Join members who trust Tribe to share moments, milestones, and memories with the people who matter most.
               Get started and start connecting in under 2 minutes.
             </p>
 
