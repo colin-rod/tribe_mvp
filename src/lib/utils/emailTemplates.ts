@@ -21,7 +21,7 @@ export function renderRecipientDigestEmail(data: DigestEmailData): string {
     narrative,
     child_name,
     date_range,
-    app_domain = 'tribe-mvp.com'
+    app_domain = 'tribeupdate.com'
   } = data
 
   return `
@@ -205,7 +205,7 @@ export function renderRecipientDigestEmail(data: DigestEmailData): string {
     <div class="footer">
       <p>You're receiving this because you're part of ${child_name}'s family circle.</p>
       <p style="margin-top: 16px; font-size: 12px;">
-        Sent with ❤️ by <a href="https://${app_domain}">Tribe</a>
+        Sent with ❤️ by <a href="https://${app_domain}">TribeUpdate</a>
       </p>
     </div>
   </div>
