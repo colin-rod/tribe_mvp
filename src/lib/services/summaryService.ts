@@ -17,6 +17,7 @@ import type {
 
 const logger = createLogger('SummaryService')
 type SummaryRow = Tables<'summaries'>
+export type SummaryListItem = Pick<Summary, 'id' | 'title' | 'status' | 'total_recipients' | 'sent_at' | 'digest_date' | 'created_at'>
 type SummaryMemoryWithRelations = {
   recipients: {
     id: string
@@ -308,6 +309,38 @@ export async function getSummaryById(summaryId: string): Promise<Summary | null>
   }
 
   return data as unknown as Summary
+}
+
+/**
+ * Fetches the most recent summaries for the authenticated parent
+ */
+export async function getRecentSummaries(limit: number = 5): Promise<SummaryListItem[]> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('summaries')
+    .select('id, title, status, total_recipients, sent_at, digest_date, created_at')
+    .eq('parent_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    logger.error('Failed to fetch recent summaries', { error, userId: user.id })
+    throw new Error(`Failed to fetch recent summaries: ${error.message}`)
+  }
+
+  return (data ?? []).map(summary => ({
+    id: summary.id,
+    title: summary.title,
+    status: (summary.status as SummaryListItem['status']) ?? 'ready',
+    total_recipients: summary.total_recipients ?? 0,
+    sent_at: summary.sent_at ?? undefined,
+    digest_date: summary.digest_date,
+    created_at: summary.created_at ?? new Date().toISOString()
+  }))
 }
 
 /**
