@@ -5,49 +5,21 @@
 
 import { createClient } from './client'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import type { Database } from '../types/database'
-import type { DashboardUpdate } from '../types/dashboard'
+import type {
+  DashboardFilters,
+  DashboardStats,
+  EngagementUpdatePayload,
+  PaginationParams,
+  TimelineUpdate,
+  UpdateWithChild,
+  Database
+} from '../types/database'
 import { createLogger, type LogContext } from '../logger'
 
 const logger = createLogger('dashboard-client')
 
 type UpdateRow = Database['public']['Tables']['memories']['Row']
 
-// Type definitions
-type DashboardFilters = {
-  search?: string
-  childIds?: string[]
-  milestoneTypes?: string[]
-  status?: string
-  dateFrom?: string
-  dateTo?: string
-}
-
-type PaginationParams = {
-  limit?: number
-  offset?: number
-  cursorCreatedAt?: string
-  cursorId?: string
-}
-
-type UpdateWithChild = DashboardUpdate
-
-type TimelineUpdate = DashboardUpdate
-
-type DashboardStats = {
-  total_updates: number
-  draft_count: number
-  sent_count: number
-  scheduled_count: number
-  total_recipients: number
-  total_children: number
-}
-
-type EngagementUpdatePayload = {
-  updateId: string
-  userId: string
-  action: 'like' | 'unlike'
-}
 type CommentRow = Database['public']['Tables']['comments']['Row']
 
 export class DashboardClient {
@@ -109,17 +81,14 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message), hasMore: false }
       }
 
-      type UpdateType = {
-        created_at: string
-        id: string
-      }
-
-      const typedData = data as unknown as UpdateType[]
+      const typedData = (data || []) as UpdateWithChild[]
       const hasMore = typedData.length > limit
       const updates = hasMore ? typedData.slice(0, -1) : typedData
-      const nextCursor = hasMore && updates.length > 0
-        ? { createdAt: updates[updates.length - 1].created_at, id: updates[updates.length - 1].id }
-        : undefined
+      const lastUpdate = updates[updates.length - 1]
+      const nextCursor =
+        hasMore && lastUpdate?.created_at
+          ? { createdAt: lastUpdate.created_at, id: lastUpdate.id }
+          : undefined
 
       logger.debug('Successfully fetched dashboard updates', {
         count: updates.length,
@@ -128,7 +97,7 @@ export class DashboardClient {
       })
 
       return {
-        data: updates as unknown as UpdateWithChild[],
+        data: updates,
         error: null,
         hasMore,
         nextCursor
@@ -210,7 +179,7 @@ export class DashboardClient {
 
       const stats = (data as DashboardStats[] | null)?.[0] || null
 
-      logger.debug('Successfully fetched dashboard stats', stats as LogContext)
+      logger.debug('Successfully fetched dashboard stats', stats ? { stats } : undefined)
 
       return { data: stats, error: null }
     } catch (err) {
@@ -489,13 +458,21 @@ export class DashboardClient {
         (payload: RealtimePostgresChangesPayload<UpdateRow>) => {
           logger.debug('Received engagement update', payload)
 
-          const update = payload.new as Record<string, unknown>
-          if (update?.id) {
-            const updateData = update as Record<string, unknown>
+          const update = payload.new as Partial<UpdateRow> | null
+          if (update && typeof update.id === 'string') {
+            const typedUpdate = update as UpdateRow
             callback({
-              updateId: String(updateData.id || ''),
-              userId: String(updateData.parent_id || ''),
-              action: 'like' as const
+              updateId: typedUpdate.id,
+              parentId: typedUpdate.parent_id,
+              childId: typedUpdate.child_id,
+              likeCount: typedUpdate.like_count,
+              commentCount: typedUpdate.comment_count,
+              responseCount: typedUpdate.response_count,
+              viewCount: typedUpdate.view_count,
+              distributionStatus: typedUpdate.distribution_status,
+              updatedAt: typedUpdate.updated_at,
+              action: 'engagement_update',
+              raw: typedUpdate
             })
           }
         }
@@ -587,7 +564,7 @@ export class DashboardClient {
         offset: options.offset || 0
       }
     ).then(result => ({
-      data: result.data as UpdateWithChild[],
+      data: result.data,
       error: result.error
     }))
   }

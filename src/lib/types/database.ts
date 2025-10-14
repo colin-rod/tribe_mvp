@@ -2171,17 +2171,113 @@ export const Constants = {
   },
 } as const
 
+// ---------------------------------------------------------------------------
 // Custom dashboard types used by hooks
-// TODO: Generate these from database schema or define properly
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type UpdateWithChild = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DashboardStats = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TimelineUpdate = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DashboardFilters = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PaginationParams = any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EngagementUpdatePayload = any
+// ---------------------------------------------------------------------------
+
+type MemoryRow = Database['public']['Tables']['memories']['Row']
+
+/**
+ * Update enriched with child metadata returned from dashboard RPC helpers.
+ */
+export type UpdateWithChild = MemoryRow & {
+  child_name: string
+  child_avatar_url: string | null
+}
+
+type DashboardChildSummary = {
+  count: number
+  child_id: string | null
+  avatar_url: string | null
+}
+
+type DashboardEngagementStats = {
+  avg_responses_per_update: number
+  most_popular_milestone: string | null
+  total_likes: number | null
+  total_comments: number | null
+}
+
+type DashboardRecentActivityItem = {
+  update_id: string
+  child_name: string
+  content_preview: string | null
+  response_count: number | null
+  created_at: string
+}
+
+/**
+ * Aggregated statistics displayed on the dashboard overview cards.
+ */
+export interface DashboardStats {
+  total_updates: number
+  total_responses: number
+  total_views: number
+  milestones_count: number
+  updates_by_child: Record<string, DashboardChildSummary>
+  updates_by_date: Record<string, number>
+  engagement_stats: DashboardEngagementStats
+  recent_activity: DashboardRecentActivityItem[]
+}
+
+type TimelineUpdateItem = {
+  id: string
+  child_id: string
+  child_name: string
+  child_avatar_url: string | null
+  content: string | null
+  media_urls: string[] | null
+  milestone_type: string | null
+  like_count: number | null
+  response_count: number | null
+  distribution_status: string | null
+  created_at: string | null
+}
+
+/**
+ * Grouped timeline data returned from the timeline RPC helper.
+ */
+export interface TimelineUpdate {
+  date_group: string
+  updates_count: number
+  updates: TimelineUpdateItem[]
+}
+
+/**
+ * Filter parameters supported by dashboard queries.
+ */
+export interface DashboardFilters {
+  search?: string
+  childIds?: string[]
+  milestoneTypes?: string[]
+  status?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+/**
+ * Pagination state shared by dashboard hooks and client helpers.
+ */
+export interface PaginationParams {
+  limit?: number
+  offset?: number
+  cursorCreatedAt?: string
+  cursorId?: string
+}
+
+/**
+ * Real-time engagement update emitted for dashboard cards.
+ */
+export interface EngagementUpdatePayload {
+  updateId: string
+  parentId: string
+  childId: string
+  likeCount: number | null
+  commentCount: number | null
+  responseCount: number | null
+  viewCount: number | null
+  distributionStatus: string | null
+  updatedAt: string | null
+  action: 'engagement_update'
+  raw: MemoryRow
+}
