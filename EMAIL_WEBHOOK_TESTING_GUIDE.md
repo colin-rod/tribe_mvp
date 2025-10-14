@@ -55,7 +55,7 @@ curl -X OPTIONS 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-web
 # Test basic functionality
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Emma took her first steps!' \
   -d 'text=She walked from the couch to the coffee table! So proud!' \
@@ -72,13 +72,13 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Emma took her first steps!' \
   -d 'text=She walked from the couch to the coffee table! So proud!' \
   -d 'html=<p>She walked from the couch to the coffee table!</p>' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass'
 ```
 
@@ -101,12 +101,12 @@ SELECT * FROM updates WHERE created_via = 'email' ORDER BY created_at DESC LIMIT
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Memory for Emma: First day at daycare' \
   -d 'text=Emma had a great first day! She made friends and loved the playground.' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass'
 ```
 
@@ -116,7 +116,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=unknown@example.com' \
   -d 'subject=Should not work' \
   -d 'text=This should be rejected' \
@@ -136,7 +136,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Should fail SPF' \
   -d 'text=This should be rejected due to SPF failure' \
@@ -156,7 +156,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=' \
   -d 'text=' \
@@ -171,13 +171,13 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@colinrodrigues.com' \
+  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@tribeupdate.com' \
   -d 'from=grandma@example.com' \
   -d 'subject=Re: Emma'\''s First Steps' \
   -d 'text=So wonderful! Can'\''t wait to see her walk more!' \
   -d 'html=<p>So wonderful! Can'\''t wait to see her walk more!</p>' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["grandma@example.com"],"to":["update-550e8400-e29b-41d4-a716-446655440000@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["grandma@example.com"],"to":["update-550e8400-e29b-41d4-a716-446655440000@tribeupdate.com"]}' \
   -d 'SPF=pass'
 ```
 
@@ -202,7 +202,7 @@ ORDER BY r.received_at DESC LIMIT 1;
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=update-99999999-9999-9999-9999-999999999999@colinrodrigues.com' \
+  -d 'to=update-99999999-9999-9999-9999-999999999999@tribeupdate.com' \
   -d 'from=grandma@example.com' \
   -d 'subject=Re: Non-existent update' \
   -d 'text=This should fail' \
@@ -222,7 +222,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@colinrodrigues.com' \
+  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@tribeupdate.com' \
   -d 'from=unknown@example.com' \
   -d 'subject=Re: Should fail' \
   -d 'text=Unknown recipient' \
@@ -244,7 +244,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Content cleaning test' \
   -d 'text=This is the actual content.
@@ -265,7 +265,7 @@ On Jan 1, 2024, at 12:00 PM, someone@example.com wrote:
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=HTML test' \
   -d 'text=' \
@@ -281,7 +281,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Test with attachments' \
   -d 'text=Photo from today!' \
@@ -296,7 +296,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Test with invalid attachments' \
   -d 'text=This has invalid attachments' \
@@ -330,7 +330,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```bash
 curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'to=unknown@colinrodrigues.com' \
+  -d 'to=unknown@tribeupdate.com' \
   -d 'from=someone@example.com' \
   -d 'subject=Unknown email type' \
   -d 'text=This should be unhandled' \
@@ -341,7 +341,7 @@ curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhoo
 ```json
 {
   "success": false,
-  "error": "Unhandled email address: unknown@colinrodrigues.com",
+  "error": "Unhandled email address: unknown@tribeupdate.com",
   "type": "unknown"
 }
 ```
@@ -422,7 +422,7 @@ supabase functions logs email-webhook --follow
 for i in {1..10}; do
   curl -X POST 'https://advbcfkisejskhskrmqw.supabase.co/functions/v1/email-webhook' \
     -H 'Content-Type: application/x-www-form-urlencoded' \
-      -d "to=memory@colinrodrigues.com" \
+      -d "to=memory@tribeupdate.com" \
     -d "from=parent@example.com" \
     -d "subject=Load test $i" \
     -d "text=Testing concurrent processing" \

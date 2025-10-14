@@ -38,7 +38,7 @@ function getZodFieldType(fieldName: string): string {
     NEXT_PUBLIC_SUPABASE_URL: 'url (required)',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'string (required, min length: 1)',
     SENDGRID_API_KEY: 'string (required, min length: 1)',
-    SENDGRID_FROM_EMAIL: 'email (optional, default: updates@colinrodrigues.com)',
+    SENDGRID_FROM_EMAIL: 'email (optional, default: updates@tribeupdate.com)',
     SENDGRID_FROM_NAME: 'string (optional, default: Tribe)',
     SENDGRID_WEBHOOK_PUBLIC_KEY: 'string (required in production, min length: 1)',
     SENDGRID_WEBHOOK_RELAXED_VALIDATION: 'boolean (optional, default: false)',
@@ -79,7 +79,7 @@ const envSchema = z.object({
   }),
   SENDGRID_FROM_EMAIL: z.string().email({
     message: 'SENDGRID_FROM_EMAIL must be a valid email address'
-  }).optional().default('updates@colinrodrigues.com'),
+  }).optional().default('updates@tribeupdate.com'),
   SENDGRID_FROM_NAME: z.string().optional().default('Tribe'),
   SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().min(1, {
     message: 'SENDGRID_WEBHOOK_PUBLIC_KEY cannot be empty when provided'
@@ -225,7 +225,7 @@ function validateEnvironment(): Env {
         '  • SENDGRID_API_KEY',
         '',
         'Optional variables with defaults:',
-        '  • SENDGRID_FROM_EMAIL (default: updates@colinrodrigues.com)',
+        '  • SENDGRID_FROM_EMAIL (default: updates@tribeupdate.com)',
         '  • SENDGRID_FROM_NAME (default: Tribe)',
         '  • NEXT_PUBLIC_APP_URL (default: http://localhost:3000)',
         '  • NODE_ENV (default: development)',

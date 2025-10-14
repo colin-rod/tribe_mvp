@@ -31,13 +31,13 @@ echo -e "${YELLOW}Test 1: Memory Email - Happy Path${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Emma took her first steps!' \
   -d 'text=She walked from the couch to the coffee table! So proud of our little girl!' \
   -d 'html=<p>She walked from the couch to the coffee table!</p>' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass' | jq '.'
 echo ""
 
@@ -46,12 +46,12 @@ echo -e "${YELLOW}Test 2: Memory Email - With Child Name${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Memory for Emma: First day at daycare' \
   -d 'text=Emma had a great first day! She made friends and loved the playground.' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass' | jq '.'
 echo ""
 
@@ -60,13 +60,13 @@ echo -e "${YELLOW}Test 3: Update Response Email${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@colinrodrigues.com' \
+  -d 'to=update-550e8400-e29b-41d4-a716-446655440000@tribeupdate.com' \
   -d 'from=grandma@example.com' \
   -d 'subject=Re: Emma'\''s First Steps' \
   -d 'text=So wonderful! Can'\''t wait to see her walk more!' \
   -d 'html=<p>So wonderful! Can'\''t wait to see her walk more!</p>' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["grandma@example.com"],"to":["update-550e8400-e29b-41d4-a716-446655440000@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["grandma@example.com"],"to":["update-550e8400-e29b-41d4-a716-446655440000@tribeupdate.com"]}' \
   -d 'SPF=pass' | jq '.'
 echo ""
 
@@ -75,13 +75,13 @@ echo -e "${YELLOW}Test 4: Memory Email - With Attachments${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Emma at the park' \
   -d 'text=Had so much fun at the park today!' \
   -d 'attachments=2' \
   -d 'attachment-info={"photo1.jpg":{"filename":"photo1.jpg","type":"image/jpeg","content":"base64encodedcontent"},"photo2.jpg":{"filename":"photo2.jpg","type":"image/jpeg","content":"base64encodedcontent"}}' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass' | jq '.'
 echo ""
 
@@ -90,7 +90,7 @@ echo -e "${YELLOW}Test 5: Unknown Email Type${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=unknown@colinrodrigues.com' \
+  -d 'to=unknown@tribeupdate.com' \
   -d 'from=someone@example.com' \
   -d 'subject=Random email' \
   -d 'text=This is a random email' \
@@ -112,7 +112,7 @@ echo -e "${YELLOW}Test 7: SPF Authentication Failure${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=suspicious@example.com' \
   -d 'subject=Suspicious email' \
   -d 'text=This email should fail SPF check' \
@@ -125,7 +125,7 @@ echo -e "${YELLOW}Test 8: Email Content Cleaning${NC}"
 curl -s -X POST "$WEBHOOK_URL" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $ANON_KEY" \
-  -d 'to=memory@colinrodrigues.com' \
+  -d 'to=memory@tribeupdate.com' \
   -d 'from=parent@example.com' \
   -d 'subject=Test content cleaning' \
   -d 'text=This is the actual content.
@@ -136,7 +136,7 @@ Sent from my iPhone
 On Jan 1, 2024, at 12:00 PM, someone@example.com wrote:
 > This is quoted content that should be removed' \
   -d 'attachments=0' \
-  -d 'envelope={"from":["parent@example.com"],"to":["memory@colinrodrigues.com"]}' \
+  -d 'envelope={"from":["parent@example.com"],"to":["memory@tribeupdate.com"]}' \
   -d 'SPF=pass' | jq '.'
 echo ""
 
