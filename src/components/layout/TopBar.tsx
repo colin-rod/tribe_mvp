@@ -10,6 +10,7 @@ import { UserDropdown } from './UserDropdown'
 import { ProfileModal } from '@/components/profile/ProfileModal'
 import { Button } from '@/components/ui/Button'
 import { useNavigationState } from '@/hooks/useNavigationState'
+import { useLayout } from '@/contexts/LayoutContext'
 
 /**
  * TopBar component with three sections: logo (left), search (center), profile (right)
@@ -19,6 +20,11 @@ export function TopBar() {
   const { user, signOut } = useAuth()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const { isMobileNavOpen, toggleMobileNav } = useNavigationState()
+  const { focusMode, setFocusMode } = useLayout()
+
+  const handleLayoutToggle = () => {
+    setFocusMode(!focusMode)
+  }
 
   return (
     <header
@@ -54,6 +60,16 @@ export function TopBar() {
 
           {/* Right Section: Search, Notifications, and Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-neutral-600 hover:text-neutral-900"
+              onClick={handleLayoutToggle}
+            >
+              {focusMode ? 'Switch to tools view' : 'Switch to focus view'}
+            </Button>
+
             {/* Global Search */}
             <div className="flex-shrink-0">
               <GlobalSearch />
