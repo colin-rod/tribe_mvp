@@ -122,8 +122,10 @@ export async function POST(
     }
 
     // Check for existing memberships
-    const { data: existingMemberships } = await supabase
-      .from('recipients')
+    // Note: Using type assertion because group_memberships table exists in DB but types need regeneration
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingMemberships } = await (supabase as any)
+      .from('group_memberships')
       .select('recipient_id')
       .eq('group_id', groupId)
       .in('recipient_id', validatedData.recipient_ids)

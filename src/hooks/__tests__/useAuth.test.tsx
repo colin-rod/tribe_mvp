@@ -1,5 +1,5 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals'
-import { renderHook, waitFor, act } from '@testing-library/react'
+import { renderHook, waitFor, act, render } from '@testing-library/react'
 import { AuthProvider, useAuth } from '../useAuth'
 import React from 'react'
 
@@ -15,25 +15,50 @@ jest.mock('@/lib/logger', () => ({
   createLogger: () => mockLogger
 }))
 
-// Mock Supabase client
-const mockGetUser = jest.fn()
-const mockGetSession = jest.fn()
-const mockSignOut = jest.fn()
-const mockOnAuthStateChange = jest.fn()
-
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      getUser: mockGetUser,
-      getSession: mockGetSession,
-      signOut: mockSignOut,
-      onAuthStateChange: mockOnAuthStateChange
+// Mock Supabase client - Everything must be inside the factory for Jest hoisting
+jest.mock('@/lib/supabase/client', () => {
+  // Create mocks inside the factory with default implementations
+  const mockGetUser = jest.fn().mockResolvedValue({ data: { user: null }, error: null })
+  const mockGetSession = jest.fn().mockResolvedValue({ data: { session: null }, error: null })
+  const mockSignOut = jest.fn().mockResolvedValue({ error: null })
+  const mockOnAuthStateChange = jest.fn().mockReturnValue({
+    data: {
+      subscription: {
+        unsubscribe: jest.fn()
+      }
     }
-  }))
-}))
+  })
+
+  // Store references globally so tests can access them
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(global as any).mockGetUser = mockGetUser
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(global as any).mockGetSession = mockGetSession
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(global as any).mockSignOut = mockSignOut
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(global as any).mockOnAuthStateChange = mockOnAuthStateChange
+
+  return {
+    createClient: jest.fn(() => ({
+      auth: {
+        getUser: mockGetUser,
+        getSession: mockGetSession,
+        signOut: mockSignOut,
+        onAuthStateChange: mockOnAuthStateChange
+      }
+    }))
+  }
+})
+
+// Get mock references from global
+const mockGetUser = (global as { mockGetUser?: jest.Mock }).mockGetUser!
+const mockGetSession = (global as { mockGetSession?: jest.Mock }).mockGetSession!
+const mockSignOut = (global as { mockSignOut?: jest.Mock }).mockSignOut!
+const mockOnAuthStateChange = (global as { mockOnAuthStateChange?: jest.Mock }).mockOnAuthStateChange!
 
 // Mock fetch for logout API
-global.fetch = jest.fn() as jest.Mock
+global.fetch = jest.fn<typeof fetch>()
 
 describe('useAuth', () => {
   const mockUser = {
@@ -52,7 +77,10 @@ describe('useAuth', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    // Default mocks - auth state change subscription
+    // Set default mock implementations
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+    mockGetSession.mockResolvedValue({ data: { session: null }, error: null })
+    mockSignOut.mockResolvedValue({ error: null })
     mockOnAuthStateChange.mockReturnValue({
       data: {
         subscription: {
