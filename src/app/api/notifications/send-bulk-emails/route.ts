@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         totalRequested: validatedData.emails.length
       }
     }),
-    buildSuccessResponse: (context, summary) => {
+    buildSuccessResponse: (context, summary, _ownedEmails, _rateLimitInfo) => {
       const results = summary.deliveries.map(delivery => ({
         to: delivery.payload.to,
         success: delivery.delivery.success,
