@@ -380,10 +380,10 @@ async function getTables(): Promise<TableInfo[]> {
     query: QUERIES.rlsStatus
   });
 
-  const rlsMap = new Map(
+  const rlsMap = new Map<string, boolean>(
     rlsData?.map((row: Record<string, unknown>) => [
       `${row.schema}.${row.table}`,
-      row.rls_enabled
+      row.rls_enabled as boolean
     ]) || []
   );
 
@@ -402,7 +402,7 @@ async function getTables(): Promise<TableInfo[]> {
       name: table.name,
       rowCount,
       columns: columns || [],
-      rlsEnabled: rlsMap.get(`${table.schema}.${table.name}`) || false,
+      rlsEnabled: rlsMap.get(`${table.schema}.${table.name}`) ?? false,
       description: table.description,
     });
   }
