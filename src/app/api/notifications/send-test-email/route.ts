@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { serverEmailService } from '@/lib/services/serverEmailService'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
-import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
+import { requireAuth, verifyNotificationPermissions } from '@/lib/middleware/authorization'
+import { checkRateLimit } from '@/lib/middleware/rateLimiting'
 
 const logger = createLogger('NotificationTestEmailAPI')
 
@@ -25,11 +26,30 @@ export async function POST(request: NextRequest) {
     const { user } = authResult
 
     // Check rate limiting for test emails
-    if (!checkRateLimit(user.id, 20, 5)) { // 20 test emails per 5 minutes
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
+    const rateLimitResult = checkRateLimit(request, { maxRequests: 20, windowMinutes: 5 }, user.id)
+    if (!rateLimitResult.allowed) {
+      const { info } = rateLimitResult
+      const retryAfterSeconds = Math.max(1, Math.ceil((info.resetTime - Date.now()) / 1000))
+
+      const response = NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          details: {
+            limit: info.total,
+            remaining: info.remaining,
+            resetTime: new Date(info.resetTime).toISOString(),
+            retryAfter: retryAfterSeconds
+          }
+        },
         { status: 429 }
       )
+
+      response.headers.set('X-RateLimit-Limit', info.total.toString())
+      response.headers.set('X-RateLimit-Remaining', info.remaining.toString())
+      response.headers.set('X-RateLimit-Reset', Math.ceil(info.resetTime / 1000).toString())
+      response.headers.set('Retry-After', retryAfterSeconds.toString())
+
+      return response
     }
 
     // For test emails, allow sending to user's own email or owned recipients
@@ -71,12 +91,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       messageId: result.messageId,
       statusCode: result.statusCode,
       message: `Test ${validatedData.type} email sent successfully`
     })
+
+    response.headers.set('X-RateLimit-Limit', rateLimitResult.info.total.toString())
+    response.headers.set('X-RateLimit-Remaining', rateLimitResult.info.remaining.toString())
+    response.headers.set('X-RateLimit-Reset', Math.ceil(rateLimitResult.info.resetTime / 1000).toString())
+
+    return response
 
   } catch (error) {
     logger.errorWithStack('Send test email API error', error as Error)

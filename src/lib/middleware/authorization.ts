@@ -255,36 +255,3 @@ export function withAuth<T extends unknown[]>(
     }
   }
 }
-
-/**
- * Rate limiting per user (simple in-memory implementation)
- * In production, you'd want to use Redis or similar
- */
-type RateLimitEntry = { count: number; resetTime: number }
-
-const userRateLimits = new Map<string, RateLimitEntry>()
-
-export function resetRateLimitStore(): void {
-  userRateLimits.clear()
-}
-
-export function checkRateLimit(userId: string, maxRequests = 10, windowMinutes = 1): boolean {
-  const now = Date.now()
-  const windowMs = windowMinutes * 60 * 1000
-
-  const userLimit = userRateLimits.get(userId)
-
-  if (!userLimit || now > userLimit.resetTime) {
-    // First request or window expired
-    userRateLimits.set(userId, { count: 1, resetTime: now + windowMs })
-    return true
-  }
-
-  if (userLimit.count >= maxRequests) {
-    logger.warn('Rate limit exceeded', { userId, count: userLimit.count, maxRequests })
-    return false
-  }
-
-  userLimit.count++
-  return true
-}

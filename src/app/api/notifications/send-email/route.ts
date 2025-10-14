@@ -38,26 +38,27 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = checkRateLimit(request, RateLimitConfigs.email, user.id)
     if (!rateLimitResult.allowed) {
       const { info } = rateLimitResult
-      return NextResponse.json(
+      const retryAfterSeconds = Math.max(1, Math.ceil((info.resetTime - Date.now()) / 1000))
+
+      const response = NextResponse.json(
         {
           error: 'Rate limit exceeded. Please try again later.',
           details: {
             limit: info.total,
             remaining: info.remaining,
             resetTime: new Date(info.resetTime).toISOString(),
-            retryAfter: Math.ceil((info.resetTime - Date.now()) / 1000)
+            retryAfter: retryAfterSeconds
           }
         },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': info.total.toString(),
-            'X-RateLimit-Remaining': info.remaining.toString(),
-            'X-RateLimit-Reset': Math.ceil(info.resetTime / 1000).toString(),
-            'Retry-After': Math.ceil((info.resetTime - Date.now()) / 1000).toString()
-          }
-        }
+        { status: 429 }
       )
+
+      response.headers.set('X-RateLimit-Limit', info.total.toString())
+      response.headers.set('X-RateLimit-Remaining', info.remaining.toString())
+      response.headers.set('X-RateLimit-Reset', Math.ceil(info.resetTime / 1000).toString())
+      response.headers.set('Retry-After', retryAfterSeconds.toString())
+
+      return response
     }
 
     // Verify user can send email to this recipient
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Email queued successfully - return job info
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       messageId: result.messageId,
       jobId: result.messageId, // Job ID is the same as message ID
@@ -114,6 +115,12 @@ export async function POST(request: NextRequest) {
         ? 'Email queued for delivery'
         : 'Email sent successfully'
     })
+
+    response.headers.set('X-RateLimit-Limit', rateLimitResult.info.total.toString())
+    response.headers.set('X-RateLimit-Remaining', rateLimitResult.info.remaining.toString())
+    response.headers.set('X-RateLimit-Reset', Math.ceil(rateLimitResult.info.resetTime / 1000).toString())
+
+    return response
 
   } catch (error) {
     logger.errorWithStack('Send email API error', error as Error)

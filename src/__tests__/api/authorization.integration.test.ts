@@ -7,9 +7,8 @@ import {
   requireAuth,
   verifyResourceOwnership,
   verifyNotificationPermissions,
-  checkRateLimit,
-  resetRateLimitStore,
 } from '@/lib/middleware/authorization'
+import { checkUserRateLimit, resetRateLimitStore } from '@/lib/middleware/rateLimiting'
 import { validateSessionMiddleware } from '@/lib/middleware/session-validation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -133,10 +132,12 @@ describe('Authorization Middleware Integration Tests', () => {
         { email: 'recipient1@example.com' },
         { email: 'recipient2@example.com' },
       ]
-      mockSupabase.from().select().eq().in.mockResolvedValue({
-        data: mockOwnedEmails,
-        error: null,
-      })
+      mockSupabase.eq
+        .mockReturnValueOnce(mockSupabase)
+        .mockResolvedValueOnce({
+          data: mockOwnedEmails,
+          error: null,
+        })
 
       const { allowed, ownedEmails } = await verifyNotificationPermissions(
         'user-123',
@@ -155,13 +156,14 @@ describe('Authorization Middleware Integration Tests', () => {
 
     it('should allow requests within rate limit', () => {
       const userId = 'user-123'
-      const result1 = checkRateLimit(userId, 5, 1)
-      const result2 = checkRateLimit(userId, 5, 1)
-      const result3 = checkRateLimit(userId, 5, 1)
+      const result1 = checkUserRateLimit(userId, { maxRequests: 5, windowMinutes: 1 })
+      const result2 = checkUserRateLimit(userId, { maxRequests: 5, windowMinutes: 1 })
+      const result3 = checkUserRateLimit(userId, { maxRequests: 5, windowMinutes: 1 })
 
-      expect(result1).toBe(true)
-      expect(result2).toBe(true)
-      expect(result3).toBe(true)
+      expect(result1.allowed).toBe(true)
+      expect(result2.allowed).toBe(true)
+      expect(result3.allowed).toBe(true)
+      expect(result3.info.remaining).toBe(2)
     })
   })
 })
