@@ -475,6 +475,101 @@ const updateNotificationPreference = async (
 
 ---
 
+## CRO-118 Enhancements (October 2025)
+
+### New Indexes Added
+
+#### Memories AI Analysis
+```sql
+-- Sentiment filtering
+SELECT * FROM find_memories_by_sentiment('user-id', 'positive', 50);
+
+-- High-confidence suggestions
+SELECT * FROM find_high_confidence_suggestions('user-id', 0.8);
+
+-- Advanced search
+SELECT * FROM search_memories_advanced(
+  p_user_id := 'user-id',
+  p_sentiment := 'positive',
+  p_has_milestones := true,
+  p_has_media := true,
+  p_min_confidence := 0.7
+);
+```
+
+#### AI Prompts Optimization
+```sql
+-- Get prompts by type
+SELECT * FROM get_ai_prompts_by_type('user-id', 'milestone', 'pending', 20);
+
+-- Now uses idx_ai_prompts_parent_type_status for fast filtering
+```
+
+#### Notification Processing
+```sql
+-- Get urgent jobs (service_role only)
+SELECT * FROM get_urgent_notification_jobs(100);
+
+-- Get ready digests (service_role only)
+SELECT * FROM get_ready_digest_queue('weekly', 50);
+```
+
+#### Batch Operations
+```sql
+-- Batch get preferences for multiple users
+SELECT * FROM batch_get_notification_preferences(ARRAY['uuid1', 'uuid2']::uuid[]);
+
+-- Significantly faster than individual queries
+```
+
+### New Monitoring Views
+
+#### Enhanced Index Usage
+```sql
+-- View enhanced index statistics with usage categories
+SELECT * FROM v_jsonb_index_usage_enhanced
+ORDER BY index_scans DESC;
+
+-- Columns: usage_category, avg_tuples_per_scan, index_size_bytes
+```
+
+#### Query Statistics
+```sql
+-- View table statistics for JSONB tables
+SELECT * FROM v_jsonb_query_stats;
+
+-- Shows: table_size, row_count, hot_updates, last_analyze
+```
+
+#### Performance Analysis
+```sql
+-- Get optimization recommendations
+SELECT * FROM analyze_jsonb_performance();
+
+-- Automatically suggests missing indexes based on query patterns
+```
+
+### Migration Timeline
+
+1. **October 2025 (20251001000001)**: Initial JSONB optimization
+   - Expression indexes for notification_preferences
+   - Partial indexes for boolean flags
+   - GIN indexes with jsonb_path_ops
+
+2. **October 2025 (20251001000002)**: Helper functions
+   - Optimized query functions
+   - Batch operations
+   - Mute status helpers
+
+3. **October 2025 (20251015000001)**: CRO-118 Enhancements
+   - Memories AI analysis indexes
+   - AI prompts optimization
+   - Notification processing helpers
+   - Advanced search functions
+   - Enhanced monitoring
+
+---
+
 ## Additional Resources
 
 - [PostgreSQL JSONB Documentation](https://www.postgresql.org/docs/current/datatype-json.html)
@@ -483,6 +578,7 @@ const updateNotificationPreference = async (
 - Migration Files:
   - [20251001000001_optimize_jsonb_indexes.sql](../supabase/migrations/20251001000001_optimize_jsonb_indexes.sql)
   - [20251001000002_optimize_jsonb_query_patterns.sql](../supabase/migrations/20251001000002_optimize_jsonb_query_patterns.sql)
+  - [20251015000001_jsonb_query_pattern_improvements.sql](../supabase/migrations/20251015000001_jsonb_query_pattern_improvements.sql)
 
 ---
 
@@ -503,6 +599,7 @@ When writing JSONB queries, ensure:
 
 ---
 
-**Last Updated:** 2025-10-01
-**Related Migrations:** 20251001000001, 20251001000002
+**Last Updated:** 2025-10-15
+**Related Migrations:** 20251001000001, 20251001000002, 20251015000001
+**Related Issues:** CRO-118
 **Maintained By:** Database Team
