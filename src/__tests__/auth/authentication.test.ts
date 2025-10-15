@@ -215,7 +215,7 @@ describe('Authentication Flow Tests', () => {
       expect(mockSupabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
         'user@example.com',
         {
-          redirectTo: expect.stringContaining('/auth/reset-password')
+          redirectTo: expect.stringContaining('/reset-password')
         }
       )
 

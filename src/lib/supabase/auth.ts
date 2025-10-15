@@ -116,7 +116,7 @@ export async function resetPassword(email: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
   })
 
   return { data, error }
@@ -150,19 +150,8 @@ export function isValidEmail(email: string): boolean {
   return emailRegex.test(email)
 }
 
-export function isValidPassword(password: string): boolean {
-  // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/
-  return passwordRegex.test(password)
-}
-
-export function getPasswordStrength(password: string): 'weak' | 'medium' | 'strong' {
-  if (password.length < 6) return 'weak'
-  if (password.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-    return 'strong'
-  }
-  return 'medium'
-}
+export { isValidPassword } from '@/lib/validation/password'
+export { getPasswordStrengthLabel as getPasswordStrength } from '@/lib/validation/password'
 
 // Error message utilities
 export function getAuthErrorMessage(error: AuthError | null): string {
