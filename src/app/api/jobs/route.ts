@@ -144,7 +144,6 @@ export async function GET(request: NextRequest) {
     // Use cursor-based RPC function if cursor provided
     if (paginationParams.cursor && validatedParams.sort_by === 'created_at') {
       // Use cursor-based function for created_at sorting
-      // @ts-expect-error - New cursor function not yet in generated types (requires migration)
       const { data: jobs, error: queryError } = await supabase.rpc('get_notification_jobs_cursor' as 'analyze_content_formats', {
         p_parent_id: user.id,
         p_status: validatedParams.status || null,
