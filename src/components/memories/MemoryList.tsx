@@ -36,6 +36,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
+  const [newMemoriesCount, setNewMemoriesCount] = useState<number>(0)
   const [groupedMemories, setGroupedMemories] = useState<{ label: string; memories: MemoryCardData[] }[]>([])
   const [newMemoriesCount, setNewMemoriesCount] = useState(0)
 
@@ -113,6 +114,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
 
       setMemories(transformedMemories)
       setGroupedMemories(groupMemories(transformedMemories))
+      setNewMemoriesCount(result.newMemoriesCount ?? 0)
 
       const responseNewCount = typeof (recentMemories as { newMemoriesCount?: number }).newMemoriesCount === 'number'
         ? (recentMemories as { newMemoriesCount: number }).newMemoriesCount
