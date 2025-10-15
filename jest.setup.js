@@ -72,6 +72,29 @@ jest.mock('@/components/ui/LoadingSpinner', () => {
   }
 })
 
+// Suppress Next.js image quality warning in tests
+// This warning is about Next.js 16 configuration requirements
+// We've added the qualities config to next.config.js, but jest environment doesn't pick it up
+const originalWarn = console.warn
+beforeAll(() => {
+  console.warn = (...args) => {
+    const message = args[0]
+    if (
+      typeof message === 'string' &&
+      message.includes('is using quality') &&
+      message.includes('which is not configured in images.qualities')
+    ) {
+      // Suppress this specific warning in tests
+      return
+    }
+    originalWarn.apply(console, args)
+  }
+})
+
+afterAll(() => {
+  console.warn = originalWarn
+})
+
 // Mock Math.random for consistent test results
 Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
 
