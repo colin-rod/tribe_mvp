@@ -1,14 +1,17 @@
 /**
  * Full-Text Search API
  * CRO-127: Suboptimal Full-Text Search Implementation
+ * CRO-123: Cursor-based pagination implementation
  *
  * Provides server-side full-text search using PostgreSQL FTS
  * with result ranking, highlighting, and performance optimization.
+ * Now supports cursor-based pagination for efficient deep pagination.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { normalizePaginationParams } from '@/lib/utils/pagination';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +39,10 @@ export interface SearchResponse {
   total: number;
   query: string;
   executionTime: number;
+  pagination: {
+    hasMore: boolean;
+    nextCursor?: string;
+  };
 }
 
 /**
@@ -45,7 +52,8 @@ export interface SearchResponse {
  * - q: Search query (required)
  * - types: Comma-separated list of types to search (optional)
  * - limit: Maximum number of results (default: 50, max: 100)
- * - offset: Pagination offset (default: 0)
+ * - cursor: Base64-encoded cursor for pagination (preferred over offset)
+ * - offset: Pagination offset (default: 0, deprecated - use cursor instead)
  * - includeHighlights: Include search term highlights (default: true)
  */
 export async function GET(request: NextRequest) {
@@ -69,9 +77,19 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q')?.trim();
     const types = searchParams.get('types')?.split(',').filter(Boolean) || [];
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
     const includeHighlights = searchParams.get('includeHighlights') !== 'false';
+
+    // Normalize pagination parameters (supports both cursor and offset)
+    const paginationParams = normalizePaginationParams({
+      limit: searchParams.get('limit') || undefined,
+      offset: searchParams.get('offset') || undefined,
+      cursor: searchParams.get('cursor') || undefined
+    });
+
+    const limit = paginationParams.limit;
+    const cursor = paginationParams.cursor;
+    const offset = paginationParams.offset || 0;
+
 
     if (!query) {
       return NextResponse.json(
@@ -92,23 +110,43 @@ export async function GET(request: NextRequest) {
 
     // Search memories (updates) if no types specified or 'memory' is included
     if (types.length === 0 || types.includes('memory')) {
-      const { data: memories, error: memoriesError } = await supabase.rpc(
-        'search_memories',
-        {
-          search_query: tsQuery,
-          user_id: user.id,
-          result_limit: limit,
-          result_offset: offset
-        }
-      );
+      // Use cursor-based function if cursor provided, otherwise fall back to offset
+      const searchFunction = cursor ? 'search_memories_cursor' : 'search_memories';
+      const searchParams = cursor
+        ? {
+            search_query: tsQuery,
+            user_id: user.id,
+            result_limit: limit + 1, // Fetch one extra to determine hasMore
+            cursor_created_at: cursor.createdAt,
+            cursor_id: cursor.id
+          }
+        : {
+            search_query: tsQuery,
+            user_id: user.id,
+            result_limit: limit,
+            result_offset: offset
+          };
+
+      // @ts-expect-error - Dynamic function name, new cursor functions not yet in generated types
+      const { data: memories, error: memoriesError } = await supabase.rpc(searchFunction as 'search_memories', searchParams);
 
       if (memoriesError) {
         // eslint-disable-next-line no-console
         console.error('Error searching memories:', memoriesError);
       } else if (memories) {
-        totalResults += memories.length;
+        type MemorySearchResult = {
+          id: string
+          subject: string | null
+          content: string | null
+          child_id: string
+          distribution_status: string
+          created_at: string
+          search_rank: number
+        }
+        const typedMemories = memories as unknown as MemorySearchResult[]
+        totalResults += typedMemories.length;
 
-        for (const memory of memories) {
+        for (const memory of typedMemories) {
           results.push({
             id: memory.id,
             type: 'memory',
@@ -135,23 +173,42 @@ export async function GET(request: NextRequest) {
 
     // Search comments if requested
     if (types.includes('comment')) {
-      const { data: comments, error: commentsError } = await supabase.rpc(
-        'search_comments',
-        {
-          search_query: tsQuery,
-          user_id: user.id,
-          result_limit: limit,
-          result_offset: offset
-        }
-      );
+      // Use cursor-based function if cursor provided, otherwise fall back to offset
+      const searchFunction = cursor ? 'search_comments_cursor' : 'search_comments';
+      const searchParams = cursor
+        ? {
+            search_query: tsQuery,
+            user_id: user.id,
+            result_limit: limit + 1, // Fetch one extra to determine hasMore
+            cursor_created_at: cursor.createdAt,
+            cursor_id: cursor.id
+          }
+        : {
+            search_query: tsQuery,
+            user_id: user.id,
+            result_limit: limit,
+            result_offset: offset
+          };
+
+      // @ts-expect-error - Dynamic function name, new cursor functions not yet in generated types
+      const { data: comments, error: commentsError } = await supabase.rpc(searchFunction as 'search_comments', searchParams);
 
       if (commentsError) {
         // eslint-disable-next-line no-console
         console.error('Error searching comments:', commentsError);
       } else if (comments) {
-        totalResults += comments.length;
+        type CommentSearchResult = {
+          id: string
+          content: string
+          update_id: string
+          update_subject: string | null
+          created_at: string
+          search_rank: number
+        }
+        const typedComments = comments as unknown as CommentSearchResult[]
+        totalResults += typedComments.length;
 
-        for (const comment of comments) {
+        for (const comment of typedComments) {
           results.push({
             id: comment.id,
             type: 'comment',
@@ -286,11 +343,34 @@ export async function GET(request: NextRequest) {
 
     const executionTime = Date.now() - startTime;
 
+    // Build pagination metadata
+    // Note: For search results sorted by rank, cursor pagination is less straightforward
+    // We'll provide nextCursor based on the last result's created_at and id
+    const hasMore = cursor ? results.length > limit : false;
+    const visibleResults = hasMore ? results.slice(0, limit) : results;
+
+    let nextCursor: string | undefined;
+    if (hasMore && visibleResults.length > 0) {
+      const lastResult = visibleResults[visibleResults.length - 1];
+      if (lastResult.metadata?.createdAt && lastResult.id) {
+        const cursorObj = {
+          createdAt: lastResult.metadata.createdAt as string,
+          id: lastResult.id
+        };
+        // Use the encoding function from pagination utils
+        nextCursor = Buffer.from(JSON.stringify(cursorObj)).toString('base64');
+      }
+    }
+
     const response: SearchResponse = {
-      results,
+      results: visibleResults,
       total: totalResults,
       query,
       executionTime,
+      pagination: {
+        hasMore,
+        nextCursor
+      }
     };
 
     return NextResponse.json(response);

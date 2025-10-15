@@ -347,12 +347,12 @@ export class DashboardClient {
 
   /**
    * Get comments for an update
+   * CRO-123: Now supports cursor-based pagination for efficient deep pagination
    */
   async getUpdateComments(
     updateId: string,
     parentId: string,
-    limit: number = 50,
-    offset: number = 0
+    pagination: PaginationParams = {}
   ): Promise<{
     data: Array<{
       id: string
@@ -362,22 +362,46 @@ export class DashboardClient {
       createdAt: string
       updatedAt: string
     }>
+    hasMore: boolean
+    nextCursor?: { createdAt: string; id: string }
     error: Error | null
   }> {
     try {
-      logger.debug('Fetching update comments', { updateId, parentId, limit, offset })
+      const {
+        limit = 50,
+        offset = 0,
+        cursor,
+        cursorCreatedAt,
+        cursorId
+      } = pagination
+
+      logger.debug('Fetching update comments', { updateId, parentId, pagination })
+
+      // Use cursor-based function if cursor provided
+      const usesCursor = cursor || (cursorCreatedAt && cursorId)
+      const functionName = usesCursor ? 'get_update_comments_cursor' : 'get_update_comments'
+
+      const params = usesCursor
+        ? {
+            p_update_id: updateId,
+            p_parent_id: parentId,
+            p_limit: limit + 1, // Fetch one extra to check hasMore
+            p_cursor_created_at: cursor?.createdAt || cursorCreatedAt || null,
+            p_cursor_id: cursor?.id || cursorId || null
+          }
+        : {
+            p_update_id: updateId,
+            p_parent_id: parentId,
+            p_limit: limit,
+            p_offset: offset
+          }
 
       // @ts-expect-error - Supabase RPC type inference issue
-      const { data, error } = await this.supabase.rpc('get_update_comments', {
-        p_update_id: updateId,
-        p_parent_id: parentId,
-        p_limit: limit,
-        p_offset: offset
-      })
+      const { data, error } = await this.supabase.rpc(functionName, params)
 
       if (error) {
         logger.error('Error fetching update comments', { message: error.message, details: error.details, hint: error.hint } as LogContext)
-        return { data: [], error: new Error(error.message) }
+        return { data: [], hasMore: false, error: new Error(error.message) }
       }
 
       type CommentType = {
@@ -390,7 +414,12 @@ export class DashboardClient {
       }
 
       const typedData = (data || []) as unknown as CommentType[]
-      const comments = typedData.map((comment) => ({
+
+      // Check if there are more results
+      const hasMore = usesCursor ? typedData.length > limit : false
+      const visibleComments = hasMore ? typedData.slice(0, limit) : typedData
+
+      const comments = visibleComments.map((comment) => ({
         id: comment.id,
         parentId: comment.parent_id,
         parentName: comment.parent_name,
@@ -399,12 +428,17 @@ export class DashboardClient {
         updatedAt: comment.updated_at
       }))
 
-      logger.debug('Successfully fetched update comments', { count: comments.length })
+      // Generate next cursor if more results exist
+      const nextCursor = hasMore && comments.length > 0
+        ? { createdAt: comments[comments.length - 1].createdAt, id: comments[comments.length - 1].id }
+        : undefined
 
-      return { data: comments, error: null }
+      logger.debug('Successfully fetched update comments', { count: comments.length, hasMore, nextCursor })
+
+      return { data: comments, hasMore, nextCursor, error: null }
     } catch (err) {
       logger.errorWithStack('Unexpected error fetching update comments', err as Error)
-      return { data: [], error: err as Error }
+      return { data: [], hasMore: false, error: err as Error }
     }
   }
 

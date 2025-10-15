@@ -2256,13 +2256,44 @@ export interface DashboardFilters {
 }
 
 /**
+ * Pagination cursor for efficient cursor-based pagination
+ * CRO-123: Cursor-based pagination implementation
+ */
+export interface PaginationCursor {
+  createdAt: string
+  id: string
+}
+
+/**
  * Pagination state shared by dashboard hooks and client helpers.
+ * CRO-123: Enhanced with cursor support for efficient deep pagination
+ *
+ * - cursor: Preferred method for efficient pagination (use this for new code)
+ * - offset: Legacy offset-based pagination (deprecated, use cursor instead)
+ * - cursorCreatedAt / cursorId: Legacy cursor format (deprecated, use cursor object)
  */
 export interface PaginationParams {
   limit?: number
+  /** @deprecated Use cursor instead for better performance */
   offset?: number
+  /** Preferred cursor-based pagination */
+  cursor?: PaginationCursor
+  /** @deprecated Use cursor object instead */
   cursorCreatedAt?: string
+  /** @deprecated Use cursor object instead */
   cursorId?: string
+}
+
+/**
+ * Pagination response metadata
+ * CRO-123: Standardized pagination response format
+ */
+export interface PaginationResponse {
+  hasMore: boolean
+  nextCursor?: PaginationCursor
+  total?: number
+  limit?: number
+  offset?: number
 }
 
 /**
