@@ -1,8 +1,6 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals'
-import { compileSummary, getSummaryPreview, approveSummary, getSummaryStats } from '../summaryService'
-import type { CompileSummaryRequest, SummaryPreviewData } from '@/lib/types/summary'
 
-// Mock logger
+// Mock logger BEFORE imports
 const mockLogger = {
   info: jest.fn(),
   error: jest.fn(),
@@ -14,29 +12,48 @@ jest.mock('@/lib/logger', () => ({
   createLogger: () => mockLogger
 }))
 
-// Mock Supabase client
-const mockGetUser = jest.fn()
-const mockFunctionsInvoke = jest.fn()
-const mockFrom = jest.fn()
-const mockSelect = jest.fn()
-const mockEq = jest.fn()
-const mockSingle = jest.fn()
-const mockUpdate = jest.fn()
-const mockInsert = jest.fn()
-const mockGte = jest.fn()
-const mockLte = jest.fn()
+// Create the mock client with mocks defined in the factory BEFORE imports
+const createMockClient = () => {
+  const mockGetUser = jest.fn()
+  const mockFunctionsInvoke = jest.fn()
+  const mockFrom = jest.fn()
+
+  return {
+    client: {
+      auth: { getUser: mockGetUser },
+      functions: { invoke: mockFunctionsInvoke },
+      from: mockFrom
+    },
+    mocks: {
+      getUser: mockGetUser,
+      functionsInvoke: mockFunctionsInvoke,
+      from: mockFrom
+    }
+  }
+}
+
+const mockClientData = createMockClient()
 
 jest.mock('@/lib/supabase/client', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      getUser: mockGetUser
-    },
-    functions: {
-      invoke: mockFunctionsInvoke
-    },
-    from: mockFrom
-  }))
+  createClient: jest.fn(() => mockClientData.client)
 }))
+
+// Import types only (types don't execute code)
+import type { CompileSummaryRequest, SummaryPreviewData } from '@/lib/types/summary'
+
+const mocks = {
+  ...mockClientData.mocks,
+  select: jest.fn(),
+  eq: jest.fn(),
+  single: jest.fn(),
+  update: jest.fn(),
+  insert: jest.fn(),
+  gte: jest.fn(),
+  lte: jest.fn()
+}
+
+// Load the service functions AFTER mocks are set up using require
+const { compileSummary, getSummaryPreview, approveSummary, getSummaryStats } = require('../summaryService')
 
 describe('summaryService', () => {
   const mockUser = {
@@ -46,7 +63,7 @@ describe('summaryService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null })
+    ;(mocks.getUser as any).mockResolvedValue({ data: { user: mockUser }, error: null })
   })
 
   describe('compileSummary', () => {
@@ -73,7 +90,7 @@ describe('summaryService', () => {
         total_recipients: 2
       }
 
-      mockFunctionsInvoke.mockResolvedValue({
+      ;(mocks.functionsInvoke as any).mockResolvedValue({
         data: {
           success: true,
           summary_id: 'summary-123',
@@ -82,14 +99,24 @@ describe('summaryService', () => {
         error: null
       })
 
-      // Mock getSummaryPreview
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
+      // Mock getSummaryPreview - first call for summary fetch
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            single: (mocks.single as any).mockResolvedValue({
               data: mockSummary,
               error: null
             })
+          })
+        })
+      })
+
+      // Mock getSummaryPreview - second call for summary_memories fetch
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockResolvedValue({
+            data: [],
+            error: null
           })
         })
       })
@@ -98,7 +125,7 @@ describe('summaryService', () => {
 
       expect(result.success).toBe(true)
       expect(result.summary).toEqual(mockSummary)
-      expect(mockFunctionsInvoke).toHaveBeenCalledWith('compile-summary', {
+      expect(mocks.functionsInvoke).toHaveBeenCalledWith('compile-summary', {
         body: {
           ...mockRequest,
           parent_id: mockUser.id
@@ -111,7 +138,9 @@ describe('summaryService', () => {
     })
 
     it('should handle compilation failure', async () => {
-      mockFunctionsInvoke.mockResolvedValue({
+      // Ensure auth is mocked
+
+      ;(mocks.functionsInvoke as any).mockResolvedValue({
         data: null,
         error: { message: 'Compilation failed' }
       })
@@ -124,13 +153,15 @@ describe('summaryService', () => {
     })
 
     it('should handle unauthenticated user', async () => {
-      mockGetUser.mockResolvedValue({ data: { user: null }, error: null })
+      ;(mocks.getUser as any).mockResolvedValue({ data: { user: null }, error: null })
 
       await expect(compileSummary(mockRequest)).rejects.toThrow('Not authenticated')
     })
 
     it('should handle function returning success: false', async () => {
-      mockFunctionsInvoke.mockResolvedValue({
+      ;(mocks.getUser as any).mockResolvedValue({ data: { user: mockUser }, error: null })
+
+      ;(mocks.functionsInvoke as any).mockResolvedValue({
         data: {
           success: false,
           error: 'No memories to compile'
@@ -149,6 +180,7 @@ describe('summaryService', () => {
     const mockSummaryId = 'summary-123'
 
     it('should fetch summary preview successfully', async () => {
+
       const mockSummary = {
         id: mockSummaryId,
         parent_id: mockUser.id,
@@ -173,10 +205,10 @@ describe('summaryService', () => {
       ]
 
       // Mock summary fetch
-      mockFrom.mockReturnValueOnce({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            single: (mocks.single as any).mockResolvedValue({
               data: mockSummary,
               error: null
             })
@@ -185,9 +217,9 @@ describe('summaryService', () => {
       })
 
       // Mock summary_memories fetch
-      mockFrom.mockReturnValueOnce({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockResolvedValue({
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockResolvedValue({
             data: mockMemories,
             error: null
           })
@@ -198,15 +230,16 @@ describe('summaryService', () => {
 
       expect(result).toBeDefined()
       expect(result.summary).toEqual(mockSummary)
-      expect(mockFrom).toHaveBeenCalledWith('summaries')
-      expect(mockFrom).toHaveBeenCalledWith('summary_memories')
+      expect(mocks.from).toHaveBeenCalledWith('summaries')
+      expect(mocks.from).toHaveBeenCalledWith('summary_memories')
     })
 
     it('should handle summary not found', async () => {
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            single: mockSingle.mockResolvedValue({
+
+      ;(mocks.from as any).mockReturnValue({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            single: (mocks.single as any).mockResolvedValue({
               data: null,
               error: { message: 'Not found', code: 'PGRST116' }
             })
@@ -222,18 +255,19 @@ describe('summaryService', () => {
     const mockSummaryId = 'summary-123'
 
     it('should approve summary successfully', async () => {
+
       const approvedSummary = {
         id: mockSummaryId,
         status: 'approved',
         approved_at: new Date().toISOString()
       }
 
-      mockFrom.mockReturnValue({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              select: mockSelect.mockReturnValue({
-                single: mockSingle.mockResolvedValue({
+      ;(mocks.from as any).mockReturnValue({
+        update: (mocks.update as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            eq: (mocks.eq as any).mockReturnValue({
+              select: (mocks.select as any).mockReturnValue({
+                single: (mocks.single as any).mockResolvedValue({
                   data: approvedSummary,
                   error: null
                 })
@@ -249,7 +283,7 @@ describe('summaryService', () => {
       })
 
       expect(result.status).toBe('approved')
-      expect(mockUpdate).toHaveBeenCalledWith(
+      expect(mocks.update).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'approved'
         })
@@ -257,12 +291,13 @@ describe('summaryService', () => {
     })
 
     it('should handle approval failure', async () => {
-      mockFrom.mockReturnValue({
-        update: mockUpdate.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
-              select: mockSelect.mockReturnValue({
-                single: mockSingle.mockResolvedValue({
+
+      ;(mocks.from as any).mockReturnValue({
+        update: (mocks.update as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            eq: (mocks.eq as any).mockReturnValue({
+              select: (mocks.select as any).mockReturnValue({
+                single: (mocks.single as any).mockResolvedValue({
                   data: null,
                   error: { message: 'Update failed' }
                 })
@@ -282,6 +317,7 @@ describe('summaryService', () => {
 
   describe('getSummaryStats', () => {
     it('should fetch summary statistics successfully', async () => {
+
       const mockStats = [
         { status: 'sent', count: 5 },
         { status: 'pending_review', count: 2 },
@@ -293,11 +329,11 @@ describe('summaryService', () => {
       }
 
       // Mock stats query
-      mockFrom.mockReturnValueOnce({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            gte: mockGte.mockReturnValue({
-              lte: mockLte.mockResolvedValue({
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            gte: (mocks.gte as any).mockReturnValue({
+              lte: (mocks.lte as any).mockResolvedValue({
                 data: mockStats,
                 error: null
               })
@@ -307,10 +343,10 @@ describe('summaryService', () => {
       })
 
       // Mock last sent query
-      mockFrom.mockReturnValueOnce({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            eq: mockEq.mockReturnValue({
+      ;(mocks.from as any).mockReturnValueOnce({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            eq: (mocks.eq as any).mockReturnValue({
               order: jest.fn().mockReturnValue({
                 limit: jest.fn().mockResolvedValue({
                   data: [mockLastSent],
@@ -334,11 +370,12 @@ describe('summaryService', () => {
     })
 
     it('should handle database error gracefully', async () => {
-      mockFrom.mockReturnValue({
-        select: mockSelect.mockReturnValue({
-          eq: mockEq.mockReturnValue({
-            gte: mockGte.mockReturnValue({
-              lte: mockLte.mockResolvedValue({
+
+      ;(mocks.from as any).mockReturnValue({
+        select: (mocks.select as any).mockReturnValue({
+          eq: (mocks.eq as any).mockReturnValue({
+            gte: (mocks.gte as any).mockReturnValue({
+              lte: (mocks.lte as any).mockResolvedValue({
                 data: null,
                 error: { message: 'Database error' }
               })
