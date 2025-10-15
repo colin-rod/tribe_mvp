@@ -70,10 +70,10 @@ describe('MemoryList', () => {
       },
     ]
 
-    ;(getRecentMemoriesWithStats as jest.Mock).mockResolvedValue({
-      memories: mockMemories,
-      newMemoriesCount: 2,
-    })
+    const mockResponse = [...mockMemories]
+    Object.defineProperty(mockResponse, 'newMemoriesCount', { value: 2 })
+
+    ;(getRecentMemoriesWithStats as jest.Mock).mockResolvedValue(mockResponse)
 
     render(<MemoryList limit={5} />)
 
