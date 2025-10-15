@@ -36,6 +36,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
+  const [newMemoriesCount, setNewMemoriesCount] = useState<number>(0)
   const [groupedMemories, setGroupedMemories] = useState<{ label: string; memories: MemoryCardData[] }[]>([])
 
   const loadMemories = useCallback(async () => {
@@ -65,6 +66,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
         })
         setMemories([])
         setGroupedMemories([])
+        setNewMemoriesCount(0)
         return
       }
 
@@ -111,6 +113,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
 
       setMemories(transformedMemories)
       setGroupedMemories(groupMemories(transformedMemories))
+      setNewMemoriesCount(result.newMemoriesCount ?? 0)
 
       const loadEndTime = Date.now()
       logger.info('MemoryList: Successfully loaded memories', {
@@ -134,6 +137,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       setError(err instanceof Error ? err.message : 'Failed to load memories')
       setMemories([])
       setGroupedMemories([])
+      setNewMemoriesCount(0)
     } finally {
       setLoading(false)
     }
@@ -208,6 +212,11 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
 
   return (
     <div className={cn('space-y-8', className)}>
+      {newMemoriesCount > 0 && (
+        <div className="text-sm text-neutral-600" data-testid="new-memories-count">
+          {`${newMemoriesCount} new ${newMemoriesCount === 1 ? 'memory' : 'memories'}`}
+        </div>
+      )}
       {groupedMemories.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-blue-200 rounded-lg bg-blue-50 text-blue-700">
           <p className="text-sm font-medium">No memories to share just yet.</p>
