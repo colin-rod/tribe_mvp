@@ -294,7 +294,7 @@ export default function CreateMemoryWizard({
             {currentStep === 'preview' && (
               <MemoryPreview
                 formData={formData}
-                aiAnalysis={aiAnalysis}
+                aiAnalysis={aiAnalysis?.raw ?? null}
                 child={selectedChild}
                 recipients={recipients}
                 previewUrls={previewUrls}

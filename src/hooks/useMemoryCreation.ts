@@ -59,7 +59,7 @@ function getAnalysisRecord(analysis: NormalizedAIAnalysis | null): Record<string
   if (!analysis) return {}
 
   if (analysis.raw?.analysis) {
-    return analysis.raw.analysis
+    return analysis.raw.analysis as unknown as Record<string, unknown>
   }
 
   return {

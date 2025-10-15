@@ -589,33 +589,53 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
 
     const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
+    type ResponseRow = {
+      update_id: string
+      received_at: string
+    }
+
     type AggregatedResponseStat = {
       update_id: string
       response_count: number | null
       last_response_at: string | null
     }
 
-    const { data: responseStats, error: responseStatsError } = await supabase
+    const { data: responses, error: responseStatsError } = await supabase
       .from('responses')
-      .select('update_id,response_count:count(*),last_response_at:max(received_at)')
+      .select('update_id,received_at')
       .in('update_id', memoryIds)
-      .group('update_id')
 
     if (responseStatsError) {
-      logger.error('Error fetching aggregated response stats', {
+      logger.error('Error fetching response stats', {
         requestId,
         error: responseStatsError.message
       })
     }
 
+    // Aggregate responses in JavaScript
     const responseStatsMap = new Map<string, AggregatedResponseStat>()
 
-    if (responseStats) {
-      for (const stat of responseStats as AggregatedResponseStat[]) {
-        responseStatsMap.set(stat.update_id, {
-          update_id: stat.update_id,
-          response_count: stat.response_count ?? 0,
-          last_response_at: stat.last_response_at ?? null
+    if (responses) {
+      const typedResponses = responses as ResponseRow[]
+      const groupedByUpdate = new Map<string, ResponseRow[]>()
+
+      // Group responses by update_id
+      for (const response of typedResponses) {
+        const existing = groupedByUpdate.get(response.update_id) || []
+        existing.push(response)
+        groupedByUpdate.set(response.update_id, existing)
+      }
+
+      // Calculate aggregates for each update
+      for (const [updateId, updateResponses] of groupedByUpdate.entries()) {
+        const sortedResponses = updateResponses.sort((a, b) =>
+          new Date(b.received_at).getTime() - new Date(a.received_at).getTime()
+        )
+
+        responseStatsMap.set(updateId, {
+          update_id: updateId,
+          response_count: updateResponses.length,
+          last_response_at: sortedResponses[0]?.received_at ?? null
         })
       }
     }
