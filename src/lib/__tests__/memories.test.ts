@@ -164,18 +164,14 @@ describe('getRecentMemoriesWithStats', () => {
 
     mockMemoriesLimit.mockResolvedValue({ data: memories, error: null })
     mockLikesIn.mockResolvedValue({ data: [{ update_id: 'memory-1' }], error: null })
-    mockResponsesGroup.mockResolvedValue({
+
+    // Mock raw response data (not aggregated) - this is what the code now fetches
+    mockResponsesIn.mockResolvedValue({
       data: [
-        {
-          update_id: 'memory-1',
-          response_count: 3,
-          last_response_at: '2024-01-05T12:00:00.000Z',
-        },
-        {
-          update_id: 'memory-2',
-          response_count: 1,
-          last_response_at: '2024-01-04T08:00:00.000Z',
-        },
+        { update_id: 'memory-1', received_at: '2024-01-05T12:00:00.000Z' },
+        { update_id: 'memory-1', received_at: '2024-01-05T10:00:00.000Z' },
+        { update_id: 'memory-1', received_at: '2024-01-05T08:00:00.000Z' },
+        { update_id: 'memory-2', received_at: '2024-01-04T08:00:00.000Z' },
       ],
       error: null,
     })
@@ -184,9 +180,8 @@ describe('getRecentMemoriesWithStats', () => {
 
     expect(mockMemoriesLimit).toHaveBeenCalledWith(2)
     expect(mockLikesIn).toHaveBeenCalledWith('update_id', ['memory-1', 'memory-2'])
-    expect(mockResponsesSelect).toHaveBeenCalledWith('update_id,response_count:count(*),last_response_at:max(received_at)')
+    expect(mockResponsesSelect).toHaveBeenCalledWith('update_id,received_at')
     expect(mockResponsesIn).toHaveBeenCalledWith('update_id', ['memory-1', 'memory-2'])
-    expect(mockResponsesGroup).toHaveBeenCalledWith('update_id')
 
     expect(result).toEqual([
       {
@@ -247,12 +242,12 @@ describe('getRecentMemoriesWithStats', () => {
 
     mockMemoriesLimit.mockResolvedValue({ data: memories, error: null })
     mockLikesIn.mockResolvedValue({ data: [], error: null })
-    mockResponsesGroup.mockResolvedValue({ data: null, error: { message: 'boom' } })
+    mockResponsesIn.mockResolvedValue({ data: null, error: { message: 'boom' } })
 
     const result = await getRecentMemoriesWithStats(1)
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      'Error fetching aggregated response stats',
+      'Error fetching response stats',
       expect.objectContaining({
         requestId: expect.any(String),
         error: 'boom',

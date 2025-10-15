@@ -42,15 +42,24 @@ jest.mock('@/lib/supabase/client', () => ({
 // Import types only (types don't execute code)
 import type { CompileSummaryRequest, SummaryPreviewData } from '@/lib/types/summary'
 
-const mocks = {
-  ...mockClientData.mocks,
+// Create mock factory functions that return fresh mocks for each chain
+const createMockChain = () => ({
   select: jest.fn(),
   eq: jest.fn(),
   single: jest.fn(),
   update: jest.fn(),
   insert: jest.fn(),
   gte: jest.fn(),
-  lte: jest.fn()
+  lte: jest.fn(),
+  order: jest.fn(),
+  limit: jest.fn(),
+  maybeSingle: jest.fn(),
+  returns: jest.fn()
+})
+
+const mocks = {
+  ...mockClientData.mocks,
+  ...createMockChain()
 }
 
 // Load the service functions AFTER mocks are set up using require
@@ -86,9 +95,7 @@ describe('summaryService', () => {
 
       const mockPreview: SummaryPreviewData = {
         summary: mockSummary,
-        recipient_previews: [],
-        total_memories: 3,
-        total_recipients: 2
+        recipients: []
       }
 
       ;(mocks.functionsInvoke as any).mockResolvedValue({
@@ -101,31 +108,32 @@ describe('summaryService', () => {
       })
 
       // Mock getSummaryPreview - first call for summary fetch
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            single: (mocks.single as any).mockResolvedValue({
-              data: mockSummary,
-              error: null
-            })
-          })
-        })
+      const mockSingle1 = (jest.fn() as any).mockResolvedValue({
+        data: mockSummary,
+        error: null
       })
+      const mockEq2_1 = (jest.fn() as any).mockReturnValue({ single: mockSingle1 })
+      const mockEq1_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_1 })
+      const mockSelect1 = (jest.fn() as any).mockReturnValue({ eq: mockEq1_1 })
 
       // Mock getSummaryPreview - second call for summary_memories fetch
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockResolvedValue({
-            data: [],
-            error: null
-          })
-        })
+      const mockOrder = (jest.fn() as any).mockResolvedValue({
+        data: [],
+        error: null
       })
+      const mockEq2_2 = (jest.fn() as any).mockReturnValue({ order: mockOrder })
+      const mockEq1_2 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_2 })
+      const mockSelect2 = (jest.fn() as any).mockReturnValue({ eq: mockEq1_2 })
+
+      ;(mocks.from as any)
+        .mockReturnValueOnce({ select: mockSelect1 })
+        .mockReturnValueOnce({ select: mockSelect2 })
 
       const result = await compileSummary(mockRequest)
 
       expect(result.success).toBe(true)
       expect(result.summary).toEqual(mockSummary)
+      expect(result.preview_data).toEqual(mockPreview)
       expect(mocks.functionsInvoke).toHaveBeenCalledWith('compile-summary', {
         body: {
           ...mockRequest,
@@ -205,27 +213,27 @@ describe('summaryService', () => {
         }
       ]
 
-      // Mock summary fetch
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            single: (mocks.single as any).mockResolvedValue({
-              data: mockSummary,
-              error: null
-            })
-          })
-        })
+      // Mock summary fetch (needs double .eq() for id and parent_id)
+      const mockSingle = (jest.fn() as any).mockResolvedValue({
+        data: mockSummary,
+        error: null
       })
+      const mockEq2 = (jest.fn() as any).mockReturnValue({ single: mockSingle })
+      const mockEq1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2 })
+      const mockSelect = (jest.fn() as any).mockReturnValue({ eq: mockEq1 })
 
-      // Mock summary_memories fetch
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockResolvedValue({
-            data: mockMemories,
-            error: null
-          })
-        })
+      // Mock summary_memories fetch (needs double .eq() and .order())
+      const mockOrder = (jest.fn() as any).mockResolvedValue({
+        data: mockMemories,
+        error: null
       })
+      const mockEq2_mem = (jest.fn() as any).mockReturnValue({ order: mockOrder })
+      const mockEq1_mem = (jest.fn() as any).mockReturnValue({ eq: mockEq2_mem })
+      const mockSelect_mem = (jest.fn() as any).mockReturnValue({ eq: mockEq1_mem })
+
+      ;(mocks.from as any)
+        .mockReturnValueOnce({ select: mockSelect })
+        .mockReturnValueOnce({ select: mockSelect_mem })
 
       const result = await getSummaryPreview(mockSummaryId)
 
@@ -236,19 +244,17 @@ describe('summaryService', () => {
     })
 
     it('should handle summary not found', async () => {
-
-      ;(mocks.from as any).mockReturnValue({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            single: (mocks.single as any).mockResolvedValue({
-              data: null,
-              error: { message: 'Not found', code: 'PGRST116' }
-            })
-          })
-        })
+      const mockSingle = (jest.fn() as any).mockResolvedValue({
+        data: null,
+        error: { message: 'Not found', code: 'PGRST116' }
       })
+      const mockEq2 = (jest.fn() as any).mockReturnValue({ single: mockSingle })
+      const mockEq1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2 })
+      const mockSelect = (jest.fn() as any).mockReturnValue({ eq: mockEq1 })
 
-      await expect(getSummaryPreview(mockSummaryId)).rejects.toThrow('Not found')
+      ;(mocks.from as any).mockReturnValue({ select: mockSelect })
+
+      await expect(getSummaryPreview(mockSummaryId)).rejects.toThrow('Failed to fetch summary: Not found')
     })
   })
 
@@ -256,137 +262,162 @@ describe('summaryService', () => {
     const mockSummaryId = 'summary-123'
 
     it('should approve summary successfully', async () => {
-
-      const approvedSummary = {
-        id: mockSummaryId,
-        status: 'approved',
-        approved_at: new Date().toISOString()
-      }
-
-      ;(mocks.from as any).mockReturnValue({
-        update: (mocks.update as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            eq: (mocks.eq as any).mockReturnValue({
-              select: (mocks.select as any).mockReturnValue({
-                single: (mocks.single as any).mockResolvedValue({
-                  data: approvedSummary,
-                  error: null
-                })
-              })
-            })
-          })
-        })
+      // Mock first from() call for summaries update
+      const mockEq2_update = (jest.fn() as any).mockResolvedValue({
+        data: null,
+        error: null
       })
+      const mockEq1_update = (jest.fn() as any).mockReturnValue({ eq: mockEq2_update })
+      const mockUpdate = (jest.fn() as any).mockReturnValue({ eq: mockEq1_update })
 
-      const result = await approveSummary({
+      // Mock second from() call for summary_memories select
+      const mockEq_select = (jest.fn() as any).mockResolvedValue({
+        data: [],
+        error: null
+      })
+      const mockSelect = (jest.fn() as any).mockReturnValue({ eq: mockEq_select })
+
+      ;(mocks.from as any)
+        .mockReturnValueOnce({ update: mockUpdate })
+        .mockReturnValueOnce({ select: mockSelect })
+
+      await approveSummary({
         summary_id: mockSummaryId,
         parent_narrative: { introduction: 'Great week!' }
       })
 
-      expect(result.status).toBe('approved')
-      expect(mocks.update).toHaveBeenCalledWith(
+      expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'approved'
         })
       )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Summary approved successfully',
+        expect.objectContaining({ summaryId: mockSummaryId })
+      )
     })
 
     it('should handle approval failure', async () => {
-
-      ;(mocks.from as any).mockReturnValue({
-        update: (mocks.update as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            eq: (mocks.eq as any).mockReturnValue({
-              select: (mocks.select as any).mockReturnValue({
-                single: (mocks.single as any).mockResolvedValue({
-                  data: null,
-                  error: { message: 'Update failed' }
-                })
-              })
-            })
-          })
-        })
+      const mockEq2 = (jest.fn() as any).mockResolvedValue({
+        data: null,
+        error: { message: 'Update failed' }
       })
+      const mockEq1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2 })
+      const mockUpdate = (jest.fn() as any).mockReturnValue({ eq: mockEq1 })
+
+      ;(mocks.from as any).mockReturnValue({ update: mockUpdate })
 
       await expect(
         approveSummary({
           summary_id: mockSummaryId
         })
-      ).rejects.toThrow('Update failed')
+      ).rejects.toThrow('Failed to approve summary: Update failed')
     })
   })
 
   describe('getSummaryStats', () => {
     it('should fetch summary statistics successfully', async () => {
 
-      const mockStats = [
-        { status: 'sent', count: 5 },
-        { status: 'pending_review', count: 2 },
-        { status: 'draft', count: 1 }
+      const mockSummaries = [
+        { total_updates: 3, total_recipients: 2 },
+        { total_updates: 5, total_recipients: 3 }
       ]
 
       const mockLastSent = {
         sent_at: '2025-01-07T10:00:00Z'
       }
 
-      // Mock stats query
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            gte: (mocks.gte as any).mockReturnValue({
-              lte: (mocks.lte as any).mockResolvedValue({
-                data: mockStats,
-                error: null
-              })
-            })
-          })
-        })
-      })
+      // Mock first query: total summaries count
+      const mockEq1 = (jest.fn() as any).mockResolvedValue({ count: 10, error: null })
+      const mockSelect1 = (jest.fn() as any).mockReturnValue({ eq: mockEq1 })
 
-      // Mock last sent query
-      ;(mocks.from as any).mockReturnValueOnce({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            eq: (mocks.eq as any).mockReturnValue({
-              order: jest.fn().mockReturnValue({
-                limit: jest.fn().mockResolvedValue({
-                  data: [mockLastSent],
-                  error: null
-                })
-              })
-            })
-          })
-        })
+      // Mock second query: sent this month count (with .eq() twice and .gte())
+      const mockGte = (jest.fn() as any).mockResolvedValue({ count: 5, error: null })
+      const mockEq2_2 = (jest.fn() as any).mockReturnValue({ gte: mockGte })
+      const mockEq2_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_2 })
+      const mockSelect2 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_1 })
+
+      // Mock third query: pending review count (with .eq() twice)
+      const mockEq3_2 = (jest.fn() as any).mockResolvedValue({ count: 2, error: null })
+      const mockEq3_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq3_2 })
+      const mockSelect3 = (jest.fn() as any).mockReturnValue({ eq: mockEq3_1 })
+
+      // Mock fourth query: summaries for averages
+      const mockReturns = (jest.fn() as any).mockResolvedValue({
+        data: mockSummaries,
+        error: null
       })
+      const mockEq4 = (jest.fn() as any).mockReturnValue({ returns: mockReturns })
+      const mockSelect4 = (jest.fn() as any).mockReturnValue({ eq: mockEq4 })
+
+      // Mock fifth query: last sent (with .eq() twice, .order(), .limit(), .maybeSingle())
+      const mockMaybeSingle = (jest.fn() as any).mockResolvedValue({
+        data: mockLastSent,
+        error: null
+      })
+      const mockLimit = (jest.fn() as any).mockReturnValue({ maybeSingle: mockMaybeSingle })
+      const mockOrder = (jest.fn() as any).mockReturnValue({ limit: mockLimit })
+      const mockEq5_2 = (jest.fn() as any).mockReturnValue({ order: mockOrder })
+      const mockEq5_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq5_2 })
+      const mockSelect5 = (jest.fn() as any).mockReturnValue({ eq: mockEq5_1 })
+
+      ;(mocks.from as any)
+        .mockReturnValueOnce({ select: mockSelect1 })
+        .mockReturnValueOnce({ select: mockSelect2 })
+        .mockReturnValueOnce({ select: mockSelect3 })
+        .mockReturnValueOnce({ select: mockSelect4 })
+        .mockReturnValueOnce({ select: mockSelect5 })
 
       const result = await getSummaryStats()
 
       expect(result).toBeDefined()
-      expect(result.total_digests).toBeGreaterThanOrEqual(0)
-      expect(result.sent_this_month).toBeGreaterThanOrEqual(0)
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Fetching summary stats',
-        expect.any(Object)
-      )
+      expect(result.total_summaries).toBe(10)
+      expect(result.sent_this_month).toBe(5)
+      expect(result.pending_review).toBe(2)
     })
 
     it('should handle database error gracefully', async () => {
+      // Mock first query: total summaries count (returns null)
+      const mockEq1 = (jest.fn() as any).mockResolvedValue({ count: null, error: null })
+      const mockSelect1 = (jest.fn() as any).mockReturnValue({ eq: mockEq1 })
 
-      ;(mocks.from as any).mockReturnValue({
-        select: (mocks.select as any).mockReturnValue({
-          eq: (mocks.eq as any).mockReturnValue({
-            gte: (mocks.gte as any).mockReturnValue({
-              lte: (mocks.lte as any).mockResolvedValue({
-                data: null,
-                error: { message: 'Database error' }
-              })
-            })
-          })
-        })
-      })
+      // Mock second query: sent this month count
+      const mockGte2 = (jest.fn() as any).mockResolvedValue({ count: null, error: null })
+      const mockEq2_2 = (jest.fn() as any).mockReturnValue({ gte: mockGte2 })
+      const mockEq2_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_2 })
+      const mockSelect2 = (jest.fn() as any).mockReturnValue({ eq: mockEq2_1 })
 
-      await expect(getSummaryStats()).rejects.toThrow()
-      expect(mockLogger.error).toHaveBeenCalled()
+      // Mock third query: pending review count
+      const mockEq3_2 = (jest.fn() as any).mockResolvedValue({ count: null, error: null })
+      const mockEq3_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq3_2 })
+      const mockSelect3 = (jest.fn() as any).mockReturnValue({ eq: mockEq3_1 })
+
+      // Mock fourth query: summaries for averages
+      const mockReturns = (jest.fn() as any).mockResolvedValue({ data: [], error: null })
+      const mockEq4 = (jest.fn() as any).mockReturnValue({ returns: mockReturns })
+      const mockSelect4 = (jest.fn() as any).mockReturnValue({ eq: mockEq4 })
+
+      // Mock fifth query: last sent
+      const mockMaybeSingle = (jest.fn() as any).mockResolvedValue({ data: null, error: null })
+      const mockLimit = (jest.fn() as any).mockReturnValue({ maybeSingle: mockMaybeSingle })
+      const mockOrder = (jest.fn() as any).mockReturnValue({ limit: mockLimit })
+      const mockEq5_2 = (jest.fn() as any).mockReturnValue({ order: mockOrder })
+      const mockEq5_1 = (jest.fn() as any).mockReturnValue({ eq: mockEq5_2 })
+      const mockSelect5 = (jest.fn() as any).mockReturnValue({ eq: mockEq5_1 })
+
+      ;(mocks.from as any)
+        .mockReturnValueOnce({ select: mockSelect1 })
+        .mockReturnValueOnce({ select: mockSelect2 })
+        .mockReturnValueOnce({ select: mockSelect3 })
+        .mockReturnValueOnce({ select: mockSelect4 })
+        .mockReturnValueOnce({ select: mockSelect5 })
+
+      const result = await getSummaryStats()
+
+      // Should return zeros when counts are null
+      expect(result.total_summaries).toBe(0)
+      expect(result.sent_this_month).toBe(0)
+      expect(result.pending_review).toBe(0)
     })
   })
 })
