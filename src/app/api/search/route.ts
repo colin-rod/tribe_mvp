@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
             result_offset: offset
           };
 
-      // @ts-ignore - Dynamic function name, new cursor functions not yet in generated types
+      // @ts-expect-error - Dynamic function name, new cursor functions not yet in generated types
       const { data: memories, error: memoriesError } = await supabase.rpc(searchFunction as 'search_memories', searchParams);
 
       if (memoriesError) {
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
             result_offset: offset
           };
 
-      // @ts-ignore - Dynamic function name, new cursor functions not yet in generated types
+      // @ts-expect-error - Dynamic function name, new cursor functions not yet in generated types
       const { data: comments, error: commentsError } = await supabase.rpc(searchFunction as 'search_comments', searchParams);
 
       if (commentsError) {
