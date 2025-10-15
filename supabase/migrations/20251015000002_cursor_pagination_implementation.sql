@@ -564,18 +564,58 @@ COMMENT ON VIEW v_cursor_pagination_indexes IS
 
 -- Add deprecation notice to old offset-based functions
 -- Keep them for backward compatibility but warn about performance
+-- Only add comments if the functions exist (conditional execution)
 
-COMMENT ON FUNCTION public.search_memories(TEXT, UUID, INTEGER, INTEGER) IS
-  'DEPRECATED: Use search_memories_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+DO $$
+BEGIN
+  -- search_memories
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+    AND p.proname = 'search_memories'
+    AND pg_get_function_identity_arguments(p.oid) = 'search_query text, user_id uuid, result_limit integer, result_offset integer'
+  ) THEN
+    COMMENT ON FUNCTION public.search_memories(TEXT, UUID, INTEGER, INTEGER) IS
+      'DEPRECATED: Use search_memories_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+  END IF;
 
-COMMENT ON FUNCTION public.search_comments(TEXT, UUID, INTEGER, INTEGER) IS
-  'DEPRECATED: Use search_comments_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+  -- search_comments
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+    AND p.proname = 'search_comments'
+    AND pg_get_function_identity_arguments(p.oid) = 'search_query text, user_id uuid, result_limit integer, result_offset integer'
+  ) THEN
+    COMMENT ON FUNCTION public.search_comments(TEXT, UUID, INTEGER, INTEGER) IS
+      'DEPRECATED: Use search_comments_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+  END IF;
 
-COMMENT ON FUNCTION public.search_memories_with_highlights(TEXT, UUID, INTEGER, INTEGER) IS
-  'DEPRECATED: Use search_memories_with_highlights_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+  -- search_memories_with_highlights
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+    AND p.proname = 'search_memories_with_highlights'
+    AND pg_get_function_identity_arguments(p.oid) = 'search_query text, user_id uuid, result_limit integer, result_offset integer'
+  ) THEN
+    COMMENT ON FUNCTION public.search_memories_with_highlights(TEXT, UUID, INTEGER, INTEGER) IS
+      'DEPRECATED: Use search_memories_with_highlights_cursor() instead. Offset-based pagination has poor performance with large datasets.';
+  END IF;
 
-COMMENT ON FUNCTION public.get_update_comments(UUID, UUID, INTEGER, INTEGER) IS
-  'DEPRECATED: Use get_update_comments_cursor() instead. Offset-based pagination has poor performance with large comment threads.';
+  -- get_update_comments
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+    AND p.proname = 'get_update_comments'
+    AND pg_get_function_identity_arguments(p.oid) = 'p_update_id uuid, p_parent_id uuid, p_limit integer, p_offset integer'
+  ) THEN
+    COMMENT ON FUNCTION public.get_update_comments(UUID, UUID, INTEGER, INTEGER) IS
+      'DEPRECATED: Use get_update_comments_cursor() instead. Offset-based pagination has poor performance with large comment threads.';
+  END IF;
+END $$;
 
 -- =============================================================================
 -- PART 9: ANALYZE TABLES FOR QUERY PLANNER
