@@ -505,16 +505,16 @@ export async function getRecipientStats(): Promise<{
   const [statusResponse, relationshipResponse, groupResponse] = await Promise.all([
     supabase
       .from('recipients')
-      .select('is_active')
+      .select('is_active, count:id', { group: 'is_active' })
       .eq('parent_id', user.id),
     supabase
       .from('recipients')
-      .select('relationship')
+      .select('relationship, count:id', { group: 'relationship' })
       .eq('parent_id', user.id)
       .eq('is_active', true),
     supabase
       .from('recipients')
-      .select('group_id')
+      .select('group_id, count:id', { group: 'group_id' })
       .eq('parent_id', user.id)
       .eq('is_active', true)
   ])
@@ -534,21 +534,34 @@ export async function getRecipientStats(): Promise<{
     throw new Error('Failed to fetch recipient statistics')
   }
 
-  type StatusCountRow = { is_active: boolean | null }
-  type RelationshipCountRow = { relationship: string | null }
-  type GroupCountRow = { group_id: string | null }
+  type StatusCountRow = { is_active: boolean | null; count: string | number | null }
+  type RelationshipCountRow = { relationship: string | null; count: string | number | null }
+  type GroupCountRow = { group_id: string | null; count: string | number | null }
 
   const statusCounts = (statusResponse.data ?? []) as StatusCountRow[]
   const relationshipCounts = (relationshipResponse.data ?? []) as RelationshipCountRow[]
   const groupCounts = (groupResponse.data ?? []) as GroupCountRow[]
 
-  const totalRecipients = statusCounts.length
-  const activeRecipients = statusCounts.filter(row => row.is_active).length
-  const inactiveRecipients = totalRecipients - activeRecipients
+  const parseCount = (value: string | number | null | undefined): number => {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+      const parsed = Number.parseInt(value, 10)
+      return Number.isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
+  const totalRecipients = statusCounts.reduce((total, row) => total + parseCount(row.count), 0)
+  const activeRecipients = statusCounts
+    .filter((row) => row.is_active === true)
+    .reduce((total, row) => total + parseCount(row.count), 0)
+  const inactiveRecipients = statusCounts
+    .filter((row) => row.is_active === false)
+    .reduce((total, row) => total + parseCount(row.count), 0)
 
   const byRelationship = relationshipCounts.reduce<Record<string, number>>((acc, row) => {
     const key = row.relationship && row.relationship.trim().length > 0 ? row.relationship : 'unknown'
-    acc[key] = (acc[key] || 0) + 1
+    acc[key] = (acc[key] || 0) + parseCount(row.count)
     return acc
   }, {})
 
@@ -581,7 +594,7 @@ export async function getRecipientStats(): Promise<{
 
   const byGroup = groupCounts.reduce<Record<string, number>>((acc, row) => {
     const name = row.group_id ? groupNameMap.get(row.group_id) ?? 'Unknown Group' : 'Unassigned'
-    acc[name] = (acc[name] || 0) + 1
+    acc[name] = (acc[name] || 0) + parseCount(row.count)
     return acc
   }, {})
 
