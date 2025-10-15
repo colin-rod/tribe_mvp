@@ -75,8 +75,18 @@ jest.mock('date-fns', () => ({
 
 // Mock ChildImage component
 jest.mock('@/components/ui/ChildImage', () => {
-  return function MockChildImage({ alt, className, ...props }) {
-    return <img alt={alt} className={className} {...props} data-testid="child-image" />
+  return function MockChildImage({ alt, className, childId, photoUrl, name }) {
+    return (
+      <div
+        role="img"
+        aria-label={alt}
+        className={className}
+        data-testid="child-image"
+        data-child-id={childId}
+        data-photo-url={photoUrl}
+        data-name={name}
+      />
+    )
   }
 })
 
