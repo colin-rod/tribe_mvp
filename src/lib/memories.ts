@@ -5,6 +5,17 @@ import type { Memory, CreateMemoryRequest, RecentMemoriesWithStatsResult, Memory
 
 const logger = createLogger('Memories')
 
+function attachNewMemoriesCount(memories: MemoryWithStats[], newMemoriesCount: number): RecentMemoriesWithStatsResult {
+  Object.defineProperty(memories, 'newMemoriesCount', {
+    value: newMemoriesCount,
+    enumerable: false,
+    writable: false,
+    configurable: true
+  })
+
+  return memories
+}
+
 /**
  * Perform diagnostic checks when database errors occur
  * Temporarily disabled - uncomment if needed for debugging
@@ -509,7 +520,7 @@ export async function getApprovedMemories(): Promise<Memory[]> {
 
 /**
  * Get recent memories with response counts for dashboard display
- * Always returns an object with a memories array and new-memory count
+ * Returns an array of memories with a non-enumerable newMemoriesCount property
  */
 export async function getRecentMemoriesWithStats(limit: number = 5): Promise<RecentMemoriesWithStatsResult> {
   const startTime = Date.now()
@@ -529,7 +540,7 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
 
     if (authError || !user) {
       logger.error('Authentication error in getRecentMemoriesWithStats', { requestId })
-      return { memories: [], newMemoriesCount: 0 }
+      return attachNewMemoriesCount([] as MemoryWithStats[], 0)
     }
 
     const thirtyDaysAgo = new Date()
@@ -553,11 +564,11 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
 
     if (error) {
       logger.error('Database query failed', { requestId, error: error.message })
-      return { memories: [], newMemoriesCount: 0 }
+      return attachNewMemoriesCount([] as MemoryWithStats[], 0)
     }
 
     if (!memories || memories.length === 0) {
-      return { memories: [], newMemoriesCount: 0 }
+      return attachNewMemoriesCount([] as MemoryWithStats[], 0)
     }
 
     const newMemoriesCount = memories.reduce((count, memory) => count + (memory.is_new ? 1 : 0), 0)
@@ -576,95 +587,74 @@ export async function getRecentMemoriesWithStats(limit: number = 5): Promise<Rec
       update_id: string
     }
 
-  const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
+    const likedMemoryIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
-  type AggregatedResponseStat = {
-    update_id: string
-    response_count: number | null
-    last_response_at: string | null
-  }
+    type AggregatedResponseStat = {
+      update_id: string
+      response_count: number | null
+      last_response_at: string | null
+    }
 
-  // NOTE: GROUP BY not directly supported in Supabase JS client
-  // This aggregation should be done via a database function or view
-  // For now, we fetch all responses and aggregate in JS
-  const { data: responseData, error: responseStatsError } = await supabase
-    .from('responses')
-    .select('update_id, received_at')
-    .in('update_id', memoryIds)
+    const { data: responseStats, error: responseStatsError } = await supabase
+      .from('responses')
+      .select('update_id,response_count:count(*),last_response_at:max(received_at)')
+      .in('update_id', memoryIds)
+      .group('update_id')
 
-  if (responseStatsError) {
-    logger.error('Error fetching aggregated response stats', {
-      requestId,
-      error: responseStatsError.message
-    })
-  }
+    if (responseStatsError) {
+      logger.error('Error fetching aggregated response stats', {
+        requestId,
+        error: responseStatsError.message
+      })
+    }
 
-  // Aggregate response stats in JavaScript
-  const responseStatsMap = new Map<string, AggregatedResponseStat>()
+    const responseStatsMap = new Map<string, AggregatedResponseStat>()
 
-  if (responseData) {
-    const statsMap = new Map<string, { count: number; lastDate: string }>()
-
-    for (const response of responseData) {
-      const existing = statsMap.get(response.update_id)
-      const receivedAt = response.received_at || ''
-
-      if (!existing) {
-        statsMap.set(response.update_id, { count: 1, lastDate: receivedAt })
-      } else {
-        existing.count++
-        if (receivedAt > existing.lastDate) {
-          existing.lastDate = receivedAt
-        }
+    if (responseStats) {
+      for (const stat of responseStats as AggregatedResponseStat[]) {
+        responseStatsMap.set(stat.update_id, {
+          update_id: stat.update_id,
+          response_count: stat.response_count ?? 0,
+          last_response_at: stat.last_response_at ?? null
+        })
       }
     }
 
-    for (const [updateId, stats] of statsMap.entries()) {
-      responseStatsMap.set(updateId, {
-        update_id: updateId,
-        response_count: stats.count,
-        last_response_at: stats.lastDate || null
-      })
-    }
-  }
+    // Merge response stats and engagement data for each memory
+    const memoriesWithStats: MemoryWithStats[] = memories.map((memory) => {
+      const stats = responseStatsMap.get(memory.id)
 
-  // Merge response stats and engagement data for each memory
-  const memoriesWithStats: MemoryWithStats[] = memories.map((memory) => {
-    const stats = responseStatsMap.get(memory.id)
+      let responseCount = 0
+      if (stats?.response_count !== undefined && stats?.response_count !== null) {
+        const parsedCount = Number(stats.response_count)
+        responseCount = Number.isNaN(parsedCount) ? 0 : parsedCount
+      }
 
-    let responseCount = 0
-    if (stats?.response_count !== undefined && stats?.response_count !== null) {
-      const parsedCount = Number(stats.response_count)
-      responseCount = Number.isNaN(parsedCount) ? 0 : parsedCount
-    }
+      return {
+        ...memory,
+        response_count: responseCount,
+        last_response_at: stats?.last_response_at ?? null,
+        has_unread_responses: false,
+        like_count: memory.like_count ?? 0,
+        comment_count: memory.comment_count ?? 0,
+        isLiked: likedMemoryIds.has(memory.id)
+      } as MemoryWithStats
+    })
 
-    return {
-      ...memory,
-      response_count: responseCount,
-      last_response_at: stats?.last_response_at ?? null,
-      has_unread_responses: false,
-      like_count: memory.like_count ?? 0,
-      comment_count: memory.comment_count ?? 0,
-      isLiked: likedMemoryIds.has(memory.id)
-    } as MemoryWithStats
-  })
+    logger.info('Successfully completed getRecentMemoriesWithStats', {
+      requestId,
+      totalMemories: memoriesWithStats.length,
+      newMemoriesCount,
+      duration: Date.now() - startTime
+    })
 
-  logger.info('Successfully completed getRecentMemoriesWithStats', {
-    requestId,
-    totalMemories: memoriesWithStats.length,
-    duration: Date.now() - startTime
-  })
-
-    return {
-      memories: memoriesWithStats,
-      newMemoriesCount
-    }
+    return attachNewMemoriesCount(memoriesWithStats, newMemoriesCount)
 
   } catch (globalError) {
     logger.error('Critical error in getRecentMemoriesWithStats', {
       requestId,
       error: globalError instanceof Error ? globalError.message : 'Unknown'
     })
-    return { memories: [], newMemoriesCount: 0 }
+    return attachNewMemoriesCount([] as MemoryWithStats[], 0)
   }
 }

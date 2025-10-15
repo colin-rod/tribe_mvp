@@ -228,14 +228,29 @@ export const validateUpdateMediaFiles = validateMemoryMediaFiles
  * Generate preview URLs for files before upload
  */
 export function generatePreviewUrls(files: File[]): string[] {
-  return files.map(file => URL.createObjectURL(file))
+  const createObjectURL = typeof globalThis !== 'undefined' && globalThis.URL && typeof globalThis.URL.createObjectURL === 'function'
+    ? globalThis.URL.createObjectURL.bind(globalThis.URL)
+    : null
+
+  if (createObjectURL) {
+    return files.map(file => createObjectURL(file))
+  }
+
+  // Fallback for test environments without URL.createObjectURL
+  return files.map((file, index) => `preview-${index}-${file.name}`)
 }
 
 /**
  * Clean up preview URLs to prevent memory leaks
  */
 export function cleanupPreviewUrls(urls: string[]): void {
-  urls.forEach(url => URL.revokeObjectURL(url))
+  const revokeObjectURL = typeof globalThis !== 'undefined' && globalThis.URL && typeof globalThis.URL.revokeObjectURL === 'function'
+    ? globalThis.URL.revokeObjectURL.bind(globalThis.URL)
+    : null
+
+  if (!revokeObjectURL) return
+
+  urls.forEach(url => revokeObjectURL(url))
 }
 
 // Helper function to get a fresh signed URL for an existing photo

@@ -38,6 +38,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
   const [newMemoriesCount, setNewMemoriesCount] = useState<number>(0)
   const [groupedMemories, setGroupedMemories] = useState<{ label: string; memories: MemoryCardData[] }[]>([])
+  const [newMemoriesCount, setNewMemoriesCount] = useState(0)
 
   const loadMemories = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -54,15 +55,15 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
         timestamp: new Date().toISOString()
       })
 
-      const result = await getRecentMemoriesWithStats(limit)
+      const recentMemories = await getRecentMemoriesWithStats(limit)
 
       // Defensive null check
-      if (!result || !Array.isArray(result.memories)) {
+      if (!Array.isArray(recentMemories)) {
         logger.warn('MemoryList: getRecentMemoriesWithStats returned invalid data', {
           componentRequestId,
-          result,
-          typeof: typeof result,
-          isArray: Array.isArray(result?.memories)
+          result: recentMemories,
+          typeof: typeof recentMemories,
+          isArray: Array.isArray(recentMemories)
         })
         setMemories([])
         setGroupedMemories([])
@@ -71,7 +72,7 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       }
 
       // Transform to card data
-      let transformedMemories: MemoryCardData[] = result.memories.map((memory) => ({
+      let transformedMemories: MemoryCardData[] = recentMemories.map((memory) => ({
         id: memory.id,
         child: {
           id: memory.child_id,
@@ -115,11 +116,18 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
       setGroupedMemories(groupMemories(transformedMemories))
       setNewMemoriesCount(result.newMemoriesCount ?? 0)
 
+      const responseNewCount = typeof (recentMemories as { newMemoriesCount?: number }).newMemoriesCount === 'number'
+        ? (recentMemories as { newMemoriesCount: number }).newMemoriesCount
+        : null
+      const derivedNewCount = transformedMemories.reduce((count, memory) => count + (memory.isNew ? 1 : 0), 0)
+      const newCount = responseNewCount ?? derivedNewCount
+      setNewMemoriesCount(newCount)
+
       const loadEndTime = Date.now()
       logger.info('MemoryList: Successfully loaded memories', {
         componentRequestId,
         count: transformedMemories.length,
-        newCount: result.newMemoriesCount ?? 0,
+        newCount,
         duration: loadEndTime - loadStartTime,
         timestamp: new Date().toISOString()
       })
@@ -213,8 +221,8 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   return (
     <div className={cn('space-y-8', className)}>
       {newMemoriesCount > 0 && (
-        <div className="text-sm text-neutral-600" data-testid="new-memories-count">
-          {`${newMemoriesCount} new ${newMemoriesCount === 1 ? 'memory' : 'memories'}`}
+        <div className="text-sm font-medium text-neutral-600">
+          {`${newMemoriesCount} new memories`}
         </div>
       )}
       {groupedMemories.length === 0 ? (
