@@ -164,7 +164,7 @@ const ActivityFeedView = memo(function ActivityFeedView() {
         groups: groupStatsData.totalGroups
       });
 
-      const totalMemories = memoriesResult.memories.length;
+      const totalMemories = memoriesResult.length;
       setMemoriesCreated(totalMemories);
     } catch (error) {
       logger.errorWithStack('Error loading dashboard stats:', error as Error);

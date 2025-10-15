@@ -38,7 +38,6 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
   const [activeMemoryId, setActiveMemoryId] = useState<string | null>(null)
   const [newMemoriesCount, setNewMemoriesCount] = useState<number>(0)
   const [groupedMemories, setGroupedMemories] = useState<{ label: string; memories: MemoryCardData[] }[]>([])
-  const [newMemoriesCount, setNewMemoriesCount] = useState(0)
 
   const loadMemories = useCallback(async () => {
     const loadStartTime = Date.now()
@@ -114,10 +113,10 @@ const MemoryListComponent = memo<MemoryListProps>(function MemoryListComponent({
 
       setMemories(transformedMemories)
       setGroupedMemories(groupMemories(transformedMemories))
-      setNewMemoriesCount(result.newMemoriesCount ?? 0)
 
-      const responseNewCount = typeof (recentMemories as { newMemoriesCount?: number }).newMemoriesCount === 'number'
-        ? (recentMemories as { newMemoriesCount: number }).newMemoriesCount
+      // Calculate new memories count from the response or derive from memory data
+      const responseNewCount = typeof (recentMemories as unknown as { newMemoriesCount?: number }).newMemoriesCount === 'number'
+        ? (recentMemories as unknown as { newMemoriesCount: number }).newMemoriesCount
         : null
       const derivedNewCount = transformedMemories.reduce((count, memory) => count + (memory.isNew ? 1 : 0), 0)
       const newCount = responseNewCount ?? derivedNewCount
