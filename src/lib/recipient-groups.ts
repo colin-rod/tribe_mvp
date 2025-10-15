@@ -465,7 +465,7 @@ export async function getGroupStats(): Promise<{
       .eq('parent_id', user.id),
     supabase
       .from('recipient_groups')
-      .select('is_default_group, count:id', { group: 'is_default_group' })
+      .select('is_default_group')
       .eq('parent_id', user.id),
     supabase
       .from('recipients')
@@ -489,16 +489,7 @@ export async function getGroupStats(): Promise<{
     throw new Error('Failed to fetch group statistics')
   }
 
-  type GroupBreakdownRow = { is_default_group: boolean | null; count: string | number | null }
-
-  const parseCount = (value: string | number | null | undefined): number => {
-    if (typeof value === 'number') return value
-    if (typeof value === 'string') {
-      const parsed = Number.parseInt(value, 10)
-      return Number.isNaN(parsed) ? 0 : parsed
-    }
-    return 0
-  }
+  type GroupBreakdownRow = { is_default_group: boolean | null }
 
   const breakdownRows = (groupBreakdownResponse.data ?? []) as GroupBreakdownRow[]
 
@@ -506,7 +497,7 @@ export async function getGroupStats(): Promise<{
   let customGroups = 0
 
   breakdownRows.forEach((row) => {
-    const count = parseCount(row.count)
+    const count = 1
     if (row.is_default_group) {
       defaultGroups += count
     } else {
