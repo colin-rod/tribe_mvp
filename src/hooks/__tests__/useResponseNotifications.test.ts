@@ -98,7 +98,7 @@ describe('useResponseNotifications', () => {
     })
 
     // Setup mock query chains
-    const updatesChain = {
+    const memoriesChain = {
       eq: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: mockSingle,
@@ -118,8 +118,8 @@ describe('useResponseNotifications', () => {
         select: jest.fn(),
       }
 
-      if (table === 'updates') {
-        mockTableReturn.select.mockReturnValue(updatesChain)
+      if (table === 'memories') {
+        mockTableReturn.select.mockReturnValue(memoriesChain)
       } else if (table === 'recipients') {
         mockTableReturn.select.mockReturnValue(recipientsChain)
       }
