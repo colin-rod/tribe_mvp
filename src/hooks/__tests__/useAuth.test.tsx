@@ -95,7 +95,7 @@ describe('useAuth', () => {
   )
 
   describe('AuthProvider initialization', () => {
-    it('should initialize with loading state', () => {
+    it('should initialize with loading state', async () => {
       mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
 
       const { result } = renderHook(() => useAuth(), { wrapper })
@@ -103,6 +103,11 @@ describe('useAuth', () => {
       expect(result.current.loading).toBe(true)
       expect(result.current.user).toBeNull()
       expect(result.current.session).toBeNull()
+
+      // Wait for loading to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false)
+      })
     })
 
     it('should load authenticated user on mount', async () => {
