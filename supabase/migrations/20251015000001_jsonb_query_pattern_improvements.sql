@@ -129,7 +129,6 @@ COMMENT ON INDEX idx_digest_queue_ready IS
 
 -- Function: Find memories by AI-detected sentiment
 CREATE OR REPLACE FUNCTION find_memories_by_sentiment(
-  p_user_id UUID,
   p_sentiment TEXT,
   p_limit INTEGER DEFAULT 50,
   p_offset INTEGER DEFAULT 0
@@ -141,7 +140,13 @@ RETURNS TABLE(
   confidence NUMERIC,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'find_memories_by_sentiment requires an authenticated user';
+  END IF;
+
   RETURN QUERY
   SELECT
     m.id,
@@ -150,7 +155,7 @@ BEGIN
     COALESCE((m.ai_analysis->'confidence'->>'sentiment')::NUMERIC, 0) as confidence,
     m.created_at
   FROM memories m
-  WHERE m.parent_id = p_user_id
+  WHERE m.parent_id = v_user_id
     AND m.ai_analysis ? 'sentiment'
     AND m.ai_analysis->>'sentiment' = p_sentiment
   ORDER BY m.created_at DESC
@@ -166,7 +171,6 @@ GRANT EXECUTE ON FUNCTION find_memories_by_sentiment TO authenticated;
 
 -- Function: Get AI prompts by type for user
 CREATE OR REPLACE FUNCTION get_ai_prompts_by_type(
-  p_user_id UUID,
   p_prompt_type TEXT,
   p_status TEXT DEFAULT 'pending',
   p_limit INTEGER DEFAULT 20
@@ -179,7 +183,13 @@ RETURNS TABLE(
   status TEXT,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'get_ai_prompts_by_type requires an authenticated user';
+  END IF;
+
   RETURN QUERY
   SELECT
     ap.id,
@@ -189,7 +199,7 @@ BEGIN
     ap.status::TEXT,
     ap.created_at
   FROM ai_prompts ap
-  WHERE ap.parent_id = p_user_id
+  WHERE ap.parent_id = v_user_id
     AND ap.prompt_data ? 'prompt_type'
     AND ap.prompt_data->>'prompt_type' = p_prompt_type
     AND ap.status::TEXT = p_status
@@ -205,7 +215,6 @@ GRANT EXECUTE ON FUNCTION get_ai_prompts_by_type TO authenticated;
 
 -- Function: Find high-confidence AI suggestions
 CREATE OR REPLACE FUNCTION find_high_confidence_suggestions(
-  p_user_id UUID,
   p_min_confidence NUMERIC DEFAULT 0.8,
   p_limit INTEGER DEFAULT 50
 )
@@ -216,7 +225,13 @@ RETURNS TABLE(
   confidence_scores JSONB,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'find_high_confidence_suggestions requires an authenticated user';
+  END IF;
+
   RETURN QUERY
   SELECT
     m.id,
@@ -225,7 +240,7 @@ BEGIN
     m.ai_analysis->'suggested_metadata'->'confidence_scores' as confidence_scores,
     m.created_at
   FROM memories m
-  WHERE m.parent_id = p_user_id
+  WHERE m.parent_id = v_user_id
     AND m.ai_analysis ? 'suggested_metadata'
     AND (m.ai_analysis->'suggested_metadata'->'confidence_scores'->>'overall')::NUMERIC >= p_min_confidence
   ORDER BY
@@ -332,7 +347,32 @@ RETURNS TABLE(
   weekly_digest BOOLEAN,
   full_preferences JSONB
 ) AS $$
+DECLARE
+  v_requesting_user UUID := auth.uid();
+  v_requested_ids UUID[];
 BEGIN
+  IF v_requesting_user IS NULL THEN
+    RAISE EXCEPTION 'batch_get_notification_preferences requires an authenticated user';
+  END IF;
+
+  v_requested_ids := COALESCE(p_user_ids, ARRAY[v_requesting_user]::uuid[]);
+
+  IF array_length(v_requested_ids, 1) IS NULL THEN
+    v_requested_ids := ARRAY[v_requesting_user]::uuid[];
+  END IF;
+
+  IF NOT v_requesting_user = ANY(v_requested_ids) THEN
+    RAISE EXCEPTION 'batch_get_notification_preferences may only be called for the authenticated user';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM unnest(v_requested_ids) AS requested_id
+    WHERE requested_id <> v_requesting_user
+  ) THEN
+    RAISE EXCEPTION 'batch_get_notification_preferences may not request other users';
+  END IF;
+
   RETURN QUERY
   SELECT
     p.id,
@@ -343,7 +383,7 @@ BEGIN
     COALESCE((p.notification_preferences->>'weekly_digest')::BOOLEAN, false) as weekly_digest,
     p.notification_preferences
   FROM profiles p
-  WHERE p.id = ANY(p_user_ids);
+  WHERE p.id = v_requesting_user;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
@@ -354,7 +394,6 @@ GRANT EXECUTE ON FUNCTION batch_get_notification_preferences TO authenticated;
 
 -- Function: Search memories with multiple metadata filters
 CREATE OR REPLACE FUNCTION search_memories_advanced(
-  p_user_id UUID,
   p_sentiment TEXT DEFAULT NULL,
   p_has_milestones BOOLEAN DEFAULT NULL,
   p_has_media BOOLEAN DEFAULT NULL,
@@ -374,7 +413,13 @@ RETURNS TABLE(
   ai_analysis JSONB,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
 BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'search_memories_advanced requires an authenticated user';
+  END IF;
+
   RETURN QUERY
   SELECT
     m.id,
@@ -386,7 +431,7 @@ BEGIN
     m.ai_analysis,
     m.created_at
   FROM memories m
-  WHERE m.parent_id = p_user_id
+  WHERE m.parent_id = v_user_id
     -- Sentiment filter
     AND (p_sentiment IS NULL OR m.ai_analysis->>'sentiment' = p_sentiment)
     -- Milestone filter
