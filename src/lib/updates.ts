@@ -815,8 +815,9 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
 
   const likedUpdateIds = new Set((userLikes as UserLike[] | null)?.map(like => like.update_id) || [])
 
-  // Get response counts and engagement data for each update
-  logger.info('Getting response counts for updates', {
+  // CRO-98: Get response stats for all updates in a SINGLE batch query
+  // This eliminates the N+1 query pattern (was 2N queries, now 1 query)
+  logger.info('Getting response counts for updates (batch)', {
     requestId,
     updateIds,
     updateCount: updateIds.length,
@@ -824,128 +825,78 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
     likesQueryDuration: likesQueryEnd - likesQueryStart
   })
 
-  const updatesWithStats = await Promise.all(
-    typedUpdates.map(async (update) => {
-      logger.debug('Querying responses for update', { updateId: update.id })
+  const responseStatsStart = Date.now()
+  type ResponseStat = {
+    update_id: string
+    response_count: number
+    last_response_at: string | null
+  }
 
-      try {
-        // Get response count with detailed error tracking
-        const responseCountStart = Date.now()
-        const { count, error: countError } = await supabase
-          .from('responses')
-          .select('*', { count: 'exact', head: true })
-          .eq('update_id', update.id)
-        const responseCountEnd = Date.now()
+  // CRO-98: Call batch response stats function
+  // Note: RPC function exists in database (migration 20251016000001) but not yet in generated types
+  const { data: responseStats, error: responseStatsError } = await supabase
+    .rpc('get_update_response_stats' as 'analyze_content_formats', {
+      update_ids: updateIds
+    } as never)
+  const responseStatsEnd = Date.now()
 
-        if (countError) {
-          logger.error('Error getting response count for update', {
-            requestId,
-            updateId: update.id,
-            error: {
-              code: countError.code,
-              message: countError.message,
-              details: countError.details,
-              hint: countError.hint,
-              status: (countError as unknown as Record<string, unknown>).status,
-              statusCode: (countError as unknown as Record<string, unknown>).statusCode,
-              statusText: (countError as unknown as Record<string, unknown>).statusText
-            },
-            queryDuration: responseCountEnd - responseCountStart,
-            tableName: 'responses',
-            operation: 'COUNT',
-            timestamp: new Date().toISOString()
-          })
-          // Set count to 0 if query fails to prevent null access
-        }
-
-        // Get last response with detailed error tracking
-        const lastResponseStart = Date.now()
-        const { data: lastResponseData, error: lastResponseError } = await supabase
-          .from('responses')
-          .select('received_at')
-          .eq('update_id', update.id)
-          .order('received_at', { ascending: false })
-          .limit(1)
-        const lastResponseEnd = Date.now()
-
-        if (lastResponseError) {
-          logger.error('Error getting last response for update', {
-            requestId,
-            updateId: update.id,
-            error: {
-              code: lastResponseError.code,
-              message: lastResponseError.message,
-              details: lastResponseError.details,
-              hint: lastResponseError.hint,
-              status: (lastResponseError as unknown as Record<string, unknown>).status,
-              statusCode: (lastResponseError as unknown as Record<string, unknown>).statusCode,
-              statusText: (lastResponseError as unknown as Record<string, unknown>).statusText
-            },
-            queryDuration: lastResponseEnd - lastResponseStart,
-            tableName: 'responses',
-            operation: 'SELECT_LATEST',
-            timestamp: new Date().toISOString()
-          })
-          // Continue with null lastResponse if query fails
-        }
-
-        // Extract first response from array or use null
-        type LastResponse = {
-          received_at: string | null
-        }
-
-        const lastResponse = lastResponseData && lastResponseData.length > 0 ? (lastResponseData[0] as LastResponse) : null
-
-        const result = {
-          ...update,
-          response_count: count || 0,
-          last_response_at: lastResponse?.received_at || null,
-          has_unread_responses: false, // For now, we'll implement this later
-          // Engagement fields
-          like_count: update.like_count || 0,
-          comment_count: update.comment_count || 0,
-          isLiked: likedUpdateIds.has(update.id)
-        }
-
-        logger.debug('Processed update stats', {
-          requestId,
-          updateId: update.id,
-          responseCount: result.response_count,
-          lastResponseAt: result.last_response_at,
-          isLiked: result.isLiked,
-          responseCountDuration: responseCountEnd - responseCountStart,
-          lastResponseDuration: lastResponseEnd - lastResponseStart,
-          childName: update.children?.name || 'Unknown',
-          contentLength: update.content?.length || 0
-        })
-
-        return result
-        } catch (updateError) {
-        logger.error('Error processing individual update stats', {
-          requestId,
-          updateId: update.id,
-          error: updateError instanceof Error ? updateError.message : 'Unknown',
-          timestamp: new Date().toISOString()
-        })
-
-        // Return update with default stats if processing fails
-        return {
-          ...update,
-          response_count: 0,
-          last_response_at: null,
-          has_unread_responses: false,
-          like_count: update.like_count || 0,
-          comment_count: update.comment_count || 0,
-          isLiked: false
-        }
-      }
+  if (responseStatsError) {
+    logger.error('Error getting batch response stats (non-fatal)', {
+      requestId,
+      error: {
+        code: responseStatsError.code,
+        message: responseStatsError.message,
+        details: responseStatsError.details,
+        hint: responseStatsError.hint
+      },
+      queryDuration: responseStatsEnd - responseStatsStart,
+      updateCount: updateIds.length,
+      timestamp: new Date().toISOString()
     })
+    // Continue with empty stats if query fails
+  }
+
+  // Build a Map for O(1) lookup of response stats by update_id
+  const typedResponseStats = (responseStats || []) as unknown as ResponseStat[]
+  const responseStatsMap = new Map(
+    typedResponseStats.map(stat => [
+      stat.update_id,
+      {
+        response_count: stat.response_count || 0,
+        last_response_at: stat.last_response_at
+      }
+    ])
   )
+
+  logger.info('Batch response stats retrieved', {
+    requestId,
+    statsCount: responseStatsMap.size,
+    queryDuration: responseStatsEnd - responseStatsStart,
+    totalResponses: typedResponseStats.reduce((sum, s) => sum + (s.response_count || 0), 0)
+  })
+
+  // Map updates with stats - all data is now available, no additional queries needed
+  const updatesWithStats = typedUpdates.map((update) => {
+    const stats = responseStatsMap.get(update.id)
+
+    const result = {
+      ...update,
+      response_count: stats?.response_count || 0,
+      last_response_at: stats?.last_response_at || null,
+      has_unread_responses: false, // For now, we'll implement this later
+      // Engagement fields
+      like_count: update.like_count || 0,
+      comment_count: update.comment_count || 0,
+      isLiked: likedUpdateIds.has(update.id)
+    }
+
+    return result
+  })
 
   const endTime = Date.now()
   const totalDuration = endTime - startTime
 
-  logger.info('Successfully completed getRecentUpdatesWithStats', {
+  logger.info('Successfully completed getRecentUpdatesWithStats (CRO-98 optimized)', {
     requestId,
     totalUpdates: updatesWithStats.length,
     totalResponses: updatesWithStats.reduce((sum, u) => sum + u.response_count, 0),
@@ -954,9 +905,12 @@ export async function getRecentUpdatesWithStats(limit: number = 5): Promise<Upda
       totalDuration,
       queryDuration: queryEndTime - queryStartTime,
       likesQueryDuration: likesQueryEnd - likesQueryStart,
-      avgUpdateProcessing: updatesWithStats.length > 0 ? totalDuration / updatesWithStats.length : 0
+      responseStatsQueryDuration: responseStatsEnd - responseStatsStart,
+      avgUpdateProcessing: updatesWithStats.length > 0 ? totalDuration / updatesWithStats.length : 0,
+      queriesEliminated: updatesWithStats.length * 2 // Was 2N individual queries, now 1 batch query
     },
     dataTransferred: JSON.stringify(updatesWithStats).length,
+    optimization: 'N+1 eliminated - batch query instead of 2N individual queries',
     timestamp: new Date().toISOString()
   })
 
