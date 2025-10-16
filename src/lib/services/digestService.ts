@@ -231,46 +231,60 @@ export async function approveDigest(request: ApproveDigestRequest): Promise<void
 }
 
 /**
- * Send summary to all recipients
+ * Send summary to all recipients via email
  */
 async function sendDigest(digestId: string): Promise<void> {
   const { supabase, user } = await getAuthenticatedSupabaseContext()
 
-  logger.info('Sending summary', { digestId, userId: user.id })
+  logger.info('Sending summary via email', { digestId, userId: user.id })
 
-  // Update status to sending
-  await supabase
-    .from('summaries')
-    .update({ status: 'sending' })
-    .eq('id', digestId)
+  // Verify digest ownership
+  await requireDigestOwnership(supabase, digestId, user.id)
 
-  // In production, this would:
-  // 1. Fetch preview data
-  // 2. For each recipient, render email template
-  // 3. Send via email service
-  // 4. Track delivery status
-  // 5. Update digest status to 'sent'
-
-  // For now, just mark as sent
-  const { error } = await supabase
-    .from('summaries')
-    .update({
-      status: 'sent',
-      sent_at: new Date().toISOString()
+  try {
+    // Call Edge Function to send digest emails
+    const { data, error } = await supabase.functions.invoke('send-digest-emails', {
+      body: {
+        digest_id: digestId
+      }
     })
-    .eq('id', digestId)
 
-  if (error) {
-    throw new Error(`Failed to send summary: ${error.message}`)
+    if (error) {
+      logger.error('Digest email sending failed', { error, digestId, userId: user.id })
+      throw new Error(`Failed to send digest emails: ${error.message}`)
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown email sending error')
+    }
+
+    logger.info('Digest emails sent successfully', {
+      digestId,
+      sentCount: data.sent_count,
+      failedCount: data.failed_count,
+      userId: user.id
+    })
+
+    // Log any errors that occurred during sending
+    if (data.errors && data.errors.length > 0) {
+      logger.warn('Some digest emails failed to send', {
+        digestId,
+        errors: data.errors,
+        userId: user.id
+      })
+    }
+  } catch (error) {
+    logger.error('Error sending digest', { error, digestId, userId: user.id })
+
+    // Update digest status to failed
+    await supabase
+      .from('summaries')
+      .update({ status: 'failed' })
+      .eq('id', digestId)
+      .eq('parent_id', user.id)
+
+    throw error
   }
-
-  // Update all related updates to 'sent_in_digest'
-  await supabase
-    .from('memories')
-    .update({ distribution_status: 'sent_in_digest' })
-    .eq('digest_id', digestId)
-
-  logger.info('Summary sent successfully', { digestId, userId: user.id })
 }
 
 /**
