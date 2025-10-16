@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { Toaster } from 'sonner'
 import FeedbackButton from '@/components/feedback/FeedbackButton'
 import { DashboardAnalyticsInitializer } from '@/components/providers/DashboardAnalyticsInitializer'
+import { ReactQueryProvider } from '@/lib/react-query'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -142,15 +143,17 @@ export default function RootLayout({
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">
           <ErrorBoundary>
-            <AuthProvider>
-              <LayoutProvider>
-                <KeyboardShortcutsProvider>
-                  <main id="main-content" tabIndex={-1}>
-                    {children}
-                  </main>
-                </KeyboardShortcutsProvider>
-              </LayoutProvider>
-            </AuthProvider>
+            <ReactQueryProvider>
+              <AuthProvider>
+                <LayoutProvider>
+                  <KeyboardShortcutsProvider>
+                    <main id="main-content" tabIndex={-1}>
+                      {children}
+                    </main>
+                  </KeyboardShortcutsProvider>
+                </LayoutProvider>
+              </AuthProvider>
+            </ReactQueryProvider>
           </ErrorBoundary>
         </div>
         <DevelopmentIndicator />
