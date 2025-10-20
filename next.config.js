@@ -38,6 +38,8 @@ const createContentSecurityPolicy = () => {
       'wss://*.supabase.in',
       'https://va.vercel-scripts.com',
       'https://*.vercel-analytics.com',
+      'https://www.google-analytics.com',
+      'https://www.googletagmanager.com',
       'https://vercel.live',
       isDevelopment ? 'ws://localhost:*' : '',
       isDevelopment ? 'wss://localhost:*' : '',
