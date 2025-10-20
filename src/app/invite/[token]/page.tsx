@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { Suspense } from 'react'
 import InviteAcceptanceForm from './InviteAcceptanceForm'
 
@@ -21,23 +20,9 @@ interface PageProps {
 }
 
 function getAppUrl() {
-  try {
-    const requestHeaders = headers()
-    const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
-    const protocol = requestHeaders.get('x-forwarded-proto') ?? 'https'
-
-    if (host) {
-      return `${protocol}://${host}`
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.warn('Falling back to environment URL for metadata generation', error)
-    }
-  }
-
   const envUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
 
   return envUrl ?? 'http://localhost:3000'
@@ -50,8 +35,12 @@ async function getInvitationDetails(token: string) {
 
   try {
     const appUrl = getAppUrl()
+    const requestUrl = new URL(
+      `/api/invitations/validate/${encodeURIComponent(token)}`,
+      appUrl
+    )
     const response = await fetch(
-      `${appUrl}/api/invitations/validate/${encodeURIComponent(token)}`,
+      requestUrl,
       {
         headers: {
           Accept: 'application/json'
