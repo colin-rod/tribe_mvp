@@ -23,7 +23,6 @@ import { cn, getInitials } from '@/lib/utils'
 import {
   DASHBOARD_NAVIGATION_ITEMS,
   DASHBOARD_NAVIGATION_SECTIONS,
-  type DashboardNavigationItem,
 } from '@/lib/constants/navigationItems'
 import type { UpdateType } from '@/hooks/useActivityFilters'
 import { trackDashboardInteraction } from '@/lib/analytics/dashboard-analytics'
@@ -98,11 +97,12 @@ export default function Navigation({ onCreateUpdate, customActions }: Navigation
 
   const handleNavigation = (
     event: ReactMouseEvent<HTMLAnchorElement>,
-    item: DashboardNavigationItem,
+    item: { href: string },
     options: { closeMobileMenu?: boolean } = {}
   ) => {
     event.preventDefault()
-    navigate(item.href)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    navigate(item.href as any)
 
     if (options.closeMobileMenu) {
       setIsMobileMenuOpen(false)

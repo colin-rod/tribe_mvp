@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { cn } from '@/lib/utils'
@@ -71,9 +71,78 @@ export function TemporaryMuteModal({
 }: TemporaryMuteModalProps) {
   const [selectedDuration, setSelectedDuration] = useState('1_day')
   const [preserveUrgent, setPreserveUrgent] = useState(true)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null)
 
   const handleConfirm = () => {
     onConfirm(selectedDuration, preserveUrgent)
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null
+
+    const dialogEl = dialogRef.current
+    if (dialogEl) {
+      const focusableElements = dialogEl.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+      )
+      const focusable = Array.from(focusableElements).filter(
+        element => !element.hasAttribute('data-focus-guard')
+      )
+      const firstFocusable = focusable[0]
+
+      if (firstFocusable) {
+        firstFocusable.focus()
+      } else {
+        dialogEl.focus()
+      }
+    }
+
+    return () => {
+      if (previouslyFocusedElementRef.current) {
+        previouslyFocusedElementRef.current.focus()
+        previouslyFocusedElementRef.current = null
+      }
+    }
+  }, [isOpen])
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const dialogEl = dialogRef.current
+    if (!dialogEl) {
+      return
+    }
+
+    const focusableElements = dialogEl.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    )
+    const focusable = Array.from(focusableElements).filter(element => !element.hasAttribute('data-focus-guard'))
+
+    if (focusable.length === 0) {
+      event.preventDefault()
+      dialogEl.focus()
+      return
+    }
+
+    const firstElement = focusable[0]
+    const lastElement = focusable[focusable.length - 1]
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        event.preventDefault()
+        lastElement.focus()
+      }
+    } else if (document.activeElement === lastElement) {
+      event.preventDefault()
+      firstElement.focus()
+    }
   }
 
   const calculateMuteEnd = (duration: string): string => {
@@ -132,21 +201,35 @@ export function TemporaryMuteModal({
         />
 
         {/* Modal */}
-        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="temporary-mute-modal-title"
+          aria-describedby="temporary-mute-modal-description"
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          className="relative bg-white rounded-lg shadow-xl w-full max-w-md"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                 <BellSlashIcon className="h-5 w-5 text-orange-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3
+                id="temporary-mute-modal-title"
+                className="text-lg font-semibold text-gray-900"
+              >
                 Temporarily Mute Group
               </h3>
             </div>
             <button
+              type="button"
               onClick={onClose}
               disabled={isProcessing}
               className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+              aria-label="Close temporary mute dialog"
             >
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -156,7 +239,10 @@ export function TemporaryMuteModal({
           <div className="p-6 space-y-6">
             {/* Description */}
             <div>
-              <p className="text-sm text-gray-600">
+              <p
+                id="temporary-mute-modal-description"
+                className="text-sm text-gray-600"
+              >
                 Temporarily pause notifications from <strong className="text-gray-900">&quot;{groupName}&quot;</strong>.
                 You&apos;ll remain in the group and can unmute anytime.
               </p>

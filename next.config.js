@@ -2,6 +2,110 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
+const createContentSecurityPolicy = () => {
+  const directives = {
+    'default-src': ["'self'"],
+    'script-src': [
+      "'self'",
+      // Next.js requires inline scripts for hydration
+      "'unsafe-inline'",
+      isDevelopment ? "'unsafe-eval'" : '',
+      'https://va.vercel-scripts.com',
+      'https://vercel.live',
+      'https://www.googletagmanager.com',
+      'https://www.google-analytics.com',
+    ].filter(Boolean),
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    'img-src': [
+      "'self'",
+      'data:',
+      'blob:',
+      'https:',
+      'https://*.supabase.co',
+      'https://*.supabase.in',
+      'https://*.vercel.app',
+      'https://*.vercel-analytics.com',
+    ],
+    'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
+    'connect-src': [
+      "'self'",
+      'https://*.colinrodrigues.com',
+      'https://*.supabase.co',
+      'wss://*.supabase.co',
+      'https://*.supabase.in',
+      'wss://*.supabase.in',
+      'https://va.vercel-scripts.com',
+      'https://*.vercel-analytics.com',
+      'https://vercel.live',
+      isDevelopment ? 'ws://localhost:*' : '',
+      isDevelopment ? 'wss://localhost:*' : '',
+      isDevelopment ? 'ws:' : '',
+      isDevelopment ? 'wss:' : '',
+    ].filter(Boolean),
+    'frame-src': ["'self'", 'https://vercel.live'],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"],
+    'media-src': ["'self'", 'https://*.supabase.co', 'https://*.supabase.in'],
+    'worker-src': ["'self'", 'blob:'],
+    'manifest-src': ["'self'"],
+  }
+
+  if (!isDevelopment) {
+    directives['upgrade-insecure-requests'] = []
+  }
+
+  return Object.entries(directives)
+    .map(([key, values]) => {
+      if (!values.length) {
+        return key
+      }
+      return `${key} ${values.join(' ')}`
+    })
+    .join('; ')
+}
+
+const createSecurityHeaders = () => {
+  const headers = [
+    {
+      key: 'Content-Security-Policy',
+      value: createContentSecurityPolicy(),
+    },
+    {
+      key: 'X-Content-Type-Options',
+      value: 'nosniff',
+    },
+    {
+      key: 'X-Frame-Options',
+      value: 'DENY',
+    },
+    {
+      key: 'Referrer-Policy',
+      value: 'strict-origin-when-cross-origin',
+    },
+    {
+      key: 'Permissions-Policy',
+      value: ['camera=()', 'microphone=()', 'geolocation=()', 'interest-cohort=()'].join(', '),
+    },
+    {
+      key: 'X-XSS-Protection',
+      value: '1; mode=block',
+    },
+  ]
+
+  if (!isDevelopment) {
+    headers.push({
+      key: 'Strict-Transport-Security',
+      value: 'max-age=31536000; includeSubDomains',
+    })
+  }
+
+  return headers
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['sharp'],
@@ -39,6 +143,14 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: createSecurityHeaders(),
+      },
+    ]
   },
   // Explicitly define environment variables for client-side access
   // This ensures they're available during both build and runtime

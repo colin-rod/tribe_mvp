@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { IconOptionSelector, type IconOption } from '@/components/ui/IconOptionSelector'
@@ -82,6 +82,19 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
+
+  const frequencyFieldsetId = useId()
+  const frequencyLegendId = `${frequencyFieldsetId}-legend`
+  const frequencyHelperId = `${frequencyFieldsetId}-helper`
+  const importanceFieldsetId = useId()
+  const importanceLegendId = `${importanceFieldsetId}-legend`
+  const importanceHelperId = `${importanceFieldsetId}-helper`
+  const channelFieldsetId = useId()
+  const channelLegendId = `${channelFieldsetId}-legend`
+  const channelHelperId = `${channelFieldsetId}-helper`
+  const contentFieldsetId = useId()
+  const contentLegendId = `${contentFieldsetId}-legend`
+  const contentHelperId = `${contentFieldsetId}-helper`
 
   const options = getPreferenceOptions()
 
@@ -267,11 +280,11 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Frequency Selection */}
-      <div>
-        <label className="text-base font-medium text-gray-900">
+      <fieldset className="space-y-4">
+        <legend id={frequencyLegendId} className="text-base font-medium text-gray-900">
           How often would you like to receive memories?
-        </label>
-        <p className="text-sm text-gray-500 mt-1 mb-4">
+        </legend>
+        <p id={frequencyHelperId} className="text-sm text-gray-500 mt-1 mb-4">
           Choose how frequently you want to be notified about new memories
         </p>
 
@@ -282,7 +295,9 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           mode="single"
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 4 }}
-          ariaLabel="Memory frequency"
+          ariaLabelledBy={frequencyLegendId}
+          ariaDescribedBy={frequencyHelperId}
+          idPrefix={`${frequencyFieldsetId}-option`}
           badges={
             recipient.group && recipient.group.default_frequency
               ? Object.fromEntries(
@@ -304,14 +319,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             {errors.frequency}
           </p>
         )}
-      </div>
+      </fieldset>
 
       {/* Importance Threshold Selection */}
-      <div>
-        <label className="text-base font-medium text-gray-900">
+      <fieldset className="space-y-4">
+        <legend id={importanceLegendId} className="text-base font-medium text-gray-900">
           What types of memories do you want to receive?
-        </label>
-        <p className="text-sm text-gray-500 mt-1 mb-4">
+        </legend>
+        <p id={importanceHelperId} className="text-sm text-gray-500 mt-1 mb-4">
           Control which memories reach you based on their importance
         </p>
 
@@ -322,7 +337,9 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           mode="single"
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 3 }}
-          ariaLabel="Memory importance threshold"
+          ariaLabelledBy={importanceLegendId}
+          ariaDescribedBy={importanceHelperId}
+          idPrefix={`${importanceFieldsetId}-option`}
         />
 
         {/* Helpful info box */}
@@ -341,14 +358,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             </div>
           </div>
         </div>
-      </div>
+      </fieldset>
 
       {/* Channel Selection */}
-      <div>
-        <label className="text-base font-medium text-gray-900">
+      <fieldset className="space-y-4">
+        <legend id={channelLegendId} className="text-base font-medium text-gray-900">
           How would you like to receive memories?
-        </label>
-        <p className="text-sm text-gray-500 mt-1 mb-4">
+        </legend>
+        <p id={channelHelperId} className="text-sm text-gray-500 mt-1 mb-4">
           Select one or more ways to receive notifications (at least one required)
         </p>
 
@@ -359,7 +376,9 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           mode="multi"
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 3 }}
-          ariaLabel="Communication channels"
+          ariaLabelledBy={channelLegendId}
+          ariaDescribedBy={channelHelperId}
+          idPrefix={`${channelFieldsetId}-option`}
           badges={
             recipient.group && recipient.group.default_channels.length > 0
               ? Object.fromEntries(
@@ -379,14 +398,14 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             {errors.preferred_channels}
           </p>
         )}
-      </div>
+      </fieldset>
 
       {/* Content Type Selection */}
-      <div>
-        <label className="text-base font-medium text-gray-900">
+      <fieldset className="space-y-4">
+        <legend id={contentLegendId} className="text-base font-medium text-gray-900">
           What types of content would you like to receive?
-        </label>
-        <p className="text-sm text-gray-500 mt-1 mb-4">
+        </legend>
+        <p id={contentHelperId} className="text-sm text-gray-500 mt-1 mb-4">
           Choose what types of memories you want to see (at least one required)
         </p>
 
@@ -397,7 +416,9 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
           mode="multi"
           size="md"
           columns={{ mobile: 1, tablet: 2, desktop: 3 }}
-          ariaLabel="Content types"
+          ariaLabelledBy={contentLegendId}
+          ariaDescribedBy={contentHelperId}
+          idPrefix={`${contentFieldsetId}-option`}
         />
 
         {errors.content_types && (
@@ -405,7 +426,7 @@ export default function PreferenceForm({ recipient, token, onSuccess }: Preferen
             {errors.content_types}
           </p>
         )}
-      </div>
+      </fieldset>
 
       {/* Group Override Warning - Only shown when preferences differ from defaults */}
       {recipient.group && hasChangedFromDefaults && (

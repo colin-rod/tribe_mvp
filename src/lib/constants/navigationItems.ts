@@ -39,7 +39,42 @@ export interface DashboardNavigationSection {
   items: readonly DashboardNavigationItem[];
 }
 
-export const DASHBOARD_NAVIGATION_SECTIONS: readonly DashboardNavigationSection[] = [
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  href: string;
+  badge?: number; // For notification counts
+}
+
+export interface NavigationSection {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+export const navigationItems: NavItem[] = [
+  {
+    id: 'activity',
+    label: 'Activity',
+    icon: RectangleStackIcon,
+    href: '/dashboard/activity',
+  },
+  {
+    id: 'memory-book',
+    label: 'Memory Book',
+    icon: BookOpenIcon,
+    href: '/dashboard/memory-book',
+  },
+  {
+    id: 'summaries',
+    label: 'Summaries',
+    icon: DocumentTextIcon,
+    href: '/dashboard/digests',
+  },
+];
+
+export const DASHBOARD_NAVIGATION_SECTIONS = [
   {
     id: 'overview',
     items: [
@@ -168,7 +203,7 @@ export const accountNavigationItems: NavItem[] = [
   },
 ];
 
-export const mobileNavigationSections: NavigationSection[] = [
+export const mobileNavigationSections: readonly NavigationSection[] = [
   {
     id: 'primary',
     label: 'Main navigation',
@@ -179,4 +214,19 @@ export const mobileNavigationSections: NavigationSection[] = [
     label: 'Account',
     items: accountNavigationItems,
   },
-];
+] as const;
+
+export type DashboardNavigationItemId =
+  (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
+
+export const DASHBOARD_NAVIGATION_ITEMS: readonly DashboardNavigationItem[] = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
+  (section) => section.items
+) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+export function getNavigationItemByPath(pathname: string) {
+  return DASHBOARD_NAVIGATION_ITEMS.find(
+    (item) =>
+      item.href === pathname ||
+      item.alternateHrefs?.includes(pathname as DashboardRoute)
+  );
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { ReactNode } from 'react'
+import { ReactNode, useId } from 'react'
 
 export interface IconOption<T extends string = string> {
   value: T
@@ -35,6 +35,12 @@ export interface IconOptionSelectorProps<T extends string = string> {
   className?: string
   /** Accessible name for the group */
   ariaLabel?: string
+  /** ID referencing the element that labels this selector */
+  ariaLabelledBy?: string
+  /** ID referencing the element that describes this selector */
+  ariaDescribedBy?: string
+  /** Optional prefix for generated option IDs */
+  idPrefix?: string
   /** Whether the selector is disabled */
   disabled?: boolean
   /** Optional badge content to show on options */
@@ -92,10 +98,15 @@ export function IconOptionSelector<T extends string = string>({
   showDescription = true,
   className,
   ariaLabel,
+  ariaLabelledBy,
+  ariaDescribedBy,
+  idPrefix,
   disabled = false,
   badges,
 }: IconOptionSelectorProps<T>) {
   const selectedValues = Array.isArray(value) ? value : [value]
+  const generatedIdPrefix = useId()
+  const selectorIdPrefix = idPrefix ?? generatedIdPrefix
 
   const handleOptionClick = (optionValue: T) => {
     if (disabled) return
@@ -204,12 +215,20 @@ export function IconOptionSelector<T extends string = string>({
     <div
       className={cn('space-y-3', className)}
       role={mode === 'multi' ? 'group' : 'radiogroup'}
-      aria-label={ariaLabel}
+      aria-label={ariaLabelledBy ? undefined : ariaLabel}
+      aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
     >
       <div className={gridClass}>
         {options.map((option, index) => {
           const isSelected = selectedValues.includes(option.value)
           const isDisabled = disabled || option.disabled
+          const optionIdBase = `${selectorIdPrefix}-${option.value}`
+          const optionLabelId = `${optionIdBase}-label`
+          const optionDescriptionId = option.description && showDescription
+            ? `${optionIdBase}-description`
+            : undefined
+          const isTabStop = isSelected || (!selectedValues.length && index === 0)
 
           return (
             <button
@@ -221,8 +240,10 @@ export function IconOptionSelector<T extends string = string>({
               role={mode === 'multi' ? 'checkbox' : 'radio'}
               aria-checked={isSelected}
               aria-disabled={isDisabled}
+              aria-labelledby={optionLabelId}
+              aria-describedby={optionDescriptionId}
               data-option-value={option.value}
-              tabIndex={index === 0 ? 0 : -1}
+              tabIndex={isTabStop ? 0 : -1}
               className={cn(
                 'relative flex flex-col items-center justify-center rounded-lg border-2 transition-all duration-200',
                 sizeClasses[size],
@@ -257,13 +278,19 @@ export function IconOptionSelector<T extends string = string>({
               )}
 
               {/* Label */}
-              <div className={cn('font-medium text-center', textSizeClasses[size])}>
+              <div
+                id={optionLabelId}
+                className={cn('font-medium text-center', textSizeClasses[size])}
+              >
                 {option.label}
               </div>
 
               {/* Description */}
               {showDescription && option.description && (
-                <div className="text-xs text-gray-500 text-center mt-1">
+                <div
+                  id={optionDescriptionId}
+                  className="text-xs text-gray-500 text-center mt-1"
+                >
                   {option.description}
                 </div>
               )}
