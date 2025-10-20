@@ -17,7 +17,7 @@ import { DashboardAnalyticsInitializer } from '@/components/providers/DashboardA
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  adjustFontFallback: 'size',
+  adjustFontFallback: true,
   fallback: ['system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
   variable: '--font-sans',
 })
