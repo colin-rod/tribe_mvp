@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PreferenceLayout from '@/components/preferences/PreferenceLayout'
 import PreferenceForm from '@/components/preferences/PreferenceForm'
 import { type RecipientWithGroup } from '@/lib/preference-server'
@@ -13,6 +13,13 @@ interface PreferencesPageClientProps {
 
 export default function PreferencesPageClient({ recipient, token }: PreferencesPageClientProps) {
   const [showSuccess, setShowSuccess] = useState(false)
+  const successHeadingRef = useRef<HTMLHeadingElement | null>(null)
+
+  useEffect(() => {
+    if (showSuccess && successHeadingRef.current) {
+      successHeadingRef.current.focus()
+    }
+  }, [showSuccess])
 
   const handleSuccess = () => {
     setShowSuccess(true)
@@ -31,13 +38,22 @@ export default function PreferencesPageClient({ recipient, token }: PreferencesP
 
           {/* Success message */}
           <div className="space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1
+              ref={successHeadingRef}
+              tabIndex={-1}
+              className="text-2xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
               Preferences Updated Successfully!
             </h1>
             <p className="text-lg text-gray-600">
               Thank you, {recipient.name}! Your update preferences have been saved.
             </p>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto"
+            >
               <p className="text-sm text-green-800">
                 You&apos;ll now receive baby updates according to your preferences.
                 You can update them anytime by visiting this link again.
@@ -58,6 +74,7 @@ export default function PreferencesPageClient({ recipient, token }: PreferencesP
           {/* Update again button */}
           <div className="mt-8">
             <button
+              type="button"
               onClick={() => setShowSuccess(false)}
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
