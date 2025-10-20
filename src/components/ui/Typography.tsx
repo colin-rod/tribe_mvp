@@ -63,12 +63,15 @@ export const Heading: React.FC<HeadingProps> = ({
     6: 'text-responsive-lg',
   }
 
-  const headingClass = responsive
-    ? responsiveClasses[visualLevel]
-    : baseClasses[visualLevel]
-
   return (
-    <Tag className={cn(headingClass, className)} {...props}>
+    <Tag
+      className={cn(
+        baseClasses[visualLevel],
+        responsive ? responsiveClasses[visualLevel] : undefined,
+        className
+      )}
+      {...props}
+    >
       {children}
     </Tag>
   )

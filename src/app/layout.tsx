@@ -14,7 +14,13 @@ import { Toaster } from 'sonner'
 import FeedbackButton from '@/components/feedback/FeedbackButton'
 import { DashboardAnalyticsInitializer } from '@/components/providers/DashboardAnalyticsInitializer'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  adjustFontFallback: 'size',
+  fallback: ['system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+  variable: '--font-sans',
+})
 
 export const viewport = {
   width: 'device-width',
@@ -127,7 +133,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} antialiased`}>
       <head>
         <script
           type="application/ld+json"
@@ -136,7 +142,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <DashboardAnalyticsInitializer />
         <SkipLinks />
         <DevelopmentBanner />

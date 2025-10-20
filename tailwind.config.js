@@ -117,8 +117,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
       },
       // Typography Scale - Based on 1.25 ratio (Major Third)
       // Base: 16px (1rem), Line heights optimized for readability

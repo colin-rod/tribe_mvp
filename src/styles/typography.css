@@ -1,22 +1,19 @@
 /* Typography System for Tribe MVP
  *
- * Type Scale: Major Third (1.25 ratio)
- * Base: 16px (1rem) for optimal readability
- * Line heights: Calculated for comfortable reading
- *
- * Usage:
- * - Use semantic heading tags (h1-h6) for proper document structure
- * - Use utility classes (.h1-.h6) when semantic HTML doesn't match visual hierarchy
- * - For body text, use .body, .body-lg, or .body-sm classes
+ * Optimised for performance with fluid scaling and minimal overrides.
+ * Tailwind layers ensure unused utilities are tree-shaken from the bundle.
  */
 
-/* Base Typography */
+@layer base {
   html {
-    font-feature-settings: "cv03", "cv04", "cv11";
+    font-feature-settings: 'cv03', 'cv04', 'cv11';
+    font-variation-settings: 'opsz' 32;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: theme('fontFamily.sans');
     font-size: 1rem;
     line-height: 1.625;
     color: theme('colors.neutral.800');
@@ -25,38 +22,38 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Semantic Heading Hierarchy
-   * Following Major Third (1.25) type scale
-   * Responsive scaling built-in via Tailwind config
-   */
-  h1, .h1 {
-    @apply text-6xl font-bold text-neutral-900;
+  h1,
+  .h1 {
+    @apply text-6xl font-bold text-neutral-900 tracking-tight;
   }
 
-  h2, .h2 {
-    @apply text-5xl font-bold text-neutral-900;
+  h2,
+  .h2 {
+    @apply text-5xl font-bold text-neutral-900 tracking-tight;
   }
 
-  h3, .h3 {
-    @apply text-4xl font-semibold text-neutral-900;
+  h3,
+  .h3 {
+    @apply text-4xl font-semibold text-neutral-900 tracking-tight;
   }
 
-  h4, .h4 {
+  h4,
+  .h4 {
     @apply text-3xl font-semibold text-neutral-900;
   }
 
-  h5, .h5 {
+  h5,
+  .h5 {
     @apply text-2xl font-semibold text-neutral-900;
   }
 
-  h6, .h6 {
+  h6,
+  .h6 {
     @apply text-xl font-semibold text-neutral-900;
   }
 
-  /* Body Text Sizes
-   * Use for paragraphs, descriptions, and general content
-   */
-  p, .body {
+  p,
+  .body {
     @apply text-base text-neutral-700;
   }
 
@@ -69,25 +66,59 @@
   }
 
   .body-xs {
-    @apply text-xs text-neutral-700;
+    @apply text-xs text-neutral-600;
   }
 
-  /* Display Text for Hero Sections
-   * Extra large text for landing pages and hero sections
-   */
+  code {
+    @apply text-sm bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded font-mono;
+  }
+
+  pre {
+    @apply bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent text-inherit p-0;
+  }
+
+  a,
+  .link {
+    @apply text-primary-600 font-medium transition-colors duration-200;
+  }
+
+  a:hover,
+  .link:hover {
+    @apply text-primary-700;
+  }
+
+  .link-subtle {
+    @apply text-neutral-600 transition-colors duration-200;
+  }
+
+  .link-subtle:hover {
+    @apply text-neutral-900;
+  }
+}
+
+@layer components {
   .display-xl {
-    @apply text-9xl font-bold text-neutral-900;
+    font-size: clamp(4.5rem, 4vw + 3rem, 7.451rem);
+    line-height: 1.05;
+    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .display-lg {
-    @apply text-8xl font-bold text-neutral-900;
+    font-size: clamp(3.75rem, 3vw + 2.5rem, 5.96rem);
+    line-height: 1.08;
+    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .display-md {
-    @apply text-7xl font-bold text-neutral-900;
+    font-size: clamp(3rem, 2.5vw + 2rem, 4.768rem);
+    line-height: 1.1;
+    @apply font-bold text-neutral-900 tracking-tight;
   }
 
-  /* Text Colors */
   .text-muted {
     @apply text-neutral-500;
   }
@@ -120,16 +151,6 @@
     @apply text-info-600;
   }
 
-  /* Links */
-  a, .link {
-    @apply text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200;
-  }
-
-  .link-subtle {
-    @apply text-neutral-600 hover:text-neutral-900 transition-colors duration-200;
-  }
-
-  /* Caption and Small Text */
   .caption {
     @apply text-sm text-neutral-500 font-medium;
   }
@@ -138,108 +159,53 @@
     @apply text-xs text-neutral-500 font-semibold uppercase tracking-wide;
   }
 
-  /* Code */
-  code {
-    @apply text-sm bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded font-mono;
-  }
-
-  pre {
-    @apply bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto;
-  }
-
-  pre code {
-    @apply bg-transparent text-inherit p-0;
-  }
-
-/* Responsive Typography Utilities
- * Scale typography across breakpoints for optimal readability
- */
-
-  /* Responsive Headings */
   .heading-xl-responsive {
-    @apply text-5xl sm:text-6xl lg:text-7xl;
+    font-size: clamp(3.052rem, 2.5vw + 2.5rem, 4.768rem);
+    line-height: 1.1;
+    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .heading-lg-responsive {
-    @apply text-4xl sm:text-5xl lg:text-6xl;
+    font-size: clamp(2.441rem, 2vw + 2rem, 3.815rem);
+    line-height: 1.12;
+    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .heading-md-responsive {
-    @apply text-3xl sm:text-4xl lg:text-5xl;
+    font-size: clamp(1.953rem, 1.5vw + 1.7rem, 3.052rem);
+    line-height: 1.18;
+    @apply font-semibold text-neutral-900;
   }
 
   .heading-sm-responsive {
-    @apply text-2xl sm:text-3xl lg:text-4xl;
+    font-size: clamp(1.563rem, 1.3vw + 1.3rem, 2.441rem);
+    line-height: 1.22;
+    @apply font-semibold text-neutral-900;
   }
 
-  /* Responsive Body Text */
   .text-responsive-xl {
-    @apply text-lg sm:text-xl lg:text-2xl;
+    font-size: clamp(1.125rem, 0.8vw + 1rem, 1.563rem);
+    line-height: 1.35;
   }
 
   .text-responsive-lg {
-    @apply text-base sm:text-lg lg:text-xl;
+    font-size: clamp(1rem, 0.6vw + 0.9rem, 1.25rem);
+    line-height: 1.4;
   }
 
   .text-responsive-base {
-    @apply text-sm sm:text-base lg:text-lg;
+    font-size: clamp(0.875rem, 0.5vw + 0.8rem, 1.125rem);
+    line-height: 1.45;
   }
 
   .text-responsive-sm {
-    @apply text-xs sm:text-sm lg:text-base;
+    font-size: clamp(0.75rem, 0.45vw + 0.7rem, 1rem);
+    line-height: 1.5;
   }
+}
 
-  /* Text Balance for Headlines */
+@layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Font Weight Utilities */
-  .font-light {
-    font-weight: 300;
-  }
-
-  .font-regular {
-    font-weight: 400;
-  }
-
-  .font-medium {
-    font-weight: 500;
-  }
-
-  .font-semibold {
-    font-weight: 600;
-  }
-
-  .font-bold {
-    font-weight: 700;
-  }
-
-  .font-extrabold {
-    font-weight: 800;
-  }
-
-  /* Letter Spacing */
-  .tracking-tighter {
-    letter-spacing: -0.05em;
-  }
-
-  .tracking-tight {
-    letter-spacing: -0.025em;
-  }
-
-  .tracking-normal {
-    letter-spacing: 0em;
-  }
-
-  .tracking-wide {
-    letter-spacing: 0.025em;
-  }
-
-  .tracking-wider {
-    letter-spacing: 0.05em;
-  }
-
-  .tracking-widest {
-    letter-spacing: 0.1em;
-  }
+}
