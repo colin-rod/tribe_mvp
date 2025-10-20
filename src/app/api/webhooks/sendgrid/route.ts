@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createLogger } from '@/lib/logger'
 import crypto from 'crypto'
-import { getEnv } from '@/lib/env'
+import { getEnv, type Env } from '@/lib/env'
+import { trackSecurityIncident } from '@/lib/monitoring/securityIncidentTracker'
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/database'
 
 const logger = createLogger('SendGridWebhook')
+
+type ServiceRoleClient = SupabaseClient<Database>
 
 // SendGrid Event Types
 export enum SendGridEventType {
@@ -69,11 +74,60 @@ function verifyWebhookSignature(
     const publicKeyFormatted = `-----BEGIN PUBLIC KEY-----\n${publicKey}\n-----END PUBLIC KEY-----`
     return verify.verify(publicKeyFormatted, signature, 'base64')
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     logger.error('Webhook signature verification failed', {
-      error: error instanceof Error ? error.message : String(error)
+      error: message
+    })
+    trackSecurityIncident({
+      type: 'sendgrid_webhook_signature_verification_error',
+      severity: 'high',
+      source: 'sendgrid_webhook',
+      description: 'Exception thrown during SendGrid webhook signature verification',
+      metadata: {
+        error: message
+      }
     })
     return false
   }
+}
+
+function createServiceRoleClient(env: Env): ServiceRoleClient | null {
+  const supabaseUrl = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    logger.error('Supabase service role configuration missing for SendGrid webhook', {
+      hasUrl: !!supabaseUrl,
+      hasServiceRoleKey: !!serviceRoleKey
+    })
+    return null
+  }
+
+  try {
+    return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }) as ServiceRoleClient
+  } catch (error) {
+    logger.error('Failed to create Supabase service role client for SendGrid webhook', {
+      error: error instanceof Error ? error.message : String(error)
+    })
+    return null
+  }
+}
+
+function resolveMessageIdentifier(event: SendGridEvent, explicit?: string): string | null {
+  return explicit || event.sg_message_id || event['smtp-id'] || null
+}
+
+function toIsoTimestamp(epochSeconds?: number): string {
+  if (!epochSeconds) {
+    return new Date().toISOString()
+  }
+
+  return new Date(epochSeconds * 1000).toISOString()
 }
 
 /**
@@ -97,6 +151,8 @@ function verifyWebhookSignature(
 export async function POST(request: NextRequest) {
   try {
     const env = getEnv()
+    const isProduction = env.NODE_ENV === 'production'
+    const relaxedValidation = env.SENDGRID_WEBHOOK_RELAXED_VALIDATION
 
     // Get raw body for signature verification
     const rawBody = await request.text()
@@ -105,6 +161,28 @@ export async function POST(request: NextRequest) {
     if (env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
       const signature = request.headers.get('x-twilio-email-event-webhook-signature')
       const timestamp = request.headers.get('x-twilio-email-event-webhook-timestamp')
+
+      if (!signature || !timestamp) {
+        logger.error('Missing SendGrid webhook signature headers', {
+          hasSignature: !!signature,
+          hasTimestamp: !!timestamp
+        })
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_missing_signature_headers',
+          severity: 'high',
+          source: 'sendgrid_webhook',
+          description: 'SendGrid webhook request missing signature headers',
+          metadata: {
+            hasSignature: !!signature,
+            hasTimestamp: !!timestamp
+          }
+        })
+
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        )
+      }
 
       const isValid = verifyWebhookSignature(
         rawBody,
@@ -115,13 +193,42 @@ export async function POST(request: NextRequest) {
 
       if (!isValid) {
         logger.error('Invalid webhook signature')
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_invalid_signature',
+          severity: 'high',
+          source: 'sendgrid_webhook',
+          description: 'SendGrid webhook signature verification failed',
+          metadata: {
+            signatureLength: signature.length,
+            timestamp
+          }
+        })
+
         return NextResponse.json(
           { error: 'Invalid signature' },
           { status: 401 }
         )
       }
     } else {
-      logger.warn('SendGrid webhook signature verification skipped - SENDGRID_WEBHOOK_PUBLIC_KEY not configured')
+      if (isProduction && !relaxedValidation) {
+        logger.error('SendGrid webhook signature verification blocked - public key missing in production')
+        trackSecurityIncident({
+          type: 'sendgrid_webhook_missing_public_key',
+          severity: 'critical',
+          source: 'sendgrid_webhook',
+          description: 'SENDGRID_WEBHOOK_PUBLIC_KEY is missing in production environment'
+        })
+
+        return NextResponse.json(
+          { error: 'SendGrid webhook verification misconfigured' },
+          { status: 401 }
+        )
+      }
+
+      logger.warn('SendGrid webhook signature verification skipped - SENDGRID_WEBHOOK_PUBLIC_KEY not configured', {
+        environment: env.NODE_ENV,
+        relaxedValidation
+      })
     }
 
     // Parse events
@@ -135,9 +242,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supabase = createServiceRoleClient(env)
+
     // Process each event
     const results = await Promise.all(
-      events.map(event => processWebhookEvent(event))
+      events.map(event => processWebhookEvent(event, supabase))
     )
 
     const successCount = results.filter(r => r.success).length
@@ -169,7 +278,10 @@ export async function POST(request: NextRequest) {
 /**
  * Process individual webhook event
  */
-async function processWebhookEvent(event: SendGridEvent): Promise<{ success: boolean; error?: string }> {
+async function processWebhookEvent(
+  event: SendGridEvent,
+  supabase: ServiceRoleClient | null
+): Promise<{ success: boolean; error?: string }> {
   try {
     logger.info('Processing SendGrid event', {
       event: event.event,
@@ -184,36 +296,36 @@ async function processWebhookEvent(event: SendGridEvent): Promise<{ success: boo
     // Handle different event types
     switch (event.event) {
       case SendGridEventType.DELIVERED:
-        await handleDeliveredEvent(event, messageId)
+        await handleDeliveredEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.BOUNCE:
-        await handleBounceEvent(event, messageId)
+        await handleBounceEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.BLOCKED:
-        await handleBlockedEvent(event, messageId)
+        await handleBlockedEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.DROPPED:
-        await handleDroppedEvent(event, messageId)
+        await handleDroppedEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.SPAM_REPORT:
-        await handleSpamReportEvent(event, messageId)
+        await handleSpamReportEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.UNSUBSCRIBE:
       case SendGridEventType.GROUP_UNSUBSCRIBE:
-        await handleUnsubscribeEvent(event, messageId)
+        await handleUnsubscribeEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.OPEN:
-        await handleOpenEvent(event, messageId)
+        await handleOpenEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.CLICK:
-        await handleClickEvent(event, messageId)
+        await handleClickEvent(event, messageId, supabase)
         break
 
       case SendGridEventType.PROCESSED:
@@ -247,22 +359,50 @@ async function processWebhookEvent(event: SendGridEvent): Promise<{ success: boo
 /**
  * Handle successful delivery
  */
-async function handleDeliveredEvent(event: SendGridEvent, messageId?: string) {
+async function handleDeliveredEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.info('Email delivered successfully', {
     email: event.email,
     messageId,
     timestamp: new Date(event.timestamp * 1000).toISOString()
   })
 
-  // TODO: Update database with delivery status
-  // - Mark email as delivered in email_logs table
-  // - Update notification status if applicable
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'delivered',
+      delivered_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      metadata: {
+        delivered_response: event.response || null,
+        smtp_id: event['smtp-id'] || null
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'delivered',
+      delivery_time: eventTimestamp,
+      error_message: null,
+      error_code: null,
+      provider_response: event
+    })
+  ])
 }
 
 /**
  * Handle bounce events (hard and soft bounces)
  */
-async function handleBounceEvent(event: SendGridEvent, messageId?: string) {
+async function handleBounceEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   const bounceType = event.type || 'unknown' // 'bounce' or 'blocked'
   const bounceReason = event.reason || 'Unknown'
 
@@ -274,80 +414,225 @@ async function handleBounceEvent(event: SendGridEvent, messageId?: string) {
     status: event.status
   })
 
-  // TODO: Update database with bounce status
-  // - Mark email as bounced in email_logs table
-  // - Add email to suppression list if hard bounce
-  // - Consider retrying if soft bounce (already handled by queue)
-  // - Update user notification preferences if needed
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+  const metadata = {
+    bounce_reason: bounceReason,
+    bounce_status: event.status || null,
+    bounce_type: bounceType
+  }
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'bounced',
+      bounced_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, { metadata }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'failed',
+      delivery_time: eventTimestamp,
+      error_message: bounceReason,
+      error_code: event.status || null,
+      provider_response: event
+    })
+  ])
+
+  await disableEmailChannelForRecipient(supabase, event.email, {
+    reason: 'bounce',
+    occurred_at: eventTimestamp,
+    message_id: identifier
+  })
 }
 
 /**
  * Handle blocked events
  */
-async function handleBlockedEvent(event: SendGridEvent, messageId?: string) {
+async function handleBlockedEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.error('Email blocked', {
     email: event.email,
     messageId,
     reason: event.reason
   })
 
-  // TODO: Update database with blocked status
-  // - Mark email as blocked in email_logs table
-  // - Add email to suppression list
-  // - Consider notifying admin if this is unexpected
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+  const reason = event.reason || 'Blocked by provider'
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'blocked',
+      blocked_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      metadata: {
+        block_reason: reason
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'failed',
+      delivery_time: eventTimestamp,
+      error_message: reason,
+      error_code: event.status || null,
+      provider_response: event
+    })
+  ])
+
+  await disableEmailChannelForRecipient(supabase, event.email, {
+    reason: 'blocked',
+    occurred_at: eventTimestamp,
+    message_id: identifier
+  })
 }
 
 /**
  * Handle dropped events
  */
-async function handleDroppedEvent(event: SendGridEvent, messageId?: string) {
+async function handleDroppedEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.error('Email dropped by SendGrid', {
     email: event.email,
     messageId,
     reason: event.reason
   })
 
-  // TODO: Update database with dropped status
-  // - Mark email as dropped in email_logs table
-  // - Investigate reason (invalid email, spam, etc.)
-  // - Remove from suppression list if correctable
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+  const reason = event.reason || 'Dropped by provider'
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'dropped',
+      dropped_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      metadata: {
+        drop_reason: reason
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'failed',
+      delivery_time: eventTimestamp,
+      error_message: reason,
+      error_code: event.status || null,
+      provider_response: event
+    })
+  ])
+
+  await disableEmailChannelForRecipient(supabase, event.email, {
+    reason: 'dropped',
+    occurred_at: eventTimestamp,
+    message_id: identifier
+  })
 }
 
 /**
  * Handle spam reports
  */
-async function handleSpamReportEvent(event: SendGridEvent, messageId?: string) {
+async function handleSpamReportEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.error('Email marked as spam', {
     email: event.email,
     messageId
   })
 
-  // TODO: Update database with spam report
-  // - Mark email as spam in email_logs table
-  // - Add email to suppression list
-  // - Automatically unsubscribe user from future emails
-  // - Alert admin for review
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'spam_reported',
+      spam_reported_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      metadata: {
+        spam_reported: true,
+        spam_metadata: {
+          useragent: event.useragent || null,
+          ip: event.ip || null
+        }
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'spam_reported',
+      delivery_time: eventTimestamp,
+      error_message: 'Recipient reported spam',
+      error_code: null,
+      provider_response: event
+    })
+  ])
+
+  await disableEmailChannelForRecipient(supabase, event.email, {
+    reason: 'spam_report',
+    occurred_at: eventTimestamp,
+    message_id: identifier
+  })
 }
 
 /**
  * Handle unsubscribe events
  */
-async function handleUnsubscribeEvent(event: SendGridEvent, messageId?: string) {
+async function handleUnsubscribeEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.info('User unsubscribed', {
     email: event.email,
     messageId
   })
 
-  // TODO: Update database with unsubscribe
-  // - Update user notification preferences to disable all emails
-  // - Add to unsubscribe list
-  // - Remove from active recipient lists
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      status: 'unsubscribed',
+      unsubscribed_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      metadata: {
+        unsubscribe_source: event.event
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'unsubscribed',
+      delivery_time: eventTimestamp,
+      error_message: null,
+      error_code: null,
+      provider_response: event
+    })
+  ])
+
+  await disableEmailChannelForRecipient(supabase, event.email, {
+    reason: 'unsubscribe',
+    occurred_at: eventTimestamp,
+    message_id: identifier
+  })
 }
 
 /**
  * Handle email open events (if tracking enabled)
  */
-async function handleOpenEvent(event: SendGridEvent, messageId?: string) {
+async function handleOpenEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.debug('Email opened', {
     email: event.email,
     messageId,
@@ -355,16 +640,37 @@ async function handleOpenEvent(event: SendGridEvent, messageId?: string) {
     ip: event.ip
   })
 
-  // TODO: Track email opens for engagement metrics
-  // - Increment open count in email_logs table
-  // - Update last_opened_at timestamp
-  // - Track engagement score for future optimization
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      last_opened_at: eventTimestamp,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      incrementOpen: true,
+      metadata: {
+        last_open_ip: event.ip || null,
+        last_open_user_agent: event.useragent || null
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'opened',
+      delivery_time: eventTimestamp,
+      provider_response: event
+    })
+  ])
 }
 
 /**
  * Handle link click events (if tracking enabled)
  */
-async function handleClickEvent(event: SendGridEvent, messageId?: string) {
+async function handleClickEvent(
+  event: SendGridEvent,
+  messageId: string | undefined,
+  supabase: ServiceRoleClient | null
+) {
   logger.debug('Email link clicked', {
     email: event.email,
     messageId,
@@ -373,10 +679,154 @@ async function handleClickEvent(event: SendGridEvent, messageId?: string) {
     ip: event.ip
   })
 
-  // TODO: Track email clicks for engagement metrics
-  // - Increment click count in email_logs table
-  // - Track which links are clicked most
-  // - Update engagement score for future optimization
+  const identifier = resolveMessageIdentifier(event, messageId)
+  const eventTimestamp = toIsoTimestamp(event.timestamp)
+
+  await Promise.all([
+    upsertEmailLog(supabase, identifier, event.email, {
+      last_clicked_at: eventTimestamp,
+      last_clicked_url: event.url || null,
+      last_event_at: eventTimestamp,
+      last_event_type: event.event
+    }, {
+      incrementClick: true,
+      metadata: {
+        last_click_ip: event.ip || null,
+        last_click_user_agent: event.useragent || null,
+        last_clicked_url: event.url || null
+      }
+    }),
+    updateNotificationDeliveryLog(supabase, identifier, {
+      status: 'clicked',
+      delivery_time: eventTimestamp,
+      provider_response: event
+    })
+  ])
+}
+
+function isSupabaseNoRowError(error: { code?: string } | null | undefined) {
+  return error?.code === 'PGRST116'
+}
+
+// NOTE: email_logs table does not exist in database schema
+// This functionality has been disabled until the table is created
+// or migrated to use notification_delivery_logs
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function upsertEmailLog(
+  _supabase: ServiceRoleClient | null,
+  _messageId: string | null,
+  _recipientEmail: string,
+  _updates: Record<string, unknown>,
+  _options?: {
+    metadata?: Record<string, unknown>
+    incrementOpen?: boolean
+    incrementClick?: boolean
+  }
+) {
+  // Disabled - email_logs table does not exist
+  return
+}
+
+async function updateNotificationDeliveryLog(
+  supabase: ServiceRoleClient | null,
+  messageId: string | null,
+  updates: Record<string, unknown>
+) {
+  if (!supabase) {
+    logger.warn('Supabase client unavailable - skipping notification delivery log update')
+    return
+  }
+
+  if (!messageId) {
+    logger.warn('Missing message identifier for notification delivery log update')
+    return
+  }
+
+  const payload: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) {
+      payload[key] = value
+    }
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return
+  }
+
+  const { data, error } = await supabase
+    .from('notification_delivery_logs')
+    .update(payload)
+    .eq('provider_message_id', messageId)
+    .select('id')
+
+  if (error) {
+    throw new Error(`Failed to update notification delivery log: ${error.message}`)
+  }
+
+  if (!data || data.length === 0) {
+    logger.warn('No notification delivery logs updated for message', {
+      messageId
+    })
+  }
+}
+
+async function disableEmailChannelForRecipient(
+  supabase: ServiceRoleClient | null,
+  email: string | undefined,
+  context: { reason: string; occurred_at: string; message_id: string | null }
+) {
+  if (!supabase) {
+    logger.warn('Supabase client unavailable - skipping recipient preference update')
+    return
+  }
+
+  if (!email) {
+    logger.warn('No recipient email provided for preference update')
+    return
+  }
+
+  const { data: recipient, error } = await supabase
+    .from('recipients')
+    .select('id, preferred_channels, is_active')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (error && !isSupabaseNoRowError(error)) {
+    throw new Error(`Failed to fetch recipient preferences: ${error.message}`)
+  }
+
+  if (!recipient) {
+    logger.warn('Recipient not found for email preference update', {
+      email,
+      reason: context.reason
+    })
+    return
+  }
+
+  const preferredChannels: string[] = Array.isArray(recipient.preferred_channels)
+    ? recipient.preferred_channels
+    : []
+
+  const updatedChannels = preferredChannels.filter(channel => channel !== 'email')
+
+  const { error: updateError } = await supabase
+    .from('recipients')
+    .update({
+      preferred_channels: updatedChannels,
+      is_active: false
+    })
+    .eq('id', recipient.id)
+
+  if (updateError) {
+    throw new Error(`Failed to update recipient preferences: ${updateError.message}`)
+  }
+
+  logger.info('Recipient email channel disabled', {
+    email,
+    reason: context.reason,
+    messageId: context.message_id,
+    occurredAt: context.occurred_at
+  })
 }
 
 // Prevent caching of webhook responses

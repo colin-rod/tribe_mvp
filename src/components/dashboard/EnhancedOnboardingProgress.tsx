@@ -1,14 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   ChevronUpIcon,
   ChevronDownIcon,
   CheckIcon,
-  ArrowRightIcon,
   ArrowUturnUpIcon,
-  SparklesIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
 import { Button } from '@/components/ui/Button'
@@ -35,7 +33,6 @@ interface EnhancedOnboardingProgressProps {
   onDismiss?: () => void
   canCollapse?: boolean
   canDismiss?: boolean
-  showCelebration?: boolean
   className?: string
 }
 
@@ -48,30 +45,28 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
   onDismiss,
   canCollapse = true,
   canDismiss = true,
-  showCelebration = false,
   className
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
 
-  const completedSteps = steps.filter(step => step.isCompleted).length
-  const progress = Math.round((completedSteps / totalSteps) * 100)
-  const remainingTime = steps
-    .filter(step => !step.isCompleted && !step.isSkipped)
-    .reduce((total, step) => total + step.estimatedTimeMinutes, 0)
+  const reflectionStep = useMemo(() => {
+    return steps.find(step => {
+      const id = step.id.toLowerCase()
+      const title = step.title.toLowerCase()
+      return id.includes('reflection') ||
+        id.includes('memory') ||
+        title.includes('reflection') ||
+        title.includes('memory')
+    })
+  }, [steps])
 
-  const nextSteps = steps
-    .filter(step => !step.isCompleted && !step.isSkipped)
-    .slice(0, 2)
-
-  // Handle celebration animation
-  useEffect(() => {
-    if (showCelebration) {
-      setShowConfetti(true)
-      const timer = setTimeout(() => setShowConfetti(false), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [showCelebration])
+  const currentChapterNumber = useMemo(() => {
+    const currentStep = steps[_currentStepIndex]
+    if (!currentStep) return null
+    const index = steps.findIndex(step => step.id === currentStep.id)
+    if (index === -1) return null
+    return index + 1
+  }, [steps, _currentStepIndex])
 
   const handleCollapseToggle = () => {
     const newCollapsed = !isCollapsed
@@ -80,305 +75,209 @@ export const EnhancedOnboardingProgress: React.FC<EnhancedOnboardingProgressProp
   }
 
   const handleStepClick = (stepId: string, step: OnboardingStep) => {
-    if (step.isCompleted || step.isCurrent) {
-      // Analytics tracking
-      if (typeof window !== 'undefined') {
-        window.gtag?.('event', 'onboarding_step_click', {
-          event_category: 'onboarding',
-          event_label: stepId,
-          value: 1
-        })
-      }
-      onStepClick?.(stepId)
+    if (typeof window !== 'undefined' && reflectionStep && step.id === reflectionStep.id) {
+      window.gtag?.('event', 'reflection_entry_opened', {
+        event_category: 'reflection',
+        event_label: stepId
+      })
     }
+    onStepClick?.(stepId)
   }
 
-  // Confetti component
-  const Confetti = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            'absolute w-2 h-2 rounded-full animate-confetti-fall',
-            ['bg-primary-400', 'bg-secondary-400', 'bg-accent-400', 'bg-warning-400'][i % 4]
-          )}
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${3 + Math.random() * 2}s`
-          }}
-        />
-      ))}
-    </div>
-  )
-
-  // Collapsed view
   if (isCollapsed && canCollapse) {
     return (
-      <div className={cn(
-        'bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-xl p-4 relative overflow-hidden',
-        className
-      )}>
+      <div
+        className={cn(
+          'bg-gradient-to-r from-primary-50/70 to-secondary-50/70 border border-primary-200 rounded-xl p-4 relative overflow-hidden',
+          className
+        )}
+      >
         <button
           onClick={handleCollapseToggle}
           className="w-full flex items-center justify-between text-left group"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-              {progress}%
-            </div>
-            <div>
-              <p className="text-sm font-medium text-neutral-900">
-                Setup Progress
-              </p>
-              <p className="text-xs text-neutral-600">
-                {completedSteps} of {totalSteps} complete
-              </p>
-            </div>
+          <div className="flex flex-col text-left">
+            <p className="text-sm font-semibold text-neutral-900">
+              A mindful welcome
+            </p>
+            <p className="text-xs text-neutral-600">
+              Our chapters wait patiently until you&apos;re ready.
+            </p>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {remainingTime > 0 && (
-              <span className="text-xs text-neutral-500">
-                ~{remainingTime}min left
-              </span>
-            )}
-            <ChevronDownIcon className="w-4 h-4 text-neutral-500 group-hover:text-neutral-700 transition-colors" />
-          </div>
+          <ChevronDownIcon className="w-4 h-4 text-neutral-500 group-hover:text-neutral-700 transition-colors" />
         </button>
 
-        {/* Mini progress bar */}
-        <div className="mt-3 w-full bg-neutral-200 rounded-full h-2">
-          <div
-            className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        {reflectionStep && (
+          <div className="mt-4">
+            <Button
+              size="sm"
+              variant="primary"
+              className="w-full"
+              onClick={() => handleStepClick(reflectionStep.id, reflectionStep)}
+            >
+              Start your first reflection
+            </Button>
+          </div>
+        )}
       </div>
     )
   }
 
-  // Expanded view
   return (
-    <div className={cn(
-      'bg-gradient-to-br from-primary-50 via-white to-secondary-50 border border-primary-200 rounded-xl overflow-hidden relative',
-      showCelebration && 'animate-celebration-bounce',
-      className
-    )}>
-      {showConfetti && <Confetti />}
-
-      {/* Header */}
-      <div className="p-4 pb-0">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-neutral-900">
-              Getting you set up
+    <div
+      className={cn(
+        'bg-gradient-to-br from-primary-50 via-white to-secondary-50 border border-primary-200 rounded-xl overflow-hidden relative',
+        className
+      )}
+    >
+      <div className="p-6 pb-4">
+        <div className="flex items-start justify-between">
+          <div className="max-w-xl text-left">
+            <p className="text-sm uppercase tracking-wide text-primary-600 font-semibold">
+              Our mindful beginning
+            </p>
+            <h3 className="mt-2 text-xl font-semibold text-neutral-900">
+              A community built on presence and privacy
             </h3>
-            <p className="text-sm text-neutral-600">
-              {completedSteps} of {totalSteps} steps complete
+            <p className="mt-3 text-sm text-neutral-700 leading-relaxed">
+              Take a breath and move at your own pace. Each chapter invites you to settle in, honour privacy, and share when the moment feels right. Nothing here is urgent—your reflections are cherished precisely because they arrive gently.
             </p>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <p className="text-lg font-bold text-primary-600">{progress}%</p>
-              {remainingTime > 0 && (
-                <p className="text-xs text-neutral-500">
-                  ~{remainingTime}min left
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {canDismiss && (
-                <button
-                  onClick={() => onDismiss?.()}
-                  className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
-                  aria-label="Dismiss onboarding"
-                  title="Don't show this again"
-                >
-                  <XMarkIcon className="w-4 h-4 text-neutral-500" />
-                </button>
-              )}
-              {canCollapse && (
-                <button
-                  onClick={handleCollapseToggle}
-                  className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
-                  aria-label="Collapse progress"
-                >
-                  <ChevronUpIcon className="w-4 h-4 text-neutral-500" />
-                </button>
-              )}
-            </div>
+          <div className="flex items-center space-x-2">
+            {canDismiss && (
+              <button
+                onClick={() => onDismiss?.()}
+                className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                aria-label="Dismiss onboarding"
+                title="Don&apos;t show this again"
+              >
+                <XMarkIcon className="w-4 h-4 text-neutral-500" />
+              </button>
+            )}
+            {canCollapse && (
+              <button
+                onClick={handleCollapseToggle}
+                className="p-1 rounded-full hover:bg-neutral-100 transition-colors"
+                aria-label="Collapse onboarding overview"
+              >
+                <ChevronUpIcon className="w-4 h-4 text-neutral-500" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="relative mb-6">
-          <div className="w-full bg-neutral-200 rounded-full h-3">
-            <div
-              className="bg-gradient-to-r from-primary-500 to-secondary-500 h-3 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
-              style={{ width: `${progress}%` }}
+        {reflectionStep && (
+          <div className="mt-5 bg-white/80 border border-primary-100 rounded-lg p-4 text-center">
+            <h4 className="text-sm font-semibold text-primary-900">
+              Ready for a deeper pause?
+            </h4>
+            <p className="mt-2 text-sm text-neutral-700">
+              When inspiration stirs, jump straight into your first reflection. We&apos;ll keep the other chapters cozy for later.
+            </p>
+            <Button
+              className="mt-4"
+              variant="primary"
+              onClick={() => handleStepClick(reflectionStep.id, reflectionStep)}
             >
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 animate-shimmer" />
-            </div>
+              Start your first reflection
+            </Button>
           </div>
+        )}
 
-          {/* Milestone markers */}
-          <div className="absolute top-0 w-full flex justify-between">
-            {[25, 50, 75, 100].map(milestone => (
-              <div
-                key={milestone}
-                className={cn(
-                  'w-1 h-3 rounded-full transition-colors',
-                  progress >= milestone ? 'bg-white' : 'bg-neutral-300'
-                )}
-                style={{ marginLeft: `${milestone}%`, transform: 'translateX(-50%)' }}
-              />
-            ))}
-          </div>
+        <div className="mt-6 text-sm text-neutral-600 text-center">
+          Take your time—mindful sharing begins with feeling at ease.
+          {currentChapterNumber && (
+            <span className="ml-1 text-neutral-500">
+              (You&apos;re resting near chapter {currentChapterNumber} of {totalSteps})
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Steps List */}
-      <div className="px-4 pb-4 space-y-3">
-        {steps.map((step) => {
+      <div className="px-6 pb-6 space-y-4">
+        {steps.map((step, index) => {
           const StepIcon = step.icon
+          const isReflection = reflectionStep && step.id === reflectionStep.id
+          const chapterLabel = step.isRequired ? `Chapter ${index + 1}` : 'Optional Chapter'
 
           return (
-            <div
+            <article
               key={step.id}
               className={cn(
-                'flex items-center space-x-3 p-3 rounded-lg transition-all duration-200',
-                step.isCurrent && 'bg-primary-50 border border-primary-200',
-                step.isCompleted && 'bg-success-50/50',
-                (step.isCompleted || step.isCurrent) && 'cursor-pointer hover:shadow-sm',
-                !step.isCompleted && !step.isCurrent && 'opacity-60'
+                'rounded-xl border border-primary-100/60 bg-white/70 backdrop-blur-sm p-4 transition-shadow',
+                step.isCurrent && 'shadow-lg shadow-primary-100',
+                step.isCompleted && 'border-success-200 bg-success-50/40',
+                step.isSkipped && 'border-warning-200 bg-warning-50/30'
               )}
-              onClick={() => handleStepClick(step.id, step)}
             >
-              {/* Step Icon */}
-              <div className={cn(
-                'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-all duration-200',
-                step.isCompleted && 'bg-success-500 border-success-500 text-white',
-                step.isSkipped && 'bg-warning-100 border-warning-400 text-warning-800',
-                step.isCurrent && 'bg-primary-100 border-primary-400 text-primary-700 ring-2 ring-primary-200',
-                !step.isCompleted && !step.isSkipped && !step.isCurrent && 'bg-neutral-100 border-neutral-300 text-neutral-500'
-              )}>
-                {step.isCompleted ? (
-                  <CheckIcon className="w-5 h-5" aria-hidden="true" />
-                ) : step.isSkipped ? (
-                  <ArrowUturnUpIcon className="w-5 h-5" aria-hidden="true" />
-                ) : (
-                  <StepIcon className="w-5 h-5" aria-hidden="true" />
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={() => handleStepClick(step.id, step)}
+                className="w-full text-left"
+              >
+                <div className="flex items-start space-x-4">
+                  <div
+                    className={cn(
+                      'flex-shrink-0 w-12 h-12 rounded-full border flex items-center justify-center',
+                      step.isCompleted && 'bg-success-500 border-success-500 text-white',
+                      step.isSkipped && 'bg-warning-100 border-warning-300 text-warning-800',
+                      step.isCurrent && 'bg-primary-100 border-primary-300 text-primary-700',
+                      !step.isCompleted && !step.isSkipped && !step.isCurrent && 'bg-white border-primary-200 text-primary-500'
+                    )}
+                  >
+                    {step.isCompleted ? (
+                      <CheckIcon className="w-5 h-5" aria-hidden="true" />
+                    ) : step.isSkipped ? (
+                      <ArrowUturnUpIcon className="w-5 h-5" aria-hidden="true" />
+                    ) : (
+                      <StepIcon className="w-5 h-5" aria-hidden="true" />
+                    )}
+                  </div>
 
-            {/* Step Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h4 className={cn(
-                  'text-sm font-medium truncate',
-                  step.isCurrent && 'text-primary-900',
-                  step.isCompleted && 'text-success-800',
-                  !step.isCompleted && !step.isCurrent && 'text-neutral-700'
-                )}>
-                  {step.title}
-                </h4>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-primary-500">
+                          {chapterLabel}
+                        </span>
+                        <h4 className="mt-1 text-base font-semibold text-neutral-900">
+                          {step.title}
+                        </h4>
+                      </div>
 
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  {step.estimatedTimeMinutes > 0 && !step.isCompleted && (
-                    <span className="text-xs text-neutral-500">
-                      {step.estimatedTimeMinutes}min
-                    </span>
-                  )}
+                      <div className="flex items-center space-x-2">
+                        {step.isCompleted && (
+                          <span className="text-xs font-medium text-success-700">Completed</span>
+                        )}
+                        {step.isSkipped && (
+                          <span className="text-xs font-medium text-warning-700">Skipped</span>
+                        )}
+                        {isReflection && (
+                          <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+                            Reflection
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  {step.isCompleted && step.completedAt && (
-                    <span className="flex items-center text-xs text-success-600">
-                      <CheckIcon className="w-3 h-3 mr-1" aria-hidden="true" />
-                      Done
-                    </span>
-                  )}
+                    <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+                      {step.description}
+                    </p>
 
-                  {step.isCurrent && (
-                    <ArrowRightIcon className="w-3 h-3 text-primary-500" />
-                  )}
+                    {!step.isRequired && (
+                      <p className="mt-2 text-xs text-neutral-500">
+                        Pause-friendly and entirely optional—visit when curiosity calls.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              <p className={cn(
-                'text-xs mt-1 leading-relaxed',
-                step.isCurrent && 'text-primary-700',
-                step.isCompleted && 'text-success-700',
-                !step.isCompleted && !step.isCurrent && 'text-neutral-600'
-              )}>
-                {step.description}
-              </p>
-
-              {!step.isRequired && (
-                <span className="inline-block mt-1 px-2 py-0.5 bg-neutral-100 text-neutral-600 text-xs rounded">
-                  Optional
-                </span>
-              )}
-            </div>
-          </div>
+              </button>
+            </article>
           )
         })}
       </div>
-
-      {/* Next Steps Preview */}
-      {nextSteps.length > 0 && (
-        <div className="bg-primary-50/50 border-t border-primary-100 px-4 py-3">
-          <h4 className="text-sm font-medium text-primary-900 mb-2">
-            Coming up next:
-          </h4>
-          <div className="space-y-2">
-            {nextSteps.map(step => {
-              const StepIcon = step.icon
-              return (
-                <div key={step.id} className="flex items-center space-x-2">
-                  <StepIcon className="w-4 h-4 text-primary-600" aria-hidden="true" />
-                  <span className="text-sm text-primary-800">{step.title}</span>
-                  <span className="text-xs text-primary-600">
-                    (~{step.estimatedTimeMinutes}min)
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Completion State */}
-      {progress === 100 && (
-        <div
-          className="bg-gradient-to-r from-success-50 to-secondary-50 border-t border-success-200 px-4 py-4"
-          role="alert"
-          aria-live="assertive"
-        >
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2 text-success-600">
-              <SparklesIcon className="w-7 h-7" aria-hidden="true" />
-            </div>
-            <h4 className="text-lg font-semibold text-success-800 mb-1">
-              Setup Complete!
-            </h4>
-            <p className="text-sm text-success-700 mb-3">
-              You&apos;re all ready to start sharing precious moments with your family.
-            </p>
-            <Button
-              variant="success"
-              size="sm"
-              onClick={() => onStepClick?.('complete')}
-              aria-label="Complete onboarding and start creating updates"
-            >
-              Start Sharing
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

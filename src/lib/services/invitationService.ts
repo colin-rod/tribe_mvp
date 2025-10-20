@@ -5,6 +5,8 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { createLogger } from '@/lib/logger'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Json } from '@/lib/types/database.types'
 import type {
   Invitation,
   InvitationWithDetails,
@@ -36,6 +38,78 @@ function generateSecureToken(): string {
     .replace(/=/g, '')
 }
 
+type ParentProfile = {
+  id: string
+  name?: string | null
+}
+
+type InviterProfile = {
+  id: string
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+async function ensureParentProfile(
+  supabase: SupabaseClient,
+  parentId: string
+): Promise<ParentProfile> {
+  const { data: parentData, error: parentError } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('id', parentId)
+    .single()
+
+  if (parentError || !parentData) {
+    throw new Error('Parent not found')
+  }
+
+  return parentData as ParentProfile
+}
+
+type InvitationInsertBase = {
+  parentId: string
+  invitationType: Invitation['invitation_type']
+  token: string
+  groupId?: string | null
+  customMessage?: string | null
+}
+
+type InvitationInsertOverrides = {
+  channel: Invitation['channel']
+  recipient_email?: string | null
+  recipient_phone?: string | null
+  expires_at?: string | null
+  metadata?: Json | null
+}
+
+function buildInvitationInsert(
+  base: InvitationInsertBase,
+  overrides: InvitationInsertOverrides
+) {
+  return {
+    parent_id: base.parentId,
+    invitation_type: base.invitationType,
+    token: base.token,
+    status: 'active',
+    channel: overrides.channel ?? null,
+    recipient_email:
+      overrides.recipient_email !== undefined
+        ? overrides.recipient_email
+        : null,
+    recipient_phone:
+      overrides.recipient_phone !== undefined
+        ? overrides.recipient_phone
+        : null,
+    expires_at:
+      overrides.expires_at !== undefined ? overrides.expires_at : null,
+    group_id: base.groupId ?? null,
+    custom_message: base.customMessage ?? null,
+    use_count: 0,
+    metadata: overrides.metadata ?? {}
+  }
+}
+
 /**
  * Create a single-use invitation
  *
@@ -57,16 +131,7 @@ export async function createSingleUseInvitation(
     expiresInDays = 7
   } = data
 
-  // Validate parent exists
-  const { data: parentData, error: parentError } = await supabase
-    .from('profiles')
-    .select('id, name')
-    .eq('id', parentId)
-    .single()
-
-  if (parentError || !parentData) {
-    throw new Error('Parent not found')
-  }
+  await ensureParentProfile(supabase, parentId)
 
   // Generate secure token
   const token = generateSecureToken()
@@ -78,20 +143,24 @@ export async function createSingleUseInvitation(
   // Create invitation
   const { data: invitation, error } = await supabase
     .from('invitations')
-    .insert({
-      parent_id: parentId,
-      invitation_type: 'single_use',
-      token,
-      status: 'active',
-      channel,
-      recipient_email: email || null,
-      recipient_phone: phone || null,
-      expires_at: expiresAt.toISOString(),
-      group_id: groupId || null,
-      custom_message: customMessage || null,
-      use_count: 0,
-      metadata: {}
-    })
+    .insert(
+      buildInvitationInsert(
+        {
+          parentId,
+          invitationType: 'single_use',
+          token,
+          groupId,
+          customMessage
+        },
+        {
+          channel,
+          recipient_email: email ?? null,
+          recipient_phone: phone ?? null,
+          expires_at: expiresAt.toISOString(),
+          metadata: {}
+        }
+      )
+    )
     .select()
     .single()
 
@@ -128,16 +197,7 @@ export async function createReusableLink(
 
   const { parentId, groupId, customMessage, qrCodeSettings } = data
 
-  // Validate parent exists
-  const { data: parentData, error: parentError } = await supabase
-    .from('profiles')
-    .select('id, name')
-    .eq('id', parentId)
-    .single()
-
-  if (parentError || !parentData) {
-    throw new Error('Parent not found')
-  }
+  await ensureParentProfile(supabase, parentId)
 
   // Generate secure token
   const token = generateSecureToken()
@@ -145,22 +205,26 @@ export async function createReusableLink(
   // Create invitation (no expiration, unlimited uses)
   const { data: invitation, error } = await supabase
     .from('invitations')
-    .insert({
-      parent_id: parentId,
-      invitation_type: 'reusable',
-      token,
-      status: 'active',
-      channel: 'link',
-      recipient_email: null,
-      recipient_phone: null,
-      expires_at: null,
-      group_id: groupId || null,
-      custom_message: customMessage || null,
-      use_count: 0,
-      metadata: {
-        qrCodeSettings: qrCodeSettings || {}
-      } as never
-    } as never)
+    .insert(
+      buildInvitationInsert(
+        {
+          parentId,
+          invitationType: 'reusable',
+          token,
+          groupId,
+          customMessage
+        },
+        {
+          channel: 'link',
+          recipient_email: null,
+          recipient_phone: null,
+          expires_at: null,
+          metadata: {
+            qrCodeSettings: qrCodeSettings || {}
+          } as unknown as Json
+        }
+      )
+    )
     .select()
     .single()
 
@@ -791,8 +855,37 @@ export async function sendInvitation(
   channel: 'email' | 'sms' | 'whatsapp',
   customMessage?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const supabase = createClient()
   const invitationUrl = getInvitationURL(invitation.token)
   const message = customMessage || invitation.custom_message || undefined
+
+  let inviterProfile: InviterProfile | null = null
+
+  if (invitation.parent_id) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email, phone')
+        .eq('id', invitation.parent_id)
+        .single()
+
+      if (error) {
+        logger.errorWithStack('Error fetching inviter profile for invitation delivery', error as Error)
+      } else if (data) {
+        inviterProfile = data as unknown as InviterProfile
+      }
+    } catch (profileError) {
+      logger.errorWithStack('Unexpected error fetching inviter profile for invitation delivery', profileError as Error)
+    }
+  } else {
+    logger.warn('Invitation missing parent_id when attempting to send', {
+      invitationId: invitation.id,
+      channel
+    })
+  }
+
+  const inviterName = inviterProfile?.name?.trim() ? inviterProfile.name : 'A parent'
+  const inviterEmail = inviterProfile?.email || undefined
 
   try {
     if (channel === 'email') {
@@ -805,11 +898,16 @@ export async function sendInvitation(
         invitation.recipient_email,
         {
           recipientName: undefined,
-          inviterName: 'A parent', // TODO: Get actual parent name
+          inviterName,
           customMessage: message,
           invitationUrl,
           expiresAt: invitation.expires_at || undefined
-        }
+        },
+        inviterEmail
+          ? {
+              replyTo: inviterEmail
+            }
+          : undefined
       )
 
       return {
@@ -827,7 +925,7 @@ export async function sendInvitation(
       if (channel === 'sms') {
         const result = await smsService.sendInvitationSMS(
           invitation.recipient_phone,
-          'A parent', // TODO: Get actual parent name
+          inviterName,
           invitationUrl,
           message,
           invitation.expires_at || undefined
@@ -841,7 +939,7 @@ export async function sendInvitation(
       } else {
         const result = await smsService.sendInvitationWhatsApp(
           invitation.recipient_phone,
-          'A parent', // TODO: Get actual parent name
+          inviterName,
           invitationUrl,
           message,
           invitation.expires_at || undefined

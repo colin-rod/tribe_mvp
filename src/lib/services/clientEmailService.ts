@@ -1,32 +1,7 @@
 'use client'
 
 import { createLogger } from '@/lib/logger'
-
-export interface EmailTemplate {
-  subject: string
-  html: string
-  text: string
-}
-
-export interface EmailOptions {
-  to: string
-  from?: string
-  fromName?: string
-  replyTo?: string
-  subject: string
-  html: string
-  text: string
-  templateData?: Record<string, unknown>
-  categories?: string[]
-  customArgs?: Record<string, string>
-}
-
-export interface EmailDeliveryResult {
-  success: boolean
-  messageId?: string
-  error?: string
-  statusCode?: number
-}
+import type { EmailDeliveryResult, EmailOptions } from '@/lib/types/email'
 
 export interface EmailApiRequest {
   to: string
@@ -49,12 +24,23 @@ export class ClientEmailService {
   private logger = createLogger('ClientEmailService')
 
   private async fetchApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const { headers, ...rest } = options
+
+    const normalizedHeaders: Record<string, string> =
+      headers instanceof Headers
+        ? Object.fromEntries(headers.entries())
+        : Array.isArray(headers)
+        ? Object.fromEntries(headers)
+        : (headers as Record<string, string> | undefined) ?? {}
+
+    const mergedHeaders = {
+      'Content-Type': 'application/json',
+      ...normalizedHeaders,
+    }
+
     const response = await fetch(endpoint, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
+      ...rest,
+      headers: mergedHeaders,
     })
 
     return response

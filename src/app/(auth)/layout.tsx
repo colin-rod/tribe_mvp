@@ -10,10 +10,10 @@ export default function AuthLayout({
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <Link href="/" className="text-3xl font-bold text-primary-600">
-            Tribe
+            TribeUpdate
           </Link>
           <p className="mt-2 text-sm text-gray-600">
-            Smart baby update distribution platform
+            Share life&apos;s moments with the people who matter most
           </p>
         </div>
       </div>

@@ -76,7 +76,11 @@ class EnhancedRateLimiter {
       if (allowed) {
         info.count++
         info.remaining = Math.max(0, config.maxRequests - info.count)
+        info.total = config.maxRequests
         this.limits.set(key, info)
+      } else {
+        info.total = config.maxRequests
+        info.remaining = Math.max(0, config.maxRequests - info.count)
       }
 
       return { allowed, info }
@@ -101,6 +105,10 @@ class EnhancedRateLimiter {
 
   getInfo(key: string): RateLimitInfo | null {
     return this.limits.get(key) || null
+  }
+
+  clear(): void {
+    this.limits.clear()
   }
 
   destroy(): void {
@@ -191,6 +199,24 @@ export function simpleRateLimit(userId: string, maxRequests: number = 10, window
   return allowed
 }
 
+export interface UserRateLimitOptions {
+  maxRequests?: number
+  windowMinutes?: number
+}
+
+export function checkUserRateLimit(
+  userId: string,
+  options: UserRateLimitOptions = {}
+): { allowed: boolean; info: RateLimitInfo } {
+  const key = `user:${userId || 'anonymous'}`
+  const config: RateLimitConfig = {
+    maxRequests: options.maxRequests ?? 10,
+    windowMinutes: options.windowMinutes ?? 1,
+  }
+
+  return rateLimiter.checkLimit(key, config)
+}
+
 /**
  * Middleware for applying rate limiting to API routes
  */
@@ -279,6 +305,10 @@ export const RateLimitConfigs = {
 
 // Export the rate limiter instance for advanced usage
 export { rateLimiter }
+
+export function resetRateLimitStore(): void {
+  rateLimiter.clear()
+}
 
 // Cleanup on process termination
 process.on('SIGTERM', () => {

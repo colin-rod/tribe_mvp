@@ -166,6 +166,8 @@ export type MemoryWithStats = Memory & {
   photo_count?: number  // Number of photos in this memory
 }
 
+export type RecentMemoriesWithStatsResult = MemoryWithStats[]
+
 /**
  * Memory display data for UI components
  */
@@ -185,6 +187,8 @@ export interface MemoryCardData {
   media_urls: string[] | null
   /** Structured metadata (milestones, locations, dates, people) */
   metadata?: MemoryMetadata | null
+  /** Original creation timestamp for grouping */
+  createdAt?: string | null
   distributionStatus: MemoryStatus
   isNew: boolean  // New badge indicator
   captureChannel: CaptureChannel

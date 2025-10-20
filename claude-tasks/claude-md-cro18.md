@@ -14,7 +14,7 @@ Set up initial Supabase project with complete database schema and Row Level Secu
 Building a private family sharing platform that intelligently distributes baby updates to recipients via their preferred channels (email, SMS, WhatsApp). This is the foundational database and backend setup.
 
 ## Domain & Environment
-- Development domain: www.colinrodrigues.com
+- Development domain: www.tribeupdate.com
 - Using Supabase for backend (Auth, Database, Storage, Edge Functions)
 - PostgreSQL with Row Level Security
 - Next.js 15 frontend (to be built in subsequent issues)
@@ -42,7 +42,7 @@ Building a private family sharing platform that intelligently distributes baby u
 
 ### 4. Authentication Setup
 - [ ] Configure email authentication
-- [ ] Set up authentication redirects for www.colinrodrigues.com
+- [ ] Set up authentication redirects for www.tribeupdate.com
 - [ ] Test user registration and login flows
 - [ ] Configure user profile creation trigger
 
@@ -325,7 +325,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # External APIs (for future phases)
 OPENAI_API_KEY=your-openai-api-key
 SENDGRID_API_KEY=your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=updates@colinrodrigues.com
+SENDGRID_FROM_EMAIL=updates@tribeupdate.com
 ```
 
 ## Success Criteria

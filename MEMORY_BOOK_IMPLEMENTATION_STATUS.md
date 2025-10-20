@@ -38,7 +38,7 @@
   - `approveMemory()` - Marks as approved, clears new badge
   - `approveMemories()` - Bulk approve operation
   - `getNewMemories()` - Get all memories with is_new = true
-  - `getNewMemoriesCount()` - Badge counter
+  - `getRecentMemoriesWithStats()` - Dashboard feed with engagement stats and new-memory count
   - All CRUD operations updated
 - [x] Created [summaryService.ts](src/lib/services/summaryService.ts) - Summary management
   - `compileSummary()` - Create weekly summary

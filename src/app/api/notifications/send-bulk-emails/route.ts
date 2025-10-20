@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { serverEmailService } from '@/lib/services/serverEmailService'
 import { z } from 'zod'
 import { createLogger } from '@/lib/logger'
-import { requireAuth, verifyNotificationPermissions, checkRateLimit } from '@/lib/middleware/authorization'
+import { RateLimitConfigs } from '@/lib/middleware/rateLimiting'
+import { handleEmailNotificationRequest } from '@/lib/services/notificationService/emailNotificationHandler'
+import { emailSchema } from '@/lib/validation/security'
 
 const logger = createLogger('NotificationBulkEmailAPI')
 
 const bulkEmailSchema = z.object({
   emails: z.array(z.object({
-    to: z.string().email('Invalid email address'),
+    to: emailSchema,
     type: z.enum(['response', 'prompt', 'digest', 'system', 'preference']),
     templateData: z.record(z.any()).optional(),
     options: z.object({
-      from: z.string().email().optional(),
+      from: emailSchema.optional(),
       fromName: z.string().optional(),
-      replyTo: z.string().email().optional(),
+      replyTo: emailSchema.optional(),
       categories: z.array(z.string()).optional(),
       customArgs: z.record(z.string()).optional()
     }).optional()
@@ -22,128 +23,65 @@ const bulkEmailSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  try {
-    // Parse request body
-    const body = await request.json()
-    const validatedData = bulkEmailSchema.parse(body)
+  return handleEmailNotificationRequest(request, {
+    schema: bulkEmailSchema,
+    rateLimit: RateLimitConfigs.bulk,
+    logger,
+    transformPayload: validatedData => ({
+      notifications: validatedData.emails.map(email => ({
+        to: email.to,
+        type: email.type,
+        templateData: email.templateData || {},
+        options: email.options || {}
+      })),
+      meta: {
+        totalRequested: validatedData.emails.length
+      }
+    }),
+    buildSuccessResponse: (context, summary, _ownedEmails, _rateLimitInfo) => {
+      const results = summary.deliveries.map(delivery => ({
+        to: delivery.payload.to,
+        success: delivery.delivery.success,
+        messageId: delivery.delivery.messageId,
+        error: delivery.delivery.error
+      }))
 
-    // Check authentication
-    const authResult = await requireAuth(request)
-    if (authResult instanceof NextResponse) {
-      return authResult
-    }
-    const { user } = authResult
+      const successCount = results.filter(result => result.success).length
+      const failureCount = results.length - successCount
 
-    // Check rate limiting - stricter for bulk emails
-    if (!checkRateLimit(user.id, 100, 60)) { // 100 emails per hour
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { status: 429 }
-      )
-    }
-
-    // Extract all recipient emails
-    const recipientEmails = validatedData.emails.map(email => email.to)
-
-    // Verify user can send emails to all recipients
-    const { allowed, ownedEmails } = await verifyNotificationPermissions(user.id, recipientEmails)
-    if (!allowed) {
-      const unauthorizedEmails = recipientEmails.filter(email => !ownedEmails.includes(email.toLowerCase()))
-      logger.warn('Unauthorized bulk email send attempt', {
-        userId: user.id,
-        totalRequested: recipientEmails.length,
-        authorized: ownedEmails.length,
-        unauthorizedEmails
+      context.logger.info('Bulk email send completed', {
+        userId: context.user.id,
+        totalRequested: summary.meta?.totalRequested ?? results.length,
+        totalSent: results.length,
+        successfulSends: successCount,
+        failedSends: failureCount
       })
+
+      return NextResponse.json({
+        success: failureCount === 0,
+        results,
+        summary: {
+          total: results.length,
+          successful: successCount,
+          failed: failureCount
+        }
+      })
+    },
+    handlePermissionDenied: (_context, details) => {
+      const totalRequested = details.transformResult.notifications.length
       return NextResponse.json(
         {
           error: 'You are not authorized to send emails to some recipients',
           details: {
-            totalRequested: recipientEmails.length,
-            authorized: ownedEmails.length,
-            unauthorized: unauthorizedEmails.length
+            totalRequested,
+            authorized: details.ownedEmails.length,
+            unauthorized: details.unauthorizedEmails.length
           }
         },
         { status: 403 }
       )
     }
-
-    // Check if email service is configured
-    if (!serverEmailService.isConfigured()) {
-      return NextResponse.json(
-        { error: 'Email service not properly configured' },
-        { status: 500 }
-      )
-    }
-
-    // Email options will be handled by sendTemplatedEmail
-
-    // Send emails in batches using the individual email method
-    // Only send to authorized emails
-    const authorizedEmails = validatedData.emails.filter(email =>
-      ownedEmails.includes(email.to.toLowerCase())
-    )
-
-    const results = []
-    for (const emailData of authorizedEmails) {
-      try {
-        const result = await serverEmailService.sendTemplatedEmail(
-          emailData.to,
-          emailData.type,
-          emailData.templateData || {},
-          emailData.options || {}
-        )
-        results.push({
-          to: emailData.to,
-          success: result.success,
-          messageId: result.messageId,
-          error: result.error
-        })
-      } catch (error) {
-        results.push({
-          to: emailData.to,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
-      }
-    }
-
-    // Log security event for audit trail
-    logger.info('Bulk email send completed', {
-      userId: user.id,
-      totalRequested: validatedData.emails.length,
-      totalSent: authorizedEmails.length,
-      successfulSends: results.filter(r => r.success).length
-    })
-
-    const successCount = results.filter(r => r.success).length
-    const failureCount = results.length - successCount
-
-    return NextResponse.json({
-      success: failureCount === 0,
-      results,
-      summary: {
-        total: results.length,
-        successful: successCount,
-        failed: failureCount
-      }
-    })
-
-  } catch (error) {
-    logger.errorWithStack('Send bulk emails API error', error as Error)
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
+  })
 }
 
 export async function GET() {

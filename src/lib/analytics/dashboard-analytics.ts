@@ -119,11 +119,21 @@ class DashboardAnalyticsManager {
   private sessionId: string
   private userId?: string
   private config: AnalyticsConfiguration
-  private flushTimer?: NodeJS.Timeout
+  private flushTimer?: ReturnType<typeof setInterval> | number
   private performanceObserver?: PerformanceObserver
   private mutationObserver?: MutationObserver
   private beforeUnloadHandler?: () => void
   private visibilityChangeHandler?: () => void
+  private handleClickListener?: (event: MouseEvent) => void
+  private handleKeyboardListener?: (event: KeyboardEvent) => void
+  private handleScrollListener?: () => void
+  private handleResizeListener?: () => void
+  private scrollDebounceTimeoutId?: ReturnType<typeof setTimeout> | number
+  private memoryUsageIntervalId?: ReturnType<typeof setInterval> | number
+  private fpsFrameRequestId?: number
+  private fpsMeasurementCallback?: (timestamp: number) => void
+  private fpsLastFrameTime = 0
+  private fpsFrameCount = 0
 
   private readonly STORAGE_KEYS = {
     INTERACTIONS: 'dashboard_interactions',
@@ -191,29 +201,36 @@ class DashboardAnalyticsManager {
     if (typeof window === 'undefined' || !this.config.enableRealTimeTracking) return
 
     // Track clicks
-    document.addEventListener('click', this.handleClickEvent.bind(this), true)
+    this.handleClickListener = this.handleClickEvent.bind(this)
+    document.addEventListener('click', this.handleClickListener, true)
 
     // Track scrolls
-    let scrollTimeout: NodeJS.Timeout
-    window.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout)
-      scrollTimeout = setTimeout(() => {
+    this.handleScrollListener = () => {
+      if (this.scrollDebounceTimeoutId) {
+        clearTimeout(this.scrollDebounceTimeoutId)
+      }
+
+      this.scrollDebounceTimeoutId = window.setTimeout(() => {
         this.trackInteraction({
           type: 'scroll',
           element: 'window',
           metadata: {
             scrollY: window.scrollY,
-            scrollPercent: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100)
+            scrollPercent: Math.round(
+              (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
+            )
           }
         })
       }, 150)
-    })
+    }
+    window.addEventListener('scroll', this.handleScrollListener)
 
     // Track keyboard shortcuts
-    document.addEventListener('keydown', this.handleKeyboardEvent.bind(this))
+    this.handleKeyboardListener = this.handleKeyboardEvent.bind(this)
+    document.addEventListener('keydown', this.handleKeyboardListener)
 
     // Track resize events
-    window.addEventListener('resize', () => {
+    this.handleResizeListener = () => {
       this.trackInteraction({
         type: 'performance_event',
         element: 'window',
@@ -222,7 +239,8 @@ class DashboardAnalyticsManager {
           viewport: { width: window.innerWidth, height: window.innerHeight }
         }
       })
-    })
+    }
+    window.addEventListener('resize', this.handleResizeListener)
   }
 
   private handleClickEvent(event: MouseEvent) {
@@ -334,7 +352,7 @@ class DashboardAnalyticsManager {
 
     // Memory usage monitoring
     if ('memory' in performance) {
-      setInterval(() => {
+      this.memoryUsageIntervalId = window.setInterval(() => {
         const memoryInfo = (performance as Performance & {
           memory?: {
             usedJSHeapSize: number
@@ -357,29 +375,33 @@ class DashboardAnalyticsManager {
     }
 
     // FPS monitoring for virtual scroll
-    let lastFrameTime = 0
-    let frameCount = 0
-    const measureFPS = () => {
-      const now = performance.now()
-      frameCount++
+    this.fpsLastFrameTime = 0
+    this.fpsFrameCount = 0
+    this.fpsMeasurementCallback = (timestamp: number) => {
+      const now = timestamp || performance.now()
+      this.fpsFrameCount++
 
-      if (now - lastFrameTime >= 1000) {
+      if (this.fpsLastFrameTime === 0) {
+        this.fpsLastFrameTime = now
+      }
+
+      if (now - this.fpsLastFrameTime >= 1000) {
         this.trackPerformanceMetric({
           type: 'virtual_scroll_fps',
-          value: Math.round((frameCount * 1000) / (now - lastFrameTime)),
+          value: Math.round((this.fpsFrameCount * 1000) / (now - this.fpsLastFrameTime)),
           metadata: {
-            frameCount,
-            duration: now - lastFrameTime
+            frameCount: this.fpsFrameCount,
+            duration: now - this.fpsLastFrameTime
           }
         })
 
-        frameCount = 0
-        lastFrameTime = now
+        this.fpsFrameCount = 0
+        this.fpsLastFrameTime = now
       }
 
-      requestAnimationFrame(measureFPS)
+      this.fpsFrameRequestId = window.requestAnimationFrame(this.fpsMeasurementCallback as FrameRequestCallback)
     }
-    requestAnimationFrame(measureFPS)
+    this.fpsFrameRequestId = window.requestAnimationFrame(this.fpsMeasurementCallback as FrameRequestCallback)
   }
 
   private mapPerformanceEntryType(entryType: string): MetricType {
@@ -703,6 +725,39 @@ class DashboardAnalyticsManager {
     if (this.flushTimer) {
       clearInterval(this.flushTimer)
     }
+    if (typeof document !== 'undefined') {
+      if (this.handleClickListener) {
+        document.removeEventListener('click', this.handleClickListener, true)
+        this.handleClickListener = undefined
+      }
+      if (this.handleKeyboardListener) {
+        document.removeEventListener('keydown', this.handleKeyboardListener)
+        this.handleKeyboardListener = undefined
+      }
+    }
+    if (typeof window !== 'undefined') {
+      if (this.handleScrollListener) {
+        window.removeEventListener('scroll', this.handleScrollListener)
+        this.handleScrollListener = undefined
+      }
+      if (this.handleResizeListener) {
+        window.removeEventListener('resize', this.handleResizeListener)
+        this.handleResizeListener = undefined
+      }
+      if (this.memoryUsageIntervalId) {
+        window.clearInterval(this.memoryUsageIntervalId)
+        this.memoryUsageIntervalId = undefined
+      }
+      if (this.fpsFrameRequestId !== undefined) {
+        window.cancelAnimationFrame(this.fpsFrameRequestId)
+        this.fpsFrameRequestId = undefined
+        this.fpsMeasurementCallback = undefined
+      }
+      if (this.scrollDebounceTimeoutId) {
+        clearTimeout(this.scrollDebounceTimeoutId)
+        this.scrollDebounceTimeoutId = undefined
+      }
+    }
     if (this.performanceObserver) {
       this.performanceObserver.disconnect()
     }
@@ -764,6 +819,11 @@ export function trackCustomDashboardEvent(eventName: string, eventData: Record<s
 
 export function flushDashboardAnalytics(reason: FlushReason = 'manual') {
   analyticsInstance?.flush(reason)
+}
+
+export function destroyDashboardAnalytics() {
+  analyticsInstance?.destroy()
+  analyticsInstance = null
 }
 
 export { DashboardAnalyticsManager }

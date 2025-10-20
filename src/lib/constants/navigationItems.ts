@@ -13,9 +13,7 @@ import type { ComponentType } from 'react';
 import {
   RectangleStackIcon,
   BookOpenIcon,
-  UserIcon,
   UserPlusIcon,
-  UserGroupIcon,
   DocumentTextIcon,
   UserCircleIcon,
   ShieldCheckIcon,
@@ -27,7 +25,7 @@ import { DASHBOARD_ROUTES, type DashboardRoute } from './routes';
 export type NavigationIcon = ComponentType<{ className?: string }>;
 
 export interface DashboardNavigationItem {
-  id: 'activity' | 'digests' | 'children' | 'recipients' | 'groups' | 'drafts' | 'settings';
+  id: 'activity' | 'summaries' | 'recipients' | 'drafts' | 'settings';
   label: string;
   icon: NavigationIcon;
   href: DashboardRoute;
@@ -88,7 +86,7 @@ export const DASHBOARD_NAVIGATION_SECTIONS = [
         alternateHrefs: [DASHBOARD_ROUTES.ACTIVITY_ALT],
       },
       {
-        id: 'digests',
+        id: 'summaries',
         label: 'Memory Book',
         icon: BookOpenIcon,
         href: DASHBOARD_ROUTES.SUMMARIES,
@@ -100,22 +98,10 @@ export const DASHBOARD_NAVIGATION_SECTIONS = [
     label: 'Manage',
     items: [
       {
-        id: 'children',
-        label: 'Children',
-        icon: UserIcon,
-        href: DASHBOARD_ROUTES.CHILDREN,
-      },
-      {
         id: 'recipients',
         label: 'Recipients',
         icon: UserPlusIcon,
         href: DASHBOARD_ROUTES.RECIPIENTS,
-      },
-      {
-        id: 'groups',
-        label: 'Groups',
-        icon: UserGroupIcon,
-        href: DASHBOARD_ROUTES.GROUPS,
       },
       {
         id: 'drafts',
@@ -130,6 +116,63 @@ export const DASHBOARD_NAVIGATION_SECTIONS = [
         href: DASHBOARD_ROUTES.SETTINGS,
       },
     ],
+  },
+] as const;
+
+export type DashboardNavigationItemId =
+  (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
+
+export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
+  (section) => section.items
+);
+
+export function getNavigationItemByPath(pathname: string) {
+  return DASHBOARD_NAVIGATION_ITEMS.find(
+    (item) =>
+      item.href === pathname ||
+      item.alternateHrefs?.includes(pathname as DashboardRoute)
+  );
+}
+
+// Legacy navigation items for mobile menu
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  badge?: number;
+}
+
+export interface NavigationSection {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+export const navigationItems: NavItem[] = [
+  {
+    id: 'activity',
+    label: 'Activity',
+    icon: RectangleStackIcon,
+    href: '/dashboard/activity',
+  },
+  {
+    id: 'memory-book',
+    label: 'Memory Book',
+    icon: BookOpenIcon,
+    href: '/dashboard/memory-book',
+  },
+  {
+    id: 'recipients',
+    label: 'Recipients',
+    icon: UserPlusIcon,
+    href: '/dashboard/recipients',
+  },
+  {
+    id: 'summaries',
+    label: 'Summaries',
+    icon: DocumentTextIcon,
+    href: '/dashboard/digests',
   },
 ];
 

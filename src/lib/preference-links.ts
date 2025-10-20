@@ -2,6 +2,11 @@
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 import { createLogger } from './logger'
+import {
+  createPreferenceTokenFingerprint,
+  getTokenPrefix,
+  trackPreferenceTelemetry
+} from './analytics/preference-telemetry'
 
 // Create logger instance for this module
 const logger = createLogger('PreferenceLinks')
@@ -420,8 +425,8 @@ export function getPreferenceOptions() {
 
 
 /**
- * Logs preference access for analytics (placeholder)
- * In production, this could track usage patterns
+ * Logs preference access for analytics/telemetry
+ * Records anonymized metadata about preference interactions
  *
  * @param token - The preference token accessed
  * @param action - The action performed ('view', 'update', 'reset')
@@ -430,12 +435,40 @@ export async function logPreferenceAccess(
   token: string,
   action: 'view' | 'update' | 'reset'
 ): Promise<void> {
-  // In production, this could log to analytics service
-  logger.info(`Preference access logged: ${action} for token ${token.slice(0, 8)}...`)
+  if (!token || token.trim() === '') {
+    logger.warn('Preference telemetry skipped due to missing token', { action })
+    return
+  }
 
-  // TODO: Implement actual analytics logging if needed
-  // This could track:
-  // - How often recipients update their preferences
-  // - Which preferences are most commonly changed
-  // - Usage patterns for optimization
+  const normalizedToken = token.trim()
+  const tokenPrefix = getTokenPrefix(normalizedToken)
+
+  try {
+    const tokenHash = await createPreferenceTokenFingerprint(normalizedToken)
+
+    const record = await trackPreferenceTelemetry({
+      action,
+      tokenHash,
+      tokenPrefix,
+      metadata: {
+        source: 'preference-links',
+        action
+      }
+    })
+
+    logger.info('Preference access telemetry emitted', {
+      action: record.action,
+      tokenPrefix: record.tokenPrefix,
+      eventId: record.eventId
+    })
+  } catch (error) {
+    logger.errorWithStack(
+      'Failed to emit preference access telemetry',
+      error as Error,
+      {
+        action,
+        tokenPrefix
+      }
+    )
+  }
 }

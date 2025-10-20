@@ -458,6 +458,55 @@ Use descriptive branch names with the `claude/` prefix:
      --base development
    ```
 
+### Automation & Enforcement
+
+This workflow is **ENFORCED** through Git hooks that block non-compliant operations:
+
+#### Who This Applies To
+- **Claude Code**: Must use `claude/` prefix for all branches
+- **Codex**: Must use `codex/` prefix for all branches
+- **Human developers**: Use your name or team prefix
+- **All contributors**: No exceptions - everyone goes through PRs
+
+#### Pre-Commit Hook Protection
+`./.githooks/pre-commit` **blocks all commits** to protected branches:
+- ❌ Blocks commits to `main` and `development`
+- ✅ Only allows commits on feature branches
+- 📋 Provides clear instructions for creating branches
+- 🔒 Cannot be bypassed (intentionally)
+
+#### Pre-Push Hook Protection
+`./.githooks/pre-push` performs comprehensive checks:
+- ❌ **Blocks pushes** from `main` and `development` branches
+- 📝 **Auto-commits** any uncommitted changes before pushing
+- 🔍 Verifies feature branches are rebased on `development` (or `main` for `hotfix/`)
+  - ✅ Runs `npm run lint` - catches style violations
+  - ✅ Runs `npx tsc --noEmit` - catches type errors
+  - ❌ Push is blocked until all checks pass
+  - 💡 Override available: `SKIP_PUSH_CHECKS=1 git push` (emergency only)
+
+#### Post-Push Automation
+`./.githooks/post-push` automatically creates Pull Requests:
+- 🎯 Targets `development` for regular branches
+- 🎯 Targets `main` for `hotfix/` and `emergency/` branches
+- 📝 Uses GitHub CLI to create PR with formatted template
+- 🤖 Includes Claude Code attribution
+
+#### Installation
+Install or refresh hooks anytime:
+```bash
+./.githooks/install.sh
+```
+
+This copies all hooks to `.git/hooks/` and sets executable permissions.
+
+#### Branch Prefixes and Targets
+- `claude/*` → PR to `development`
+- `codex/*` → PR to `development`
+- `hotfix/*` → PR to `main` (production fixes)
+- `emergency/*` → PR to `main` (critical issues)
+- All others → PR to `development`
+
 ### PR Requirements
 
 All Pull Requests must:

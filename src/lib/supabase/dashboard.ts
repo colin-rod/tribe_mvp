@@ -5,49 +5,21 @@
 
 import { createClient } from './client'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import type { Database } from '../types/database'
-import type { DashboardUpdate } from '../types/dashboard'
+import type {
+  DashboardFilters,
+  DashboardStats,
+  EngagementUpdatePayload,
+  PaginationParams,
+  TimelineUpdate,
+  UpdateWithChild,
+  Database
+} from '../types/database'
 import { createLogger, type LogContext } from '../logger'
 
 const logger = createLogger('dashboard-client')
 
-type UpdateRow = Database['public']['Tables']['updates']['Row']
+type UpdateRow = Database['public']['Tables']['memories']['Row']
 
-// Type definitions
-type DashboardFilters = {
-  search?: string
-  childIds?: string[]
-  milestoneTypes?: string[]
-  status?: string
-  dateFrom?: string
-  dateTo?: string
-}
-
-type PaginationParams = {
-  limit?: number
-  offset?: number
-  cursorCreatedAt?: string
-  cursorId?: string
-}
-
-type UpdateWithChild = DashboardUpdate
-
-type TimelineUpdate = DashboardUpdate
-
-type DashboardStats = {
-  total_updates: number
-  draft_count: number
-  sent_count: number
-  scheduled_count: number
-  total_recipients: number
-  total_children: number
-}
-
-type EngagementUpdatePayload = {
-  updateId: string
-  userId: string
-  action: 'like' | 'unlike'
-}
 type CommentRow = Database['public']['Tables']['comments']['Row']
 
 export class DashboardClient {
@@ -109,17 +81,14 @@ export class DashboardClient {
         return { data: [], error: new Error(error.message), hasMore: false }
       }
 
-      type UpdateType = {
-        created_at: string
-        id: string
-      }
-
-      const typedData = data as unknown as UpdateType[]
+      const typedData = (data || []) as UpdateWithChild[]
       const hasMore = typedData.length > limit
       const updates = hasMore ? typedData.slice(0, -1) : typedData
-      const nextCursor = hasMore && updates.length > 0
-        ? { createdAt: updates[updates.length - 1].created_at, id: updates[updates.length - 1].id }
-        : undefined
+      const lastUpdate = updates[updates.length - 1]
+      const nextCursor =
+        hasMore && lastUpdate?.created_at
+          ? { createdAt: lastUpdate.created_at, id: lastUpdate.id }
+          : undefined
 
       logger.debug('Successfully fetched dashboard updates', {
         count: updates.length,
@@ -128,7 +97,7 @@ export class DashboardClient {
       })
 
       return {
-        data: updates as unknown as UpdateWithChild[],
+        data: updates,
         error: null,
         hasMore,
         nextCursor
@@ -210,7 +179,7 @@ export class DashboardClient {
 
       const stats = (data as DashboardStats[] | null)?.[0] || null
 
-      logger.debug('Successfully fetched dashboard stats', stats as LogContext)
+      logger.debug('Successfully fetched dashboard stats', stats ? { stats } : undefined)
 
       return { data: stats, error: null }
     } catch (err) {
@@ -378,12 +347,12 @@ export class DashboardClient {
 
   /**
    * Get comments for an update
+   * CRO-123: Now supports cursor-based pagination for efficient deep pagination
    */
   async getUpdateComments(
     updateId: string,
     parentId: string,
-    limit: number = 50,
-    offset: number = 0
+    pagination: PaginationParams = {}
   ): Promise<{
     data: Array<{
       id: string
@@ -393,22 +362,46 @@ export class DashboardClient {
       createdAt: string
       updatedAt: string
     }>
+    hasMore: boolean
+    nextCursor?: { createdAt: string; id: string }
     error: Error | null
   }> {
     try {
-      logger.debug('Fetching update comments', { updateId, parentId, limit, offset })
+      const {
+        limit = 50,
+        offset = 0,
+        cursor,
+        cursorCreatedAt,
+        cursorId
+      } = pagination
+
+      logger.debug('Fetching update comments', { updateId, parentId, pagination })
+
+      // Use cursor-based function if cursor provided
+      const usesCursor = cursor || (cursorCreatedAt && cursorId)
+      const functionName = usesCursor ? 'get_update_comments_cursor' : 'get_update_comments'
+
+      const params = usesCursor
+        ? {
+            p_update_id: updateId,
+            p_parent_id: parentId,
+            p_limit: limit + 1, // Fetch one extra to check hasMore
+            p_cursor_created_at: cursor?.createdAt || cursorCreatedAt || null,
+            p_cursor_id: cursor?.id || cursorId || null
+          }
+        : {
+            p_update_id: updateId,
+            p_parent_id: parentId,
+            p_limit: limit,
+            p_offset: offset
+          }
 
       // @ts-expect-error - Supabase RPC type inference issue
-      const { data, error } = await this.supabase.rpc('get_update_comments', {
-        p_update_id: updateId,
-        p_parent_id: parentId,
-        p_limit: limit,
-        p_offset: offset
-      })
+      const { data, error } = await this.supabase.rpc(functionName, params)
 
       if (error) {
         logger.error('Error fetching update comments', { message: error.message, details: error.details, hint: error.hint } as LogContext)
-        return { data: [], error: new Error(error.message) }
+        return { data: [], hasMore: false, error: new Error(error.message) }
       }
 
       type CommentType = {
@@ -421,7 +414,12 @@ export class DashboardClient {
       }
 
       const typedData = (data || []) as unknown as CommentType[]
-      const comments = typedData.map((comment) => ({
+
+      // Check if there are more results
+      const hasMore = usesCursor ? typedData.length > limit : false
+      const visibleComments = hasMore ? typedData.slice(0, limit) : typedData
+
+      const comments = visibleComments.map((comment) => ({
         id: comment.id,
         parentId: comment.parent_id,
         parentName: comment.parent_name,
@@ -430,12 +428,17 @@ export class DashboardClient {
         updatedAt: comment.updated_at
       }))
 
-      logger.debug('Successfully fetched update comments', { count: comments.length })
+      // Generate next cursor if more results exist
+      const nextCursor = hasMore && comments.length > 0
+        ? { createdAt: comments[comments.length - 1].createdAt, id: comments[comments.length - 1].id }
+        : undefined
 
-      return { data: comments, error: null }
+      logger.debug('Successfully fetched update comments', { count: comments.length, hasMore, nextCursor })
+
+      return { data: comments, hasMore, nextCursor, error: null }
     } catch (err) {
       logger.errorWithStack('Unexpected error fetching update comments', err as Error)
-      return { data: [], error: err as Error }
+      return { data: [], hasMore: false, error: err as Error }
     }
   }
 
@@ -489,13 +492,21 @@ export class DashboardClient {
         (payload: RealtimePostgresChangesPayload<UpdateRow>) => {
           logger.debug('Received engagement update', payload)
 
-          const update = payload.new as Record<string, unknown>
-          if (update?.id) {
-            const updateData = update as Record<string, unknown>
+          const update = payload.new as Partial<UpdateRow> | null
+          if (update && typeof update.id === 'string') {
+            const typedUpdate = update as UpdateRow
             callback({
-              updateId: String(updateData.id || ''),
-              userId: String(updateData.parent_id || ''),
-              action: 'like' as const
+              updateId: typedUpdate.id,
+              parentId: typedUpdate.parent_id,
+              childId: typedUpdate.child_id,
+              likeCount: typedUpdate.like_count,
+              commentCount: typedUpdate.comment_count,
+              responseCount: typedUpdate.response_count,
+              viewCount: typedUpdate.view_count,
+              distributionStatus: typedUpdate.distribution_status,
+              updatedAt: typedUpdate.updated_at,
+              action: 'engagement_update',
+              raw: typedUpdate
             })
           }
         }
@@ -587,7 +598,7 @@ export class DashboardClient {
         offset: options.offset || 0
       }
     ).then(result => ({
-      data: result.data as UpdateWithChild[],
+      data: result.data,
       error: result.error
     }))
   }

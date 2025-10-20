@@ -446,7 +446,7 @@ export const updatePreferencesSchema = z.object({
 
 ### URL Structure
 ```
-https://www.colinrodrigues.com/preferences/[token]
+https://www.tribeupdate.com/preferences/[token]
 ```
 
 ### PreferencePage Component

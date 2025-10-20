@@ -91,11 +91,13 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const queryParams = Object.fromEntries(url.searchParams.entries())
 
-    // Parse array parameters
+    // Parse array parameters and convert string booleans to actual booleans
     const parsedParams = {
       ...queryParams,
       group_ids: queryParams.group_ids ? queryParams.group_ids.split(',') : undefined,
-      recipient_ids: queryParams.recipient_ids ? queryParams.recipient_ids.split(',') : undefined
+      recipient_ids: queryParams.recipient_ids ? queryParams.recipient_ids.split(',') : undefined,
+      include_inactive: queryParams.include_inactive === 'true',
+      settings_summary: queryParams.settings_summary === 'true'
     }
 
     const validatedQuery: BulkPreferenceQuery = bulkPreferenceQuerySchema.parse(parsedParams)

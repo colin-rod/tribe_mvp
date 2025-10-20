@@ -90,7 +90,7 @@ export default function ChildSelector({
               <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                 <ChildImage
                   childId={selectedChild.id}
-                  photoUrl={selectedChild.profile_photo_url}
+                  photoUrl={selectedChild.profile_photo_url ?? undefined}
                   name={selectedChild.name}
                   alt={`${selectedChild.name}'s profile`}
                   className="w-full h-full object-cover"
@@ -143,7 +143,7 @@ export default function ChildSelector({
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                     <ChildImage
                       childId={child.id}
-                      photoUrl={child.profile_photo_url}
+                      photoUrl={child.profile_photo_url ?? undefined}
                       name={child.name}
                       alt={`${child.name}'s profile`}
                       className="w-full h-full object-cover"

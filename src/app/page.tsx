@@ -27,38 +27,38 @@ interface FAQItem {
 const faqItems: FAQItem[] = [
   {
     id: 'what-is-tribe',
-    question: 'What is Tribe and how does it work?',
-    answer: 'Tribe is a secure baby update app designed specifically for private family sharing. Unlike social media, Tribe creates a private, ad-free environment where you can share your baby\'s photos, milestones, and moments with only the people you choose. Your updates are automatically organized and shared with the right family members at the right time.'
+    question: 'What is TribeUpdate and how does it work?',
+    answer: 'TribeUpdate is a secure baby update app designed specifically for private family sharing. Unlike social media, TribeUpdate creates a private, ad-free environment where you can share your baby\'s photos, milestones, and moments with only the people you choose. Your updates are automatically organized and shared with the right family members at the right time.'
   },
   {
     id: 'privacy-security',
-    question: 'How secure is my baby\'s information on Tribe?',
-    answer: 'Security is our top priority. Tribe is SOC 2 certified and uses bank-level encryption to protect your family\'s photos and information. Your data is never sold to advertisers, and only invited family members can see your updates. We\'re committed to keeping your precious moments private and secure.'
+    question: 'How secure is my baby\'s information on TribeUpdate?',
+    answer: 'Security is our top priority. TribeUpdate is SOC 2 certified and uses bank-level encryption to protect your family\'s photos and information. Your data is never sold to advertisers, and only invited family members can see your updates. We\'re committed to keeping your precious moments private and secure.'
   },
   {
     id: 'family-sharing-app',
     question: 'Can distant family members easily stay connected?',
-    answer: 'Absolutely! Tribe is designed to bridge the distance between family members. Grandparents, aunts, uncles, and other loved ones receive real-time notifications when you share new updates. They can comment, react, and feel connected to your baby\'s journey, no matter how far away they are.'
+    answer: 'Absolutely! TribeUpdate is designed to bridge the distance between family members. Grandparents, aunts, uncles, and other loved ones receive real-time notifications when you share new updates. They can comment, react, and feel connected to your baby\'s journey, no matter how far away they are.'
   },
   {
     id: 'milestone-tracking',
-    question: 'Does Tribe help track baby milestones automatically?',
-    answer: 'Yes! Tribe includes intelligent milestone tracking that helps you capture and remember important moments like first steps, first words, and growth milestones. Our app suggests milestone moments and helps organize them into a beautiful timeline you can treasure forever.'
+    question: 'Does TribeUpdate help track baby milestones automatically?',
+    answer: 'Yes! TribeUpdate includes intelligent milestone tracking that helps you capture and remember important moments like first steps, first words, and growth milestones. Our app suggests milestone moments and helps organize them into a beautiful timeline you can treasure forever.'
   },
   {
     id: 'photo-sharing-limits',
     question: 'Are there limits on photos and storage?',
-    answer: 'Tribe offers generous storage for your family photos. You can share unlimited updates with your family circle, and all content is automatically backed up securely in the cloud. Your memories are safe and accessible whenever you need them.'
+    answer: 'TribeUpdate offers generous storage for your family photos. You can share unlimited updates with your family circle, and all content is automatically backed up securely in the cloud. Your memories are safe and accessible whenever you need them.'
   },
   {
     id: 'group-communication',
-    question: 'How does Tribe solve chaotic group texting?',
-    answer: 'Tribe eliminates the chaos of group texts by creating organized, topic-specific conversations around your updates. Instead of scattered messages across multiple platforms, all family discussions about your baby happen in one secure, organized space that everyone can easily follow.'
+    question: 'How does TribeUpdate solve chaotic group texting?',
+    answer: 'TribeUpdate eliminates the chaos of group texts by creating organized, topic-specific conversations around your updates. Instead of scattered messages across multiple platforms, all family discussions about your baby happen in one secure, organized space that everyone can easily follow.'
   },
   {
     id: 'getting-started',
-    question: 'How quickly can I start sharing with Tribe?',
-    answer: 'Getting started with Tribe takes less than 2 minutes! Simply download the app, create your family circle by inviting your loved ones, and start sharing immediately. Our intuitive interface means you can begin creating memories right away, without any learning curve.'
+    question: 'How quickly can I start sharing with TribeUpdate?',
+    answer: 'Getting started with TribeUpdate takes less than 2 minutes! Simply download the app, create your family circle by inviting your loved ones, and start sharing immediately. Our intuitive interface means you can begin creating memories right away, without any learning curve.'
   }
 ]
 
@@ -183,26 +183,85 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Button
-                size="xl"
-                className="w-full sm:w-auto"
-                onClick={trackSignupStarted}
-              >
-                <Link href="/signup" className="flex items-center">
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackSignupStarted}
+                >
                   Start Free Family Circle
                   <HeartIcon className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="xl"
-                className="w-full sm:w-auto"
-                onClick={trackDemoRequested}
-              >
-                <Link href="#demo">Watch 2-Min Demo</Link>
-              </Button>
+                </Button>
+              </Link>
+              <Link href="#demo" className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="w-full sm:w-auto"
+                  onClick={trackDemoRequested}
+                >
+                  Watch 2-Min Demo
+                </Button>
+              </Link>
             </div>
 
+          </div>
+        </Container>
+      </section>
+
+      {/* Demo Section */}
+      <section
+        id="demo"
+        className="py-16 lg:py-24 bg-white"
+        aria-labelledby="demo-heading"
+      >
+        <Container>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2
+                id="demo-heading"
+                className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
+              >
+                Watch the TribeUpdate Experience
+              </h2>
+              <p className="text-xl text-gray-600 mb-6">
+                Take a quick look at how TribeUpdate helps you capture milestones, keep everyone
+                in the loop, and nurture genuine connections with the people who matter most.
+              </p>
+              <ul className="space-y-4 text-gray-700">
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>Guided tour of creating and sharing your first update.</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>See how digests and milestone reminders keep family close.</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckIcon className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
+                  <span>Accessible controls let you pause, rewind, or watch full screen.</span>
+                </li>
+              </ul>
+            </div>
+            <figure>
+              <div className="relative aspect-video rounded-3xl overflow-hidden shadow-xl ring-1 ring-gray-200">
+                <iframe
+                  className="absolute inset-0 h-full w-full"
+                  src="https://www.youtube.com/embed/2eYk1KzZ2UY"
+                  title="TribeUpdate Product Demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  aria-describedby="demo-caption"
+                />
+              </div>
+              <figcaption
+                id="demo-caption"
+                className="mt-4 text-sm text-gray-500"
+              >
+                Video demonstration with captions available on YouTube. Use the on-player controls to
+                enable captions, adjust playback speed, or open the video in full screen.
+              </figcaption>
+            </figure>
           </div>
         </Container>
       </section>
@@ -222,7 +281,7 @@ function Home() {
               Everything You Need for Meaningful Sharing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Built people who want to stay close with friends, family, and community in a more intentional way.
+              Built for people who want to stay close with friends, family, and community in a more intentional way.
             </p>
           </div>
 
@@ -250,7 +309,7 @@ function Home() {
               <CardHeader>
                 <CardTitle>Flexible Sharing</CardTitle>
                 <CardDescription>
-                  Post updates however it’s easiest—email, SMS, or WhatsApp. Share text, photos, or even voice notes. Your recipients receive simple digests at the pace they choose—instantly,daily, or weekly.
+                  Post updates however it’s easiest—email, SMS, or WhatsApp. Share text, photos, or even voice notes. Your recipients receive simple digests at the pace they choose—instantly, daily, or weekly.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -337,7 +396,7 @@ function Home() {
                   <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <HeartIcon className="w-10 h-10 text-primary-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">The Tribe Solution</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">The TribeUpdate Solution</h3>
                 </div>
 
                 <div className="space-y-4">
@@ -382,29 +441,33 @@ function Home() {
               id="cta-heading"
               className="text-3xl md:text-4xl font-bold mb-4"
             >
-              Ready to Build Your Tribe?
+              Ready to Start Sharing?
             </h2>
             <p className="text-xl opacity-90 mb-8 max-w-3xl mx-auto">
-              Join members who trust Tribe o share moments, milestones, and memories with the people who matter most. 
+              Join members who trust TribeUpdate to share moments, milestones, and memories with the people who matter most.
               Get started and start connecting in under 2 minutes.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                size="xl"
-                variant="secondary"
-                className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
-                onClick={trackSignupStarted}
-              >
-                <Link href="/signup">Start Your Free Family Circle</Link>
-              </Button>
-              <Button
-                size="xl"
-                variant="outline"
-                className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="secondary"
+                  className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-50"
+                  onClick={trackSignupStarted}
+                >
+                  Start Your Free Family Circle
+                </Button>
+              </Link>
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button
+                  size="xl"
+                  variant="outline"
+                  className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
+                >
+                  Sign In
+                </Button>
+              </Link>
             </div>
 
             <p className="text-sm opacity-75 mt-6">

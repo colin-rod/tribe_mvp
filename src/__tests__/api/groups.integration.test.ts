@@ -313,8 +313,48 @@ describe('Groups API Integration Tests', () => {
 
       mockGetGroupWithMembers.mockResolvedValue({ ...mockGroup, members: [] } as never)
 
-      const addRecipientsToGroupMock = jest.spyOn(require('@/lib/group-management'), 'addRecipientsToGroup')
-      addRecipientsToGroupMock.mockResolvedValue(mockNewMemberships as never)
+      // Mock Supabase queries for recipient verification and membership checking
+      // We need two different query chains for the two .from() calls
+      let recipientsEqCallCount = 0
+      const recipientsQuery = {
+        select: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockImplementation(() => {
+          recipientsEqCallCount++
+          // The recipients query has TWO .eq() calls - return this for the first, data for the second
+          if (recipientsEqCallCount < 2) {
+            return recipientsQuery // Return this for chaining
+          }
+          return Promise.resolve({ data: mockRecipients, error: null })
+        })
+      }
+
+      let membershipsEqCallCount = 0
+      const membershipsQuery = {
+        select: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockImplementation(() => {
+          membershipsEqCallCount++
+          // The memberships query has THREE .eq() calls - return this for first two, data for the third
+          if (membershipsEqCallCount < 3) {
+            return membershipsQuery // Return this for chaining
+          }
+          return Promise.resolve({ data: [], error: null })
+        })
+      }
+
+      // Return different mocks for different table queries
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'recipients') {
+          return recipientsQuery
+        }
+        if (table === 'group_memberships') {
+          return membershipsQuery
+        }
+        return recipientsQuery
+      })
+
+      mockAddRecipientsToGroup.mockResolvedValue(mockNewMemberships as never)
 
       const request = new NextRequest(`http://localhost:3000/api/groups/${groupId}/members`, {
         method: 'POST',

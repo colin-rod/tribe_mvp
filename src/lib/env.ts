@@ -38,8 +38,10 @@ function getZodFieldType(fieldName: string): string {
     NEXT_PUBLIC_SUPABASE_URL: 'url (required)',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'string (required, min length: 1)',
     SENDGRID_API_KEY: 'string (required, min length: 1)',
-    SENDGRID_FROM_EMAIL: 'email (optional, default: updates@colinrodrigues.com)',
+    SENDGRID_FROM_EMAIL: 'email (optional, default: updates@tribeupdate.com)',
     SENDGRID_FROM_NAME: 'string (optional, default: Tribe)',
+    SENDGRID_WEBHOOK_PUBLIC_KEY: 'string (required in production, min length: 1)',
+    SENDGRID_WEBHOOK_RELAXED_VALIDATION: 'boolean (optional, default: false)',
     LINEAR_API_KEY: 'string (optional)',
     LINEAR_PROJECT_ID: 'uuid (optional)',
     DATABASE_URL: 'url (optional)',
@@ -67,6 +69,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
     message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'
   }),
+  // Supabase Service Role - Optional (for background workers)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // SendGrid - Required for email functionality
   SENDGRID_API_KEY: z.string().min(1, {
@@ -74,9 +79,12 @@ const envSchema = z.object({
   }),
   SENDGRID_FROM_EMAIL: z.string().email({
     message: 'SENDGRID_FROM_EMAIL must be a valid email address'
-  }).optional().default('updates@colinrodrigues.com'),
+  }).optional().default('updates@tribeupdate.com'),
   SENDGRID_FROM_NAME: z.string().optional().default('Tribe'),
-  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().optional(),
+  SENDGRID_WEBHOOK_PUBLIC_KEY: z.string().min(1, {
+    message: 'SENDGRID_WEBHOOK_PUBLIC_KEY cannot be empty when provided'
+  }).optional(),
+  SENDGRID_WEBHOOK_RELAXED_VALIDATION: z.coerce.boolean().optional().default(false),
 
   // Redis - Optional for email queue functionality
   REDIS_URL: z.string().url({
@@ -217,7 +225,7 @@ function validateEnvironment(): Env {
         '  • SENDGRID_API_KEY',
         '',
         'Optional variables with defaults:',
-        '  • SENDGRID_FROM_EMAIL (default: updates@colinrodrigues.com)',
+        '  • SENDGRID_FROM_EMAIL (default: updates@tribeupdate.com)',
         '  • SENDGRID_FROM_NAME (default: Tribe)',
         '  • NEXT_PUBLIC_APP_URL (default: http://localhost:3000)',
         '  • NODE_ENV (default: development)',
@@ -265,7 +273,21 @@ function validateEnvironment(): Env {
       totalValidatedFields: Object.keys(result.data).length
     })
 
-    return result.data
+    const env = result.data
+
+    // Warn about missing webhook key in production, but don't block the build
+    // The webhook endpoint will handle validation at runtime
+    if (env.NODE_ENV === 'production' && !env.SENDGRID_WEBHOOK_PUBLIC_KEY && !env.SENDGRID_WEBHOOK_RELAXED_VALIDATION) {
+      logger.warn('SENDGRID_WEBHOOK_PUBLIC_KEY not configured in production', {
+        nodeEnv: env.NODE_ENV,
+        relaxedValidation: env.SENDGRID_WEBHOOK_RELAXED_VALIDATION,
+        hasPublicKey: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY,
+        impact: 'SendGrid webhook signature verification will be disabled',
+        recommendation: 'Set SENDGRID_WEBHOOK_PUBLIC_KEY for production security'
+      })
+    }
+
+    return env
   } catch (error) {
     // Log error and re-throw for proper handling
     if (error instanceof Error && error.message.includes('Environment Configuration Error')) {
@@ -629,16 +651,6 @@ export function checkEnvironmentHealth(): {
   errors: string[]
 } {
   const result = envSchema.safeParse(process.env)
-
-  if (result.success) {
-    return {
-      isValid: true,
-      missingRequired: [],
-      missingOptional: [],
-      errors: []
-    }
-  }
-
   const requiredFields = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -655,28 +667,32 @@ export function checkEnvironmentHealth(): {
     'LOG_LEVEL'
   ]
 
-  const errors = result.error.errors
-  const missingRequired: string[] = []
-  const missingOptional: string[] = []
+  const missingRequired = new Set<string>()
+  const missingOptional = new Set<string>()
   const errorMessages: string[] = []
 
-  for (const error of errors) {
-    const field = error.path[0] as string
-    const errorMsg = `${field}: ${error.message}`
+  if (!result.success) {
+    for (const error of result.error.errors) {
+      const field = error.path[0] as string
+      const errorMsg = `${field}: ${error.message}`
 
-    errorMessages.push(errorMsg)
+      errorMessages.push(errorMsg)
 
-    if (requiredFields.includes(field)) {
-      missingRequired.push(field)
-    } else if (optionalFields.includes(field)) {
-      missingOptional.push(field)
+      if (requiredFields.includes(field)) {
+        missingRequired.add(field)
+      } else if (optionalFields.includes(field)) {
+        missingOptional.add(field)
+      }
     }
   }
 
+  // Note: SENDGRID_WEBHOOK_PUBLIC_KEY is now optional in production
+  // Webhook endpoint will handle validation at runtime with appropriate warnings
+
   return {
-    isValid: false,
-    missingRequired,
-    missingOptional,
+    isValid: result.success && errorMessages.length === 0,
+    missingRequired: Array.from(missingRequired),
+    missingOptional: Array.from(missingOptional),
     errors: errorMessages
   }
 }
@@ -697,7 +713,8 @@ export function initializeEnvironment(): void {
       features: {
         supabase: !!env.NEXT_PUBLIC_SUPABASE_URL,
         sendgrid: !!env.SENDGRID_API_KEY,
-        linear: !!env.LINEAR_API_KEY
+        linear: !!env.LINEAR_API_KEY,
+        sendgridWebhookVerified: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY
       }
     })
 
@@ -708,6 +725,14 @@ export function initializeEnvironment(): void {
 
     if (!env.DATABASE_URL) {
       logger.debug('Direct database URL not configured - using Supabase client only')
+    }
+
+    if (!env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+      if (env.SENDGRID_WEBHOOK_RELAXED_VALIDATION) {
+        logger.warn('SendGrid webhook verification running in relaxed mode - public key missing (allowed for development only)')
+      } else {
+        logger.warn('SendGrid webhook public key missing - signature verification disabled')
+      }
     }
 
   } catch (error) {
@@ -743,6 +768,7 @@ export function getFeatureFlags(): {
   whatsappEnabled: boolean
   linearEnabled: boolean
   directDbEnabled: boolean
+  sendgridWebhookVerified: boolean
 } {
   // Remove try-catch fallback - if environment validation fails,
   // the application should fail rather than return false flags
@@ -764,7 +790,8 @@ export function getFeatureFlags(): {
     smsEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER),
     whatsappEnabled: !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && (env.TWILIO_WHATSAPP_NUMBER || env.TWILIO_PHONE_NUMBER)),
     linearEnabled: !!(env.LINEAR_API_KEY && env.LINEAR_PROJECT_ID),
-    directDbEnabled: !!env.DATABASE_URL
+    directDbEnabled: !!env.DATABASE_URL,
+    sendgridWebhookVerified: !!env.SENDGRID_WEBHOOK_PUBLIC_KEY
   }
 }
 

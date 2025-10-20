@@ -1,12 +1,13 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals'
+import { jest, describe, it, expect, beforeEach, beforeAll } from '@jest/globals'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { useMemoryCreation } from '../useMemoryCreation'
 import type { UpdateFormData } from '@/lib/validation/update'
 
 // Mock logger
 const mockLogger = {
   info: jest.fn(),
-  error: jest.fn()
+  warn: jest.fn(),
+  error: jest.fn(),
+  errorWithStack: jest.fn()
 }
 
 jest.mock('@/lib/logger', () => ({
@@ -60,6 +61,13 @@ jest.mock('@/lib/age-utils', () => ({
 jest.mock('@/lib/supabase/client', () => ({
   createClient: jest.fn()
 }))
+
+type UseMemoryCreationFn = typeof import('../useMemoryCreation').useMemoryCreation
+let useMemoryCreation: UseMemoryCreationFn
+
+beforeAll(async () => {
+  ;({ useMemoryCreation } = await import('../useMemoryCreation'))
+})
 
 describe('useMemoryCreation', () => {
   const mockChild = {
@@ -289,7 +297,7 @@ describe('useMemoryCreation', () => {
       await waitFor(() => {
         expect(mockUploadUpdatePhotos).toHaveBeenCalled()
         expect(mockUpdateUpdateMediaUrls).toHaveBeenCalledWith(mockUpdateId, ['url1.jpg', 'url2.jpg'])
-        expect(mockUpdateUpdateRecipients).toHaveBeenCalledWith(mockUpdateId, ['rec-1', 'rec-2'])
+        expect(mockUpdateUpdateRecipients).toHaveBeenCalledWith(mockUpdateId, [], ['rec-1', 'rec-2'])
         expect(mockMarkUpdateAsSent).toHaveBeenCalledWith(mockUpdateId)
       })
     })

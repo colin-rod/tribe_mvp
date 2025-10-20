@@ -48,15 +48,6 @@ WITH CHECK (
   bucket_id = 'feedback-screenshots'
 );
 
--- Allow anonymous users to upload screenshots (for anonymous feedback)
-CREATE POLICY "Anonymous users can upload feedback screenshots"
-ON storage.objects
-FOR INSERT
-TO anon
-WITH CHECK (
-  bucket_id = 'feedback-screenshots'
-);
-
 -- Allow public read access to screenshots
 CREATE POLICY "Public read access to feedback screenshots"
 ON storage.objects
@@ -65,6 +56,9 @@ TO public
 USING (
   bucket_id = 'feedback-screenshots'
 );
+
+-- Ensure anon role cannot insert into the bucket (uploads restricted to authenticated users)
+REVOKE INSERT ON TABLE storage.objects FROM anon;
 
 -- =============================================================================
 -- 3. VERIFICATION
@@ -79,10 +73,10 @@ BEGIN
   WHERE tablename = 'objects'
   AND policyname LIKE '%feedback screenshots%';
 
-  IF policy_count = 3 THEN
-    RAISE NOTICE 'SUCCESS: All 3 RLS policies created successfully for feedback-screenshots bucket.';
+  IF policy_count = 2 THEN
+    RAISE NOTICE 'SUCCESS: All required RLS policies created successfully for feedback-screenshots bucket.';
   ELSE
-    RAISE WARNING 'WARNING: Expected 3 policies, but found %. Please verify policy creation.', policy_count;
+    RAISE WARNING 'WARNING: Expected 2 policies, but found %. Please verify policy creation.', policy_count;
   END IF;
 END $$;
 

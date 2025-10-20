@@ -30,18 +30,8 @@ const SummaryRightPane = dynamic(
   { loading: () => <RightPaneSkeleton /> }
 )
 
-const ChildrenRightPane = dynamic(
-  () => import('./ChildrenRightPane').then(mod => ({ default: mod.ChildrenRightPane })),
-  { loading: () => <RightPaneSkeleton /> }
-)
-
 const RecipientsRightPane = dynamic(
   () => import('./RecipientsRightPane').then(mod => ({ default: mod.RecipientsRightPane })),
-  { loading: () => <RightPaneSkeleton /> }
-)
-
-const GroupsRightPane = dynamic(
-  () => import('./GroupsRightPane').then(mod => ({ default: mod.GroupsRightPane })),
   { loading: () => <RightPaneSkeleton /> }
 )
 
@@ -55,10 +45,6 @@ const SettingsRightPane = dynamic(
   { loading: () => <RightPaneSkeleton /> }
 )
 
-const MemoryBookRightPane = dynamic(
-  () => import('./MemoryBookRightPane').then(mod => ({ default: mod.MemoryBookRightPane })),
-  { loading: () => <RightPaneSkeleton /> }
-)
 
 /**
  * Skeleton loading state for right pane components
@@ -93,18 +79,10 @@ export function RightPaneContent() {
           onSelectAIPrompt={handleSelectAIPrompt}
         />
       )
-    case 'memory-book':
-      return <MemoryBookRightPane />
-    case 'digests':
-      return <SummaryRightPane />
     case 'summaries':
       return <SummaryRightPane />
-    case 'children':
-      return <ChildrenRightPane />
     case 'recipients':
       return <RecipientsRightPane />
-    case 'groups':
-      return <GroupsRightPane />
     case 'drafts':
       return <DraftsRightPane />
     case 'settings':

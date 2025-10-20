@@ -1,4 +1,10 @@
-import { createClient } from '@/lib/supabase/client'
+import { getAuthenticatedSupabaseContext } from '@/lib/data/supabaseClient'
+import {
+  fetchDigestPreviewRows,
+  fetchDigestsForUser,
+  fetchDigestById,
+  requireDigestOwnership
+} from '@/lib/data/digestRepository'
 import { createLogger } from '@/lib/logger'
 import type {
   Digest,
@@ -18,10 +24,7 @@ const logger = createLogger('DigestService')
  * Compile a new summary from ready memories
  */
 export async function compileDigest(request: Omit<CompileDigestRequest, 'parent_id'>): Promise<CompileDigestResponse> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
   logger.info('Starting summary compilation', { request, userId: user.id })
 
@@ -62,62 +65,23 @@ export async function compileDigest(request: Omit<CompileDigestRequest, 'parent_
  * Get complete preview data for a summary
  */
 export async function getDigestPreview(digestId: string): Promise<DigestPreviewData> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
   logger.info('Fetching summary preview', { digestId, userId: user.id })
 
   // Fetch digest
-  const { data: digest, error: digestError } = await supabase
-    .from('summaries')
-    .select('*')
-    .eq('id', digestId)
-    .eq('parent_id', user.id)
-    .single()
-
-  if (digestError) {
-    throw new Error(`Failed to fetch summary: ${digestError.message}`)
-  }
+  const digest = await requireDigestOwnership(supabase, digestId, user.id)
 
   // Fetch all digest_updates with full update and recipient data (including narratives)
-  const { data: digestUpdates, error: updatesError } = await supabase
-    .from('summary_memories')
-    .select(`
-      *,
-      narrative_data,
-      updates:update_id (
-        *,
-        children:child_id (
-          name,
-          birth_date,
-          profile_photo_url
-        )
-      ),
-      recipients:recipient_id (
-        id,
-        name,
-        email,
-        relationship,
-        frequency
-      )
-    `)
-    .eq('digest_id', digestId)
-    .order('recipient_id')
-    .order('display_order')
-
-  if (updatesError) {
-    throw new Error(`Failed to fetch summary memories: ${updatesError.message}`)
-  }
+  const digestUpdates = await fetchDigestPreviewRows(supabase, digestId)
 
   // Group by recipient
   const recipientMap = new Map<string, RecipientDigestPreview>()
 
-  digestUpdates?.forEach((du: Record<string, unknown>) => {
+  digestUpdates?.forEach((du) => {
     const recipientId = du.recipient_id as string
-    const recipient = du.recipients as Record<string, unknown>
-    const update = du.updates as Record<string, unknown>
+    const recipient = du.recipients as unknown as Record<string, unknown>
+    const update = du.updates as unknown as Record<string, unknown>
     const children = update.children as Record<string, unknown>
 
     if (!recipientMap.has(recipientId)) {
@@ -128,7 +92,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
         relationship: recipient.relationship as string,
         frequency_preference: recipient.frequency as string,
         updates: [],
-        narrative: du.narrative_data as import('@/lib/types/digest').DigestNarrative | undefined, // CRO-267: Include AI narrative
+        narrative: du.narrative_data as unknown as import('@/lib/types/digest').DigestNarrative | undefined, // CRO-267: Include AI narrative
         email_subject: digest.title || 'New Update',
         email_preview_html: '',
         ai_rationale: ((du.ai_rationale as Record<string, unknown>)?.recipient_rationale as string) || '',
@@ -185,10 +149,7 @@ export async function getDigestPreview(digestId: string): Promise<DigestPreviewD
  * Customize summary for specific recipient
  */
 export async function customizeDigestForRecipient(request: CustomizeDigestRequest): Promise<void> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
   logger.info('Customizing summary for recipient', {
     digestId: request.digest_id,
@@ -198,16 +159,7 @@ export async function customizeDigestForRecipient(request: CustomizeDigestReques
   })
 
   // Verify digest ownership
-  const { data: digest, error: digestError } = await supabase
-    .from('summaries')
-    .select('id')
-    .eq('id', request.digest_id)
-    .eq('parent_id', user.id)
-    .single()
-
-  if (digestError || !digest) {
-    throw new Error('Summary not found or access denied')
-  }
+  await requireDigestOwnership(supabase, request.digest_id, user.id)
 
   // Update each digest_update
   for (const update of request.updates) {
@@ -244,10 +196,7 @@ export async function customizeDigestForRecipient(request: CustomizeDigestReques
  * Approve summary and optionally send
  */
 export async function approveDigest(request: ApproveDigestRequest): Promise<void> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
   logger.info('Approving summary', { request, userId: user.id })
 
@@ -282,118 +231,87 @@ export async function approveDigest(request: ApproveDigestRequest): Promise<void
 }
 
 /**
- * Send summary to all recipients
+ * Send summary to all recipients via email
  */
 async function sendDigest(digestId: string): Promise<void> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
-  if (!user) throw new Error('Not authenticated')
+  logger.info('Sending summary via email', { digestId, userId: user.id })
 
-  logger.info('Sending summary', { digestId, userId: user.id })
+  // Verify digest ownership
+  await requireDigestOwnership(supabase, digestId, user.id)
 
-  // Update status to sending
-  await supabase
-    .from('summaries')
-    .update({ status: 'sending' })
-    .eq('id', digestId)
-
-  // In production, this would:
-  // 1. Fetch preview data
-  // 2. For each recipient, render email template
-  // 3. Send via email service
-  // 4. Track delivery status
-  // 5. Update digest status to 'sent'
-
-  // For now, just mark as sent
-  const { error } = await supabase
-    .from('summaries')
-    .update({
-      status: 'sent',
-      sent_at: new Date().toISOString()
+  try {
+    // Call Edge Function to send digest emails
+    const { data, error } = await supabase.functions.invoke('send-digest-emails', {
+      body: {
+        digest_id: digestId
+      }
     })
-    .eq('id', digestId)
 
-  if (error) {
-    throw new Error(`Failed to send summary: ${error.message}`)
+    if (error) {
+      logger.error('Digest email sending failed', { error, digestId, userId: user.id })
+      throw new Error(`Failed to send digest emails: ${error.message}`)
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown email sending error')
+    }
+
+    logger.info('Digest emails sent successfully', {
+      digestId,
+      sentCount: data.sent_count,
+      failedCount: data.failed_count,
+      userId: user.id
+    })
+
+    // Log any errors that occurred during sending
+    if (data.errors && data.errors.length > 0) {
+      logger.warn('Some digest emails failed to send', {
+        digestId,
+        errors: data.errors,
+        userId: user.id
+      })
+    }
+  } catch (error) {
+    logger.error('Error sending digest', { error, digestId, userId: user.id })
+
+    // Update digest status to failed
+    await supabase
+      .from('summaries')
+      .update({ status: 'failed' })
+      .eq('id', digestId)
+      .eq('parent_id', user.id)
+
+    throw error
   }
-
-  // Update all related updates to 'sent_in_digest'
-  await supabase
-    .from('memories')
-    .update({ distribution_status: 'sent_in_digest' })
-    .eq('digest_id', digestId)
-
-  logger.info('Summary sent successfully', { digestId, userId: user.id })
 }
 
 /**
  * Get summary by ID
  */
 export async function getDigestById(digestId: string): Promise<Digest | null> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
-  if (!user) throw new Error('Not authenticated')
-
-  const { data: digest, error } = await supabase
-    .from('summaries')
-    .select('*')
-    .eq('id', digestId)
-    .eq('parent_id', user.id)
-    .single()
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null
-    }
-    throw new Error(`Failed to fetch summary: ${error.message}`)
-  }
-
-  return digest as unknown as Digest
+  return fetchDigestById(supabase, digestId, user.id)
 }
 
 /**
  * Get all summaries for current user
  */
 export async function getDigests(): Promise<Digest[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
-  if (!user) throw new Error('Not authenticated')
-
-  const { data: digests, error } = await supabase
-    .from('summaries')
-    .select('*')
-    .eq('parent_id', user.id)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    throw new Error(`Failed to fetch summaries: ${error.message}`)
-  }
-
-  return (digests as unknown as Digest[]) || []
+  return fetchDigestsForUser(supabase, user.id)
 }
 
 /**
  * Get summary statistics
  */
 export async function getDigestStats(): Promise<DigestStats> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
-  if (!user) throw new Error('Not authenticated')
-
-  const { data: digests, error } = await supabase
-    .from('summaries')
-    .select('*')
-    .eq('parent_id', user.id)
-
-  if (error) {
-    throw new Error(`Failed to fetch summary stats: ${error.message}`)
-  }
-
-  const allDigests = (digests as unknown as Digest[]) || []
+  const allDigests = await fetchDigestsForUser(supabase, user.id)
   const thisMonth = new Date()
   thisMonth.setDate(1)
   thisMonth.setHours(0, 0, 0, 0)
@@ -428,10 +346,7 @@ export async function getDigestStats(): Promise<DigestStats> {
  * Delete a summary (only if not sent)
  */
 export async function deleteDigest(digestId: string): Promise<void> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await getAuthenticatedSupabaseContext()
 
   logger.info('Deleting summary', { digestId, userId: user.id })
 

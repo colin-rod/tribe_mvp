@@ -312,6 +312,9 @@ LOG_LEVEL=debug
 supabase secrets set SENDGRID_API_KEY=your_api_key
 supabase secrets set SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 supabase secrets set REPLY_TO_DOMAIN=yourdomain.com
+supabase secrets set SENDGRID_WEBHOOK_PUBLIC_KEY=your_event_webhook_public_key
 ```
+
+> Tip: Only set `SENDGRID_WEBHOOK_RELAXED_VALIDATION=true` for local testing scenarios where the webhook key is unavailable. Production deployments must keep this flag `false` and supply the real public key.
 
 This implementation provides a robust, scalable email distribution system with comprehensive tracking, personalization, and error handling for the Tribe MVP platform.

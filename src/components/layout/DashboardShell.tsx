@@ -160,7 +160,7 @@ export interface DashboardShellProps {
  * - Navigation state managed via NavigationProvider
  */
 export function DashboardShell({ leftNav, children, rightPane }: DashboardShellProps) {
-  const { leftNavCollapsed, isMobile } = useLayout()
+  const { leftNavCollapsed, isMobile, focusMode } = useLayout()
   const { isMobileNavOpen, closeMobileNav } = useNavigationState()
 
   // On mobile, show single column layout
@@ -181,21 +181,28 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
     )
   }
 
-  // Desktop 3-pane layout
+  const showLeftNav = !focusMode && !leftNavCollapsed && Boolean(leftNav)
+  const showRightPane = !focusMode && Boolean(rightPane)
+
+  // Desktop layout
   return (
     <div className="h-screen flex flex-col">
       <TopBar />
 
       <div
-        className="flex-1 grid overflow-hidden"
+        className={cn('flex-1 overflow-hidden', focusMode ? 'flex flex-col' : 'grid')}
         style={{
           paddingTop: LAYOUT_DIMENSIONS.TOP_BAR_HEIGHT,
-          gridTemplateColumns: `${leftNavCollapsed ? '0px' : 'auto'} 1fr auto`,
-          gridTemplateAreas: '"nav main sidebar"',
+          ...(focusMode
+            ? undefined
+            : {
+                gridTemplateColumns: `${showLeftNav ? 'auto' : '0px'} 1fr ${showRightPane ? 'auto' : '0px'}`,
+                gridTemplateAreas: '"nav main sidebar"',
+              }),
         }}
       >
         {/* Left Navigation */}
-        {!leftNavCollapsed && leftNav && (
+        {showLeftNav && (
           <aside
             className="border-r border-neutral-200 bg-white overflow-y-auto"
             style={{
@@ -209,16 +216,14 @@ export function DashboardShell({ leftNav, children, rightPane }: DashboardShellP
 
         {/* Main Content */}
         <main
-          className="overflow-y-auto bg-neutral-50"
-          style={{
-            gridArea: 'main',
-          }}
+          className={cn('overflow-y-auto bg-neutral-50', focusMode ? 'flex-1' : undefined)}
+          style={focusMode ? undefined : { gridArea: 'main' }}
         >
           {children}
         </main>
 
         {/* Right Sidebar */}
-        {rightPane && (
+        {showRightPane && (
           <div
             style={{
               gridArea: 'sidebar',

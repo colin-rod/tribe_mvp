@@ -13,6 +13,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { Toaster } from 'sonner'
 import FeedbackButton from '@/components/feedback/FeedbackButton'
 import { DashboardAnalyticsInitializer } from '@/components/providers/DashboardAnalyticsInitializer'
+import { ReactQueryProvider } from '@/lib/react-query'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,8 +25,8 @@ export const viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Tribe - Secure Baby Update App for Private Family Sharing',
-  description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
+  title: 'TribeUpdate - Secure Baby Update App for Private Family Sharing',
+  description: 'Keep family connected with TribeUpdate\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -45,9 +46,9 @@ export const metadata: Metadata = {
     'baby memories app',
     'grandparent sharing app'
   ],
-  authors: [{ name: 'Tribe Team' }],
-  creator: 'Tribe',
-  publisher: 'Tribe',
+  authors: [{ name: 'TribeUpdate Team' }],
+  creator: 'TribeUpdate',
+  publisher: 'TribeUpdate',
   robots: {
     index: true,
     follow: true,
@@ -62,28 +63,28 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://tribe-app.com',
-    title: 'Tribe - Secure Baby Update App for Private Family Sharing',
-    description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
-    siteName: 'Tribe',
+    url: 'https://tribeupdate.com',
+    title: 'TribeUpdate - Secure Baby Update App for Private Family Sharing',
+    description: 'Keep family connected with TribeUpdate\'s secure baby update app. Share photos, milestones & moments privately. The trusted family communication platform parents love.',
+    siteName: 'TribeUpdate',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Tribe - Secure Baby Update App for Private Family Sharing',
+        alt: 'TribeUpdate - Secure Baby Update App for Private Family Sharing',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Tribe - Secure Baby Update App for Private Family Sharing',
-    description: 'Keep family connected with Tribe\'s secure baby update app. Share photos, milestones & moments privately.',
+    title: 'TribeUpdate - Secure Baby Update App for Private Family Sharing',
+    description: 'Keep family connected with TribeUpdate\'s secure baby update app. Share photos, milestones & moments privately.',
     images: ['/twitter-image.jpg'],
-    creator: '@TribeApp',
+    creator: '@TribeUpdate',
   },
   alternates: {
-    canonical: 'https://tribe-app.com',
+    canonical: 'https://tribeupdate.com',
   },
   verification: {
     google: 'your-google-site-verification',
@@ -93,7 +94,7 @@ export const metadata: Metadata = {
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Tribe',
+  name: 'TribeUpdate',
   applicationCategory: 'Family & Parenting',
   operatingSystem: 'iOS, Android, Web',
   offers: {
@@ -116,8 +117,8 @@ const structuredData = {
   ],
   publisher: {
     '@type': 'Organization',
-    name: 'Tribe',
-    url: 'https://tribe-app.com'
+    name: 'TribeUpdate',
+    url: 'https://tribeupdate.com'
   }
 }
 
@@ -142,15 +143,17 @@ export default function RootLayout({
         <DevelopmentBanner />
         <div className="min-h-screen bg-gray-50">
           <ErrorBoundary>
-            <AuthProvider>
-              <LayoutProvider>
-                <KeyboardShortcutsProvider>
-                  <main id="main-content" tabIndex={-1}>
-                    {children}
-                  </main>
-                </KeyboardShortcutsProvider>
-              </LayoutProvider>
-            </AuthProvider>
+            <ReactQueryProvider>
+              <AuthProvider>
+                <LayoutProvider>
+                  <KeyboardShortcutsProvider>
+                    <main id="main-content" tabIndex={-1}>
+                      {children}
+                    </main>
+                  </KeyboardShortcutsProvider>
+                </LayoutProvider>
+              </AuthProvider>
+            </ReactQueryProvider>
           </ErrorBoundary>
         </div>
         <DevelopmentIndicator />

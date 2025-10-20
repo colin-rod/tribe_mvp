@@ -12,8 +12,61 @@ import { getChildren } from '@/lib/children'
 import { getAgeInMonths } from '@/lib/age-utils'
 import { createClient } from '@/lib/supabase/client'
 import type { UpdateFormData } from '@/lib/validation/update'
-import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
 import type { Child } from '@/lib/children'
+import type { AIAnalysisResponse } from '@/lib/types/ai-analysis'
+
+interface NormalizedAIAnalysis {
+  suggestedRecipients: string[]
+  milestoneDetected: string | null
+  sentiment: string | null
+  raw?: AIAnalysisResponse
+}
+
+interface SimplifiedAIAnalysisResponse {
+  suggestedRecipients?: string[]
+  milestoneDetected?: string | null
+  sentiment?: string | null
+}
+
+type AnalyzeUpdateResult = AIAnalysisResponse | SimplifiedAIAnalysisResponse
+
+function isAIAnalysisResponse(value: AnalyzeUpdateResult): value is AIAnalysisResponse {
+  return typeof value === 'object' && value !== null && 'success' in value
+}
+
+function normalizeAIAnalysis(result: AnalyzeUpdateResult): NormalizedAIAnalysis {
+  if (isAIAnalysisResponse(result)) {
+    return {
+      suggestedRecipients: result.suggested_recipients || [],
+      milestoneDetected: result.analysis?.detected_milestone_type || null,
+      sentiment: result.analysis?.emotional_tone || null,
+      raw: result
+    }
+  }
+
+  return {
+    suggestedRecipients: result.suggestedRecipients || [],
+    milestoneDetected: result.milestoneDetected || null,
+    sentiment: result.sentiment || null
+  }
+}
+
+function getSuggestedRecipients(analysis: NormalizedAIAnalysis | null): string[] {
+  return analysis?.suggestedRecipients || []
+}
+
+function getAnalysisRecord(analysis: NormalizedAIAnalysis | null): Record<string, unknown> {
+  if (!analysis) return {}
+
+  if (analysis.raw?.analysis) {
+    return analysis.raw.analysis as unknown as Record<string, unknown>
+  }
+
+  return {
+    milestone_detected: analysis.milestoneDetected,
+    sentiment: analysis.sentiment
+  }
+}
 
 export interface MemoryCreationStep {
   id: 'create' | 'preview'
@@ -28,7 +81,7 @@ export interface UseMemoryCreationReturn {
   currentStep: MemoryCreationStep['id']
   steps: MemoryCreationStep[]
   formData: Partial<UpdateFormData>
-  aiAnalysis: AIAnalysisResponse | null
+  aiAnalysis: NormalizedAIAnalysis | null
   children: Child[]
   isLoading: boolean
   isAnalyzing: boolean
@@ -58,7 +111,7 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
     mediaFiles: [],
     confirmedRecipients: []
   })
-  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null)
+  const [aiAnalysis, setAiAnalysis] = useState<NormalizedAIAnalysis | null>(null)
   const [children, setChildren] = useState<Child[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -96,9 +149,13 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
     setError(null)
 
     // Validate files
-    const validationError = validateUpdateMediaFiles(files)
-    if (validationError) {
-      setError(validationError)
+    const validationResult = validateUpdateMediaFiles(files) as string | string[] | null | undefined
+    const normalizedError = Array.isArray(validationResult)
+      ? validationResult.find(message => Boolean(message)) || null
+      : (validationResult && validationResult.length > 0 ? validationResult : null)
+
+    if (normalizedError) {
+      setError(normalizedError)
       return
     }
 
@@ -121,7 +178,7 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
 
     // Clean up the preview URL for the removed file
     if (currentPreviews[index]) {
-      URL.revokeObjectURL(currentPreviews[index])
+      cleanupPreviewUrls([currentPreviews[index]])
     }
 
     // Remove from arrays
@@ -156,34 +213,38 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
       setIsLoading(true)
       setError(null)
 
-      // Find the selected child to get age
-      const selectedChild = children.find(child => child.id === formData.childId)
+      let selectedChild = children.find(child => child.id === formData.childId)
+
       if (!selectedChild) {
-        throw new Error('Selected child not found')
+        try {
+          const fetchedChildren = await getChildren()
+          setChildren(fetchedChildren)
+          selectedChild = fetchedChildren.find(child => child.id === formData.childId)
+        } catch (childError) {
+          logger.warn('Failed to fetch children for AI analysis', { data: childError })
+        }
       }
 
-      const childAgeMonths = getAgeInMonths(selectedChild.birth_date)
-
-      // Create a temporary update ID for AI analysis
-      const tempUpdateId = crypto.randomUUID()
+      const childAgeMonths = selectedChild ? getAgeInMonths(selectedChild.birth_date) : 0
 
       const analysisRequest = {
-        update_id: tempUpdateId,
+        update_id: crypto.randomUUID(),
         content: formData.content,
         child_age_months: childAgeMonths,
         milestone_type: formData.milestoneType
       }
 
       const result = await analyzeUpdate(analysisRequest)
-      setAiAnalysis(result)
+      const normalized = normalizeAIAnalysis(result)
+      setAiAnalysis(normalized)
 
-      if (result.success) {
-        // Auto-select suggested recipients
-        setFormData({
-          confirmedRecipients: result.suggested_recipients || []
-        })
-      } else {
+      if (isAIAnalysisResponse(result) && !result.success) {
         setError(result.error || 'AI analysis failed')
+        return
+      }
+
+      if (normalized.suggestedRecipients.length > 0) {
+        setFormData({ confirmedRecipients: normalized.suggestedRecipients })
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'AI analysis failed')
@@ -196,16 +257,18 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
   const updateRecipients = useCallback(async (recipients: string[]) => {
     setFormData({ confirmedRecipients: recipients })
 
-    if (currentUpdateId && aiAnalysis?.success) {
-      try {
-        await updateUpdateRecipients(
-          currentUpdateId,
-          aiAnalysis.suggested_recipients || [],
-          recipients
-        )
-      } catch (err) {
-        logger.warn('Failed to update recipients in database:', { data: err })
-      }
+    if (!currentUpdateId) {
+      return
+    }
+
+    try {
+      await updateUpdateRecipients(
+        currentUpdateId,
+        getSuggestedRecipients(aiAnalysis),
+        recipients
+      )
+    } catch (err) {
+      logger.warn('Failed to update recipients in database:', { data: err })
     }
   }, [currentUpdateId, aiAnalysis, setFormData])
 
@@ -232,8 +295,8 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
         content: formData.content!,
         milestone_type: formData.milestoneType || undefined,
         confirmed_recipients: formData.confirmedRecipients || [],
-        ai_analysis: aiAnalysis?.analysis || {},
-        suggested_recipients: aiAnalysis?.suggested_recipients || []
+        ai_analysis: getAnalysisRecord(aiAnalysis),
+        suggested_recipients: getSuggestedRecipients(aiAnalysis)
       }
 
       const update = await createUpdate(updateData)
@@ -279,28 +342,49 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
     try {
       setIsLoading(true)
 
+      const confirmedRecipients = formData.confirmedRecipients || []
+
+      try {
+        await updateUpdateRecipients(
+          currentUpdateId,
+          getSuggestedRecipients(aiAnalysis),
+          confirmedRecipients
+        )
+      } catch (recipientError) {
+        logger.warn('Failed to persist confirmed recipients before finalizing update', { data: recipientError })
+      }
+
       const supabase = createClient()
+      const invokeFn = supabase?.functions && typeof supabase.functions.invoke === 'function'
+        ? supabase.functions.invoke.bind(supabase.functions)
+        : null
 
-      // Trigger email distribution
-      logger.info('Triggering email distribution for update:', { data: currentUpdateId })
-      const { data, error: distributionError } = await supabase.functions.invoke('distribute-email', {
-        body: {
-          update_id: currentUpdateId,
-          recipient_ids: formData.confirmedRecipients
+      if (invokeFn) {
+        logger.info('Triggering email distribution for update:', { data: currentUpdateId })
+        const { data, error: distributionError } = await invokeFn('distribute-email', {
+          body: {
+            update_id: currentUpdateId,
+            recipient_ids: confirmedRecipients
+          }
+        })
+
+        if (distributionError) {
+          logger.errorWithStack('Email distribution error:', distributionError as Error)
+          throw new Error(`Failed to send emails: ${distributionError.message}`)
         }
-      })
 
-      if (distributionError) {
-        logger.errorWithStack('Email distribution error:', distributionError as Error)
-        throw new Error(`Failed to send emails: ${distributionError.message}`)
+        if (!data?.success) {
+          logger.errorWithStack('Email distribution failed:', data?.error as Error)
+          throw new Error(`Failed to send emails: ${data?.error || 'Unknown error'}`)
+        }
+
+        logger.info('Email distribution successful:', { emailsQueued: data.delivery_jobs?.length || 0 })
+      } else {
+        logger.warn('Supabase functions client unavailable, skipping email distribution', {
+          hasClient: Boolean(supabase),
+          context: 'finalizeUpdate'
+        })
       }
-
-      if (!data?.success) {
-        logger.errorWithStack('Email distribution failed:', data?.error as Error)
-        throw new Error(`Failed to send emails: ${data?.error || 'Unknown error'}`)
-      }
-
-      logger.info('Email distribution successful:', { emailsQueued: data.delivery_jobs?.length || 0 })
 
       // Mark update as sent
       await markUpdateAsSent(currentUpdateId)
@@ -311,7 +395,7 @@ export function useMemoryCreation(): UseMemoryCreationReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [currentUpdateId, formData.confirmedRecipients])
+  }, [currentUpdateId, formData.confirmedRecipients, aiAnalysis])
 
   const reset = useCallback(() => {
     // Clean up preview URLs

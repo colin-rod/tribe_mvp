@@ -1,5 +1,20 @@
 import '@testing-library/jest-dom'
 process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3000'
+process.env.__NEXT_IMAGE_OPTS = JSON.stringify({
+  deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+  imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  path: '/_next/image',
+  loader: 'default',
+  domains: [],
+  disableStaticImages: false,
+  minimumCacheTTL: 60,
+  formats: ['image/webp'],
+  dangerouslyAllowSVG: false,
+  contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  remotePatterns: [],
+  unoptimized: false,
+  qualities: [75, 90], // Configure allowed quality values
+})
 import { TextEncoder, TextDecoder } from 'util'
 
 // Polyfill TextEncoder/TextDecoder for jsdom
@@ -17,23 +32,32 @@ jest.mock('next/navigation', () => ({
 
 // Mock Heroicons
 jest.mock('@heroicons/react/24/outline', () => ({
-  ChatBubbleLeftIcon: ({ className, ...props }) => <div data-testid="chat-icon" className={className} {...props} />,
-  EnvelopeIcon: ({ className, ...props }) => <div data-testid="email-icon" className={className} {...props} />,
-  PhoneIcon: ({ className, ...props }) => <div data-testid="phone-icon" className={className} {...props} />,
-  ChatBubbleLeftEllipsisIcon: ({ className, ...props }) => <div data-testid="sms-icon" className={className} {...props} />,
-  UsersIcon: ({ className, ...props }) => <div data-testid="users-icon" className={className} {...props} />,
-  ArrowTrendingUpIcon: ({ className, ...props }) => <div data-testid="trending-icon" className={className} {...props} />,
-  CalendarDaysIcon: ({ className, ...props }) => <div data-testid="calendar-icon" className={className} {...props} />,
-  PhotoIcon: ({ className, ...props }) => <div data-testid="photo-icon" className={className} {...props} />,
-  ClockIcon: ({ className, ...props }) => <div data-testid="clock-icon" className={className} {...props} />,
-  ChartBarIcon: ({ className, ...props }) => <div data-testid="chart-icon" className={className} {...props} />,
-  XMarkIcon: ({ className, ...props }) => <div data-testid="x-icon" className={className} {...props} />,
-  ArrowDownTrayIcon: ({ className, ...props }) => <div data-testid="download-icon" className={className} {...props} />,
-  ArrowTopRightOnSquareIcon: ({ className, ...props }) => <div data-testid="external-icon" className={className} {...props} />,
-  ChevronLeftIcon: ({ className, ...props }) => <div data-testid="chevron-left-icon" className={className} {...props} />,
-  ChevronRightIcon: ({ className, ...props }) => <div data-testid="chevron-right-icon" className={className} {...props} />,
-  PlayIcon: ({ className, ...props }) => <div data-testid="play-icon" className={className} {...props} />,
-  ArrowLeftIcon: ({ className, ...props }) => <div data-testid="arrow-left-icon" className={className} {...props} />,
+  ChatBubbleLeftIcon: ({ className, ...props }) => <div data-testid="chat-icon" className={className} {...props} />, 
+  EnvelopeIcon: ({ className, ...props }) => <div data-testid="email-icon" className={className} {...props} />, 
+  PhoneIcon: ({ className, ...props }) => <div data-testid="phone-icon" className={className} {...props} />, 
+  ChatBubbleLeftEllipsisIcon: ({ className, ...props }) => <div data-testid="sms-icon" className={className} {...props} />, 
+  UsersIcon: ({ className, ...props }) => <div data-testid="users-icon" className={className} {...props} />, 
+  ArrowTrendingUpIcon: ({ className, ...props }) => <div data-testid="trending-icon" className={className} {...props} />, 
+  CalendarDaysIcon: ({ className, ...props }) => <div data-testid="calendar-icon" className={className} {...props} />, 
+  PhotoIcon: ({ className, ...props }) => <div data-testid="photo-icon" className={className} {...props} />, 
+  ClockIcon: ({ className, ...props }) => <div data-testid="clock-icon" className={className} {...props} />, 
+  ChartBarIcon: ({ className, ...props }) => <div data-testid="chart-icon" className={className} {...props} />, 
+  XMarkIcon: ({ className, ...props }) => <div data-testid="x-icon" className={className} {...props} />, 
+  ArrowDownTrayIcon: ({ className, ...props }) => <div data-testid="download-icon" className={className} {...props} />, 
+  ArrowTopRightOnSquareIcon: ({ className, ...props }) => <div data-testid="external-icon" className={className} {...props} />, 
+  ChevronLeftIcon: ({ className, ...props }) => <div data-testid="chevron-left-icon" className={className} {...props} />, 
+  ChevronRightIcon: ({ className, ...props }) => <div data-testid="chevron-right-icon" className={className} {...props} />, 
+  PlayIcon: ({ className, ...props }) => <div data-testid="play-icon" className={className} {...props} />, 
+  ArrowLeftIcon: ({ className, ...props }) => <div data-testid="arrow-left-icon" className={className} {...props} />, 
+  ChatBubbleOvalLeftIcon: ({ className, ...props }) => (
+    <div data-testid="chat-bubble-oval-left-icon" className={className} {...props} />
+  ),
+  HeartIcon: ({ className, ...props }) => <div data-testid="heart-icon" className={className} {...props} />, 
+  ShareIcon: ({ className, ...props }) => <div data-testid="share-icon" className={className} {...props} />
+}))
+
+jest.mock('@heroicons/react/24/solid', () => ({
+  HeartIcon: ({ className, ...props }) => <div data-testid="heart-solid-icon" className={className} {...props} />
 }))
 
 // Mock date-fns
@@ -44,12 +68,25 @@ jest.mock('date-fns', () => ({
   differenceInMonths: jest.fn(() => 8),
   format: jest.fn(() => 'September'),
   getDay: jest.fn(() => 1),
+  isToday: jest.fn(() => false),
+  isYesterday: jest.fn(() => false),
+  isSameWeek: jest.fn(() => false),
 }))
 
 // Mock ChildImage component
 jest.mock('@/components/ui/ChildImage', () => {
-  return function MockChildImage({ alt, className, ...props }) {
-    return <img alt={alt} className={className} {...props} data-testid="child-image" />
+  return function MockChildImage({ alt, className, childId, photoUrl, name }) {
+    return (
+      <div
+        role="img"
+        aria-label={alt}
+        className={className}
+        data-testid="child-image"
+        data-child-id={childId}
+        data-photo-url={photoUrl}
+        data-name={name}
+      />
+    )
   }
 })
 
@@ -58,6 +95,29 @@ jest.mock('@/components/ui/LoadingSpinner', () => {
   return function MockLoadingSpinner({ className, ...props }) {
     return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
   }
+})
+
+// Suppress Next.js image quality warning in tests
+// This warning is about Next.js 16 configuration requirements
+// We've added the qualities config to next.config.js, but jest environment doesn't pick it up
+const originalWarn = console.warn
+beforeAll(() => {
+  console.warn = (...args) => {
+    const message = args[0]
+    if (
+      typeof message === 'string' &&
+      message.includes('is using quality') &&
+      message.includes('which is not configured in images.qualities')
+    ) {
+      // Suppress this specific warning in tests
+      return
+    }
+    originalWarn.apply(console, args)
+  }
+})
+
+afterAll(() => {
+  console.warn = originalWarn
 })
 
 // Mock Math.random for consistent test results
@@ -129,6 +189,13 @@ global.Headers = class MockHeaders extends Map {
 // Mock Supabase client
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      getSession: jest.fn(),
+      signUp: jest.fn(),
+      signInWithPassword: jest.fn(),
+      signOut: jest.fn(),
+    },
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({

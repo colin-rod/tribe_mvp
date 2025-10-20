@@ -14,9 +14,7 @@ export { ActivityRightPane } from './ActivityRightPane';
 export type { ActivityRightPaneProps } from './ActivityRightPane';
 
 export { SummaryRightPane } from './SummaryRightPane';
-export { ChildrenRightPane } from './ChildrenRightPane';
 export { RecipientsRightPane } from './RecipientsRightPane';
-export { GroupsRightPane } from './GroupsRightPane';
 export { DraftsRightPane } from './DraftsRightPane';
 export { SettingsRightPane } from './SettingsRightPane';
 
@@ -29,9 +27,14 @@ export type { QuickStatsCardProps, ActivityStats } from './QuickStatsCard';
 
 export { QuickActionsPanel } from './QuickActionsPanel';
 export type { QuickActionsPanelProps } from './QuickActionsPanel';
+export { ReflectionPromptsPanel } from './ReflectionPromptsPanel';
+export type { ReflectionPromptsPanelProps } from './ReflectionPromptsPanel';
 
 export { AISuggestionsPanel } from './AISuggestionsPanel';
 export type { AISuggestionsPanelProps, AIPromptSuggestion } from './AISuggestionsPanel';
+
+export { SummaryNarrative } from './SummaryNarrative';
+export type { SummaryNarrativeProps } from './SummaryNarrative';
 
 // Shared components
 export { DetailCard, DetailRow } from './shared/DetailCard';

@@ -1,4 +1,5 @@
 import { createClient } from './supabase/client'
+import { requireAuthenticatedClient } from './supabase/auth'
 import { clientEmailService } from './services/clientEmailService'
 import type { RecipientGroup } from './recipient-groups'
 // getDefaultGroup is deprecated - using relationship-based defaults instead
@@ -39,6 +40,24 @@ export interface Recipient {
 }
 
 type RecipientRow = Database['public']['Tables']['recipients']['Row']
+type RecipientRowWithRelations = RecipientRow & { recipient_groups?: unknown }
+
+export function mapRecipientRecord(record: RecipientRowWithRelations): Recipient {
+  const { recipient_groups, overrides_group_default, is_active, created_at, ...rest } = record
+
+  return {
+    ...rest,
+    relationship: rest.relationship as RecipientRelationship,
+    frequency: rest.frequency as UpdateFrequency,
+    preferred_channels: rest.preferred_channels as DeliveryChannel[],
+    content_types: rest.content_types as ContentType[],
+    importance_threshold: rest.importance_threshold as ImportanceThreshold | undefined,
+    overrides_group_default: overrides_group_default ?? false,
+    is_active: is_active ?? true,
+    created_at: created_at as string,
+    group: extractGroupFromRelation(recipient_groups)
+  }
+}
 
 /**
  * Interface for creating new recipients
@@ -110,10 +129,7 @@ function extractGroupFromRelation(relation: unknown): RecipientGroup | undefined
  * @returns Promise resolving to created recipient with group information
  */
 export async function createRecipient(recipientData: CreateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate that at least email or phone is provided
   if (!recipientData.email && !recipientData.phone) {
@@ -174,10 +190,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
     }
   }
 
-  return {
-    ...data,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -188,10 +201,7 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
  * @returns Promise resolving to array of recipients with group data
  */
 export async function getRecipients(filters: RecipientFilters = {}): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   let query = supabase
     .from('recipients')
@@ -230,16 +240,9 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
     throw new Error('Failed to fetch recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
@@ -249,10 +252,7 @@ export async function getRecipients(filters: RecipientFilters = {}): Promise<Rec
  * @returns Promise resolving to recipient or null if not found
  */
 export async function getRecipientById(recipientId: string): Promise<Recipient | null> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -270,10 +270,43 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
     throw new Error('Failed to fetch recipient')
   }
 
-  return {
-    ...data,
-    group: extractGroupFromRelation(data.recipient_groups)
+  return mapRecipientRecord(data as RecipientRowWithRelations)
+}
+
+/**
+ * Fetches multiple recipients by their IDs while preserving the requested order
+ */
+export async function getRecipientsByIds(recipientIds: string[]): Promise<Recipient[]> {
+  if (recipientIds.length === 0) {
+    return []
   }
+
+  const { supabase, user } = await requireAuthenticatedClient()
+
+  const { data, error } = await supabase
+    .from('recipients')
+    .select(`
+      *,
+      recipient_groups(*)
+    `)
+    .in('id', recipientIds)
+    .eq('parent_id', user.id)
+
+  if (error) {
+    logger.errorWithStack('Error fetching recipients by ids:', error as Error)
+    throw new Error('Failed to fetch recipients')
+  }
+
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
+  const recipientsMap = new Map<string, Recipient>()
+
+  recipientsWithGroups.forEach(record => {
+    recipientsMap.set(record.id, mapRecipientRecord(record))
+  })
+
+  return recipientIds
+    .map(id => recipientsMap.get(id))
+    .filter((recipient): recipient is Recipient => Boolean(recipient))
 }
 
 /**
@@ -284,10 +317,7 @@ export async function getRecipientById(recipientId: string): Promise<Recipient |
  * @returns Promise resolving to updated recipient
  */
 export async function updateRecipient(recipientId: string, updates: UpdateRecipientData): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   // Validate contact method if being updated
   if ((updates.email !== undefined || updates.phone !== undefined)) {
@@ -320,10 +350,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
     throw new Error('Failed to update recipient')
   }
 
-  return {
-    ...data,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -333,10 +360,7 @@ export async function updateRecipient(recipientId: string, updates: UpdateRecipi
  * @returns Promise resolving to boolean success
  */
 export async function deleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -360,10 +384,7 @@ export async function deleteRecipient(recipientId: string): Promise<boolean> {
  * @returns Promise resolving to boolean success
  */
 export async function permanentlyDeleteRecipient(recipientId: string): Promise<boolean> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { error } = await supabase
     .from('recipients')
@@ -386,10 +407,7 @@ export async function permanentlyDeleteRecipient(recipientId: string): Promise<b
  * @returns Promise resolving to reactivated recipient
  */
 export async function reactivateRecipient(recipientId: string): Promise<Recipient> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   const { data, error } = await supabase
     .from('recipients')
@@ -407,10 +425,7 @@ export async function reactivateRecipient(recipientId: string): Promise<Recipien
     throw new Error('Failed to reactivate recipient')
   }
 
-  return {
-    ...data,
-    group: Array.isArray(data.recipient_groups) ? data.recipient_groups[0] : data.recipient_groups
-  }
+  return mapRecipientRecord(data as RecipientRowWithRelations)
 }
 
 /**
@@ -444,10 +459,7 @@ export async function bulkUpdateRecipients(
   recipientIds: string[],
   updates: Omit<UpdateRecipientData, 'email' | 'phone' | 'name'>
 ): Promise<Recipient[]> {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) throw new Error('Not authenticated')
+  const { supabase, user } = await requireAuthenticatedClient()
 
   if (recipientIds.length === 0) {
     throw new Error('No recipients specified for bulk update')
@@ -468,16 +480,9 @@ export async function bulkUpdateRecipients(
     throw new Error('Failed to bulk update recipients')
   }
 
-  const recipientsWithGroups = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  const recipientsWithGroups = (data ?? []) as RecipientRowWithRelations[]
 
-  return recipientsWithGroups.map((recipient) => ({
-    ...recipient,
-    relationship: recipient.relationship as Recipient['relationship'],
-    frequency: recipient.frequency as Recipient['frequency'],
-    preferred_channels: recipient.preferred_channels as Recipient['preferred_channels'],
-    content_types: recipient.content_types as Recipient['content_types'],
-    group: extractGroupFromRelation(recipient.recipient_groups)
-  }))
+  return recipientsWithGroups.map(mapRecipientRecord)
 }
 
 /**
@@ -497,53 +502,93 @@ export async function getRecipientStats(): Promise<{
 
   if (!user) throw new Error('Not authenticated')
 
-  const { data, error } = await supabase
-    .from('recipients')
-    .select(`
-      id,
-      relationship,
-      is_active,
-      recipient_groups(name)
-    `)
-    .eq('parent_id', user.id)
+  const [statusResponse, relationshipResponse, groupResponse] = await Promise.all([
+    supabase
+      .from('recipients')
+      .select('is_active')
+      .eq('parent_id', user.id),
+    supabase
+      .from('recipients')
+      .select('relationship')
+      .eq('parent_id', user.id)
+      .eq('is_active', true),
+    supabase
+      .from('recipients')
+      .select('group_id')
+      .eq('parent_id', user.id)
+      .eq('is_active', true)
+  ])
 
-  if (error) {
-    logger.errorWithStack('Error fetching recipient stats:', error as Error)
+  if (statusResponse.error) {
+    logger.errorWithStack('Error fetching recipient status counts:', statusResponse.error as Error)
     throw new Error('Failed to fetch recipient statistics')
   }
 
-  const recipients = (data ?? []) as Array<Pick<RecipientRow, 'is_active' | 'relationship'> & { recipient_groups: unknown }>
-  const byRelationship: Record<string, number> = {}
-  const byGroup: Record<string, number> = {}
+  if (relationshipResponse.error) {
+    logger.errorWithStack('Error fetching recipient relationship counts:', relationshipResponse.error as Error)
+    throw new Error('Failed to fetch recipient statistics')
+  }
 
-  let activeCount = 0
-  let inactiveCount = 0
+  if (groupResponse.error) {
+    logger.errorWithStack('Error fetching recipient group counts:', groupResponse.error as Error)
+    throw new Error('Failed to fetch recipient statistics')
+  }
 
-  recipients.forEach((recipient) => {
-    // Count by active status
-    if (recipient.is_active) {
-      activeCount++
-    } else {
-      inactiveCount++
+  type StatusCountRow = { is_active: boolean | null }
+  type RelationshipCountRow = { relationship: string | null }
+  type GroupCountRow = { group_id: string | null }
+
+  const statusCounts = (statusResponse.data ?? []) as StatusCountRow[]
+  const relationshipCounts = (relationshipResponse.data ?? []) as RelationshipCountRow[]
+  const groupCounts = (groupResponse.data ?? []) as GroupCountRow[]
+
+  const totalRecipients = statusCounts.length
+  const activeRecipients = statusCounts.filter((row) => row.is_active === true).length
+  const inactiveRecipients = statusCounts.filter((row) => row.is_active === false).length
+
+  const byRelationship = relationshipCounts.reduce<Record<string, number>>((acc, row) => {
+    const key = row.relationship && row.relationship.trim().length > 0 ? row.relationship : 'unknown'
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+
+  const groupIds = Array.from(
+    new Set(
+      groupCounts
+        .map((row) => row.group_id)
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+    )
+  )
+
+  let groupNameMap = new Map<string, string>()
+
+  if (groupIds.length > 0) {
+    const { data: groupNameRows, error: groupNameError } = await supabase
+      .from('recipient_groups')
+      .select('id, name')
+      .in('id', groupIds)
+      .eq('parent_id', user.id)
+
+    if (groupNameError) {
+      logger.errorWithStack('Error fetching recipient group names:', groupNameError as Error)
+      throw new Error('Failed to fetch recipient statistics')
     }
 
-    // Count by relationship (only active)
-    if (recipient.is_active) {
-      const relationshipKey = recipient.relationship || 'unknown'
-      byRelationship[relationshipKey] = (byRelationship[relationshipKey] || 0) + 1
-    }
+    groupNameMap = new Map(
+      (groupNameRows ?? []).map((row) => [row.id, row.name ?? 'Unknown Group'])
+    )
+  }
 
-    // Count by group (only active)
-    if (recipient.is_active) {
-      const groupName = extractGroupFromRelation(recipient.recipient_groups)?.name || 'Unassigned'
-      byGroup[groupName] = (byGroup[groupName] || 0) + 1
-    }
-  })
+  const byGroup = groupCounts.reduce<Record<string, number>>((acc, row) => {
+    const name = row.group_id ? groupNameMap.get(row.group_id) ?? 'Unknown Group' : 'Unassigned'
+    acc[name] = (acc[name] || 0) + 1
+    return acc
+  }, {})
 
   return {
-    totalRecipients: recipients.length,
-    activeRecipients: activeCount,
-    inactiveRecipients: inactiveCount,
+    totalRecipients,
+    activeRecipients,
+    inactiveRecipients,
     byRelationship,
     byGroup
   }
@@ -627,15 +672,15 @@ async function sendPreferenceLink(email: string, name: string, token: string): P
     // Get the parent's information for the email
     const supabase = createClient()
     const { data: tokenData } = await supabase
-      .from('preference_tokens')
+      .from('recipients')
       .select(`
         parent_id,
         profiles!inner(name)
       `)
-      .eq('token', token)
+      .eq('preference_token', token)
       .single()
 
-    const senderName = (tokenData?.profiles as unknown as { name: string } | undefined)?.name || 'Someone'
+    const senderName = (tokenData?.profiles as { name: string })?.name || 'Someone'
 
     // Send the preference invitation email
     const result = await clientEmailService.sendTemplatedEmail(

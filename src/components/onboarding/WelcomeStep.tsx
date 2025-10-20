@@ -29,7 +29,7 @@ export function WelcomeStep({ onNext, className }: WelcomeStepProps) {
           <HandRaisedIcon className="w-8 h-8 text-primary-600" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome to Tribe
+          Welcome to TribeUpdate
         </h1>
         <p className="text-lg text-gray-600">
           Share moments with family
@@ -96,7 +96,7 @@ export function WelcomeStepCompact({ onNext, className }: WelcomeStepCompactProp
 
       <div className="space-y-3">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome to Tribe
+          Welcome to TribeUpdate
         </h1>
         <p className="text-gray-600">
           Family updates in {Math.ceil(totalTime)} minutes

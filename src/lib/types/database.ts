@@ -1218,6 +1218,50 @@ export type Database = {
           },
         ]
       }
+      search_analytics: {
+        Row: {
+          id: string
+          user_id: string
+          query: string
+          results_count: number
+          execution_time_ms: number | null
+          search_types: string[]
+          clicked_result_id: string | null
+          clicked_result_type: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          query: string
+          results_count?: number
+          execution_time_ms?: number | null
+          search_types?: string[]
+          clicked_result_id?: string | null
+          clicked_result_type?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          query?: string
+          results_count?: number
+          execution_time_ms?: number | null
+          search_types?: string[]
+          clicked_result_id?: string | null
+          clicked_result_type?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       responses: {
         Row: {
           channel: string
@@ -1922,6 +1966,78 @@ export type Database = {
         Args: { html_content: string; max_length?: number }
         Returns: boolean
       }
+      search_memories: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          subject: string | null
+          content: string | null
+          child_id: string
+          distribution_status: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      search_comments: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          content: string
+          update_id: string
+          update_subject: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      search_memories_with_highlights: {
+        Args: {
+          search_query: string
+          user_id: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          id: string
+          subject: string | null
+          content: string | null
+          subject_highlight: string
+          content_highlight: string
+          child_id: string
+          distribution_status: string | null
+          created_at: string | null
+          search_rank: number
+        }[]
+      }
+      get_search_statistics: {
+        Args: {
+          user_id: string
+          days_back?: number
+        }
+        Returns: {
+          total_searches: number
+          unique_queries: number
+          avg_results_count: number
+          avg_execution_time_ms: number
+          top_queries: string[]
+        }[]
+      }
+      rebuild_search_vectors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rows_updated: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -2054,3 +2170,145 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// ---------------------------------------------------------------------------
+// Custom dashboard types used by hooks
+// ---------------------------------------------------------------------------
+
+type MemoryRow = Database['public']['Tables']['memories']['Row']
+
+/**
+ * Update enriched with child metadata returned from dashboard RPC helpers.
+ */
+export type UpdateWithChild = MemoryRow & {
+  child_name: string
+  child_avatar_url: string | null
+}
+
+type DashboardChildSummary = {
+  count: number
+  child_id: string | null
+  avatar_url: string | null
+}
+
+type DashboardEngagementStats = {
+  avg_responses_per_update: number
+  most_popular_milestone: string | null
+  total_likes: number | null
+  total_comments: number | null
+}
+
+type DashboardRecentActivityItem = {
+  update_id: string
+  child_name: string
+  content_preview: string | null
+  response_count: number | null
+  created_at: string
+}
+
+/**
+ * Aggregated statistics displayed on the dashboard overview cards.
+ */
+export interface DashboardStats {
+  total_updates: number
+  total_responses: number
+  total_views: number
+  milestones_count: number
+  updates_by_child: Record<string, DashboardChildSummary>
+  updates_by_date: Record<string, number>
+  engagement_stats: DashboardEngagementStats
+  recent_activity: DashboardRecentActivityItem[]
+}
+
+type TimelineUpdateItem = {
+  id: string
+  child_id: string
+  child_name: string
+  child_avatar_url: string | null
+  content: string | null
+  media_urls: string[] | null
+  milestone_type: string | null
+  like_count: number | null
+  response_count: number | null
+  distribution_status: string | null
+  created_at: string | null
+}
+
+/**
+ * Grouped timeline data returned from the timeline RPC helper.
+ */
+export interface TimelineUpdate {
+  date_group: string
+  updates_count: number
+  updates: TimelineUpdateItem[]
+}
+
+/**
+ * Filter parameters supported by dashboard queries.
+ */
+export interface DashboardFilters {
+  search?: string
+  childIds?: string[]
+  milestoneTypes?: string[]
+  status?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+/**
+ * Pagination cursor for efficient cursor-based pagination
+ * CRO-123: Cursor-based pagination implementation
+ */
+export interface PaginationCursor {
+  createdAt: string
+  id: string
+}
+
+/**
+ * Pagination state shared by dashboard hooks and client helpers.
+ * CRO-123: Enhanced with cursor support for efficient deep pagination
+ *
+ * - cursor: Preferred method for efficient pagination (use this for new code)
+ * - offset: Legacy offset-based pagination (deprecated, use cursor instead)
+ * - cursorCreatedAt / cursorId: Legacy cursor format (deprecated, use cursor object)
+ */
+export interface PaginationParams {
+  limit?: number
+  /** @deprecated Use cursor instead for better performance */
+  offset?: number
+  /** Preferred cursor-based pagination */
+  cursor?: PaginationCursor
+  /** @deprecated Use cursor object instead */
+  cursorCreatedAt?: string
+  /** @deprecated Use cursor object instead */
+  cursorId?: string
+}
+
+/**
+ * Pagination response metadata
+ * CRO-123: Standardized pagination response format
+ */
+export interface PaginationResponse {
+  hasMore: boolean
+  nextCursor?: PaginationCursor
+  total?: number
+  limit?: number
+  offset?: number
+}
+
+/**
+ * Real-time engagement update emitted for dashboard cards.
+ */
+export interface EngagementUpdatePayload {
+  updateId: string
+  parentId: string
+  childId: string
+  likeCount: number | null
+  commentCount: number | null
+  responseCount: number | null
+  viewCount: number | null
+  distributionStatus: string | null
+  updatedAt: string | null
+  action: 'engagement_update'
+  raw: MemoryRow
+}

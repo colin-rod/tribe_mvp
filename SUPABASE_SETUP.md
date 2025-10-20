@@ -35,7 +35,7 @@ This guide walks through setting up the Supabase backend for Tribe MVP - a priva
 ### 2.2 Configure Authentication
 1. Navigate to **Authentication > Settings**
 2. **Site URL**: `http://localhost:3000` (for development)
-3. **Redirect URLs**: Add `https://www.colinrodrigues.com/**`
+3. **Redirect URLs**: Add `https://www.tribeupdate.com/**`
 4. **Enable email confirmations**: Disabled (for development)
 5. **Enable email change confirmations**: Enabled
 6. **Enable secure email change**: Enabled
@@ -118,7 +118,7 @@ NEXTAUTH_SECRET=your-generated-secret
 ### 6.1 Test User Registration
 1. Navigate to **Authentication > Users**
 2. Click "Create a new user"
-3. **Email**: `test@colinrodrigues.com`
+3. **Email**: `test@tribeupdate.com`
 4. **Password**: Generate temporary password
 5. **Auto Confirm User**: Yes
 6. Click "Create user"
@@ -166,14 +166,14 @@ Navigate to **Database > Replication** and verify these tables are enabled:
 ### 8.1 Custom Domain (Later)
 For production deployment:
 1. **Authentication > Settings**
-2. **Site URL**: `https://www.colinrodrigues.com`
+2. **Site URL**: `https://www.tribeupdate.com`
 3. **Redirect URLs**: Update for production domain
 
 ### 8.2 Environment-Specific Settings
 ```bash
 # Production .env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXTAUTH_URL=https://www.colinrodrigues.com
+NEXTAUTH_URL=https://www.tribeupdate.com
 NODE_ENV=production
 ```
 

@@ -50,9 +50,9 @@ export function LandingNavigation() {
             <Link
               href="/"
               className="text-2xl font-bold text-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md"
-              aria-label="Tribe Home"
+              aria-label="TribeUpdate Home"
             >
-              Tribe
+              TribeUpdate
             </Link>
           </div>
 
@@ -71,12 +71,16 @@ export function LandingNavigation() {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm">
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button size="sm" onClick={trackSignupStarted}>
-              <Link href="/signup">Start Free</Link>
-            </Button>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm" onClick={trackSignupStarted}>
+                Start Free
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -115,12 +119,16 @@ export function LandingNavigation() {
               ))}
 
               <div className="pt-3 border-t border-gray-200 space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Link href="/login">Sign In</Link>
-                </Button>
-                <Button className="w-full" onClick={trackSignupStarted}>
-                  <Link href="/signup">Start Free</Link>
-                </Button>
+                <Link href="/login" className="block w-full">
+                  <Button variant="ghost" className="w-full justify-start">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup" className="block w-full">
+                  <Button className="w-full" onClick={trackSignupStarted}>
+                    Start Free
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

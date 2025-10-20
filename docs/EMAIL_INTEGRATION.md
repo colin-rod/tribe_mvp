@@ -44,21 +44,21 @@ Required environment variables in `.env.local`:
 ```bash
 # SendGrid Configuration
 SENDGRID_API_KEY=your-sendgrid-api-key
-SENDGRID_FROM_EMAIL=updates@colinrodrigues.com
+SENDGRID_FROM_EMAIL=updates@tribeupdate.com
 SENDGRID_FROM_NAME=Tribe
-REPLY_TO_DOMAIN=colinrodrigues.com
+REPLY_TO_DOMAIN=tribeupdate.com
 
 # Optional: Email webhook configuration
 WEBHOOK_SECRET=your-webhook-secret
-MEMORY_EMAIL=memory@colinrodrigues.com
-INBOUND_EMAIL_DOMAIN=colinrodrigues.com
+MEMORY_EMAIL=memory@tribeupdate.com
+INBOUND_EMAIL_DOMAIN=tribeupdate.com
 ```
 
 ### SendGrid Setup
 
 1. **API Key**: Create a SendGrid API key with "Mail Send" permissions
-2. **Domain Authentication**: Set up domain authentication for `colinrodrigues.com`
-3. **From Address**: Verify `updates@colinrodrigues.com` as a sender
+2. **Domain Authentication**: Set up domain authentication for `tribeupdate.com`
+3. **From Address**: Verify `updates@tribeupdate.com` as a sender
 4. **Reply-To**: Configure reply-to handling for the domain
 
 ## Email Templates
@@ -173,19 +173,19 @@ Two test scripts are available for validation:
 #### 1. Basic Email Test
 ```bash
 # Test system notification
-npm run test:email colin@colinrodrigues.com system
+npm run test:email your-email@example.com system
 
 # Test preference invitation
-npm run test:email colin@colinrodrigues.com preference
+npm run test:email your-email@example.com preference
 
 # Test response notification
-npm run test:email colin@colinrodrigues.com response
+npm run test:email your-email@example.com response
 ```
 
 #### 2. Integration Test
 ```bash
 # Test all email types
-node scripts/test-notification-service.js colin@colinrodrigues.com
+node scripts/test-notification-service.js your-email@example.com
 ```
 
 ### Manual Testing

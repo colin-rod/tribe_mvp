@@ -53,18 +53,55 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const startTime = new Date(now.getTime() - hours * 60 * 60 * 1000)
 
-    // Build base query with authorization
-    const baseQuery = isAdmin
-      ? supabase.from('notification_jobs')
-      : supabase
-          .from('notification_jobs')
-          .select('*, recipient:recipients!notification_jobs_recipient_id_fkey(parent_id)')
-          .eq('recipient.parent_id', user.id)
+    // For non-admin users, get their recipient IDs first
+    let recipientIds: string[] = []
+    if (!isAdmin) {
+      const { data: recipients } = await supabase
+        .from('recipients')
+        .select('id')
+        .eq('parent_id', user.id)
+      recipientIds = recipients?.map(r => r.id) || []
+
+      // If no recipients, return empty metrics
+      if (recipientIds.length === 0) {
+        return NextResponse.json({
+          time_range: {
+            hours,
+            start: startTime.toISOString(),
+            end: now.toISOString()
+          },
+          summary: {
+            total_jobs: 0,
+            success_rate_percent: 0,
+            avg_processing_time_ms: null,
+            overdue_jobs: 0
+          },
+          status_counts: {
+            pending: 0,
+            processing: 0,
+            sent: 0,
+            failed: 0,
+            skipped: 0,
+            cancelled: 0
+          },
+          delivery_methods: { email: 0, sms: 0, whatsapp: 0, push: 0 },
+          notification_types: { immediate: 0, digest: 0, milestone: 0 },
+          queue_health: null,
+          recent_failures: [],
+          overdue_jobs: []
+        })
+      }
+    }
 
     // Get job counts by status
-    const statusQuery = baseQuery
+    let statusQuery = supabase
+      .from('notification_jobs')
       .select('status', { count: 'exact' })
       .gte('created_at', startTime.toISOString())
+
+    if (!isAdmin) {
+      statusQuery = statusQuery.in('recipient_id', recipientIds)
+    }
 
     const { data: allJobs, count: totalJobs } = await statusQuery
 
@@ -88,9 +125,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get delivery method breakdown
-    const { data: deliveryJobs } = await baseQuery
+    let deliveryQuery = supabase
+      .from('notification_jobs')
       .select('delivery_method')
       .gte('created_at', startTime.toISOString())
+
+    if (!isAdmin) {
+      deliveryQuery = deliveryQuery.in('recipient_id', recipientIds)
+    }
+
+    const { data: deliveryJobs } = await deliveryQuery
 
     const deliveryMethodCounts = {
       email: 0,
@@ -109,9 +153,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get notification type breakdown
-    const { data: typeJobs } = await baseQuery
+    let typeQuery = supabase
+      .from('notification_jobs')
       .select('notification_type')
       .gte('created_at', startTime.toISOString())
+
+    if (!isAdmin) {
+      typeQuery = typeQuery.in('recipient_id', recipientIds)
+    }
+
+    const { data: typeJobs } = await typeQuery
 
     const notificationTypeCounts = {
       immediate: 0,
@@ -137,11 +188,18 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Get average processing time for completed jobs
-    const { data: processedJobs } = await baseQuery
+    let processedQuery = supabase
+      .from('notification_jobs')
       .select('created_at, processed_at')
       .not('processed_at', 'is', null)
       .gte('created_at', startTime.toISOString())
-      .limit(1000) // Sample up to 1000 recent jobs
+      .limit(1000)
+
+    if (!isAdmin) {
+      processedQuery = processedQuery.in('recipient_id', recipientIds)
+    }
+
+    const { data: processedJobs } = await processedQuery
 
     let avgProcessingTimeMs: number | null = null
     if (processedJobs && processedJobs.length > 0) {
@@ -172,18 +230,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Get recent failures
-    const { data: recentFailures } = await baseQuery
+    let failuresQuery = supabase
+      .from('notification_jobs')
       .select('id, created_at, failure_reason, retry_count')
       .eq('status', 'failed')
       .gte('created_at', startTime.toISOString())
       .order('created_at', { ascending: false })
       .limit(10)
 
+    if (!isAdmin) {
+      failuresQuery = failuresQuery.in('recipient_id', recipientIds)
+    }
+
+    const { data: recentFailures } = await failuresQuery
+
     // Get overdue jobs (pending past scheduled time)
-    const { data: overdueJobs, count: overdueCount } = await baseQuery
+    let overdueQuery = supabase
+      .from('notification_jobs')
       .select('*', { count: 'exact' })
       .eq('status', 'pending')
       .lt('scheduled_for', now.toISOString())
+
+    if (!isAdmin) {
+      overdueQuery = overdueQuery.in('recipient_id', recipientIds)
+    }
+
+    const { data: overdueJobs, count: overdueCount } = await overdueQuery
 
     return NextResponse.json({
       time_range: {

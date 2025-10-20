@@ -8,7 +8,9 @@ This document outlines the database schema mismatches between the codebase and t
 ### ✅ Fixed Issues
 1. **Supabase Database Types** - Regenerated types from database
 2. **Drag Event Handlers** - Fixed type mismatches in SmartContextualInput
-3. **FormValidationContext** - Fixed variable declaration order
+3. ~~**FormValidationContext** - Fixed variable declaration order~~
+   - ❌ Deprecated: The unused `FormValidationContext` implementation and its utilities
+     have been removed to reduce dead code in the application layer.
 4. **NavigationContext** - Fixed route type mismatch
 5. **Accessibility Module** - Fixed duplicate exports
 6. **Update Type** - Made content field nullable
