@@ -6,9 +6,34 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Alert } from '@/components/ui/Alert'
 import { Card } from '@/components/ui/Card'
-import { Loader2, Link as LinkIcon, Copy, CheckCircle, Trash2, QrCode } from 'lucide-react'
+import {
+  Loader2,
+  Link as LinkIcon,
+  Copy,
+  CheckCircle,
+  Trash2,
+  QrCode,
+  Share2,
+  Facebook,
+  Twitter,
+  MessageCircle,
+  MessageSquare
+} from 'lucide-react'
 import type { Invitation } from '@/lib/types/invitation'
 import QRCodeDisplay from './QRCodeDisplay'
+import { Menu } from '@/components/ui/Menu'
+import {
+  buildShareUrl,
+  canUseWebShare,
+  openShareWindow,
+  shareViaNavigator,
+  type ShareChannel
+} from '@/lib/utils/share'
+import { createLogger } from '@/lib/logger'
+
+type ShareChannelWithNative = ShareChannel | 'native'
+
+const shareLogger = createLogger('ReusableLinkManager')
 
 interface ReusableLinkManagerProps {
   onLinkCreated?: () => void
@@ -23,10 +48,15 @@ export default function ReusableLinkManager({ onLinkCreated }: ReusableLinkManag
   const [reusableLinks, setReusableLinks] = useState<Invitation[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [selectedLinkForQR, setSelectedLinkForQR] = useState<Invitation | null>(null)
+  const [isNativeShareAvailable, setIsNativeShareAvailable] = useState(false)
 
   // Fetch existing reusable links
   useEffect(() => {
     fetchReusableLinks()
+  }, [])
+
+  useEffect(() => {
+    setIsNativeShareAvailable(canUseWebShare())
   }, [])
 
   const fetchReusableLinks = async () => {
@@ -85,6 +115,62 @@ export default function ReusableLinkManager({ onLinkCreated }: ReusableLinkManag
     navigator.clipboard.writeText(invitationUrl)
     setCopiedId(invitation.id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const trackShare = (channel: ShareChannelWithNative, invitation: Invitation) => {
+    shareLogger.info('Invitation link shared', {
+      channel,
+      invitationId: invitation.id,
+      invitationType: invitation.invitation_type,
+      hasCustomMessage: Boolean(invitation.custom_message)
+    })
+
+    if (typeof window !== 'undefined') {
+      window.gtag?.('event', 'invite_share', {
+        event_category: 'invites',
+        event_label: channel,
+        value: 1,
+        custom_parameter: JSON.stringify({
+          invitationId: invitation.id,
+          channel,
+          hasCustomMessage: Boolean(invitation.custom_message)
+        })
+      })
+    }
+  }
+
+  const handleShare = async (channel: ShareChannelWithNative, invitation: Invitation) => {
+    const invitationUrl = getInvitationUrl(invitation.token)
+    const message = invitation.custom_message ?? undefined
+
+    try {
+      if (channel === 'native') {
+        const shared = await shareViaNavigator({
+          url: invitationUrl,
+          message
+        })
+
+        if (shared) {
+          trackShare(channel, invitation)
+        }
+        return
+      }
+
+      const shareUrl = buildShareUrl(channel, {
+        url: invitationUrl,
+        message
+      })
+
+      openShareWindow(shareUrl)
+      trackShare(channel, invitation)
+    } catch (error) {
+      shareLogger.errorWithStack('Failed to share invitation link', error as Error, {
+        channel,
+        invitationId: invitation.id
+      })
+      setSuccess(null)
+      setError('Unable to open the share option. You can still copy the link manually.')
+    }
   }
 
   const handleRevokeLink = async (invitationId: string) => {
@@ -217,6 +303,64 @@ export default function ReusableLinkManager({ onLinkCreated }: ReusableLinkManag
                         </>
                       )}
                     </Button>
+
+                    <div className="flex-1">
+                      <Menu
+                        triggerClassName="w-full h-11 px-4 text-sm border border-primary-300 bg-transparent text-primary-600 hover:bg-primary-50 hover:border-primary-400 active:bg-primary-100 rounded-md inline-flex items-center justify-center gap-2 transition-all duration-200"
+                        trigger={
+                          <span className="flex items-center gap-2">
+                            <Share2 className="h-4 w-4" />
+                            Share
+                          </span>
+                        }
+                        align="right"
+                        ariaLabel="Share invitation link"
+                        items={[
+                          {
+                            id: 'native-share',
+                            label: isNativeShareAvailable ? 'Share via device' : 'Device share not supported',
+                            icon: <Share2 className="h-4 w-4" />,
+                            disabled: !isNativeShareAvailable,
+                            onClick: () => {
+                              void handleShare('native', link)
+                            }
+                          },
+                          { id: 'divider-native', divider: true },
+                          {
+                            id: 'share-facebook',
+                            label: 'Facebook',
+                            icon: <Facebook className="h-4 w-4" />,
+                            onClick: () => {
+                              void handleShare('facebook', link)
+                            }
+                          },
+                          {
+                            id: 'share-x',
+                            label: 'X (Twitter)',
+                            icon: <Twitter className="h-4 w-4" />,
+                            onClick: () => {
+                              void handleShare('x', link)
+                            }
+                          },
+                          {
+                            id: 'share-whatsapp',
+                            label: 'WhatsApp',
+                            icon: <MessageCircle className="h-4 w-4" />,
+                            onClick: () => {
+                              void handleShare('whatsapp', link)
+                            }
+                          },
+                          {
+                            id: 'share-messages',
+                            label: 'Messages',
+                            icon: <MessageSquare className="h-4 w-4" />,
+                            onClick: () => {
+                              void handleShare('messages', link)
+                            }
+                          }
+                        ]}
+                      />
+                    </div>
 
                     <Button
                       size="sm"
