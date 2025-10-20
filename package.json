@@ -63,7 +63,7 @@
     "@tiptap/extension-text-align": "^3.6.6",
     "@tiptap/extension-text-style": "^3.7.2",
     "@tiptap/extension-underline": "^3.6.6",
-    "@tiptap/react": "^3.6.6",
+    "@tiptap/react": "^3.7.2",
     "@tiptap/starter-kit": "^3.6.6",
     "@types/dompurify": "^3.2.0",
     "@types/jsdom": "^27.0.0",
