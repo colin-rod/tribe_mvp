@@ -26,18 +26,18 @@ Successfully implemented comprehensive keyboard navigation and focus management 
 
 ### Core Utilities & Hooks
 
-1. **[src/hooks/useRovingTabIndex.ts](src/hooks/useRovingTabIndex.ts)**
+1. **[src/hooks/useRovingTabIndex.ts](../../src/hooks/useRovingTabIndex.ts)**
    - Roving tabindex pattern for lists/grids
    - Arrow key navigation (↑↓←→)
    - Home/End key support
    - Configurable loop behavior
 
-2. **[src/hooks/useLiveRegion.ts](src/hooks/useLiveRegion.ts)**
+2. **[src/hooks/useLiveRegion.ts](../../src/hooks/useLiveRegion.ts)**
    - ARIA live region management
    - Specialized hooks: `useFormErrorAnnouncer`, `useLoadingAnnouncer`, `useNotificationAnnouncer`
    - Auto-cleanup and configurable politeness
 
-3. **[src/utils/keyboard-navigation.ts](src/utils/keyboard-navigation.ts)**
+3. **[src/utils/keyboard-navigation.ts](../../src/utils/keyboard-navigation.ts)**
    - Comprehensive keyboard utilities
    - Pattern handlers for menus, tabs, dialogs
    - Focus management helpers
@@ -45,7 +45,7 @@ Successfully implemented comprehensive keyboard navigation and focus management 
 
 ### UI Components
 
-4. **[src/components/ui/Menu.tsx](src/components/ui/Menu.tsx)**
+4. **[src/components/ui/Menu.tsx](../../src/components/ui/Menu.tsx)**
    - Fully accessible dropdown menu
    - Full keyboard navigation
    - Focus trap and restoration
@@ -53,13 +53,13 @@ Successfully implemented comprehensive keyboard navigation and focus management 
 
 ### Documentation
 
-5. **[docs/accessibility/CRO-154-KEYBOARD-NAVIGATION.md](docs/accessibility/CRO-154-KEYBOARD-NAVIGATION.md)**
+5. **[docs/accessibility/CRO-154-KEYBOARD-NAVIGATION.md](../accessibility/CRO-154-KEYBOARD-NAVIGATION.md)**
    - Complete implementation guide
    - Usage examples
    - WCAG compliance checklist
    - Testing guidelines
 
-6. **[docs/accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md](docs/accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md)**
+6. **[docs/accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md](../accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md)**
    - Executive summary
    - Quick reference guide
 
@@ -179,9 +179,9 @@ import { Menu } from '@/components/ui/Menu'
 ## 📚 Additional Resources
 
 ### Internal Documentation
-- [Full Implementation Guide](docs/accessibility/CRO-154-KEYBOARD-NAVIGATION.md)
-- [Implementation Summary](docs/accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md)
-- [Accessibility Design System](src/design-system/ACCESSIBILITY.md)
+- [Full Implementation Guide](../accessibility/CRO-154-KEYBOARD-NAVIGATION.md)
+- [Implementation Summary](../accessibility/CRO-154-IMPLEMENTATION-SUMMARY.md)
+- [Accessibility Design System](../../src/design-system/ACCESSIBILITY.md)
 
 ### External References
 - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)

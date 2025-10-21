@@ -23,4 +23,4 @@ SELECT 'Updated recipient:', name, email FROM recipients WHERE id = '7a1b7f77-43
 
 echo ""
 echo "Test recipient email updated to: $EMAIL"
-echo "Run ./test-with-real-data.sh to send test email"
+echo "Run ./scripts/legacy/test-with-real-data.sh to send test email"
