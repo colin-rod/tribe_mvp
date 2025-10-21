@@ -82,6 +82,41 @@ export const sanitizeHtml = (html: string): string => {
 }
 
 /**
+ * Sanitize rich text input and convert it to safe plain text
+ */
+export const sanitizePlainText = (text: string): string => {
+  const sanitizedHtml = sanitizeHtml(text)
+
+  // Normalize structural tags to preserve intentional line breaks
+  const withLineBreaks = sanitizedHtml
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|ul|ol)>/gi, '\n')
+
+  // Remove all remaining HTML tags
+  const withoutTags = withLineBreaks.replace(/<[^>]*>/g, '')
+
+  // Replace HTML entities that commonly appear in user submissions
+  const decodedEntities = withoutTags
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+
+  const normalizedWhitespace = decodedEntities
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00A0/g, ' ')
+
+  const sanitizedText = sanitizeText(normalizedWhitespace)
+
+  return sanitizedText
+    .split('\n')
+    .map(line => line.trimEnd())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
  * Text content sanitization for plain text fields
  */
 export const sanitizeText = (text: string): string => {

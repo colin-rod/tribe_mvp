@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import {
+  emailSchema,
+  sanitizePlainText,
+  sanitizeText,
+  urlSchema,
+} from '@/lib/validation/security'
 
 /**
  * Feedback types for categorization
@@ -22,18 +28,43 @@ export interface FeedbackFormData {
 }
 
 /**
- * Complete feedback data with auto-captured metadata
- */
-export interface FeedbackData extends FeedbackFormData {
-  pageUrl: string
-  userEmail?: string
-  timestamp: string
-  screenshotUrls?: string[]
-}
-
-/**
  * API request body validation schema
  */
+const sanitizedDescriptionSchema = z
+  .string()
+  .max(5000, 'Description is too long (max 5000 characters)')
+  .transform((value) => {
+    const sanitized = sanitizePlainText(value)
+    return sanitized.length > 5000 ? sanitized.slice(0, 5000) : sanitized
+  })
+  .refine((value) => value.length >= 10, {
+    message: 'Please provide at least 10 characters',
+  })
+
+const sanitizedUrlSchema = z
+  .string()
+  .trim()
+  .pipe(urlSchema)
+  .transform((value) => sanitizeText(value))
+
+const sanitizedEmailSchema = z
+  .string()
+  .trim()
+  .pipe(emailSchema)
+  .transform((value) => sanitizeText(value))
+
+const sanitizedTimestampSchema = z
+  .string()
+  .trim()
+  .datetime()
+  .transform((value) => sanitizeText(value))
+
+const sanitizedScreenshotUrlSchema = z
+  .string()
+  .trim()
+  .pipe(urlSchema)
+  .transform((value) => sanitizeText(value))
+
 export const feedbackRequestSchema = z.object({
   type: z.enum([
     FeedbackType.BUG,
@@ -41,15 +72,17 @@ export const feedbackRequestSchema = z.object({
     FeedbackType.UX_ISSUE,
     FeedbackType.OTHER,
   ]),
-  description: z
-    .string()
-    .min(10, 'Please provide at least 10 characters')
-    .max(5000, 'Description is too long (max 5000 characters)'),
-  pageUrl: z.string().url('Invalid page URL'),
-  userEmail: z.string().email().optional(),
-  timestamp: z.string().datetime(),
-  screenshotUrls: z.array(z.string().url()).optional(),
+  description: sanitizedDescriptionSchema,
+  pageUrl: sanitizedUrlSchema,
+  userEmail: sanitizedEmailSchema.optional(),
+  timestamp: sanitizedTimestampSchema,
+  screenshotUrls: z.array(sanitizedScreenshotUrlSchema).optional(),
 })
+
+/**
+ * Complete feedback data with auto-captured metadata
+ */
+export type FeedbackData = z.infer<typeof feedbackRequestSchema>
 
 /**
  * Form validation schema (client-side)
