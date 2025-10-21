@@ -305,6 +305,22 @@ describe('Groups API Integration Tests', () => {
         { id: 'membership-2', group_id: groupId, recipient_id: 'recipient-2' }
       ]
 
+      mockSupabase.from.mockReset()
+
+      const recipientsQueryMock = {
+        select: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        eq: jest.fn()
+      }
+
+      ;(recipientsQueryMock.eq as jest.Mock)
+        .mockReturnValueOnce(recipientsQueryMock)
+        .mockResolvedValueOnce({ data: mockRecipients, error: null })
+        .mockReturnValueOnce(recipientsQueryMock)
+        .mockResolvedValueOnce({ data: [], error: null })
+
+      mockSupabase.from.mockImplementation(() => recipientsQueryMock as never)
+
       mockValidateParentGroupAccess.mockResolvedValue({
         can_view: true,
         can_modify: true,
