@@ -7,35 +7,44 @@
  */
 
 import type { ComponentType } from 'react';
- * CRO-534: Memory Book Experience - Unified Dashboard Navigation
- * Updated for Memory Book Experience (Updates → Memories, Digests → Summaries)
- */
-
-import type { ComponentType } from 'react';
-
 import {
   RectangleStackIcon,
   BookOpenIcon,
+  DocumentTextIcon,
   UserIcon,
   UserPlusIcon,
   UserGroupIcon,
-  DocumentTextIcon,
   UserCircleIcon,
   ShieldCheckIcon,
   BellAlertIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
+
 import { DASHBOARD_ROUTES, type DashboardRoute } from './routes';
 
 export type NavigationIcon = ComponentType<{ className?: string }>;
 
-export interface DashboardNavigationItem {
-  id: 'activity' | 'digests' | 'children' | 'recipients' | 'groups' | 'drafts' | 'settings';
+interface BaseNavigationItem {
+  id: string;
   label: string;
   icon: NavigationIcon;
+  href: string;
+  alternateHrefs?: readonly string[];
+  badge?: number;
+}
+
+export interface DashboardNavigationItem extends BaseNavigationItem {
+  id:
+    | 'activity'
+    | 'memory-book'
+    | 'summaries'
+    | 'children'
+    | 'recipients'
+    | 'groups'
+    | 'drafts'
+    | 'settings';
   href: DashboardRoute;
   alternateHrefs?: readonly DashboardRoute[];
-  badge?: number; // For notification counts
 }
 
 export interface DashboardNavigationSection {
@@ -44,33 +53,16 @@ export interface DashboardNavigationSection {
   items: readonly DashboardNavigationItem[];
 }
 
-export const DASHBOARD_NAVIGATION_SECTIONS = [
-  icon: ComponentType<{ className?: string }>;
-  href: string;
-  badge?: number; // For notification counts
-}
-
-export interface NavigationSection {
+export interface NavigationSection<TItem extends BaseNavigationItem = BaseNavigationItem> {
   id: string;
   label: string;
-  items: NavItem[];
+  items: readonly TItem[];
 }
 
-export const navigationItems: NavItem[] = [
-  {
-    id: 'activity',
-    label: 'Activity',
-    icon: RectangleStackIcon,
-    href: '/dashboard/activity',
-  },
-  {
-    id: 'memory-book',
-    label: 'Memory Book',
-    icon: BookOpenIcon,
-    href: '/dashboard/memory-book',
-  },
+export const DASHBOARD_NAVIGATION_SECTIONS = [
   {
     id: 'overview',
+    label: 'Overview',
     items: [
       {
         id: 'activity',
@@ -80,10 +72,16 @@ export const navigationItems: NavItem[] = [
         alternateHrefs: [DASHBOARD_ROUTES.ACTIVITY_ALT],
       },
       {
-        id: 'digests',
+        id: 'memory-book',
         label: 'Memory Book',
         icon: BookOpenIcon,
-        href: DASHBOARD_ROUTES.DIGESTS,
+        href: DASHBOARD_ROUTES.MEMORY_BOOK,
+      },
+      {
+        id: 'summaries',
+        label: 'Summaries',
+        icon: DocumentTextIcon,
+        href: DASHBOARD_ROUTES.SUMMARIES,
       },
     ],
   },
@@ -109,6 +107,12 @@ export const navigationItems: NavItem[] = [
         icon: UserGroupIcon,
         href: DASHBOARD_ROUTES.GROUPS,
       },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    items: [
       {
         id: 'drafts',
         label: 'Drafts',
@@ -122,14 +126,14 @@ export const navigationItems: NavItem[] = [
         href: DASHBOARD_ROUTES.SETTINGS,
       },
     ],
-    id: 'summaries',
-    label: 'Summaries',
-    icon: DocumentTextIcon,
-    href: '/dashboard/digests',
   },
-];
+] as const satisfies readonly DashboardNavigationSection[];
 
-export const accountNavigationItems: NavItem[] = [
+export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
+  (section) => section.items,
+) as readonly DashboardNavigationItem[];
+
+export const accountNavigationItems = [
   {
     id: 'profile-settings',
     label: 'Profile Settings',
@@ -154,32 +158,28 @@ export const accountNavigationItems: NavItem[] = [
     icon: Cog6ToothIcon,
     href: '/dashboard/settings',
   },
-];
+] as const satisfies readonly BaseNavigationItem[];
 
-export const mobileNavigationSections: NavigationSection[] = [
+export const mobileNavigationSections = [
   {
     id: 'primary',
     label: 'Main navigation',
-    items: navigationItems,
+    items: DASHBOARD_NAVIGATION_ITEMS,
   },
   {
     id: 'account',
     label: 'Account',
     items: accountNavigationItems,
   },
-] as const satisfies readonly DashboardNavigationSection[];
+] as const satisfies readonly NavigationSection[];
 
 export type DashboardNavigationItemId =
   (typeof DASHBOARD_NAVIGATION_SECTIONS)[number]['items'][number]['id'];
-
-export const DASHBOARD_NAVIGATION_ITEMS = DASHBOARD_NAVIGATION_SECTIONS.flatMap(
-  (section) => section.items
-) as readonly DashboardNavigationItem[];
 
 export function getNavigationItemByPath(pathname: string) {
   return DASHBOARD_NAVIGATION_ITEMS.find(
     (item) =>
       item.href === pathname ||
-      item.alternateHrefs?.includes(pathname as DashboardRoute)
+      item.alternateHrefs?.some((alternate) => alternate === pathname),
   );
 }
