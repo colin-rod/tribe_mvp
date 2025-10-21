@@ -22,34 +22,42 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  :is(h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6) {
+    @apply text-neutral-900 font-semibold;
+  }
+
+  :is(h1, .h1, h2, .h2, h3, .h3) {
+    @apply tracking-tight;
+  }
+
   h1,
   .h1 {
-    @apply text-6xl font-bold text-neutral-900 tracking-tight;
+    @apply text-6xl font-bold;
   }
 
   h2,
   .h2 {
-    @apply text-5xl font-bold text-neutral-900 tracking-tight;
+    @apply text-5xl font-bold;
   }
 
   h3,
   .h3 {
-    @apply text-4xl font-semibold text-neutral-900 tracking-tight;
+    @apply text-4xl;
   }
 
   h4,
   .h4 {
-    @apply text-3xl font-semibold text-neutral-900;
+    @apply text-3xl;
   }
 
   h5,
   .h5 {
-    @apply text-2xl font-semibold text-neutral-900;
+    @apply text-2xl;
   }
 
   h6,
   .h6 {
-    @apply text-xl font-semibold text-neutral-900;
+    @apply text-xl;
   }
 
   p,
@@ -101,22 +109,23 @@
 }
 
 @layer components {
+  :is(.display-xl, .display-lg, .display-md) {
+    @apply font-bold text-neutral-900 tracking-tight;
+  }
+
   .display-xl {
     font-size: clamp(4.5rem, 4vw + 3rem, 7.451rem);
     line-height: 1.05;
-    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .display-lg {
     font-size: clamp(3.75rem, 3vw + 2.5rem, 5.96rem);
     line-height: 1.08;
-    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .display-md {
     font-size: clamp(3rem, 2.5vw + 2rem, 4.768rem);
     line-height: 1.1;
-    @apply font-bold text-neutral-900 tracking-tight;
   }
 
   .text-muted {
