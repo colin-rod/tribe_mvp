@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
 import { Input } from '@/components/ui/Input'
@@ -9,7 +9,10 @@ import { getPrivacyMessageForStep } from '@/lib/onboarding'
 import { validateEmail, validatePhone, validateContactMethod, RELATIONSHIP_OPTIONS } from '@/lib/validation/recipients'
 import type { RecipientSetupData } from '@/hooks/useOnboarding'
 import type { CreateRecipientData } from '@/lib/recipients'
-import { UsersIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { UsersIcon, LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { FormFeedback } from '@/components/ui/FormFeedback'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { checkRecipientDuplicate, type RecipientDuplicateMatch } from '@/lib/api/recipients'
 
 interface RecipientSetupStepProps {
   data: Partial<RecipientSetupData>
@@ -23,6 +26,13 @@ interface RecipientSetupStepProps {
 
 interface RecipientFormData extends CreateRecipientData {
   id: string // temporary ID for form management
+}
+
+interface RecipientDuplicateState {
+  match: RecipientDuplicateMatch | null
+  override: boolean
+  checking: boolean
+  error?: string
 }
 
 export function RecipientSetupStep({
@@ -39,6 +49,7 @@ export function RecipientSetupStep({
   )
   const [quickAddEnabled, setQuickAddEnabled] = useState(data.quickAddEnabled ?? true)
   const [errors, setErrors] = useState<Record<string, Record<string, string>>>({})
+  const [duplicateState, setDuplicateState] = useState<Record<string, RecipientDuplicateState>>({})
 
   const privacyMessage = getPrivacyMessageForStep('recipient-setup')
 
@@ -91,6 +102,27 @@ export function RecipientSetupStep({
 
   const updateRecipient = (id: string, updates: Partial<RecipientFormData>) => {
     setRecipients(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))
+
+    if ('email' in updates || 'phone' in updates) {
+      setDuplicateState(prev => {
+        if (!prev[id]) return prev
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+
+      setErrors(prev => {
+        if (!prev[id]?.duplicate) return prev
+        const next = { ...prev }
+        const { duplicate: _duplicate, ...rest } = next[id]
+        if (Object.keys(rest).length === 0) {
+          delete next[id]
+        } else {
+          next[id] = rest
+        }
+        return next
+      })
+    }
   }
 
   const removeRecipient = (id: string) => {
@@ -100,6 +132,112 @@ export function RecipientSetupStep({
       delete newErrors[id]
       return newErrors
     })
+    setDuplicateState(prev => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+
+  const handleDuplicateCheck = useCallback(async (id: string): Promise<RecipientDuplicateMatch | null> => {
+    const recipient = recipients.find(r => r.id === id)
+    if (!recipient) return null
+
+    const email = recipient.email?.trim()
+    const phone = recipient.phone?.trim()
+
+    if (!email && !phone) {
+      setDuplicateState(prev => {
+        if (!prev[id]) return prev
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      return null
+    }
+
+    setDuplicateState(prev => ({
+      ...prev,
+      [id]: {
+        match: prev[id]?.match ?? null,
+        override: prev[id]?.override ?? false,
+        checking: true,
+        error: undefined
+      }
+    }))
+
+    try {
+      const { match } = await checkRecipientDuplicate({ email, phone })
+      setDuplicateState(prev => ({
+        ...prev,
+        [id]: {
+          match: match || null,
+          override: match ? false : prev[id]?.override ?? false,
+          checking: false,
+          error: undefined
+        }
+      }))
+      return match ?? null
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to check duplicates right now.'
+      setDuplicateState(prev => ({
+        ...prev,
+        [id]: {
+          match: null,
+          override: prev[id]?.override ?? false,
+          checking: false,
+          error: message
+        }
+      }))
+      return null
+    }
+  }, [recipients])
+
+  const handleOverrideDuplicate = (id: string) => {
+    setDuplicateState(prev => ({
+      ...prev,
+      [id]: {
+        match: prev[id]?.match ?? null,
+        override: true,
+        checking: false,
+        error: prev[id]?.error
+      }
+    }))
+
+    setErrors(prev => {
+      if (!prev[id]?.duplicate) return prev
+      const next = { ...prev }
+      const { duplicate: _duplicate, ...rest } = next[id]
+      if (Object.keys(rest).length === 0) {
+        delete next[id]
+      } else {
+        next[id] = rest
+      }
+      return next
+    })
+  }
+
+  const handleUseExistingRecipient = (id: string) => {
+    removeRecipient(id)
+  }
+
+  const handlePrefillFromExisting = (id: string) => {
+    const duplicate = duplicateState[id]?.match
+    if (!duplicate) return
+
+    setRecipients(prev => prev.map(r => r.id === id ? {
+      ...r,
+      name: duplicate.name,
+      email: duplicate.email || '',
+      phone: duplicate.phone || '',
+    } : r))
+  }
+
+  const handleViewExistingRecipient = (id: string) => {
+    const duplicate = duplicateState[id]?.match
+    if (!duplicate) return
+    window.open(`/dashboard/recipients?recipientId=${duplicate.id}`, '_blank', 'noopener')
   }
 
   const validateRecipient = (recipient: RecipientFormData): Record<string, string> => {
@@ -124,6 +262,11 @@ export function RecipientSetupStep({
       if (phoneError) errors.phone = phoneError
     }
 
+    const duplicate = duplicateState[recipient.id]
+    if (duplicate?.match && !duplicate.override) {
+      errors.duplicate = `${duplicate.match.name} is already on your list. Choose an action or continue with "Keep both".`
+    }
+
     return errors
   }
 
@@ -143,13 +286,16 @@ export function RecipientSetupStep({
     return !hasErrors
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (recipients.length === 0) {
       if (canSkip) {
         onNext()
       }
       return
     }
+
+    await Promise.all(recipients.map(recipient => handleDuplicateCheck(recipient.id)))
+    await new Promise(resolve => setTimeout(resolve, 0))
 
     if (validateAllRecipients()) {
       onNext()
@@ -234,8 +380,14 @@ export function RecipientSetupStep({
                 key={recipient.id}
                 recipient={recipient}
                 errors={errors[recipient.id] || {}}
+                duplicate={duplicateState[recipient.id]}
                 onUpdate={(updates) => updateRecipient(recipient.id, updates)}
                 onRemove={() => removeRecipient(recipient.id)}
+                onCheckDuplicate={() => { void handleDuplicateCheck(recipient.id) }}
+                onOverrideDuplicate={() => handleOverrideDuplicate(recipient.id)}
+                onUseExisting={() => handleUseExistingRecipient(recipient.id)}
+                onPrefillExisting={() => handlePrefillFromExisting(recipient.id)}
+                onViewExisting={() => handleViewExistingRecipient(recipient.id)}
               />
             ))}
           </div>
@@ -304,8 +456,11 @@ export function RecipientSetupStep({
             </Button>
           )}
           <Button
-            onClick={handleNext}
-            disabled={recipients.length > 0 && Object.keys(errors).length > 0}
+            onClick={() => { void handleNext() }}
+            disabled={
+              (recipients.length > 0 && Object.keys(errors).length > 0) ||
+              Object.values(duplicateState).some(state => state.checking || (state.match && !state.override))
+            }
             className="px-8"
           >
             {recipients.length > 0 ? 'Continue' : canSkip ? 'Skip' : 'Add Recipients'} →
@@ -330,12 +485,37 @@ export function RecipientSetupStep({
 interface RecipientCardProps {
   recipient: RecipientFormData
   errors: Record<string, string>
+  duplicate?: RecipientDuplicateState
   onUpdate: (updates: Partial<RecipientFormData>) => void
   onRemove: () => void
+  onCheckDuplicate: () => void
+  onOverrideDuplicate: () => void
+  onUseExisting: () => void
+  onPrefillExisting: () => void
+  onViewExisting: () => void
 }
 
-function RecipientCard({ recipient, errors, onUpdate, onRemove }: RecipientCardProps) {
+function RecipientCard({
+  recipient,
+  errors,
+  duplicate,
+  onUpdate,
+  onRemove,
+  onCheckDuplicate,
+  onOverrideDuplicate,
+  onUseExisting,
+  onPrefillExisting,
+  onViewExisting
+}: RecipientCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const duplicateSummary = duplicate?.match
+    ? duplicate.match.email
+      ? `${duplicate.match.name} already uses ${duplicate.match.email}`
+      : duplicate.match.phone
+        ? `${duplicate.match.name} already uses ${duplicate.match.phone}`
+        : `${duplicate.match.name} is already on your list.`
+    : ''
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 space-y-4">
@@ -362,6 +542,7 @@ function RecipientCard({ recipient, errors, onUpdate, onRemove }: RecipientCardP
             type="email"
             value={recipient.email || ''}
             onChange={(e) => onUpdate({ email: e.target.value })}
+            onBlur={onCheckDuplicate}
             placeholder="email@example.com"
             className={errors.email ? 'border-red-500' : ''}
           />
@@ -388,6 +569,54 @@ function RecipientCard({ recipient, errors, onUpdate, onRemove }: RecipientCardP
 
       {errors.contact && (
         <p className="text-sm text-red-600">{errors.contact}</p>
+      )}
+
+      {(duplicate?.checking || duplicate?.match || duplicate?.error) && (
+        <div className="space-y-2" aria-live="polite">
+          {duplicate?.checking && (
+            <div className="flex items-center gap-2 text-sm text-gray-600" role="status">
+              <LoadingSpinner size="sm" />
+              Checking for existing recipients...
+            </div>
+          )}
+          {duplicate?.match && (
+            <FormFeedback
+              type="warning"
+              title="Possible duplicate found"
+              message={duplicateSummary}
+              actions={(
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={onViewExisting}>
+                    Review existing
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={onPrefillExisting}>
+                    Prefill from existing
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onUseExisting}>
+                    Use existing only
+                  </Button>
+                  <Button
+                    variant={duplicate.override ? 'warning' : 'ghost'}
+                    size="sm"
+                    onClick={onOverrideDuplicate}
+                  >
+                    {duplicate.override ? 'Keep both (override enabled)' : 'Keep both'}
+                  </Button>
+                </div>
+              )}
+            />
+          )}
+          {duplicate?.error && (
+            <div className="flex items-start gap-2 text-sm text-red-600">
+              <ExclamationTriangleIcon className="h-4 w-4 mt-0.5" aria-hidden="true" />
+              <span>{duplicate.error}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {errors.duplicate && (
+        <p className="text-sm text-red-600">{errors.duplicate}</p>
       )}
 
       {/* Advanced Options */}
@@ -433,13 +662,14 @@ function RecipientCard({ recipient, errors, onUpdate, onRemove }: RecipientCardP
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Phone (for SMS)
               </label>
-              <Input
-                type="tel"
-                value={recipient.phone || ''}
-                onChange={(e) => onUpdate({ phone: e.target.value })}
-                placeholder="+1234567890"
-                className={errors.phone ? 'border-red-500' : ''}
-              />
+          <Input
+            type="tel"
+            value={recipient.phone || ''}
+            onChange={(e) => onUpdate({ phone: e.target.value })}
+            onBlur={onCheckDuplicate}
+            placeholder="+1234567890"
+            className={errors.phone ? 'border-red-500' : ''}
+          />
               {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
             </div>
           </div>
