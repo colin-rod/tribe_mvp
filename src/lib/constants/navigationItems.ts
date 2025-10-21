@@ -89,7 +89,7 @@ export const DASHBOARD_NAVIGATION_SECTIONS = [
         id: 'summaries',
         label: 'Memory Book',
         icon: BookOpenIcon,
-        href: DASHBOARD_ROUTES.SUMMARIES,
+        href: DASHBOARD_ROUTES.MEMORY_BOOK,
       },
     ],
   },
