@@ -148,6 +148,22 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
     setViewMode('list')
   }
 
+  const handleRecipientMerged = (updatedRecipient: Recipient) => {
+    setRecipients(prev => prev.map(r => r.id === updatedRecipient.id ? updatedRecipient : r))
+
+    setSnackbarMessage(`Updated ${updatedRecipient.name}'s contact details.`)
+    setSnackbarAction({
+      label: 'View Recipient',
+      handler: () => {
+        setSnackbarOpen(false)
+        setViewMode('list')
+      }
+    })
+    setSnackbarOpen(true)
+
+    setViewMode('list')
+  }
+
   const handleRecipientUpdated = (updatedRecipient: Recipient) => {
     setRecipients(prev =>
       prev.map(r => r.id === updatedRecipient.id ? updatedRecipient : r)
@@ -299,6 +315,7 @@ export default function RecipientManager({ selectedGroupId }: RecipientManagerPr
         onRecipientAdded={handleRecipientAdded}
         onCancel={() => setViewMode('list')}
         selectedGroupId={selectedGroupId}
+        onRecipientMerged={handleRecipientMerged}
       />
     )
   }

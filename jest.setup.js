@@ -34,6 +34,10 @@ jest.mock('@heroicons/react/24/outline', () => ({
   ChevronRightIcon: ({ className, ...props }) => <div data-testid="chevron-right-icon" className={className} {...props} />,
   PlayIcon: ({ className, ...props }) => <div data-testid="play-icon" className={className} {...props} />,
   ArrowLeftIcon: ({ className, ...props }) => <div data-testid="arrow-left-icon" className={className} {...props} />,
+  ExclamationCircleIcon: ({ className, ...props }) => <div data-testid="error-icon" className={className} {...props} />,
+  CheckCircleIcon: ({ className, ...props }) => <div data-testid="success-icon" className={className} {...props} />,
+  InformationCircleIcon: ({ className, ...props }) => <div data-testid="info-icon" className={className} {...props} />,
+  ExclamationTriangleIcon: ({ className, ...props }) => <div data-testid="warning-icon" className={className} {...props} />,
 }))
 
 // Mock date-fns
@@ -54,11 +58,11 @@ jest.mock('@/components/ui/ChildImage', () => {
 })
 
 // Mock LoadingSpinner component
-jest.mock('@/components/ui/LoadingSpinner', () => {
-  return function MockLoadingSpinner({ className, ...props }) {
-    return <div data-testid="loading-spinner" className={className} {...props}>Loading...</div>
-  }
-})
+jest.mock('@/components/ui/LoadingSpinner', () => ({
+  LoadingSpinner: ({ className, size, ...props }) => (
+    <div data-testid="loading-spinner" className={className} data-size={size} {...props}>Loading...</div>
+  )
+}))
 
 // Mock Math.random for consistent test results
 Math.random = jest.fn(() => 0.8) // Always trigger variety bonus
