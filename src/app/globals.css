@@ -514,27 +514,6 @@
     @apply mx-4 my-3 sm:mx-6 sm:my-4;
   }
 
-  /* Responsive Text Sizes - Mobile First */
-  .text-responsive-sm {
-    @apply text-sm sm:text-base;
-  }
-
-  .text-responsive-base {
-    @apply text-base sm:text-lg;
-  }
-
-  .text-responsive-lg {
-    @apply text-lg sm:text-xl;
-  }
-
-  .text-responsive-xl {
-    @apply text-xl sm:text-2xl;
-  }
-
-  .text-responsive-2xl {
-    @apply text-2xl sm:text-3xl md:text-4xl;
-  }
-
   /* Mobile-optimized grid */
   .grid-mobile {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;

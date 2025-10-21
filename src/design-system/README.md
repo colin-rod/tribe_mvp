@@ -437,11 +437,12 @@ xl: 1280px
 - Readable text without zooming (16px base)
 
 ### Responsive Typography
-Use responsive text utilities for fluid scaling:
+Fluid text utilities are provided via CSS `clamp()` so sizes scale smoothly between breakpoints:
 ```css
-text-responsive-xl: text-lg md:text-xl lg:text-2xl
-text-responsive-lg: text-base md:text-lg lg:text-xl
-text-responsive-base: text-sm md:text-base lg:text-lg
+.text-responsive-xl { font-size: clamp(1.125rem, 0.8vw + 1rem, 1.563rem); }
+.text-responsive-lg { font-size: clamp(1rem, 0.6vw + 0.9rem, 1.25rem); }
+.text-responsive-base { font-size: clamp(0.875rem, 0.5vw + 0.8rem, 1.125rem); }
+.text-responsive-sm { font-size: clamp(0.75rem, 0.45vw + 0.7rem, 1rem); }
 ```
 
 ## Implementation Guide

@@ -195,17 +195,17 @@ Available classes:
 ### Responsive Body Text
 
 ```tsx
-{/* Scales: sm → base (sm) → lg (lg) */}
+{/* Fluid clamp scaling from mobile to desktop */}
 <p className="text-responsive-base">
   Responsive body text
 </p>
 ```
 
-Available classes:
-- `.text-responsive-xl`: lg → xl → 2xl
-- `.text-responsive-lg`: base → lg → xl
-- `.text-responsive-base`: sm → base → lg
-- `.text-responsive-sm`: xs → sm → base
+Available classes (all use CSS `clamp()` for fluid sizing):
+- `.text-responsive-xl`: `clamp(1.125rem, 0.8vw + 1rem, 1.563rem)`
+- `.text-responsive-lg`: `clamp(1rem, 0.6vw + 0.9rem, 1.25rem)`
+- `.text-responsive-base`: `clamp(0.875rem, 0.5vw + 0.8rem, 1.125rem)`
+- `.text-responsive-sm`: `clamp(0.75rem, 0.45vw + 0.7rem, 1rem)`
 
 ## Font Weights
 

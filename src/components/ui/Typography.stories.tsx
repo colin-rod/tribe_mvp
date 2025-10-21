@@ -367,7 +367,8 @@ export const ResponsiveTypography: Story = {
         <p className="text-sm font-medium text-gray-500 mb-3">Responsive Body Text</p>
         <Text variant="body" responsive>
           This text also responds to viewport size changes, maintaining optimal readability
-          across different screen sizes from mobile to desktop.
+          across different screen sizes from mobile to desktop thanks to the underlying CSS
+          <code className="ml-1">clamp()</code> scale.
         </Text>
       </div>
     </div>
@@ -375,7 +376,7 @@ export const ResponsiveTypography: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Enable responsive typography that scales fluidly with viewport size.',
+        story: 'Enable responsive typography that scales fluidly with viewport size using CSS clamp().',
       },
     },
   },
