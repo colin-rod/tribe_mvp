@@ -1149,6 +1149,7 @@ export type Database = {
           created_at: string | null
           digest_preferences: Json | null
           email: string | null
+          email_normalized: string | null
           frequency: string | null
           group_id: string | null
           id: string
@@ -1158,6 +1159,7 @@ export type Database = {
           overrides_group_default: boolean | null
           parent_id: string
           phone: string | null
+          phone_sanitized: string | null
           preference_token: string
           preferred_channels: string[] | null
           relationship: string
@@ -1168,6 +1170,7 @@ export type Database = {
           created_at?: string | null
           digest_preferences?: Json | null
           email?: string | null
+          email_normalized?: never
           frequency?: string | null
           group_id?: string | null
           id?: string
@@ -1177,6 +1180,7 @@ export type Database = {
           overrides_group_default?: boolean | null
           parent_id: string
           phone?: string | null
+          phone_sanitized?: never
           preference_token?: string
           preferred_channels?: string[] | null
           relationship: string
@@ -1187,6 +1191,7 @@ export type Database = {
           created_at?: string | null
           digest_preferences?: Json | null
           email?: string | null
+          email_normalized?: never
           frequency?: string | null
           group_id?: string | null
           id?: string
@@ -1196,6 +1201,7 @@ export type Database = {
           overrides_group_default?: boolean | null
           parent_id?: string
           phone?: string | null
+          phone_sanitized?: never
           preference_token?: string
           preferred_channels?: string[] | null
           relationship?: string
