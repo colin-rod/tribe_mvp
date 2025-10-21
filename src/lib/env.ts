@@ -3,6 +3,14 @@ import { createLogger } from './logger'
 
 const logger = createLogger('env-validation')
 
+type PlaceholderEnvGlobal = typeof globalThis & {
+  __TRIBE_PLACEHOLDER_ENV_WARNED__?: boolean
+  __TRIBE_PLACEHOLDER_ENV_VALIDATION_LOGGED__?: boolean
+  __TRIBE_PLACEHOLDER_ENV_KEYS__?: Set<string>
+}
+
+const placeholderEnvGlobal = globalThis as PlaceholderEnvGlobal
+
 interface PublicRuntimeConfig {
   [key: string]: string | undefined
 }
@@ -152,6 +160,59 @@ function validateEnvironment(): Env {
     const result = envSchema.safeParse(process.env)
 
     if (!result.success) {
+      const allowPlaceholderEnv = !process.env.VERCEL
+
+      if (allowPlaceholderEnv) {
+        const placeholderAssignments: Record<string, string> = {
+          NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co',
+          NEXT_PUBLIC_SUPABASE_ANON_KEY:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDU0ODYzOTIsImV4cCI6MTk2MTA2MjM5Mn0.placeholder',
+          SENDGRID_API_KEY: 'SG.placeholder-key',
+        }
+
+        const appliedPlaceholders: string[] = []
+        for (const [key, value] of Object.entries(placeholderAssignments)) {
+          if (!process.env[key]) {
+            process.env[key] = value
+            appliedPlaceholders.push(key)
+          }
+        }
+
+        if (appliedPlaceholders.length > 0) {
+          const placeholderKeySet =
+            placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_KEYS__ || new Set<string>()
+
+          for (const key of appliedPlaceholders) {
+            placeholderKeySet.add(key)
+          }
+
+          placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_KEYS__ = placeholderKeySet
+
+          if (!placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_WARNED__) {
+            logger.warn('Using placeholder environment values for build process', {
+              appliedPlaceholders: Array.from(placeholderKeySet),
+              nodeEnv: process.env.NODE_ENV,
+            })
+            placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_WARNED__ = true
+          }
+        }
+
+        const fallbackResult = envSchema.safeParse(process.env)
+        if (fallbackResult.success) {
+          if (!placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_VALIDATION_LOGGED__) {
+            const placeholdersApplied = Array.from(
+              placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_KEYS__ || new Set(appliedPlaceholders)
+            )
+
+            logger.warn('Environment validation passed with placeholder values', {
+              placeholdersApplied,
+            })
+            placeholderEnvGlobal.__TRIBE_PLACEHOLDER_ENV_VALIDATION_LOGGED__ = true
+          }
+          return fallbackResult.data
+        }
+      }
+
       // Enhanced error logging with detailed context
       const errors = result.error.errors.map(err => {
         const fieldName = err.path[0] as string

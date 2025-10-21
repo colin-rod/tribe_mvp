@@ -68,7 +68,7 @@ describe('Feedback sanitization', () => {
   })
 
   test('feedbackRequestSchema removes malicious markup', async () => {
-    const { feedbackRequestSchema, FeedbackType } = await import('../../lib/types/feedback')
+    const { feedbackRequestSchema, FeedbackType } = await import('../../lib/types/feedback.server')
 
     const result = feedbackRequestSchema.parse({
       type: FeedbackType.BUG,
@@ -91,7 +91,7 @@ describe('Feedback sanitization', () => {
   })
 
   test('submitFeedbackToLinear uses sanitized values for issue creation', async () => {
-    const { feedbackRequestSchema, FeedbackType } = await import('../../lib/types/feedback')
+    const { feedbackRequestSchema, FeedbackType } = await import('../../lib/types/feedback.server')
     const { submitFeedbackToLinear } = await import('../../lib/linear/client')
 
     const maliciousPayload = feedbackRequestSchema.parse({

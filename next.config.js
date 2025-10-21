@@ -1,6 +1,24 @@
+const path = require('path')
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
+
+// Ensure the compiled webpack helper exposes WebpackError when using the
+// locally installed webpack implementation. In some environments (notably the
+// Vercel build machines) Next.js only assigns the error constructor to
+// `webpack.webpack.WebpackError`, which breaks internal plugins that expect it
+// at the top level. Calling `init()` guarantees the helper is initialised, and
+// the fallback assignment keeps compatibility with older Next.js behaviour.
+const compiledWebpack = require('next/dist/compiled/webpack/webpack')
+if (typeof compiledWebpack?.init === 'function') {
+  compiledWebpack.init()
+  if (
+    typeof compiledWebpack.WebpackError !== 'function' &&
+    typeof compiledWebpack.webpack?.WebpackError === 'function'
+  ) {
+    compiledWebpack.WebpackError = compiledWebpack.webpack.WebpackError
+  }
+}
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
@@ -158,6 +176,19 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  },
+  webpack(config) {
+    config.resolve = config.resolve || {}
+    config.resolve.alias = config.resolve.alias || {}
+
+    if (!config.resolve.alias.encoding) {
+      config.resolve.alias.encoding = path.join(
+        __dirname,
+        'src/lib/polyfills/encoding.ts'
+      )
+    }
+
+    return config
   },
 }
 

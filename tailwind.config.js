@@ -117,8 +117,22 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        sans: [
+          'system-ui',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+        display: [
+          'system-ui',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
       },
       // Typography Scale - Based on 1.25 ratio (Major Third)
       // Base: 16px (1rem), Line heights optimized for readability
