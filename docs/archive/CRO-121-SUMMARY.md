@@ -7,7 +7,7 @@ I've successfully completed the analysis and implementation files for CRO-121 - 
 ## 📦 Deliverables
 
 ### 1. Database Migration File
-**Location:** [supabase/migrations/20251006000003_rls_performance_optimization.sql](supabase/migrations/20251006000003_rls_performance_optimization.sql)
+**Location:** [supabase/migrations/20251006000003_rls_performance_optimization.sql](../../supabase/migrations/20251006000003_rls_performance_optimization.sql)
 
 **Contents:**
 - 10 strategic indexes to support RLS policy conditions
@@ -30,7 +30,7 @@ I've successfully completed the analysis and implementation files for CRO-121 - 
 10. `idx_notification_history_user_id_unread` - Partial index for unread notifications
 
 ### 2. Comprehensive Analysis Document
-**Location:** [docs/RLS_PERFORMANCE_ANALYSIS.md](docs/RLS_PERFORMANCE_ANALYSIS.md)
+**Location:** [docs/RLS_PERFORMANCE_ANALYSIS.md](../RLS_PERFORMANCE_ANALYSIS.md)
 
 **Contents:**
 - Complete RLS policy inventory (33 policies analyzed)
@@ -49,7 +49,7 @@ I've successfully completed the analysis and implementation files for CRO-121 - 
 - Negligible write performance impact (<3%)
 
 ### 3. Implementation Guide
-**Location:** [docs/CRO-121-IMPLEMENTATION-GUIDE.md](docs/CRO-121-IMPLEMENTATION-GUIDE.md)
+**Location:** [docs/CRO-121-IMPLEMENTATION-GUIDE.md](../CRO-121-IMPLEMENTATION-GUIDE.md)
 
 **Contents:**
 - Step-by-step execution instructions
@@ -177,14 +177,14 @@ Mark CRO-121 as complete when:
 
 ## 📚 Additional Resources
 
-- **CLAUDE.md Guidelines:** [CLAUDE.md](CLAUDE.md) - Database migration procedures
-- **Security Documentation:** [SECURITY.md](SECURITY.md) - RLS security patterns
+- **CLAUDE.md Guidelines:** [CLAUDE.md](../../CLAUDE.md) - Database migration procedures
+- **Security Documentation:** [SECURITY.md](../../SECURITY.md) - RLS security patterns
 - **PostgreSQL Index Docs:** https://www.postgresql.org/docs/current/indexes.html
 - **Supabase RLS Guide:** https://supabase.com/docs/guides/auth/row-level-security
 
 ## 🚀 Ready for Execution
 
-All implementation files are complete and ready for execution. Follow the [Implementation Guide](docs/CRO-121-IMPLEMENTATION-GUIDE.md) to execute the migration and verify the performance improvements.
+All implementation files are complete and ready for execution. Follow the [Implementation Guide](../CRO-121-IMPLEMENTATION-GUIDE.md) to execute the migration and verify the performance improvements.
 
 ---
 
