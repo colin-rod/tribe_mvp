@@ -15,7 +15,10 @@ type SupabaseClientType = SupabaseClient<Database>
 function validateSupabaseEnvironment(): { url: string; key: string } {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const isBuildTime = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
+  const isBuildTime =
+    process.env.CI === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.NEXT_PHASE === 'phase-production-build'
 
   // During build time (CI), use fallback values to prevent build failures
   if (isBuildTime && (!supabaseUrl || !supabaseAnonKey)) {
@@ -152,7 +155,10 @@ export function createClient() {
 
     return createBrowserClient<Database>(url, key)
   } catch (error) {
-    const isBuildTime = process.env.CI === 'true' || process.env.NODE_ENV === 'test'
+    const isBuildTime =
+      process.env.CI === 'true' ||
+      process.env.NODE_ENV === 'test' ||
+      process.env.NEXT_PHASE === 'phase-production-build'
 
     logger.errorWithStack('Failed to create Supabase client - application cannot continue', error as Error)
 

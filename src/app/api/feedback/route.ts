@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { feedbackRequestSchema } from '@/lib/types/feedback'
+import { feedbackRequestSchema } from '@/lib/types/feedback.server'
 import { submitFeedbackToLinear } from '@/lib/linear/client'
 import { createLogger } from '@/lib/logger'
 import { z } from 'zod'

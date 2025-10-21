@@ -243,14 +243,12 @@ export class EmailQueueService {
 
   // Lazy initialization - only connect when actually needed
   private async initialize() {
-    // Skip initialization during build time
-    if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
-      // We're in a server context during build, skip Redis connection
-      const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
-      if (isBuildTime) {
-        logger.warn('Skipping Redis connection during build phase')
-        return
-      }
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+    const isCiBuild = process.env.CI === 'true'
+
+    if (isBuildPhase || isCiBuild) {
+      logger.warn('Skipping Redis connection during build or CI phase')
+      return
     }
 
     if (this.isInitialized || this.isShuttingDown) {

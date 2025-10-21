@@ -201,9 +201,12 @@ export class ServerEmailService {
 
       this.logger.info('Email queue worker started successfully')
     } catch (error) {
-      this.logger.error('Failed to start email queue worker', {
-        error: error instanceof Error ? error.message : String(error)
-      })
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes('Email queue service not available')) {
+        this.logger.warn('Email queue unavailable - continuing without background worker')
+      } else {
+        this.logger.error('Failed to start email queue worker', { error: message })
+      }
       // Disable queue if worker fails to start
       this.useQueue = false
     }

@@ -1,6 +1,6 @@
 import { LinearClient } from '@linear/sdk'
 import { createLogger } from '@/lib/logger'
-import type { FeedbackData } from '@/lib/types/feedback'
+import type { FeedbackData } from '@/lib/types/feedback.server'
 
 const logger = createLogger('LinearClient')
 
