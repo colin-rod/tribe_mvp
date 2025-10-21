@@ -40,6 +40,22 @@ export interface Recipient {
 
 type RecipientRow = Database['public']['Tables']['recipients']['Row']
 
+type SupabaseClientType = ReturnType<typeof createClient>
+
+export class DuplicateRecipientError extends Error {
+  constructor(public readonly recipient: Recipient) {
+    super('Recipient already exists with the same contact information')
+    this.name = 'DuplicateRecipientError'
+  }
+}
+
+export interface DuplicateRecipientLookupParams {
+  supabase: SupabaseClientType
+  parentId: string
+  email?: string | null
+  phone?: string | null
+}
+
 /**
  * Interface for creating new recipients
  */
@@ -89,6 +105,12 @@ function generatePreferenceToken(): string {
   return crypto.randomUUID() + '-' + Date.now().toString(36)
 }
 
+function normalizePhoneNumber(phone?: string | null): string | null {
+  if (!phone) return null
+  const digitsOnly = phone.replace(/\D/g, '')
+  return digitsOnly.length > 0 ? digitsOnly : null
+}
+
 function isRecipientGroupValue(value: unknown): value is RecipientGroup {
   return typeof value === 'object' && value !== null && 'id' in value && 'name' in value
 }
@@ -100,6 +122,73 @@ function extractGroupFromRelation(relation: unknown): RecipientGroup | undefined
   }
 
   return isRecipientGroupValue(relation) ? relation : undefined
+}
+
+export async function checkForDuplicateRecipient({
+  supabase,
+  parentId,
+  email,
+  phone
+}: DuplicateRecipientLookupParams): Promise<Recipient | null> {
+  const orConditions: string[] = []
+
+  if (email) {
+    const trimmedEmail = email.trim()
+    if (trimmedEmail) {
+      orConditions.push(`email.ilike.${trimmedEmail}`)
+    }
+  }
+
+  if (phone) {
+    const phoneComparisons = new Set<string>()
+    const trimmedPhone = phone.trim()
+    if (trimmedPhone) {
+      phoneComparisons.add(trimmedPhone)
+    }
+
+    const normalizedPhone = normalizePhoneNumber(phone)
+    if (normalizedPhone) {
+      phoneComparisons.add(normalizedPhone)
+      phoneComparisons.add(`+${normalizedPhone}`)
+    }
+
+    for (const candidate of phoneComparisons) {
+      orConditions.push(`phone.eq.${candidate}`)
+    }
+  }
+
+  if (orConditions.length === 0) {
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('recipients')
+    .select(`
+      *,
+      recipient_groups(*)
+    `)
+    .eq('parent_id', parentId)
+    .or(orConditions.join(','))
+    .limit(1)
+
+  if (error) {
+    logger.errorWithStack('Error checking for duplicate recipient:', error as Error)
+    throw new Error('Failed to check for duplicate recipient')
+  }
+
+  const [match] = (data ?? []) as Array<RecipientRow & { recipient_groups: unknown }>
+  if (!match) {
+    return null
+  }
+
+  return {
+    ...match,
+    relationship: match.relationship as Recipient['relationship'],
+    frequency: match.frequency as Recipient['frequency'],
+    preferred_channels: match.preferred_channels as Recipient['preferred_channels'],
+    content_types: match.content_types as Recipient['content_types'],
+    group: extractGroupFromRelation(match.recipient_groups)
+  }
 }
 
 /**
@@ -118,6 +207,17 @@ export async function createRecipient(recipientData: CreateRecipientData): Promi
   // Validate that at least email or phone is provided
   if (!recipientData.email && !recipientData.phone) {
     throw new Error('Either email or phone number is required')
+  }
+
+  const duplicateRecipient = await checkForDuplicateRecipient({
+    supabase,
+    parentId: user.id,
+    email: recipientData.email,
+    phone: recipientData.phone
+  })
+
+  if (duplicateRecipient) {
+    throw new DuplicateRecipientError(duplicateRecipient)
   }
 
   // Set default preferences based on relationship (no groups)
