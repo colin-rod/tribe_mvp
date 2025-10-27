@@ -101,7 +101,7 @@
     "@chromatic-com/storybook": "^4.1.1",
     "@next/bundle-analyzer": "^15.5.6",
     "@playwright/test": "^1.56.1",
-    "@storybook/addon-a11y": "^9.1.10",
+    "@storybook/addon-a11y": "^9.1.15",
     "@storybook/addon-actions": "^9.0.8",
     "@storybook/addon-backgrounds": "^9.0.8",
     "@storybook/addon-controls": "^9.0.8",
