@@ -257,7 +257,7 @@ export function IconOptionSelector<T extends string = string>({
             >
               {/* Badge */}
               {badges?.[option.value] && (
-                <div className="absolute -top-2 -right-2">
+                <div className="pointer-events-none absolute right-0 top-0 z-10 translate-x-1/3 -translate-y-1/3">
                   {badges[option.value]}
                 </div>
               )}
