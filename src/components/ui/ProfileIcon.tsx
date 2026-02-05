@@ -155,7 +155,7 @@ export function ProfileIcon({
 
         {/* Badge (e.g., "new", "active") */}
         {badge && (
-          <div className="absolute -top-1 -right-1">
+          <div className="pointer-events-none absolute right-0 top-0 z-10 translate-x-1/3 -translate-y-1/3">
             {badge}
           </div>
         )}
